@@ -33,6 +33,22 @@ func main() {
 		// Remove existing constraint if it exists to make script idempotent
 		`ALTER TABLE user_hunts DROP CONSTRAINT IF EXISTS check_acquisition_type`,
 		`ALTER TABLE user_hunts ADD CONSTRAINT check_acquisition_type CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED'))`,
+
+		// Add breeding support flag to games (true for all games except LGPE and Legends: Arceus)
+		`ALTER TABLE games ADD COLUMN IF NOT EXISTS supports_breeding BOOLEAN NOT NULL DEFAULT TRUE`,
+		`UPDATE games SET supports_breeding = FALSE WHERE title IN ('Let''s Go Pikachu/Eevee', 'Legends: Arceus')`,
+
+		// Track which Pokémon are legally obtainable in each game (regardless of wild encounters)
+		`CREATE TABLE IF NOT EXISTS pokemon_availability (
+			pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
+			game_id    INTEGER REFERENCES games(id)   ON DELETE CASCADE,
+			PRIMARY KEY (pokemon_id, game_id)
+		)`,
+
+		// Backfill availability from existing wild encounter data
+		`INSERT INTO pokemon_availability (pokemon_id, game_id)
+		 SELECT DISTINCT pokemon_id, game_id FROM encounters
+		 ON CONFLICT DO NOTHING`,
 	}
 
 	for i, q := range queries {

@@ -3,7 +3,10 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"sort"
+	"strconv"
 
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
@@ -217,9 +220,14 @@ type EncounterDetail struct {
 }
 
 func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
-	pokemonID := r.URL.Query().Get("pokemon_id")
-	if pokemonID == "" {
+	pokemonIDStr := r.URL.Query().Get("pokemon_id")
+	if pokemonIDStr == "" {
 		http.Error(w, "pokemon_id is required", http.StatusBadRequest)
+		return
+	}
+	pokemonID, err := strconv.Atoi(pokemonIDStr)
+	if err != nil {
+		http.Error(w, "pokemon_id must be an integer", http.StatusBadRequest)
 		return
 	}
 
@@ -229,32 +237,78 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `
+	// Step 1: wild encounters filtered to games the user owns
+	wildRows, err := database.DB.Query(context.Background(), `
 		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls
 		FROM encounters e
 		JOIN games g ON e.game_id = g.id
 		JOIN user_games ug ON g.id = ug.game_id
 		WHERE e.pokemon_id = $1 AND ug.user_id = $2
 		ORDER BY g.generation ASC, g.id ASC
-	`
-
-	rows, err := database.DB.Query(context.Background(), query, pokemonID, userID)
+	`, pokemonID, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch encounters", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
+	defer wildRows.Close()
 
+	seen := make(map[string]bool)
 	var encounters []EncounterDetail
-	for rows.Next() {
+
+	for wildRows.Next() {
 		var enc EncounterDetail
-		if err := rows.Scan(
+		if err := wildRows.Scan(
 			&enc.ID, &enc.PokemonID, &enc.GameID, &enc.GameTitle,
-			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls); err != nil {
+			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls,
+		); err != nil {
 			continue
 		}
+		seen[fmt.Sprintf("%d:%s", enc.GameID, enc.MethodName)] = true
 		encounters = append(encounters, enc)
 	}
+	wildRows.Close()
+
+	// Step 2: games where this Pokémon is available and breeding is supported
+	breedRows, err := database.DB.Query(context.Background(), `
+		SELECT g.id, g.title
+		FROM pokemon_availability pa
+		JOIN games g ON pa.game_id = g.id
+		JOIN user_games ug ON g.id = ug.game_id
+		WHERE pa.pokemon_id = $1 AND ug.user_id = $2 AND g.supports_breeding = TRUE
+	`, pokemonID, userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch availability", http.StatusInternalServerError)
+		return
+	}
+	defer breedRows.Close()
+
+	// Step 3: inject a synthetic Masuda entry for each eligible game not already present
+	for breedRows.Next() {
+		var gameID int
+		var gameTitle string
+		if err := breedRows.Scan(&gameID, &gameTitle); err != nil {
+			continue
+		}
+		key := fmt.Sprintf("%d:masuda-method", gameID)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		encounters = append(encounters, EncounterDetail{
+			PokemonID:      pokemonID,
+			GameID:         gameID,
+			GameTitle:      gameTitle,
+			MethodName:     "masuda-method",
+			AvgTimeSeconds: 45,
+			BaseRolls:      6,
+			CharmRolls:     2,
+		})
+	}
+
+	// Step 4: sort combined slice by game_id
+	sort.Slice(encounters, func(i, j int) bool {
+		return encounters[i].GameID < encounters[j].GameID
+	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(encounters)
