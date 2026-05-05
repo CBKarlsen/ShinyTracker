@@ -1,32 +1,54 @@
 import { createTheme } from "@mui/material/styles";
+import { colors } from "./palette";
 
+/**
+ * MUI theme — colors are sourced from palette.ts.
+ * Do not hardcode hex values here; reference `colors.*` instead.
+ */
 const theme = createTheme({
 	palette: {
-		mode: "dark",
+		mode: "light",
 		primary: {
-			main: "#60a5fa", // Blue
+			main: colors.primary,
+			light: colors.primaryLight,
 		},
 		secondary: {
-			main: "#f472b6", // Pink
+			main: colors.accent,
 		},
 		background: {
-			default: "#0f172a", // Slate 900
-			paper: "#1e293b", // Slate 800
+			default: colors.bgDefault,
+			paper: colors.bgPaper,
 		},
 		text: {
-			primary: "#f8fafc",
-			secondary: "#94a3b8",
+			primary: colors.textPrimary,
+			secondary: colors.textSecondary,
 		},
+		success: {
+			main: colors.success,
+		},
+		error: {
+			main: colors.error,
+		},
+		warning: {
+			main: colors.warning,
+		},
+		divider: colors.border,
 	},
 	typography: {
 		fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
 		h1: {
 			fontSize: "2.5rem",
 			fontWeight: 700,
+			color: colors.textPrimary,
 		},
 		h2: {
 			fontSize: "2rem",
 			fontWeight: 600,
+			color: colors.textPrimary,
+		},
+		h4: {
+			fontWeight: 600,
+			color: colors.textPrimary,
 		},
 		h6: {
 			fontWeight: 600,
@@ -38,13 +60,15 @@ const theme = createTheme({
 				root: {
 					borderRadius: 16,
 					backgroundImage: "none",
+					backgroundColor: colors.bgPaper,
+					border: `1px solid ${colors.border}`,
 					boxShadow:
-						"0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+						"0 2px 8px -2px rgba(116,141,174,0.12), 0 1px 4px -1px rgba(116,141,174,0.08)",
 					transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
 					"&:hover": {
-						transform: "translateY(-4px)",
+						transform: "translateY(-3px)",
 						boxShadow:
-							"0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+							"0 8px 24px -4px rgba(116,141,174,0.18), 0 4px 8px -2px rgba(116,141,174,0.10)",
 					},
 				},
 			},
@@ -55,6 +79,20 @@ const theme = createTheme({
 					borderRadius: 8,
 					textTransform: "none",
 					fontWeight: 600,
+				},
+			},
+		},
+		MuiChip: {
+			styleOverrides: {
+				root: {
+					borderRadius: 8,
+				},
+			},
+		},
+		MuiPaper: {
+			styleOverrides: {
+				root: {
+					backgroundImage: "none",
 				},
 			},
 		},

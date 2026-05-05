@@ -1,0 +1,42 @@
+[
+  {
+    "game_title": "Scarlet/Violet",
+    "pokemon_id": 906,
+    "method_name": "masuda-method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 2
+  },
+  {
+    "game_title": "Scarlet/Violet",
+    "pokemon_id": 987,
+    "method_name": "wild-encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2
+  },
+  {
+    "game_title": "Scarlet/Violet",
+    "pokemon_id": 987,
+    "method_name": "mass-outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2
+  },
+  {
+    "game_title": "Scarlet/Violet",
+    "pokemon_id": 129,
+    "method_name": "wild-encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2
+  },
+  {
+    "game_title": "Scarlet/Violet",
+    "pokemon_id": 129,
+    "method_name": "mass-outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2
+  }
+]

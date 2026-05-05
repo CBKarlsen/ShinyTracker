@@ -1,0 +1,1100 @@
+0.00,#,Pokémon,Easiest,Method
+FALSE,1,Bulbasaur,SV DLC,Outbreaks (Terarium)
+FALSE,2,Ivysaur,SV DLC,Evolve
+FALSE,3,Venusaur,SV DLC,Evolve
+FALSE,4,Charmander,SV DLC,Outbreaks (Terarium)
+FALSE,5,Charmeleon,SV DLC,Evolve
+FALSE,6,Charizard,SV DLC,Evolve
+FALSE,7,Squirtle,SV DLC,Outbreaks (Terarium)
+FALSE,8,Wartortle,SV DLC,Evolve
+FALSE,9,Blastoise,SV DLC,Evolve
+FALSE,10,Caterpie,SwSh,Masuda Breeding
+FALSE,11,Metapod,SwSh,Evolve
+FALSE,12,Butterfree,SwSh,Evolve
+FALSE,13,Weedle,LGPE,Catch Combo + Lure
+FALSE,14,Kakuna,LGPE,Catch Combo + Lure
+FALSE,15,Beedrill,LGPE,Catch Combo + Lure
+FALSE,16,Pidgey,LGPE,Catch Combo + Lure
+FALSE,17,Pidgeotto,LGPE,Catch Combo + Lure
+FALSE,18,Pidgeot,LGPE,Catch Combo + Lure
+FALSE,19,Rattata,LGPE,Catch Combo + Lure
+FALSE,20,Raticate,LGPE,Catch Combo + Lure
+FALSE,21,Spearow,LGPE,Catch Combo + Lure
+FALSE,22,Fearow,LGPE,Catch Combo + Lure
+FALSE,23,Ekans,SV DLC,Outbreaks (Kitakami)
+FALSE,24,Arbok,SV DLC,Outbreaks (Kitakami)
+FALSE,25,Pikachu,PLA,Mass Outbreaks
+FALSE,26,Raichu,PLA,MMOs
+FALSE,27,Sandshrew,SV DLC,Outbreaks (Kitakami)
+FALSE,28,Sandslash,SV DLC,Outbreaks (Kitakami)
+FALSE,29,NidoranF,SwSh DLC,Masuda Breeding
+FALSE,30,Nidorina,SwSh DLC,Evolve
+FALSE,31,Nidoqueen,SwSh DLC,Evolve
+FALSE,32,NidoranM,SwSh DLC,Masuda Breeding
+FALSE,33,Nidorino,SwSh DLC,Evolve
+FALSE,34,Nidoking,SwSh DLC,Evolve
+FALSE,35,Clefairy,PLA,Mass Outbreaks
+FALSE,36,Clefable,PLA,MMOs
+FALSE,37,Vulpix,PLA,Mass Outbreaks
+FALSE,38,Ninetales,PLA,MMOs
+FALSE,39,Jigglypuff,SV,Outbreaks
+FALSE,40,Wigglytuff,SV,Outbreaks
+FALSE,41,Zubat,PLA,Mass Outbreaks
+FALSE,42,Golbat,PLA,Mass Outbreaks
+FALSE,43,Oddish,SV DLC,Outbreaks (Terarium)
+FALSE,44,Gloom,SV DLC,Outbreaks (Terarium)
+FALSE,45,Vileplume,SV DLC,Outbreaks (Terarium)
+FALSE,46,Paras,PLA,Mass Outbreaks
+FALSE,47,Parasect,PLA,Mass Outbreaks
+FALSE,48,Venonat,SV,Outbreaks
+FALSE,49,Venomoth,SV,Outbreaks
+FALSE,50,Diglett,SV,Outbreaks
+FALSE,51,Dugtrio,SV,Outbreaks
+FALSE,52,Meowth,SV,Outbreaks
+FALSE,53,Persian,SV,Outbreaks
+FALSE,54,Psyduck,PLA,Mass Outbreaks
+FALSE,55,Golduck,PLA,Mass Outbreaks
+FALSE,56,Mankey,SV,Outbreaks
+FALSE,57,Primeape,SV,Outbreaks
+FALSE,58,Growlithe,SV,Outbreaks
+FALSE,59,Arcanine,SV,Outbreaks
+FALSE,60,Poliwag,SV DLC,Outbreaks (Kitakami)
+FALSE,61,Poliwhirl,SV DLC,Outbreaks (Kitakami)
+FALSE,62,Poliwrath,SV DLC,Evolve
+FALSE,63,Abra,PLA,Mass Outbreaks
+FALSE,64,Kadabra,PLA,Mass Outbreaks
+FALSE,65,Alakazam,PLA,MMOs
+FALSE,66,Machop,PLA,Mass Outbreaks
+FALSE,67,Machoke,PLA,Mass Outbreaks
+FALSE,68,Machamp,PLA,MMOs
+FALSE,69,Bellsprout,SV DLC,Outbreaks (Kitakami)
+FALSE,70,Weepinbell,SV DLC,Outbreaks (Kitakami)
+FALSE,71,Victreebel,SV DLC,Evolve
+FALSE,72,Tentacool,PLA,Mass Outbreaks
+FALSE,73,Tentacruel,PLA,Mass Outbreaks
+FALSE,74,Geodude,PLA,Mass Outbreaks
+FALSE,75,Graveler,PLA,Mass Outbreaks
+FALSE,76,Golem,PLA,MMOs
+FALSE,77,Ponyta,PLA,Mass Outbreaks
+FALSE,78,Rapidash,PLA,Mass Outbreaks
+FALSE,79,Slowpoke,SV,Outbreaks
+FALSE,80,Slowbro,SV,Outbreaks
+FALSE,81,Magnemite,SV,Outbreaks
+FALSE,82,Magneton,SV,Outbreaks
+FALSE,83,Farfetch'd,SwSh,Breeding + Everstone
+FALSE,84,Doduo,SV DLC,Outbreaks (Terarium)
+FALSE,85,Dodrio,SV DLC,Outbreaks (Terarium)
+FALSE,86,Seel,SV DLC,Outbreaks (Terarium)
+FALSE,87,Dewgong,SV DLC,Outbreaks (Terarium)
+FALSE,88,Grimer,SV,Outbreaks
+FALSE,89,Muk,SV,Outbreaks
+FALSE,90,Shellder,SV,Outbreaks
+FALSE,91,Cloyster,SV,Outbreaks
+FALSE,92,Gastly,PLA,Mass Outbreaks
+FALSE,93,Haunter,PLA,Mass Outbreaks
+FALSE,94,Gengar,PLA,MMOs
+FALSE,95,Onix,PLA,Mass Outbreaks
+FALSE,96,Drowzee,SV,Outbreaks
+FALSE,97,Hypno,SV,Outbreaks
+FALSE,98,Krabby,SwSh,Masuda Breeding
+FALSE,99,Kingler,SwSh,Evolve
+FALSE,100,Voltorb,SV,Outbreaks
+FALSE,101,Electrode,SV,Outbreaks
+FALSE,102,Exeggcute,SV DLC,Outbreaks (Terarium)
+FALSE,103,Exeggutor,SV DLC,Outbreaks (Terarium)
+FALSE,104,Cubone,SwSh DLC,Masuda Breeding
+FALSE,105,Marowak,SwSh DLC,Evolve
+FALSE,106,Hitmonlee,SV DLC,Outbreaks (Terarium)
+FALSE,107,Hitmonchan,SV DLC,Outbreaks (Terarium)
+FALSE,108,Lickitung,PLA,Mass Outbreaks
+FALSE,109,Koffing,SV DLC,Outbreaks (Kitakami)
+FALSE,110,Weezing,SV DLC,Outbreaks (Kitakami)
+FALSE,111,Rhyhorn,PLA,Mass Outbreaks
+FALSE,112,Rhydon,PLA,Mass Outbreaks
+FALSE,113,Chansey,PLA,Mass Outbreaks
+FALSE,114,Tangela,PLA,Mass Outbreaks
+FALSE,115,Kangaskhan,SwSh DLC,Masuda Breeding
+FALSE,116,Horsea,SV DLC,Outbreaks (Terarium)
+FALSE,117,Seadra,SV DLC,Outbreaks (Terarium)
+FALSE,118,Goldeen,SwSh,Masuda Breeding
+FALSE,119,Seaking,SwSh,Evolve
+FALSE,120,Staryu,SwSh DLC,Masuda Breeding
+FALSE,121,Starmie,SwSh DLC,Evolve
+FALSE,122,MrMime,PLA,Mass Outbreaks
+FALSE,123,Scyther,PLA,Mass Outbreaks
+FALSE,124,Jynx,SwSh DLC,Evolve
+FALSE,125,Electabuzz,PLA,Mass Outbreaks
+FALSE,126,Magmar,PLA,Mass Outbreaks
+FALSE,127,Pinsir,SwSh DLC,Masuda Breeding
+FALSE,128,Tauros,SV DLC,Outbreaks (Terarium)
+FALSE,129,Magikarp,PLA,Mass Outbreaks
+FALSE,130,Gyarados,PLA,Mass Outbreaks
+FALSE,131,Lapras,SV DLC,Outbreaks (Terarium)
+FALSE,132,Ditto,SV,Isolated Encounters
+FALSE,133,Eevee,PLA,Mass Outbreaks
+FALSE,134,Vaporeon,PLA,Evolve
+FALSE,135,Jolteon,PLA,Evolve
+FALSE,136,Flareon,PLA,Evolve
+FALSE,137,Porygon,SV DLC,Outbreaks (Terarium)
+FALSE,138,Omanyte,SwSh DLC,Masuda Breeding
+FALSE,139,Omastar,SwSh DLC,Evolve
+FALSE,140,Kabuto,SwSh DLC,Masuda Breeding
+FALSE,141,Kabutops,SwSh DLC,Evolve
+FALSE,142,Aerodactyl,SwSh DLC,Masuda Breeding
+FALSE,143,Snorlax,PLA,MMOs
+FALSE,144,Articuno,SwSh DLC,Dynamax Adventures
+FALSE,145,Zapdos,SwSh DLC,Dynamax Adventures
+FALSE,146,Moltres,SwSh DLC,Dynamax Adventures
+FALSE,147,Dratini,SV,Outbreaks
+FALSE,148,Dragonair,SV,Outbreaks
+FALSE,149,Dragonite,SV,Evolve
+FALSE,150,Mewtwo,SwSh DLC,Dynamax Adventures
+FALSE,151,Mew,UNAVAILABLE,Needs GBA/3DS VC/Event
+FALSE,152,Chikorita,SV DLC,Outbreaks (Terarium)
+FALSE,153,Bayleef,SV DLC,Evolve
+FALSE,154,Meganium,SV DLC,Evolve
+FALSE,155,Cyndaquil,PLA,MMOs
+FALSE,156,Quilava,PLA,MMOs
+FALSE,157,Typhlosion,PLA + Transfer,Evolve in SV
+FALSE,158,Totodile,SV DLC,Outbreaks (Terarium)
+FALSE,159,Croconaw,SV DLC,Evolve
+FALSE,160,Feraligatr,SV DLC,Evolve
+FALSE,161,Sentret,SV DLC,Outbreaks (Kitakami)
+FALSE,162,Furret,SV DLC,Outbreaks (Kitakami)
+FALSE,163,Hoothoot,SV DLC,Outbreaks (Kitakami)
+FALSE,164,Noctowl,SV DLC,Outbreaks (Kitakami)
+FALSE,165,Ledyba,BDSP,Masuda Breeding
+FALSE,166,Ledian,BDSP,Poké Radar (Morning)
+FALSE,167,Spinarak,SV DLC,Outbreaks (Kitakami)
+FALSE,168,Ariados,SV DLC,Outbreaks (Kitakami)
+FALSE,169,Crobat,PLA,MMOs
+FALSE,170,Chinchou,SV DLC,Outbreaks (Terarium)
+FALSE,171,Lanturn,SV DLC,Outbreaks (Terarium)
+FALSE,172,Pichu,PLA,Mass Outbreaks
+FALSE,173,Cleffa,PLA,Mass Outbreaks
+FALSE,174,Igglybuff,SV,Outbreaks
+FALSE,175,Togepi,PLA,Mass Outbreaks
+FALSE,176,Togetic,PLA,MMOs
+FALSE,177,Natu,SwSh,Masuda Breeding
+FALSE,178,Xatu,SwSh,Evolve
+FALSE,179,Mareep,SV,Outbreaks
+FALSE,180,Flaaffy,SV,Outbreaks
+FALSE,181,Ampharos,SV,Outbreaks
+FALSE,182,Bellossom,SV DLC,Outbreaks (Terarium)
+FALSE,183,Marill,SV,Outbreaks
+FALSE,184,Azumarill,SV,Outbreaks
+FALSE,185,Sudowoodo,PLA,Mass Outbreaks
+FALSE,186,Politoed,SV DLC,Evolve (Trade)
+FALSE,187,Hoppip,SV,Outbreaks
+FALSE,188,Skiploom,SV,Outbreaks
+FALSE,189,Jumpluff,SV,Outbreaks
+FALSE,190,Aipom,PLA,Mass Outbreaks
+FALSE,191,Sunkern,SV,Isolated Encounters
+FALSE,192,Sunflora,SV,Outbreaks
+FALSE,193,Yanma,PLA,Mass Outbreaks
+FALSE,194,Wooper,SV DLC,Outbreaks (Kitakami)
+FALSE,195,Quagsire,SV DLC,Outbreaks (Kitakami)
+FALSE,196,Espeon,PLA,Evolve
+FALSE,197,Umbreon,PLA,Evolve
+FALSE,198,Murkrow,SV,Outbreaks
+FALSE,199,Slowking,SV,Evolve (Trade)
+FALSE,200,Misdreavus,PLA,Mass Outbreaks
+FALSE,201,Unown,PLA,MMOs
+FALSE,202,Wobbuffet,SwSh,Evolve
+FALSE,203,Girafarig,SV,Outbreaks
+FALSE,204,Pineco,SV,Outbreaks
+FALSE,205,Forretress,SV,Outbreaks
+FALSE,206,Dunsparce,SV,Outbreaks
+FALSE,207,Gligar,PLA,Mass Outbreaks
+FALSE,208,Steelix,PLA,MMOs
+FALSE,209,Snubbull,SV DLC,Outbreaks (Terarium)
+FALSE,210,Granbull,SV DLC,Outbreaks (Terarium)
+FALSE,211,Qwilfish,SV,Outbreaks
+FALSE,212,Scizor,PLA,Evolve
+FALSE,213,Shuckle,SwSh,Masuda Breeding
+FALSE,214,Heracross,PLA,Mass Outbreaks
+FALSE,215,Sneasel,SV,Outbreaks
+FALSE,216,Teddiursa,PLA,Mass Outbreaks
+FALSE,217,Ursaring,PLA,Mass Outbreaks
+FALSE,218,Slugma,SV DLC,Outbreaks (Kitakami)
+FALSE,219,Magcargo,SV DLC,Evolve
+FALSE,220,Swinub,PLA,Mass Outbreaks
+FALSE,221,Piloswine,PLA,Mass Outbreaks
+FALSE,222,Corsola,SwSh,Breeding + Everstone
+FALSE,223,Remoraid,PLA,Mass Outbreaks
+FALSE,224,Octillery,PLA,Mass Outbreaks
+FALSE,225,Delibird,SV,Outbreaks
+FALSE,226,Mantine,PLA,Mass Outbreaks
+FALSE,227,Skarmory,SV DLC,Outbreaks (Terarium)
+FALSE,228,Houndour,SV,Outbreaks
+FALSE,229,Houndoom,SV,Outbreaks
+FALSE,230,Kingdra,SV DLC,Evolve (Trade)
+FALSE,231,Phanpy,SV,Outbreaks
+FALSE,232,Donphan,SV,Outbreaks
+FALSE,233,Porygon2,SV + Transfer,Evolve in PLA
+FALSE,234,Stantler,PLA,Mass Outbreaks
+FALSE,235,Smeargle,SV DLC,Outbreaks (Terarium)
+FALSE,236,Tyrogue,SV DLC,Outbreaks (Terarium)
+FALSE,237,Hitmontop,SV DLC,Outbreaks (Terarium)
+FALSE,238,Smoochum,SwSh DLC,Masuda Breeding
+FALSE,239,Elekid,PLA,Mass Outbreaks
+FALSE,240,Magby,PLA,Mass Outbreaks
+FALSE,241,Miltank,SwSh DLC,Masuda Breeding
+FALSE,242,Blissey,PLA,MMOs
+FALSE,243,Raikou,SwSh DLC,Dynamax Adventures
+FALSE,244,Entei,SwSh DLC,Dynamax Adventures
+FALSE,245,Suicune,SwSh DLC,Dynamax Adventures
+FALSE,246,Larvitar,SV,Outbreaks
+FALSE,247,Pupitar,SV,Outbreaks
+FALSE,248,Tyranitar,SV,Evolve
+FALSE,249,Lugia,SwSh DLC,Dynamax Adventures
+FALSE,250,HoOh,SwSh DLC,Dynamax Adventures
+FALSE,251,Celebi,UNAVAILABLE,Needs 3DS VC/Event
+FALSE,252,Treecko,SV DLC,Outbreaks (Terarium)
+FALSE,253,Grovyle,SV DLC,Evolve
+FALSE,254,Sceptile,SV DLC,Evolve
+FALSE,255,Torchic,SV DLC,Outbreaks (Terarium)
+FALSE,256,Combusken,SV DLC,Evolve
+FALSE,257,Blaziken,SV DLC,Evolve
+FALSE,258,Mudkip,SV DLC,Outbreaks (Terarium)
+FALSE,259,Marshtomp,SV DLC,Evolve
+FALSE,260,Swampert,SV DLC,Evolve
+FALSE,261,Poochyena,SV DLC,Outbreaks (Kitakami)
+FALSE,262,Mightyena,SV DLC,Outbreaks (Kitakami)
+FALSE,263,Zigzagoon,SwSh,Breeding + Everstone
+FALSE,264,Linoone,SwSh,Breeding + Everstone
+FALSE,265,Wurmple,PLA,Mass Outbreaks
+FALSE,266,Silcoon,PLA,Mass Outbreaks
+FALSE,267,Beautifly,PLA,Mass Outbreaks
+FALSE,268,Cascoon,PLA,Mass Outbreaks
+FALSE,269,Dustox,PLA,Mass Outbreaks
+FALSE,270,Lotad,SV DLC,Outbreaks (Kitakami)
+FALSE,271,Lombre,SV DLC,Outbreaks (Kitakami)
+FALSE,272,Ludicolo,SV DLC,Evolve
+FALSE,273,Seedot,SV DLC,Outbreaks (Kitakami)
+FALSE,274,Nuzleaf,SV DLC,Outbreaks (Kitakami)
+FALSE,275,Shiftry,SV DLC,Evolve
+FALSE,276,Taillow,BDSP,Masuda Breeding
+FALSE,277,Swellow,BDSP,Poké Radar (Exclusive)
+FALSE,278,Wingull,SV,Outbreaks
+FALSE,279,Pelipper,SV,Outbreaks
+FALSE,280,Ralts,PLA,Mass Outbreaks
+FALSE,281,Kirlia,PLA,Mass Outbreaks
+FALSE,282,Gardevoir,PLA,Mass Outbreaks
+FALSE,283,Surskit,SV,Outbreaks
+FALSE,284,Masquerain,SV,Outbreaks
+FALSE,285,Shroomish,SV,Outbreaks
+FALSE,286,Breloom,SV,Outbreaks
+FALSE,287,Slakoth,SV,Outbreaks
+FALSE,288,Vigoroth,SV,Outbreaks
+FALSE,289,Slaking,SV,Outbreaks
+FALSE,290,Nincada,SwSh,Masuda Breeding
+FALSE,291,Ninjask,SwSh,Evolve
+FALSE,292,Shedinja,SwSh,Evolve
+FALSE,293,Whismur,SwSh DLC,Masuda Breeding
+FALSE,294,Loudred,SwSh DLC,Evolve
+FALSE,295,Exploud,SwSh DLC,Evolve
+FALSE,296,Makuhita,SV,Outbreaks
+FALSE,297,Hariyama,SV,Outbreaks
+FALSE,298,Azurill,SV,Outbreaks
+FALSE,299,Nosepass,PLA,Mass Outbreaks
+FALSE,300,Skitty,BDSP,Poké Radar (Swarm)
+FALSE,301,Delcatty,BDSP,Evolve
+FALSE,302,Sableye,SV,Outbreaks
+FALSE,303,Mawile,SwSh,Masuda Breeding
+FALSE,304,Aron,SwSh DLC,Masuda Breeding
+FALSE,305,Lairon,SwSh DLC,Evolve
+FALSE,306,Aggron,SwSh DLC,Evolve
+FALSE,307,Meditite,SV,Outbreaks
+FALSE,308,Medicham,SV,Outbreaks
+FALSE,309,Electrike,SwSh,Masuda Breeding
+FALSE,310,Manectric,SwSh,Evolve
+FALSE,311,Plusle,SV DLC,Outbreaks (Terarium)
+FALSE,312,Minun,SV DLC,Outbreaks (Terarium)
+FALSE,313,Volbeat,SV DLC,Outbreaks (Kitakami)
+FALSE,314,Illumise,SV DLC,Outbreaks (Kitakami)
+FALSE,315,Roselia,PLA,Mass Outbreaks
+FALSE,316,Gulpin,SV,Outbreaks
+FALSE,317,Swalot,SV,Outbreaks
+FALSE,318,Carvanha,SwSh DLC,Masuda Breeding
+FALSE,319,Sharpedo,SwSh DLC,Evolve
+FALSE,320,Wailmer,SwSh,Masuda Breeding
+FALSE,321,Wailord,SwSh,Evolve
+FALSE,322,Numel,SV,Outbreaks
+FALSE,323,Camerupt,SV,Outbreaks
+FALSE,324,Torkoal,SV,Outbreaks
+FALSE,325,Spoink,SV,Outbreaks
+FALSE,326,Grumpig,SV,Outbreaks
+FALSE,327,Spinda,BDSP,Poké Radar (Swarm)
+FALSE,328,Trapinch,SV DLC,Outbreaks (Terarium)
+FALSE,329,Vibrava,SV DLC,Outbreaks (Terarium)
+FALSE,330,Flygon,SV DLC,Outbreaks (Terarium)
+FALSE,331,Cacnea,SV,Outbreaks
+FALSE,332,Cacturne,SV,Outbreaks
+FALSE,333,Swablu,SV,Outbreaks
+FALSE,334,Altaria,SV,Outbreaks
+FALSE,335,Zangoose,SV,Outbreaks
+FALSE,336,Seviper,SV,Outbreaks
+FALSE,337,Lunatone,SwSh,Masuda Breeding
+FALSE,338,Solrock,SwSh,Masuda Breeding
+FALSE,339,Barboach,PLA,Mass Outbreaks
+FALSE,340,Whiscash,PLA,Mass Outbreaks
+FALSE,341,Corphish,SV DLC,Outbreaks (Kitakami)
+FALSE,342,Crawdaunt,SV DLC,Outbreaks (Kitakami)
+FALSE,343,Baltoy,SwSh,Masuda Breeding
+FALSE,344,Claydol,SwSh,Evolve
+FALSE,345,Lileep,SwSh DLC,Masuda Breeding
+FALSE,346,Cradily,SwSh DLC,Evolve
+FALSE,347,Anorith,SwSh DLC,Masuda Breeding
+FALSE,348,Armaldo,SwSh DLC,Evolve
+FALSE,349,Feebas,SV DLC,Outbreaks (Kitakami)
+FALSE,350,Milotic,SV DLC,Evolve (Trade)
+FALSE,351,Castform,BDSP,Poké Radar
+FALSE,352,Kecleon,BDSP,Poké Radar (Exclusive)
+FALSE,353,Shuppet,SV,Outbreaks
+FALSE,354,Banette,SV,Outbreaks
+FALSE,355,Duskull,PLA,Mass Outbreaks
+FALSE,356,Dusclops,PLA,Mass Outbreaks
+FALSE,357,Tropius,SV,Outbreaks
+FALSE,358,Chimecho,PLA,Mass Outbreaks
+FALSE,359,Absol,SwSh DLC,Masuda Breeding
+FALSE,360,Wynaut,SwSh,Masuda Breeding
+FALSE,361,Snorunt,PLA,Mass Outbreaks
+FALSE,362,Glalie,PLA,Mass Outbreaks
+FALSE,363,Spheal,PLA,Mass Outbreaks
+FALSE,364,Sealeo,PLA,Mass Outbreaks
+FALSE,365,Walrein,PLA,Mass Outbreaks
+FALSE,366,Clamperl,BDSP,Masuda Breeding
+FALSE,367,Huntail,BDSP,Evolve (Trade)
+FALSE,368,Gorebyss,BDSP,Evolve (Trade)
+FALSE,369,Relicanth,SwSh DLC,Masuda Breeding
+FALSE,370,Luvdisc,SV,Outbreaks
+FALSE,371,Bagon,SV,Outbreaks
+FALSE,372,Shelgon,SV,Outbreaks
+FALSE,373,Salamence,SV,Evolve
+FALSE,374,Beldum,SV DLC,Outbreaks (Terarium)
+FALSE,375,Metang,SV DLC,Outbreaks (Terarium)
+FALSE,376,Metagross,SV DLC,Evolve
+FALSE,377,Regirock,SwSh DLC,Soft Reset
+FALSE,378,Regice,SwSh DLC,Soft Reset
+FALSE,379,Registeel,SwSh DLC,Soft Reset
+FALSE,380,Latias,SwSh DLC,Dynamax Adventures
+FALSE,381,Latios,SwSh DLC,Dynamax Adventures
+FALSE,382,Kyogre,SwSh DLC,Dynamax Adventures
+FALSE,383,Groudon,SwSh DLC,Dynamax Adventures
+FALSE,384,Rayquaza,SwSh DLC,Dynamax Adventures
+FALSE,385,Jirachi,UNAVAILABLE,Needs GBA/Event
+FALSE,386,Deoxys,UNAVAILABLE,Needs GBA/Event
+FALSE,387,Turtwig,PLA,Mass Outbreaks
+FALSE,388,Grotle,PLA,Mass Outbreaks
+FALSE,389,Torterra,PLA,MMOs
+FALSE,390,Chimchar,PLA,Mass Outbreaks
+FALSE,391,Monferno,PLA,Mass Outbreaks
+FALSE,392,Infernape,PLA,MMOs
+FALSE,393,Piplup,PLA,Mass Outbreaks
+FALSE,394,Prinplup,PLA,Mass Outbreaks
+FALSE,395,Empoleon,PLA,MMOs
+FALSE,396,Starly,PLA,Mass Outbreaks
+FALSE,397,Staravia,PLA,Mass Outbreaks
+FALSE,398,Staraptor,PLA,Mass Outbreaks
+FALSE,399,Bidoof,PLA,Mass Outbreaks
+FALSE,400,Bibarel,PLA,Mass Outbreaks
+FALSE,401,Kricketot,PLA,Mass Outbreaks
+FALSE,402,Kricketune,PLA,Mass Outbreaks
+FALSE,403,Shinx,PLA,Mass Outbreaks
+FALSE,404,Luxio,PLA,Mass Outbreaks
+FALSE,405,Luxray,PLA,Mass Outbreaks
+FALSE,406,Budew,PLA,Mass Outbreaks
+FALSE,407,Roserade,PLA,MMOs
+FALSE,408,Cranidos,SV DLC,Outbreaks (Terarium)
+FALSE,409,Rampardos,SV DLC,Evolve
+FALSE,410,Shieldon,SV DLC,Outbreaks (Terarium)
+FALSE,411,Bastiodon,SV DLC,Evolve
+FALSE,412,Burmy,PLA,Shaking Trees
+FALSE,413,Wormadam,PLA,Shaking Trees
+FALSE,414,Mothim,PLA,Evolve (Male)
+FALSE,415,Combee,PLA,Mass Outbreaks
+FALSE,416,Vespiquen,PLA,Evolve (Female)
+FALSE,417,Pachirisu,PLA,Mass Outbreaks
+FALSE,418,Buizel,PLA,Mass Outbreaks
+FALSE,419,Floatzel,PLA,Mass Outbreaks
+FALSE,420,Cherubi,PLA,Mass Outbreaks
+FALSE,421,Cherrim,PLA,Evolve
+FALSE,422,Shellos,PLA,Mass Outbreaks
+FALSE,423,Gastrodon,PLA,Mass Outbreaks
+FALSE,424,Ambipom,PLA,Mass Outbreaks
+FALSE,425,Drifloon,PLA,Mass Outbreaks
+FALSE,426,Drifblim,PLA,Mass Outbreaks
+FALSE,427,Buneary,PLA,Mass Outbreaks
+FALSE,428,Lopunny,PLA,MMOs
+FALSE,429,Mismagius,PLA,MMOs
+FALSE,430,Honchkrow,PLA,MMOs
+FALSE,431,Glameow,PLA,Mass Outbreaks
+FALSE,432,Purugly,PLA,Mass Outbreaks
+FALSE,433,Chingling,PLA,Mass Outbreaks
+FALSE,434,Stunky,PLA,Mass Outbreaks
+FALSE,435,Skuntank,PLA,Mass Outbreaks
+FALSE,436,Bronzor,PLA,Mass Outbreaks
+FALSE,437,Bronzong,PLA,Mass Outbreaks
+FALSE,438,Bonsly,PLA,Mass Outbreaks
+FALSE,439,MimeJr,PLA,Mass Outbreaks
+FALSE,440,Happiny,PLA,Mass Outbreaks
+FALSE,441,Chatot,PLA,Mass Outbreaks
+FALSE,442,Spiritomb,PLA,MMOs
+FALSE,443,Gible,PLA,Mass Outbreaks
+FALSE,444,Gabite,PLA,Mass Outbreaks
+FALSE,445,Garchomp,PLA,MMOs
+FALSE,446,Munchlax,PLA,Mass Outbreaks
+FALSE,447,Riolu,PLA,Mass Outbreaks
+FALSE,448,Lucario,PLA,MMOs
+FALSE,449,Hippopotas,PLA,Mass Outbreaks
+FALSE,450,Hippowdon,PLA,Mass Outbreaks
+FALSE,451,Skorupi,PLA,Mass Outbreaks
+FALSE,452,Drapion,PLA,Mass Outbreaks
+FALSE,453,Croagunk,PLA,Mass Outbreaks
+FALSE,454,Toxicroak,PLA,Mass Outbreaks
+FALSE,455,Carnivine,PLA,Mass Outbreaks
+FALSE,456,Finneon,PLA,Mass Outbreaks
+FALSE,457,Lumineon,PLA,Mass Outbreaks
+FALSE,458,Mantyke,PLA,Mass Outbreaks
+FALSE,459,Snover,PLA,Mass Outbreaks
+FALSE,460,Abomasnow,PLA,Mass Outbreaks
+FALSE,461,Weavile,SV,Evolve
+FALSE,462,Magnezone,SV,Evolve
+FALSE,463,Lickilicky,PLA,Mass Outbreaks
+FALSE,464,Rhyperior,PLA,MMOs
+FALSE,465,Tangrowth,PLA,Mass Outbreaks
+FALSE,466,Electivire,PLA,MMOs
+FALSE,467,Magmortar,PLA,MMOs
+FALSE,468,Togekiss,PLA,MMOs
+FALSE,469,Yanmega,PLA,Mass Outbreaks
+FALSE,470,Leafeon,PLA,Evolve
+FALSE,471,Glaceon,PLA,Evolve
+FALSE,472,Gliscor,PLA,MMOs
+FALSE,473,Mamoswine,PLA,Mass Outbreaks
+FALSE,474,PorygonZ,SV + Transfer,Evolve in PLA
+FALSE,475,Gallade,PLA,MMOs
+FALSE,476,Probopass,PLA,MMOs
+FALSE,477,Dusknoir,PLA,MMOs
+FALSE,478,Froslass,PLA,MMOs
+FALSE,479,Rotom,PLA,Mass Outbreaks
+FALSE,480,Uxie,SwSh DLC,Dynamax Adventures
+FALSE,481,Mesprit,SwSh DLC,Dynamax Adventures
+FALSE,482,Azelf,SwSh DLC,Dynamax Adventures
+FALSE,483,Dialga,SwSh DLC,Dynamax Adventures
+FALSE,484,Palkia,SwSh DLC,Dynamax Adventures
+FALSE,485,Heatran,SwSh DLC,Dynamax Adventures
+FALSE,486,Regigigas,SwSh DLC,Soft Reset
+FALSE,487,Giratina,SwSh DLC,Dynamax Adventures
+FALSE,488,Cresselia,SwSh DLC,Dynamax Adventures
+FALSE,489,Phione,PLA + Transfer,Breeding in SV
+FALSE,490,Manaphy,UNAVAILABLE,Needs DS/Event
+FALSE,491,Darkrai,UNAVAILABLE,Needs DS/Event
+FALSE,492,Shaymin,UNAVAILABLE,Needs DS/Event
+FALSE,493,Arceus,BDSP,PLA 100% Save File
+FALSE,494,Victini,UNAVAILABLE,-
+FALSE,495,Snivy,SV DLC,Outbreaks (Terarium)
+FALSE,496,Servine,SV DLC,Evolve
+FALSE,497,Serperior,SV DLC,Evolve
+FALSE,498,Tepig,SV DLC,Outbreaks (Terarium)
+FALSE,499,Pignite,SV DLC,Evolve
+FALSE,500,Emboar,SV DLC,Evolve
+FALSE,501,Oshawott,PLA,MMOs
+FALSE,502,Dewott,PLA,MMOs
+FALSE,503,Samurott,PLA + Transfer,Evolve in SV
+FALSE,504,Patrat,UNAVAILABLE,Last Appearance: XY
+FALSE,505,Watchog,UNAVAILABLE,Last Appearance: XY
+FALSE,506,Lillipup,SwSh DLC,Masuda Breeding
+FALSE,507,Herdier,SwSh DLC,Evolve
+FALSE,508,Stoutland,SwSh DLC,Evolve
+FALSE,509,Purrloin,SwSh,Masuda Breeding
+FALSE,510,Liepard,SwSh,Evolve
+FALSE,511,Pansage,UNAVAILABLE,Last Appearance: XY
+FALSE,512,Simisage,UNAVAILABLE,Last Appearance: XY
+FALSE,513,Pansear,UNAVAILABLE,Last Appearance: XY
+FALSE,514,Simisear,UNAVAILABLE,Last Appearance: XY
+FALSE,515,Panpour,UNAVAILABLE,Last Appearance: XY
+FALSE,516,Simipour,UNAVAILABLE,Last Appearance: XY
+FALSE,517,Munna,SwSh,Masuda Breeding
+FALSE,518,Musharna,SwSh,Evolve
+FALSE,519,Pidove,SwSh,Masuda Breeding
+FALSE,520,Tranquill,SwSh,Evolve
+FALSE,521,Unfezant,SwSh,Evolve
+FALSE,522,Blitzle,SV DLC,Outbreaks (Terarium)
+FALSE,523,Zebstrika,SV DLC,Outbreaks (Terarium)
+FALSE,524,Roggenrola,SwSh,Masuda Breeding
+FALSE,525,Boldore,SwSh,Evolve
+FALSE,526,Gigalith,SwSh,Evolve (Trade)
+FALSE,527,Woobat,SwSh,Masuda Breeding
+FALSE,528,Swoobat,SwSh,Evolve
+FALSE,529,Drilbur,SV DLC,Outbreaks (Kitakami)
+FALSE,530,Excadrill,SV DLC,Outbreaks (Kitakami)
+FALSE,531,Audino,SwSh DLC,Masuda Breeding
+FALSE,532,Timburr,SV DLC,Outbreaks (Kitakami)
+FALSE,533,Gurdurr,SV DLC,Outbreaks (Kitakami)
+FALSE,534,Conkeldurr,SV DLC,Evolve (Trade)
+FALSE,535,Tympole,SwSh,Masuda Breeding
+FALSE,536,Palpitoad,SwSh,Evolve
+FALSE,537,Seismitoad,SwSh,Evolve
+FALSE,538,Throh,SwSh,Masuda Breeding
+FALSE,539,Sawk,SwSh,Masuda Breeding
+FALSE,540,Sewaddle,SV DLC,Outbreaks (Kitakami)
+FALSE,541,Swadloon,SV DLC,Outbreaks (Kitakami)
+FALSE,542,Leavanny,SV DLC,Outbreaks (Kitakami)
+FALSE,543,Venipede,SwSh DLC,Masuda Breeding
+FALSE,544,Whirlipede,SwSh DLC,Evolve
+FALSE,545,Scolipede,SwSh DLC,Evolve
+FALSE,546,Cottonee,SV DLC,Outbreaks (Terarium)
+FALSE,547,Whimsicott,SV DLC,Outbreaks (Terarium)
+FALSE,548,Petilil,PLA,Mass Outbreaks
+FALSE,549,Lilligant,PLA + Transfer,Evolve in SV
+FALSE,550,Basculin,SV,Outbreaks
+FALSE,551,Sandile,SV,Outbreaks
+FALSE,552,Krokorok,SV,Outbreaks
+FALSE,553,Krookodile,SV,Outbreaks (Terarium)
+FALSE,554,Darumaka,SwSh,Breeding + Everstone
+FALSE,555,Darmanitan,SwSh,Breeding + Everstone
+FALSE,556,Maractus,SwSh,Masuda Breeding
+FALSE,557,Dwebble,SwSh,Masuda Breeding
+FALSE,558,Crustle,SwSh,Evolve
+FALSE,559,Scraggy,SV DLC,Outbreaks (Terarium)
+FALSE,560,Scrafty,SV DLC,Outbreaks (Terarium)
+FALSE,561,Sigilyph,SwSh,Masuda Breeding
+FALSE,562,Yamask,SwSh,Breeding + Everstone
+FALSE,563,Cofagrigus,SwSh,Evolve
+FALSE,564,Tirtouga,SwSh DLC,Masuda Breeding
+FALSE,565,Carracosta,SwSh DLC,Evolve
+FALSE,566,Archen,SwSh DLC,Masuda Breeding
+FALSE,567,Archeops,SwSh DLC,Evolve
+FALSE,568,Trubbish,SwSh,Masuda Breeding
+FALSE,569,Garbodor,SwSh,Evolve
+FALSE,570,Zorua,SV,Outbreaks
+FALSE,571,Zoroark,SV,Outbreaks
+FALSE,572,Minccino,SV DLC,Outbreaks (Terarium)
+FALSE,573,Cinccino,SV DLC,Outbreaks (Terarium)
+FALSE,574,Gothita,SV,Outbreaks
+FALSE,575,Gothorita,SV,Outbreaks
+FALSE,576,Gothitelle,SV,Outbreaks
+FALSE,577,Solosis,SV DLC,Outbreaks (Terarium)
+FALSE,578,Duosion,SV DLC,Outbreaks (Terarium)
+FALSE,579,Reuniclus,SV DLC,Outbreaks (Terarium)
+FALSE,580,Ducklett,SV DLC,Outbreaks (Terarium)
+FALSE,581,Swanna,SV DLC,Evolve
+FALSE,582,Vanillite,SwSh,Masuda Breeding
+FALSE,583,Vanillish,SwSh,Evolve
+FALSE,584,Vanilluxe,SwSh,Evolve
+FALSE,585,Deerling,SV,Outbreaks
+FALSE,586,Sawsbuck,SV,Outbreaks
+FALSE,587,Emolga,SwSh DLC,Masuda Breeding
+FALSE,588,Karrablast,SwSh,Masuda Breeding
+FALSE,589,Escavalier,SwSh,Evolve (Trade)
+FALSE,590,Foongus,SV,Outbreaks
+FALSE,591,Amoonguss,SV,Outbreaks
+FALSE,592,Frillish,SwSh,Masuda Breeding
+FALSE,593,Jellicent,SwSh,Evolve
+FALSE,594,Alomomola,SV,Outbreaks
+FALSE,595,Joltik,SV DLC,Outbreaks (Terarium)
+FALSE,596,Galvantula,SV DLC,Outbreaks (Terarium)
+FALSE,597,Ferroseed,SwSh,Masuda Breeding
+FALSE,598,Ferrothorn,SwSh,Evolve
+FALSE,599,Klink,SwSh,Masuda Breeding
+FALSE,600,Klang,SwSh,Evolve
+FALSE,601,Klinklang,SwSh,Evolve
+FALSE,602,Tynamo,SV,Outbreaks
+FALSE,603,Eelektrik,SV,Outbreaks
+FALSE,604,Eelektross,SV,Outbreaks
+FALSE,605,Elgyem,SwSh,Masuda Breeding
+FALSE,606,Beheeyem,SwSh,Evolve
+FALSE,607,Litwick,SV DLC,Outbreaks (Kitakami)
+FALSE,608,Lampent,SV DLC,Outbreaks (Kitakami)
+FALSE,609,Chandelure,SV DLC,Evolve
+FALSE,610,Axew,SV,Outbreaks
+FALSE,611,Fraxure,SV,Outbreaks
+FALSE,612,Haxorus,SV,Evolve
+FALSE,613,Cubchoo,SV,Outbreaks
+FALSE,614,Beartic,SV,Outbreaks
+FALSE,615,Cryogonal,SV,Outbreaks
+FALSE,616,Shelmet,SwSh,Masuda Breeding
+FALSE,617,Accelgor,SwSh,Evolve (Trade)
+FALSE,618,Stunfisk,SwSh,Breeding + Everstone
+FALSE,619,Mienfoo,SV DLC,Outbreaks (Kitakami)
+FALSE,620,Mienshao,SV DLC,Evolve
+FALSE,621,Druddigon,SwSh DLC,Masuda Breeding
+FALSE,622,Golett,SV DLC,Outbreaks (Terarium)
+FALSE,623,Golurk,SV DLC,Outbreaks (Terarium)
+FALSE,624,Pawniard,SV,Outbreaks
+FALSE,625,Bisharp,SV,Outbreaks
+FALSE,626,Bouffalant,SwSh DLC,Masuda Breeding
+FALSE,627,Rufflet,PLA,Mass Outbreaks
+FALSE,628,Braviary,PLA + Transfer,Evolve in SV
+FALSE,629,Vullaby,SV DLC,Outbreaks (Kitakami)
+FALSE,630,Mandibuzz,SV DLC,Outbreaks (Terarium)
+FALSE,631,Heatmor,SwSh,Masuda Breeding
+FALSE,632,Durant,SwSh,Masuda Breeding
+FALSE,633,Deino,SV,Outbreaks
+FALSE,634,Zweilous,SV,Outbreaks
+FALSE,635,Hydreigon,SV,Evolve
+FALSE,636,Larvesta,SV,Outbreaks
+FALSE,637,Volcarona,SV,Outbreaks
+FALSE,638,Cobalion,SwSh DLC,Soft Reset
+FALSE,639,Terrakion,SwSh DLC,Soft Reset
+FALSE,640,Virizion,SwSh DLC,Soft Reset
+FALSE,641,Tornadus,SwSh DLC,Dynamax Adventures
+FALSE,642,Thundurus,SwSh DLC,Dynamax Adventures
+FALSE,643,Reshiram,SwSh DLC,Dynamax Adventures
+FALSE,644,Zekrom,SwSh DLC,Dynamax Adventures
+FALSE,645,Landorus,SwSh DLC,Dynamax Adventures
+FALSE,646,Kyurem,SwSh DLC,Dynamax Adventures
+FALSE,647,Keldeo,UNAVAILABLE,-
+FALSE,648,Meloetta,HOME,Complete SV & SV DLC Pokedexes in Pokemon HOME
+FALSE,649,Genesect,UNAVAILABLE,Needs DS/Event
+FALSE,650,Chespin,SV DLC,Outbreaks (Terarium)
+FALSE,651,Quilladin,SV DLC,Evolve
+FALSE,652,Chesnaught,SV DLC,Evolve
+FALSE,653,Fennekin,SV DLC,Outbreaks (Terarium)
+FALSE,654,Braixen,SV DLC,Evolve
+FALSE,655,Delphox,SV DLC,Evolve
+FALSE,656,Froakie,SV DLC,Outbreaks (Terarium)
+FALSE,657,Frogadier,SV DLC,Evolve
+FALSE,658,Greninja,SV DLC,Evolve
+FALSE,659,Bunnelby,SwSh,Masuda Breeding
+FALSE,660,Diggersby,SwSh,Evolve
+FALSE,661,Fletchling,SV,Outbreaks
+FALSE,662,Fletchinder,SV,Outbreaks
+FALSE,663,Talonflame,SV,Outbreaks
+FALSE,664,Scatterbug,SV,Outbreaks
+FALSE,665,Spewpa,SV,Outbreaks
+FALSE,666,Vivillon,SV,Outbreaks
+FALSE,667,Litleo,SV,Outbreaks
+FALSE,668,Pyroar,SV,Outbreaks
+FALSE,669,Flabebe,SV,Outbreaks
+FALSE,670,Floette,SV,Outbreaks
+FALSE,671,Florges,SV,Outbreaks
+FALSE,672,Skiddo,SV,Outbreaks
+FALSE,673,Gogoat,SV,Outbreaks
+FALSE,674,Pancham,SwSh,Masuda Breeding
+FALSE,675,Pangoro,SwSh,Evolve
+FALSE,676,Furfrou,UNAVAILABLE,Last Appearance: USUM
+FALSE,677,Espurr,SV DLC,Outbreaks (Terarium)
+FALSE,678,Meowstic,SV DLC,Outbreaks (Terarium)
+FALSE,679,Honedge,SwSh,Masuda Breeding
+FALSE,680,Doublade,SwSh,Evolve
+FALSE,681,Aegislash,SwSh,Evolve
+FALSE,682,Spritzee,SwSh,Masuda Breeding
+FALSE,683,Aromatisse,SwSh,Evolve (Trade)
+FALSE,684,Swirlix,SwSh,Masuda Breeding
+FALSE,685,Slurpuff,SwSh,Evolve (Trade)
+FALSE,686,Inkay,SV DLC,Outbreaks (Terarium)
+FALSE,687,Malamar,SV DLC,Evolve
+FALSE,688,Binacle,SwSh,Masuda Breeding
+FALSE,689,Barbaracle,SwSh,Evolve
+FALSE,690,Skrelp,SV,Outbreaks
+FALSE,691,Dragalge,SV,Outbreaks
+FALSE,692,Clauncher,SV,Outbreaks
+FALSE,693,Clawitzer,SV,Outbreaks
+FALSE,694,Helioptile,SwSh,Masuda Breeding
+FALSE,695,Heliolisk,SwSh,Evolve
+FALSE,696,Tyrunt,SwSh DLC,Masuda Breeding
+FALSE,697,Tyrantrum,SwSh DLC,Evolve
+FALSE,698,Amaura,SwSh DLC,Masuda Breeding
+FALSE,699,Aurorus,SwSh DLC,Evolve
+FALSE,700,Sylveon,PLA,Evolve
+FALSE,701,Hawlucha,SV,Outbreaks
+FALSE,702,Dedenne,SV,Outbreaks
+FALSE,703,Carbink,SV DLC,Outbreaks (Kitakami)
+FALSE,704,Goomy,PLA,Mass Outbreaks
+FALSE,705,Sliggoo,PLA + Transfer,Evolve in SV
+FALSE,706,Goodra,PLA + Transfer,Evolve in SV
+FALSE,707,Klefki,SV,Outbreaks
+FALSE,708,Phantump,SV DLC,Outbreaks (Kitakami)
+FALSE,709,Trevenant,SV DLC,Outbreaks (Kitakami)
+FALSE,710,Pumpkaboo,SwSh,Masuda Breeding
+FALSE,711,Gourgeist,SwSh,Evolve (Trade)
+FALSE,712,Bergmite,PLA,Mass Outbreaks
+FALSE,713,Avalugg,PLA + Transfer,Evolve in SV
+FALSE,714,Noibat,SV,Outbreaks
+FALSE,715,Noivern,SV,Outbreaks
+FALSE,716,Xerneas,SwSh DLC,Dynamax Adventures
+FALSE,717,Yveltal,SwSh DLC,Dynamax Adventures
+FALSE,718,Zygarde,SwSh DLC,Dynamax Adventures
+FALSE,719,Diancie,UNAVAILABLE,EVENT-ONLY
+FALSE,720,Hoopa,UNAVAILABLE,-
+FALSE,721,Volcanion,UNAVAILABLE,-
+FALSE,722,Rowlet,PLA,MMOs
+FALSE,723,Dartrix,PLA,MMOs
+FALSE,724,Decidueye,PLA + Transfer,Evolve in SV
+FALSE,725,Litten,SV DLC,Outbreaks (Terarium)
+FALSE,726,Torracat,SV DLC,Evolve
+FALSE,727,Incineroar,SV DLC,Evolve
+FALSE,728,Popplio,SV DLC,Outbreaks (Terarium)
+FALSE,729,Brionne,SV DLC,Evolve
+FALSE,730,Primarina,SV DLC,Evolve
+FALSE,731,Pikipek,SV DLC,Outbreaks (Terarium)
+FALSE,732,Trumbeak,SV DLC,Outbreaks (Terarium)
+FALSE,733,Toucannon,SV DLC,Outbreaks (Terarium)
+FALSE,734,Yungoos,SV,Outbreaks
+FALSE,735,Gumshoos,SV,Outbreaks
+FALSE,736,Grubbin,SV DLC,Outbreaks (Kitakami)
+FALSE,737,Charjabug,SV DLC,Outbreaks (Kitakami)
+FALSE,738,Vikavolt,SV DLC,Evolve
+FALSE,739,Crabrawler,SV,Outbreaks
+FALSE,740,Crabominable,SV,Outbreaks
+FALSE,741,Oricorio,SV,Outbreaks
+FALSE,742,Cutiefly,SV DLC,Outbreaks (Kitakami)
+FALSE,743,Ribombee,SV DLC,Outbreaks (Kitakami)
+FALSE,744,Rockruff,SV,Outbreaks
+FALSE,745,Lycanroc,SV,Outbreaks
+FALSE,746,Wishiwashi,SwSh,Masuda Breeding
+FALSE,747,Mareanie,SV,Outbreaks
+FALSE,748,Toxapex,SV,Outbreaks
+FALSE,749,Mudbray,SV,Outbreaks
+FALSE,750,Mudsdale,SV,Outbreaks
+FALSE,751,Dewpider,SV DLC,Outbreaks (Terarium)
+FALSE,752,Araquanid,SV DLC,Outbreaks (Terarium)
+FALSE,753,Fomantis,SV,Outbreaks
+FALSE,754,Lurantis,SV,Outbreaks
+FALSE,755,Morelull,SwSh,Masuda Breeding
+FALSE,756,Shiinotic,SwSh,Evolve
+FALSE,757,Salandit,SV,Outbreaks
+FALSE,758,Salazzle,SV,Outbreaks
+FALSE,759,Stufful,SwSh,Masuda Breeding
+FALSE,760,Bewear,SwSh,Evolve
+FALSE,761,Bounsweet,SV,Outbreaks
+FALSE,762,Steenee,SV,Outbreaks
+FALSE,763,Tsareena,SV,Evolve
+FALSE,764,Comfey,SV DLC,Outbreaks (Terarium)
+FALSE,765,Oranguru,SV,Outbreaks
+FALSE,766,Passimian,SV,Outbreaks
+FALSE,767,Wimpod,SwSh,Masuda Breeding
+FALSE,768,Golisopod,SwSh,Evolve
+FALSE,769,Sandygast,SV,Outbreaks
+FALSE,770,Palossand,SV,Outbreaks
+FALSE,771,Pyukumuku,SwSh,Masuda Breeding
+FALSE,772,TypeNull,UNAVAILABLE,Needs 3DS
+FALSE,773,Silvally,UNAVAILABLE,Needs 3DS
+FALSE,774,Minior,SV DLC,Outbreaks (Terarium)
+FALSE,775,Komala,SV,Outbreaks
+FALSE,776,Turtonator,SwSh,Masuda Breeding
+FALSE,777,Togedemaru,SwSh,Masuda Breeding
+FALSE,778,Mimikyu,SV,Outbreaks
+FALSE,779,Bruxish,SV DLC,Outbreaks (Terarium)
+FALSE,780,Drampa,SwSh,Masuda Breeding
+FALSE,781,Dhelmise,SwSh,Masuda Breeding
+FALSE,782,Jangmoo,SV DLC,Outbreaks (Kitakami)
+FALSE,783,Hakamoo,SV DLC,Outbreaks (Kitakami)
+FALSE,784,Kommoo,SV DLC,Evolve
+FALSE,785,TapuKoko,SwSh DLC,Dynamax Adventures
+FALSE,786,TapuLele,SwSh DLC,Dynamax Adventures
+FALSE,787,TapuBulu,SwSh DLC,Dynamax Adventures
+FALSE,788,TapuFini,SwSh DLC,Dynamax Adventures
+FALSE,789,Cosmog,UNAVAILABLE,-
+FALSE,790,Cosmoem,UNAVAILABLE,-
+FALSE,791,Solgaleo,SwSh DLC,Dynamax Adventures
+FALSE,792,Lunala,SwSh DLC,Dynamax Adventures
+FALSE,793,Nihilego,SwSh DLC,Dynamax Adventures
+FALSE,794,Buzzwole,SwSh DLC,Dynamax Adventures
+FALSE,795,Pheromosa,SwSh DLC,Dynamax Adventures
+FALSE,796,Xurkitree,SwSh DLC,Dynamax Adventures
+FALSE,797,Celesteela,SwSh DLC,Dynamax Adventures
+FALSE,798,Kartana,SwSh DLC,Dynamax Adventures
+FALSE,799,Guzzlord,SwSh DLC,Dynamax Adventures
+FALSE,800,Necrozma,SwSh DLC,Dynamax Adventures
+FALSE,801,Magearna,UNAVAILABLE,-
+FALSE,802,Marshadow,UNAVAILABLE,-
+FALSE,803,Poipole,UNAVAILABLE,Needs 3DS
+FALSE,804,Naganadel,UNAVAILABLE,Needs 3DS
+FALSE,805,Stakataka,SwSh DLC,Dynamax Adventures
+FALSE,806,Blacephalon,SwSh DLC,Dynamax Adventures
+FALSE,807,Zeraora,UNAVAILABLE,EVENT-ONLY
+FALSE,808,Meltan,Pokémon Go,EVENT-ONLY
+FALSE,809,Melmetal,Pokémon Go,Evolve
+FALSE,810,Grookey,SV DLC,Outbreaks (Terarium)
+FALSE,811,Thwackey,SV DLC,Evolve
+FALSE,812,Rillaboom,SV DLC,Evolve
+FALSE,813,Scorbunny,SV DLC,Outbreaks (Terarium)
+FALSE,814,Raboot,SV DLC,Evolve
+FALSE,815,Cinderace,SV DLC,Evolve
+FALSE,816,Sobble,SV DLC,Outbreaks (Terarium)
+FALSE,817,Drizzile,SV DLC,Evolve
+FALSE,818,Inteleon,SV DLC,Evolve
+FALSE,819,Skwovet,SV,Outbreaks
+FALSE,820,Greedent,SV,Outbreaks
+FALSE,821,Rookidee,SV,Outbreaks
+FALSE,822,Corvisquire,SV,Outbreaks
+FALSE,823,Corviknight,SV,Evolve
+FALSE,824,Blipbug,SwSh,Masuda Breeding
+FALSE,825,Dottler,SwSh,Evolve
+FALSE,826,Orbeetle,SwSh,Evolve
+FALSE,827,Nickit,SwSh,Masuda Breeding
+FALSE,828,Thievul,SwSh,Evolve
+FALSE,829,Gossifleur,SwSh,Masuda Breeding
+FALSE,830,Eldegoss,SwSh,Evolve
+FALSE,831,Wooloo,SwSh,Masuda Breeding
+FALSE,832,Dubwool,SwSh,Evolve
+FALSE,833,Chewtle,SV,Outbreaks
+FALSE,834,Drednaw,SV,Outbreaks
+FALSE,835,Yamper,SwSh,Masuda Breeding
+FALSE,836,Boltund,SwSh,Evolve
+FALSE,837,Rolycoly,SV,Outbreaks
+FALSE,838,Carkol,SV,Outbreaks
+FALSE,839,Coalossal,SV,Evolve
+FALSE,840,Applin,SV,Outbreaks
+FALSE,841,Flapple,SV,Outbreaks (Kitakami)
+FALSE,842,Appletun,SV,Outbreaks (Kitakami)
+FALSE,843,Silicobra,SV,Outbreaks
+FALSE,844,Sandaconda,SV,Outbreaks
+FALSE,845,Cramorant,SV DLC,Outbreaks (Kitakami)
+FALSE,846,Arrokuda,SV,Outbreaks
+FALSE,847,Barraskewda,SV,Outbreaks
+FALSE,848,Toxel,SV,Outbreaks
+FALSE,849,Toxtricity,SV,Outbreaks
+FALSE,850,Sizzlipede,SwSh,Masuda Breeding
+FALSE,851,Centiskorch,SwSh,Evolve
+FALSE,852,Clobbopus,SwSh,Masuda Breeding
+FALSE,853,Grapploct,SwSh,Evolve
+FALSE,854,Sinistea,SV,Outbreaks
+FALSE,855,Polteageist,SV,Evolve
+FALSE,856,Hatenna,SV,Outbreaks
+FALSE,857,Hattrem,SV,Outbreaks
+FALSE,858,Hatterene,SV,Evolve
+FALSE,859,Impidimp,SV,Outbreaks
+FALSE,860,Morgrem,SV,Outbreaks
+FALSE,861,Grimmsnarl,SV,Evolve
+FALSE,862,Obstagoon,SwSh,Evolve
+FALSE,863,Perrserker,SwSh,Evolve
+FALSE,864,Cursola,SwSh,Evolve
+FALSE,865,Sirfetchd,SwSh,Evolve
+FALSE,866,MrRime,PLA + Transfer,Evolve in SwSh
+FALSE,867,Runerigus,SwSh,Evolve
+FALSE,868,Milcery,SV DLC,Outbreaks (Terarium)
+FALSE,869,Alcremie,SV DLC,Evolve
+FALSE,870,Falinks,SV,Outbreaks
+FALSE,871,Pincurchin,SV,Outbreaks
+FALSE,872,Snom,SV,Outbreaks
+FALSE,873,Frosmoth,SV,Outbreaks
+FALSE,874,Stonjourner,SV,Outbreaks
+FALSE,875,Eiscue,SV,Outbreaks
+FALSE,876,Indeedee,SV,Outbreaks
+FALSE,877,Morpeko,SV DLC,Outbreaks (Kitakami)
+FALSE,878,Cufant,SV,Outbreaks
+FALSE,879,Copperajah,SV,Outbreaks
+FALSE,880,Dracozolt,SwSh,Fossil Resets
+FALSE,881,Arctozolt,SwSh,Fossil Resets
+FALSE,882,Dracovish,SwSh,Fossil Resets
+FALSE,883,Arctovish,SwSh,Fossil Resets
+FALSE,884,Duraludon,SV DLC,Outbreaks (Terarium)
+FALSE,885,Dreepy,SV,Outbreaks
+FALSE,886,Drakloak,SV,Outbreaks
+FALSE,887,Dragapult,SV,Evolve
+FALSE,888,Zacian,UNAVAILABLE,EVENT-ONLY
+FALSE,889,Zamazenta,UNAVAILABLE,EVENT-ONLY
+FALSE,890,Eternatus,UNAVAILABLE,EVENT-ONLY
+FALSE,891,Kubfu,UNAVAILABLE,-
+FALSE,892,Urshifu,UNAVAILABLE,-
+FALSE,893,Zarude,UNAVAILABLE,-
+FALSE,894,Regieleki,SwSh DLC,Soft Reset
+FALSE,895,Regidrago,SwSh DLC,Soft Reset
+FALSE,896,Glastrier,UNAVAILABLE,-
+FALSE,897,Spectrier,UNAVAILABLE,-
+FALSE,898,Calyrex,UNAVAILABLE,-
+FALSE,899,Wyrdeer,PLA,MMOs
+FALSE,900,Kleavor,PLA,MMOs
+FALSE,901,Ursaluna,PLA,MMOs
+FALSE,902,Basculegion,PLA,MMOs
+FALSE,903,Sneasler,PLA,MMOs
+FALSE,904,Overqwil,PLA,MMOs
+FALSE,905,Enamorus,UNAVAILABLE,-
+FALSE,906,Sprigatito,SV,Masuda Breeding
+FALSE,907,Floragato,SV,Evolve
+FALSE,908,Meowscarada,SV,Evolve
+FALSE,909,Fuecoco,SV,Masuda Breeding
+FALSE,910,Crocalor,SV,Evolve
+FALSE,911,Skeledirge,SV,Evolve
+FALSE,912,Quaxly,SV,Masuda Breeding
+FALSE,913,Quaxwell,SV,Evolve
+FALSE,914,Quaquaval,SV,Evolve
+FALSE,915,Lechonk,SV,Outbreaks
+FALSE,916,Oinkologne,SV,Outbreaks
+FALSE,917,Tarountula,SV,Outbreaks
+FALSE,918,Spidops,SV,Outbreaks
+FALSE,919,Nymble,SV,Outbreaks
+FALSE,920,Lokix,SV,Outbreaks
+FALSE,921,Pawmi,SV,Outbreaks
+FALSE,922,Pawmo,SV,Outbreaks
+FALSE,923,Pawmot,SV,Evolve
+FALSE,924,Tandemaus,SV,Outbreaks
+FALSE,925,Maushold,SV,Evolve
+FALSE,926,Fidough,SV,Outbreaks
+FALSE,927,Dachsbun,SV,Outbreaks
+FALSE,928,Smoliv,SV,Outbreaks
+FALSE,929,Dolliv,SV,Outbreaks
+FALSE,930,Arboliva,SV,Evolve
+FALSE,931,Squawkabilly,SV,Outbreaks
+FALSE,932,Nacli,SV,Outbreaks
+FALSE,933,Naclstack,SV,Outbreaks
+FALSE,934,Garganacl,SV,Outbreaks
+FALSE,935,Charcadet,SV,Outbreaks
+FALSE,936,Armarouge,SV,Evolve
+FALSE,937,Ceruledge,SV,Evolve
+FALSE,938,Tadbulb,SV,Outbreaks
+FALSE,939,Bellibolt,SV,Outbreaks
+FALSE,940,Wattrel,SV,Outbreaks
+FALSE,941,Kilowattrel,SV,Outbreaks
+FALSE,942,Maschiff,SV,Outbreaks
+FALSE,943,Mabosstiff,SV,Outbreaks
+FALSE,944,Shroodle,SV,Outbreaks
+FALSE,945,Grafaiai,SV,Outbreaks
+FALSE,946,Bramblin,SV,Outbreaks
+FALSE,947,Brambleghast,SV,Outbreaks
+FALSE,948,Toedscool,SV,Outbreaks
+FALSE,949,Toedscruel,SV,Outbreaks
+FALSE,950,Klawf,SV,Outbreaks
+FALSE,951,Capsakid,SV,Outbreaks
+FALSE,952,Scovillain,SV,Outbreaks
+FALSE,953,Rellor,SV,Outbreaks
+FALSE,954,Rabsca,SV,Outbreaks (Terarium)
+FALSE,955,Flittle,SV,Outbreaks
+FALSE,956,Espathra,SV,Outbreaks
+FALSE,957,Tinkatink,SV,Outbreaks
+FALSE,958,Tinkatuff,SV,Outbreaks
+FALSE,959,Tinkaton,SV,Evolve
+FALSE,960,Wiglett,SV,Outbreaks
+FALSE,961,Wugtrio,SV,Outbreaks
+FALSE,962,Bombirdier,SV,Outbreaks
+FALSE,963,Finizen,SV,Outbreaks
+FALSE,964,Palafin,SV,Evolve
+FALSE,965,Varoom,SV,Outbreaks
+FALSE,966,Revavroom,SV,Outbreaks
+FALSE,967,Cyclizar,SV,Outbreaks
+FALSE,968,Orthworm,SV,Outbreaks
+FALSE,969,Glimmet,SV,Outbreaks
+FALSE,970,Glimmora,SV,Evolve
+FALSE,971,Greavard,SV,Outbreaks
+FALSE,972,Houndstone,SV,Outbreaks
+FALSE,973,Flamigo,SV,Outbreaks
+FALSE,974,Cetoddle,SV,Outbreaks
+FALSE,975,Cetitan,SV,Outbreaks
+FALSE,976,Veluza,SV,Outbreaks
+FALSE,977,Dondozo,SV,Outbreaks
+FALSE,978,Tatsugiri,SV,Outbreaks
+FALSE,979,Annihilape,SV,Outbreaks (Kitakami)
+FALSE,980,Clodsire,SV,Outbreaks
+FALSE,981,Farigiraf,SV,Outbreaks (Terarium)
+FALSE,982,Dudunsparce,SV,Outbreaks (Kitakami)
+FALSE,983,Kingambit,SV,Outbreaks (Kitakami)
+FALSE,984,Great Tusk,SV,Isolated Encounters
+FALSE,985,Scream Tail,SV,Isolated Encounters
+FALSE,986,Brute Bonnet,SV,Isolated Encounters
+FALSE,987,Flutter Mane,SV,Isolated Encounters
+FALSE,988,Slither Wing,SV,Isolated Encounters
+FALSE,989,Sandy Shocks,SV,Isolated Encounters
+FALSE,990,Iron Treads,SV,Isolated Encounters
+FALSE,991,Iron Bundle,SV,Isolated Encounters
+FALSE,992,Iron Hands,SV,Isolated Encounters
+FALSE,993,Iron Jugulis,SV,Isolated Encounters
+FALSE,994,Iron Moth,SV,Isolated Encounters
+FALSE,995,Iron Thorns,SV,Isolated Encounters
+FALSE,996,Frigibax,SV,Outbreaks
+FALSE,997,Arctibax,SV,Outbreaks
+FALSE,998,Baxcalibur,SV,Evolve
+FALSE,999,Gimmighoul,UNAVAILABLE,EVENT-ONLY (Tera Raid)
+FALSE,1000,Gholdengo,UNAVAILABLE,EVENT-ONLY (Evolve)
+FALSE,1001,Wo-Chien,UNAVAILABLE,-
+FALSE,1002,Chien-Pao,UNAVAILABLE,-
+FALSE,1003,Ting-Lu,UNAVAILABLE,-
+FALSE,1004,Chi-Yu,UNAVAILABLE,-
+FALSE,1005,Roaring Moon,SV,Isolated Encounters
+FALSE,1006,Iron Valiant,SV,Isolated Encounters
+FALSE,1007,Koraidon,UNAVAILABLE,-
+FALSE,1008,Miraidon,UNAVAILABLE,-
+FALSE,1009,WalkingWake,UNAVAILABLE,-
+FALSE,1010,IronLeaves,UNAVAILABLE,-
+FALSE,1011,Dipplin,SV DLC,Evolve
+FALSE,1012,Poltchageist,SV DLC,Outbreaks (Kitakami)
+FALSE,1013,Sinistcha,SV DLC,Evolve
+FALSE,1014,Okidogi,UNAVAILABLE,-
+FALSE,1015,Munkidori,UNAVAILABLE,-
+FALSE,1016,Fezandipiti,UNAVAILABLE,-
+FALSE,1017,Ogerpon,UNAVAILABLE,-
+FALSE,1018,Archaludon,SV DLC,Evolve
+FALSE,1019,Hydrapple,SV DLC,Evolve
+FALSE,1020,Gouging Fire,UNAVAILABLE,-
+FALSE,1021,Raging Bolt,UNAVAILABLE,-
+FALSE,1022,Iron Boulder,UNAVAILABLE,-
+FALSE,1023,Iron Crown,UNAVAILABLE,-
+FALSE,1024,Terapagos,UNAVAILABLE,-
+FALSE,1025,Pecharunt,UNAVAILABLE,-
+FALSE,,A-Rattata,LGPE,Trade Reset
+FALSE,,A-Raticate,LGPE,Evolve
+FALSE,,A-Raichu,SwSh DLC,Dynamax Adventures
+FALSE,,A-Sandshrew,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Sandslash,SV DLC,Evolve
+FALSE,,A-Vulpix,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Ninetales,SV DLC,Evolve
+FALSE,,A-Diglett,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Dugtrio,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Meowth,SwSh,Breeding + Everstone
+FALSE,,A-Persian,SwSh,Evolve
+FALSE,,A-Geodude,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Graveler,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Golem,SV DLC,Evolve (Trade)
+FALSE,,A-Grimer,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Muk,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Exeggutor,SV DLC,Outbreaks (Terarium)
+FALSE,,A-Marowak,SwSh DLC,Dynamax Adventures
+FALSE,,G-Meowth,SwSh,Masuda Breeding
+FALSE,,G-Ponyta,SwSh,Masuda Breeding
+FALSE,,G-Rapidash,SwSh,Evolve
+FALSE,,G-Slowpoke,SV DLC,Outbreaks (Terarium)
+FALSE,,G-Slowbro,SV DLC,Evolve
+FALSE,,G-Farfetch'd,SwSh,Masuda Breeding
+FALSE,,G-Weezing,SV DLC + Transfer,Evolve in SwSh
+FALSE,,G-MrMime,PLA + Transfer,Evolve in SwSh
+FALSE,,G-Articuno,UNAVAILABLE,EVENT-ONLY
+FALSE,,G-Zapdos,UNAVAILABLE,EVENT-ONLY
+FALSE,,G-Moltres,UNAVAILABLE,EVENT-ONLY
+FALSE,,G-Slowking,SV DLC,Evolve
+FALSE,,G-Corsola,SwSh,Masuda Breeding
+FALSE,,G-Zigzagoon,SwSh,Masuda Breeding
+FALSE,,G-Linoone,SwSh,Evolve
+FALSE,,G-Darumaka,SwSh,Masuda Breeding
+FALSE,,G-Darmanitan,SwSh,Evolve
+FALSE,,G-Yamask,SwSh,Masuda Breeding
+FALSE,,G-Stunfisk,SwSh,Masuda Breeding
+FALSE,,H-Growlithe,PLA,Mass Outbreaks
+FALSE,,H-Arcanine,PLA,MMOs
+FALSE,,H-Voltorb,PLA,Mass Outbreaks
+FALSE,,H-Electrode,PLA,MMOs
+FALSE,,H-Typhlosion,PLA,MMOs
+FALSE,,H-Qwilfish,PLA,Mass Outbreaks
+FALSE,,H-Sneasel,PLA,Mass Outbreaks
+FALSE,,H-Samurott,PLA,MMOs
+FALSE,,H-Lilligant,PLA,MMOs
+FALSE,,H-Basculin,PLA,Mass Outbreaks
+FALSE,,H-Zorua,PLA,Mass Outbreaks
+FALSE,,H-Zoroark,PLA,Mass Outbreaks
+FALSE,,H-Braviary,PLA,Mass Outbreaks
+FALSE,,H-Sliggoo,PLA,Mass Outbreaks
+FALSE,,H-Goodra,PLA,MMOs
+FALSE,,H-Avalugg,PLA,Mass Outbreaks
+FALSE,,H-Decidueye,PLA,MMOs
+FALSE,,P-Tauros,SV,Outbreaks
+FALSE,,P-Wooper,SV,Outbreaks
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
+FALSE,,,,
