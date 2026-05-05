@@ -188,7 +188,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 								height={40}
 								style={{ imageRendering: "pixelated" }}
 							/>
-							<Typography sx={{ textTransform: "capitalize" }}>
+							<Typography sx={{ textTransform: "capitalize" }} color="text.primary">
 								{option.name}
 							</Typography>
 						</Box>

@@ -7,7 +7,7 @@ import { colors } from "./palette";
  */
 const theme = createTheme({
 	palette: {
-		mode: "light",
+		mode: "dark",
 		primary: {
 			main: colors.primary,
 			light: colors.primaryLight,
@@ -58,17 +58,15 @@ const theme = createTheme({
 		MuiCard: {
 			styleOverrides: {
 				root: {
-					borderRadius: 16,
+					borderRadius: 12,
 					backgroundImage: "none",
 					backgroundColor: colors.bgPaper,
 					border: `1px solid ${colors.border}`,
-					boxShadow:
-						"0 2px 8px -2px rgba(116,141,174,0.12), 0 1px 4px -1px rgba(116,141,174,0.08)",
-					transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+					boxShadow: "0 2px 8px -2px rgba(0,0,0,0.4)",
+					transition: "background-color 0.18s ease, box-shadow 0.18s ease",
 					"&:hover": {
-						transform: "translateY(-3px)",
-						boxShadow:
-							"0 8px 24px -4px rgba(116,141,174,0.18), 0 4px 8px -2px rgba(116,141,174,0.10)",
+						backgroundColor: colors.bgSubtle,
+						boxShadow: "0 6px 20px -4px rgba(0,0,0,0.5)",
 					},
 				},
 			},
@@ -93,6 +91,36 @@ const theme = createTheme({
 			styleOverrides: {
 				root: {
 					backgroundImage: "none",
+				},
+			},
+		},
+		MuiAutocomplete: {
+			styleOverrides: {
+				paper: {
+					backgroundColor: colors.bgPaper,
+					backgroundImage: "none",
+					border: `1px solid ${colors.border}`,
+					boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+				},
+				listbox: {
+					backgroundColor: colors.bgPaper,
+					padding: "4px",
+				},
+				option: {
+					color: colors.textPrimary,
+					borderRadius: "6px",
+					"&:hover": {
+						backgroundColor: colors.bgSubtle,
+					},
+					'&[aria-selected="true"]': {
+						backgroundColor: `${colors.primary}22`,
+					},
+					'&[aria-selected="true"]:hover': {
+						backgroundColor: `${colors.primary}33`,
+					},
+				},
+				noOptions: {
+					color: colors.textSecondary,
 				},
 			},
 		},

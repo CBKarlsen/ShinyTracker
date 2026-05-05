@@ -13,6 +13,7 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../palette";
 
 interface Hunt {
 	id: string;
@@ -150,7 +151,14 @@ const Dashboard: React.FC = () => {
 						const progress = Math.min((displayCount / 4096) * 100, 100);
 						return (
 							<Grid size={{ xs: 12, sm: 6, md: 4 }} key={hunt.id}>
-								<Card>
+								<Card
+									sx={{
+										background: colors.bgPaper,
+										border: `1px solid ${colors.border}`,
+										borderRadius: "12px",
+										"&:hover": { background: colors.bgSubtle },
+									}}
+								>
 									<CardContent>
 										<Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
 											<img
@@ -199,10 +207,19 @@ const Dashboard: React.FC = () => {
 										{hunt.status !== "completed" ? (
 											<Box sx={{ mt: 2, display: "flex", gap: 1 }}>
 												<Button
-													variant="contained"
-													color="primary"
+													variant="outlined"
 													fullWidth
 													onClick={() => handleIncrement(hunt)}
+													sx={{
+														background: "rgba(59, 130, 246, 0.10)",
+														color: "#60A5FA",
+														borderColor: "rgba(59, 130, 246, 0.25)",
+														fontWeight: 600,
+														"&:hover": {
+															background: "rgba(59, 130, 246, 0.18)",
+															borderColor: "rgba(59, 130, 246, 0.45)",
+														},
+													}}
 												>
 													+1 Encounter
 												</Button>

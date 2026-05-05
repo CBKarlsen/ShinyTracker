@@ -76,12 +76,23 @@ function App() {
 					>
 						ShinyTracker
 					</Typography>
+					{/* ── Global CTA: highest visual priority ── */}
 					<Button
 						variant="contained"
-						color="primary"
 						startIcon={<AddIcon />}
 						onClick={() => setModalOpen(true)}
-						sx={{ mr: 2 }}
+						sx={{
+							mr: 2,
+							background: "linear-gradient(135deg, #6366F1 0%, #3B82F6 100%)",
+							color: "#ffffff",
+							fontWeight: 700,
+							letterSpacing: "0.3px",
+							boxShadow: "0 4px 14px rgba(59, 130, 246, 0.45)",
+							"&:hover": {
+								background: "linear-gradient(135deg, #4F46E5 0%, #2563EB 100%)",
+								boxShadow: "0 6px 20px rgba(59, 130, 246, 0.6)",
+							},
+						}}
 					>
 						New Hunt
 					</Button>
