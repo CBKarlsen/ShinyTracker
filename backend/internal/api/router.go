@@ -34,9 +34,11 @@ func NewRouter() *chi.Mux {
 			
 			r.Get("/hunts", GetHuntsHandler)
 			r.Post("/hunts", CreateHuntHandler)
+			r.Post("/hunts/manual", ManualCatchHandler)
 			r.Patch("/hunts/{id}", UpdateHuntHandler)
+			r.Delete("/hunts/manual/{pokemonId}", RemoveManualCatchHandler)
 
-			r.Get("/recommend/{pokemonId}", GetRecommendationsHandler)
+			r.Get("/encounters", GetEncountersHandler)
 		})
 	})
 

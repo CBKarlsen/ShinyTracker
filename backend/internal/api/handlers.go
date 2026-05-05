@@ -175,11 +175,17 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT id, name, sprite_url, types FROM pokemon"
 	args := []interface{}{}
 	
+	limit := r.URL.Query().Get("limit")
+	
 	if search != "" {
 		query += " WHERE name ILIKE $1"
 		args = append(args, "%"+search+"%")
 	}
-	query += " ORDER BY id ASC LIMIT 50"
+	query += " ORDER BY id ASC"
+	
+	if limit != "all" {
+		query += " LIMIT 50"
+	}
 
 	rows, err := database.DB.Query(context.Background(), query, args...)
 	if err != nil {
@@ -197,4 +203,52 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pokemon)
+}
+
+type EncounterDetail struct {
+	ID             int    `json:"id"`
+	PokemonID      int    `json:"pokemon_id"`
+	GameID         int    `json:"game_id"`
+	GameTitle      string `json:"game_title"`
+	MethodName     string `json:"method_name"`
+	AvgTimeSeconds int    `json:"avg_time_seconds"`
+	BaseRolls      int    `json:"base_rolls"`
+	CharmRolls     int    `json:"charm_rolls"`
+}
+
+func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
+	pokemonID := r.URL.Query().Get("pokemon_id")
+	if pokemonID == "" {
+		http.Error(w, "pokemon_id is required", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls
+		FROM encounters e
+		JOIN games g ON e.game_id = g.id
+		WHERE e.pokemon_id = $1
+		ORDER BY g.generation ASC, g.id ASC
+	`
+
+	rows, err := database.DB.Query(context.Background(), query, pokemonID)
+	if err != nil {
+		http.Error(w, "Failed to fetch encounters", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var encounters []EncounterDetail
+	for rows.Next() {
+		var enc EncounterDetail
+		if err := rows.Scan(
+			&enc.ID, &enc.PokemonID, &enc.GameID, &enc.GameTitle,
+			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls); err != nil {
+			continue
+		}
+		encounters = append(encounters, enc)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(encounters)
 }

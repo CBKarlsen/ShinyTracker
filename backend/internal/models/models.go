@@ -44,12 +44,21 @@ type Encounter struct {
 }
 
 type UserHunt struct {
-	ID             string          `json:"id"`
-	UserID         string          `json:"user_id"`
-	EncounterID    int             `json:"encounter_id"`
-	EncounterCount int             `json:"encounter_count"`
-	Status         string          `json:"status"`
-	HuntParameters json.RawMessage `json:"hunt_parameters"`
-	CreatedAt      time.Time       `json:"created_at"`
-	UpdatedAt      time.Time       `json:"updated_at"`
+	ID              string          `json:"id"`
+	UserID          string          `json:"user_id"`
+	PokemonID       int             `json:"pokemon_id"`
+	EncounterID     *int            `json:"encounter_id"`
+	EncounterCount  int             `json:"encounter_count"`
+	Status          string          `json:"status"`
+	AcquisitionType string          `json:"acquisition_type"`
+	HuntParameters  json.RawMessage `json:"hunt_parameters"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type UserHuntDetail struct {
+	UserHunt
+	PokemonName string  `json:"pokemon_name"`
+	MethodName  *string `json:"method_name"`
+	GameTitle   *string `json:"game_title"`
 }

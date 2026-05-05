@@ -42,7 +42,9 @@ CREATE TABLE IF NOT EXISTS encounters (
 CREATE TABLE IF NOT EXISTS user_hunts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     encounter_id INTEGER REFERENCES encounters(id) ON DELETE CASCADE,
+    acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED')),
     encounter_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'active', -- 'active' or 'completed'
     hunt_parameters JSONB DEFAULT '{}'::jsonb,
