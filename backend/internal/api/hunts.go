@@ -48,8 +48,9 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
 	var req struct {
-		EncounterID    int             `json:"encounter_id"`
-		HuntParameters json.RawMessage `json:"hunt_parameters"`
+		EncounterID int    `json:"encounter_id"`
+		PokemonID   int    `json:"pokemon_id"`
+		MethodName  string `json:"method_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -57,18 +58,37 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var pokemonID int
-	err := database.DB.QueryRow(context.Background(), `SELECT pokemon_id FROM encounters WHERE id = $1`, req.EncounterID).Scan(&pokemonID)
-	if err != nil {
-		http.Error(w, "Invalid encounter ID", http.StatusBadRequest)
-		return
+	var encounterID *int
+	var huntParameters json.RawMessage
+
+	if req.EncounterID == 0 {
+		// Synthetic encounter (e.g. Masuda Method) — no row in encounters table.
+		if req.PokemonID == 0 {
+			http.Error(w, "pokemon_id required for synthetic encounters", http.StatusBadRequest)
+			return
+		}
+		pokemonID = req.PokemonID
+		encounterID = nil
+		params, _ := json.Marshal(map[string]string{"method": req.MethodName})
+		huntParameters = params
+	} else {
+		// Real encounter — resolve pokemon_id from the encounters table.
+		err := database.DB.QueryRow(context.Background(),
+			`SELECT pokemon_id FROM encounters WHERE id = $1`, req.EncounterID).Scan(&pokemonID)
+		if err != nil {
+			http.Error(w, "Invalid encounter ID", http.StatusBadRequest)
+			return
+		}
+		encounterID = &req.EncounterID
+		huntParameters = json.RawMessage(`{}`)
 	}
 
 	var hunt models.UserHunt
-	err = database.DB.QueryRow(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, encounter_id, acquisition_type, hunt_parameters) 
-		 VALUES ($1, $2, $3, 'HUNTED', $4) 
+	err := database.DB.QueryRow(context.Background(),
+		`INSERT INTO user_hunts (user_id, pokemon_id, encounter_id, acquisition_type, hunt_parameters)
+		 VALUES ($1, $2, $3, 'HUNTED', $4)
 		 RETURNING id, user_id, pokemon_id, encounter_id, encounter_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		userID, pokemonID, req.EncounterID, req.HuntParameters).
+		userID, pokemonID, encounterID, huntParameters).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {

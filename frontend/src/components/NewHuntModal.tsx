@@ -3,16 +3,12 @@ import {
 	Box,
 	Button,
 	CircularProgress,
-	FormControl,
-	InputLabel,
-	MenuItem,
 	Modal,
-	Select,
 	TextField,
 	Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const style = {
@@ -53,19 +49,36 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 	const { token } = useAuth();
 	const [options, setOptions] = useState<Pokemon[]>([]);
 	const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-	const [encounters, setEncounters] = useState<EncounterDetail[]>([]);
-	const [selectedEncounter, setSelectedEncounter] = useState<EncounterDetail | null>(null);
+	const [encountersData, setEncountersData] = useState<EncounterDetail[]>([]);
+	const [selectedGame, setSelectedGame] = useState<string | null>(null);
+	const [selectedMethod, setSelectedMethod] = useState<EncounterDetail | null>(null);
 	const [loadingSearch, setLoadingSearch] = useState(false);
 	const [loadingEncounters, setLoadingEncounters] = useState(false);
 	const [search, setSearch] = useState("");
 
+	const gameOptions = useMemo(() => {
+		const seen = new Set<string>();
+		return encountersData
+			.filter((e) => {
+				if (seen.has(e.game_title)) return false;
+				seen.add(e.game_title);
+				return true;
+			})
+			.map((e) => e.game_title);
+	}, [encountersData]);
+
+	const methodOptions = useMemo(
+		() => encountersData.filter((e) => e.game_title === selectedGame),
+		[encountersData, selectedGame],
+	);
+
 	useEffect(() => {
 		if (!open) {
 			setSelectedPokemon(null);
-			setEncounters([]);
-			setSelectedEncounter(null);
+			setEncountersData([]);
+			setSelectedGame(null);
+			setSelectedMethod(null);
 			setSearch("");
-			return;
 		}
 	}, [open]);
 
@@ -89,8 +102,9 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 
 	useEffect(() => {
 		if (!selectedPokemon) {
-			setEncounters([]);
-			setSelectedEncounter(null);
+			setEncountersData([]);
+			setSelectedGame(null);
+			setSelectedMethod(null);
 			return;
 		}
 		const fetchEncounters = async () => {
@@ -98,14 +112,12 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 			try {
 				const res = await fetch(
 					`http://localhost:8080/api/encounters?pokemon_id=${selectedPokemon.id}`,
-					{
-						headers: { Authorization: `Bearer ${token}` },
-					},
+					{ headers: { Authorization: `Bearer ${token}` } },
 				);
 				if (res.ok) {
-					const data = (await res.json()) || [];
-					setEncounters(data);
-					setSelectedEncounter(null);
+					setEncountersData((await res.json()) || []);
+					setSelectedGame(null);
+					setSelectedMethod(null);
 				}
 			} catch (err) {
 				console.error(err);
@@ -117,7 +129,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 	}, [selectedPokemon, token]);
 
 	const handleStart = async () => {
-		if (!selectedEncounter) return;
+		if (!selectedMethod || !selectedPokemon) return;
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts", {
 				method: "POST",
@@ -126,8 +138,9 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
-					encounter_id: selectedEncounter.id,
-					hunt_parameters: {},
+					encounter_id: selectedMethod.id,
+					pokemon_id: selectedPokemon.id,
+					method_name: selectedMethod.method_name,
 				}),
 			});
 			if (res.ok) {
@@ -151,10 +164,14 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 					Start a New Hunt
 				</Typography>
 
+				{/* Step 1: Pokémon */}
 				<Autocomplete
 					options={options}
 					getOptionLabel={(option) =>
-						option.name.charAt(0).toUpperCase() + option.name.slice(1)
+						typeof option === "string" ? option : option.name || ""
+					}
+					isOptionEqualToValue={(option, value) =>
+						value ? option.id === value.id : false
 					}
 					onChange={(_, value) => setSelectedPokemon(value)}
 					onInputChange={(_, value) => setSearch(value)}
@@ -162,7 +179,6 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 						<Box
 							component="li"
 							{...props}
-							key={option.id}
 							sx={{ display: "flex", alignItems: "center", gap: 2 }}
 						>
 							<img
@@ -177,75 +193,112 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 							</Typography>
 						</Box>
 					)}
-					renderInput={(params) => (
-						// @ts-expect-error - MUI v6 TypeScript types are currently misaligned with Autocomplete renderInput
-						<TextField
-							{...params}
-							label="Search Pokémon"
-							variant="outlined"
-							margin="normal"
-							InputProps={{
-								...(params as any).InputProps,
-								startAdornment: (
-									<React.Fragment>
-										{selectedPokemon && (
-											<img
-												src={selectedPokemon.sprite_url}
-												alt={selectedPokemon.name}
-												width={32}
-												height={32}
-												style={{
-													imageRendering: "pixelated",
-													marginLeft: 8,
-													marginRight: 8,
-												}}
-											/>
-										)}
-										{(params as any).InputProps?.startAdornment}
-									</React.Fragment>
-								),
-								endAdornment: (
-									<React.Fragment>
-										{loadingSearch ? (
-											<CircularProgress color="inherit" size={20} />
-										) : null}
-										{(params as any).InputProps?.endAdornment}
-									</React.Fragment>
-								),
-							}}
-						/>
-					)}
-				/>
-
-				<Box sx={{ mt: 2 }}>
-					<Autocomplete
-						options={encounters}
-						getOptionLabel={(option) => `${option.game_title} - ${option.method_name}`}
-						value={selectedEncounter}
-						onChange={(_, value) => setSelectedEncounter(value)}
-						disabled={!selectedPokemon || loadingEncounters || (selectedPokemon && encounters.length === 0)}
-						renderInput={(params) => (
+					renderInput={(params) => {
+						const { InputProps, ...rest } = params;
+						return (
 							<TextField
-								{...params}
-								label={
-									selectedPokemon && encounters.length === 0 && !loadingEncounters
-										? "Shiny Locked / Unavailable"
-										: "Choose Hunting Method"
-								}
+								{...rest}
+								label="Search Pokémon"
 								variant="outlined"
+								margin="normal"
 								InputProps={{
-									...params.InputProps,
+									...InputProps,
+									startAdornment: (
+										<React.Fragment>
+											{selectedPokemon && (
+												<img
+													src={selectedPokemon.sprite_url}
+													alt={selectedPokemon.name}
+													width={32}
+													height={32}
+													style={{
+														imageRendering: "pixelated",
+														marginLeft: 8,
+														marginRight: 8,
+													}}
+												/>
+											)}
+											{InputProps?.startAdornment}
+										</React.Fragment>
+									),
 									endAdornment: (
 										<React.Fragment>
-											{loadingEncounters ? (
+											{loadingSearch ? (
 												<CircularProgress color="inherit" size={20} />
 											) : null}
-											{params.InputProps.endAdornment}
+											{InputProps?.endAdornment}
 										</React.Fragment>
 									),
 								}}
 							/>
-						)}
+						);
+					}}
+				/>
+
+				{/* Step 2: Game */}
+				<Box sx={{ mt: 2 }}>
+					<Autocomplete
+						options={gameOptions}
+						value={selectedGame}
+						onChange={(_, value) => {
+							setSelectedGame(value);
+							setSelectedMethod(null);
+						}}
+						disabled={encountersData.length === 0}
+						renderInput={(params) => {
+							const { InputProps, ...rest } = params;
+							return (
+								<TextField
+									{...rest}
+									label={
+										selectedPokemon &&
+										encountersData.length === 0 &&
+										!loadingEncounters
+											? "Shiny Locked / Unavailable"
+											: "Choose Game"
+									}
+									variant="outlined"
+									InputProps={{
+										...InputProps,
+										endAdornment: (
+											<React.Fragment>
+												{loadingEncounters ? (
+													<CircularProgress color="inherit" size={20} />
+												) : null}
+												{InputProps?.endAdornment}
+											</React.Fragment>
+										),
+									}}
+								/>
+							);
+						}}
+					/>
+				</Box>
+
+				{/* Step 3: Method */}
+				<Box sx={{ mt: 2 }}>
+					<Autocomplete
+						options={methodOptions}
+						getOptionLabel={(option) =>
+							typeof option === "string" ? option : option.method_name || ""
+						}
+						isOptionEqualToValue={(option, value) =>
+							value ? option.id === value.id : false
+						}
+						value={selectedMethod}
+						onChange={(_, value) => setSelectedMethod(value)}
+						disabled={!selectedGame}
+						renderInput={(params) => {
+							const { InputProps, ...rest } = params;
+							return (
+								<TextField
+									{...rest}
+									label="Choose Method"
+									variant="outlined"
+									InputProps={{ ...InputProps }}
+								/>
+							);
+						}}
 					/>
 				</Box>
 
@@ -259,7 +312,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 						variant="contained"
 						color="primary"
 						onClick={handleStart}
-						disabled={!selectedEncounter}
+						disabled={!selectedMethod}
 					>
 						Start Hunt
 					</Button>

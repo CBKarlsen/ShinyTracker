@@ -223,15 +223,22 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	query := `
 		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls
 		FROM encounters e
 		JOIN games g ON e.game_id = g.id
-		WHERE e.pokemon_id = $1
+		JOIN user_games ug ON g.id = ug.game_id
+		WHERE e.pokemon_id = $1 AND ug.user_id = $2
 		ORDER BY g.generation ASC, g.id ASC
 	`
 
-	rows, err := database.DB.Query(context.Background(), query, pokemonID)
+	rows, err := database.DB.Query(context.Background(), query, pokemonID, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch encounters", http.StatusInternalServerError)
 		return
