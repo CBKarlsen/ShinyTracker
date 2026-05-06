@@ -217,6 +217,7 @@ type EncounterDetail struct {
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
+	IsRecommended  bool   `json:"is_recommended"`
 }
 
 func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
@@ -239,7 +240,7 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Step 1: wild encounters filtered to games the user owns
 	wildRows, err := database.DB.Query(context.Background(), `
-		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls
+		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls, e.is_recommended
 		FROM encounters e
 		JOIN games g ON e.game_id = g.id
 		JOIN user_games ug ON g.id = ug.game_id
@@ -259,7 +260,7 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 		var enc EncounterDetail
 		if err := wildRows.Scan(
 			&enc.ID, &enc.PokemonID, &enc.GameID, &enc.GameTitle,
-			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls,
+			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls, &enc.IsRecommended,
 		); err != nil {
 			continue
 		}
