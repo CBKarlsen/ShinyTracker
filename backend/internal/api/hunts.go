@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
@@ -15,11 +16,13 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := database.DB.Query(context.Background(),
 		`SELECT h.id, h.user_id, h.pokemon_id, h.encounter_id, h.encounter_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
-		        p.name as pokemon_name, e.method_name, g.title as game_title
+		        p.name as pokemon_name, e.method_name, g.title as game_title,
+		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm
 		 FROM user_hunts h
 		 JOIN pokemon p ON h.pokemon_id = p.id
 		 LEFT JOIN encounters e ON h.encounter_id = e.id
 		 LEFT JOIN games g ON e.game_id = g.id
+		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.user_id = $1
 		 ORDER BY h.created_at DESC`, userID)
 	if err != nil {
@@ -34,6 +37,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(
 			&h.ID, &h.UserID, &h.PokemonID, &h.EncounterID, &h.EncounterCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
 			&h.PokemonName, &h.MethodName, &h.GameTitle,
+			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm,
 		); err != nil {
 			continue
 		}
@@ -113,13 +117,29 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var hunt models.UserHunt
+	var prevUpdatedAt time.Time
+	var currentTotalTime int
 	err := database.DB.QueryRow(context.Background(),
-		`UPDATE user_hunts 
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP
-		 WHERE id = $3 AND user_id = $4
+		`SELECT updated_at, total_time_seconds FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime)
+	if err != nil {
+		http.Error(w, "Hunt not found", http.StatusNotFound)
+		return
+	}
+
+	newTotalTime := currentTotalTime
+	delta := time.Since(prevUpdatedAt)
+	if delta < 600*time.Second {
+		newTotalTime += int(delta.Seconds())
+	}
+
+	var hunt models.UserHunt
+	err = database.DB.QueryRow(context.Background(),
+		`UPDATE user_hunts
+		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3
+		 WHERE id = $4 AND user_id = $5
 		 RETURNING id, user_id, pokemon_id, encounter_id, encounter_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		req.EncounterCount, req.Status, huntID, userID).
+		req.EncounterCount, req.Status, newTotalTime, huntID, userID).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {

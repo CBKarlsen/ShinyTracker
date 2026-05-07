@@ -6,7 +6,6 @@ import {
 	CardContent,
 	CircularProgress,
 	Grid,
-	LinearProgress,
 	Snackbar,
 	Typography,
 } from "@mui/material";
@@ -14,6 +13,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../palette";
+import { getShowdownGif } from "../utils/pokemon";
 
 interface Hunt {
 	id: string;
@@ -26,6 +26,26 @@ interface Hunt {
 	pokemon_name: string;
 	method_name: string | null;
 	game_title: string | null;
+	total_time_seconds: number;
+	base_rolls: number | null;
+	charm_rolls: number | null;
+	avg_time_seconds: number | null;
+	base_odds: number | null;
+	has_shiny_charm: boolean | null;
+}
+
+function formatHuntedTime(seconds: number): string {
+	const h = Math.floor(seconds / 3600);
+	const m = Math.floor((seconds % 3600) / 60);
+	if (h > 0) return `${h} h ${m} m`;
+	return `${m} m`;
+}
+
+function computeExpectedEncounters(hunt: Hunt): number | null {
+	if (hunt.base_odds == null || hunt.base_rolls == null || hunt.charm_rolls == null) return null;
+	const rolls = hunt.base_rolls + (hunt.has_shiny_charm ? hunt.charm_rolls : 0);
+	if (rolls <= 0) return null;
+	return Math.floor(hunt.base_odds / rolls);
 }
 
 const Dashboard: React.FC = () => {
@@ -33,6 +53,7 @@ const Dashboard: React.FC = () => {
 	const [hunts, setHunts] = useState<Hunt[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
+	const [gifUrls, setGifUrls] = useState<Record<string, string>>({});
 	const committedCountsRef = useRef<Record<string, number>>({});
 	const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -48,8 +69,13 @@ const Dashboard: React.FC = () => {
 					const active = data.filter((h: Hunt) => h.status === "active");
 					setHunts(active);
 					const initial: Record<string, number> = {};
-					for (const h of active) initial[h.id] = h.encounter_count;
+					const gifs: Record<string, string> = {};
+					for (const h of active) {
+						initial[h.id] = h.encounter_count;
+						gifs[h.id] = getShowdownGif(h.pokemon_name);
+					}
 					setLocalCounts(initial);
+					setGifUrls(gifs);
 					committedCountsRef.current = initial;
 				}
 			} catch (err) {
@@ -148,30 +174,47 @@ const Dashboard: React.FC = () => {
 				) : (
 					hunts.map((hunt) => {
 						const displayCount = localCounts[hunt.id] ?? hunt.encounter_count;
-						const progress = Math.min((displayCount / 4096) * 100, 100);
+						const expectedEncounters = computeExpectedEncounters(hunt);
+						const isOverOdds = expectedEncounters !== null && displayCount > expectedEncounters;
+
 						return (
 							<Grid size={{ xs: 12, sm: 6, md: 4 }} key={hunt.id}>
 								<Card
 									sx={{
-										background: colors.bgPaper,
-										border: `1px solid ${colors.border}`,
+										background: isOverOdds ? "rgba(120, 53, 15, 0.3)" : colors.bgPaper,
+										border: isOverOdds
+											? "1px solid rgba(251, 146, 60, 0.6)"
+											: `1px solid ${colors.border}`,
 										borderRadius: "12px",
-										"&:hover": { background: colors.bgSubtle },
+										"&:hover": {
+											background: isOverOdds ? "rgba(120, 53, 15, 0.4)" : colors.bgSubtle,
+										},
 									}}
 								>
 									<CardContent>
 										<Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
 											<img
-												src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`}
+												src={gifUrls[hunt.id]}
 												alt={hunt.pokemon_name}
-												width={56}
-												height={56}
-												style={{ imageRendering: "pixelated" }}
+												width={72}
+												height={72}
+												style={{ objectFit: "contain" }}
+												onError={(e) => {
+													e.currentTarget.onerror = null;
+													e.currentTarget.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
+												}}
 											/>
-											<Box>
-												<Typography variant="h6" color="primary" sx={{ textTransform: "capitalize" }}>
-													{hunt.pokemon_name}
-												</Typography>
+											<Box sx={{ flex: 1 }}>
+												<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+													<Typography variant="h6" color="primary" sx={{ textTransform: "capitalize" }}>
+														{hunt.pokemon_name}
+													</Typography>
+													{isOverOdds && (
+														<Typography variant="caption" sx={{ color: "#fb923c", fontWeight: 700 }}>
+															🔥 OVER ODDS
+														</Typography>
+													)}
+												</Box>
 												<Typography variant="body2" color="text.secondary">
 													Hunt #{hunt.id.substring(0, 6)}
 												</Typography>
@@ -184,24 +227,22 @@ const Dashboard: React.FC = () => {
 										<Typography variant="body2" sx={{ mb: 1 }}>
 											<strong>Method:</strong> {hunt.method_name || "N/A"}
 										</Typography>
+
 										<Box sx={{ mt: 2, mb: 1 }}>
-											<Typography variant="body1">
-												Encounters: {displayCount}
+											<Typography variant="body1" sx={{ fontWeight: 600 }}>
+												{displayCount} encounters
 											</Typography>
 										</Box>
-										<Box sx={{ display: "flex", alignItems: "center" }}>
-											<Box sx={{ width: "100%", mr: 1 }}>
-												<LinearProgress
-													variant="determinate"
-													value={progress}
-													color="secondary"
-												/>
-											</Box>
-											<Box sx={{ minWidth: 35 }}>
+
+										<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, mb: 1 }}>
+											<Typography variant="body2" color="text.secondary">
+												<strong>Hunted:</strong> {formatHuntedTime(hunt.total_time_seconds)}
+											</Typography>
+											{expectedEncounters !== null && hunt.avg_time_seconds != null && (
 												<Typography variant="body2" color="text.secondary">
-													{progress.toFixed(1)}%
+													<strong>Expected:</strong> ~{((expectedEncounters * hunt.avg_time_seconds) / 3600).toFixed(1)} h
 												</Typography>
-											</Box>
+											)}
 										</Box>
 
 										{hunt.status !== "completed" ? (
@@ -236,8 +277,7 @@ const Dashboard: React.FC = () => {
 												<Typography
 													variant="body2"
 													color="success.main"
-													fontWeight="bold"
-													align="center"
+													sx={{ fontWeight: "bold", textAlign: "center" }}
 												>
 													✨ Shiny Found! ✨
 												</Typography>

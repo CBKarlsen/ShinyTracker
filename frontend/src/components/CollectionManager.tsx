@@ -91,7 +91,7 @@ const CollectionManager: React.FC = () => {
 			<Typography variant="h4" gutterBottom>
 				My Game Collection
 			</Typography>
-			<Typography variant="body1" color="text.secondary" paragraph>
+			<Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
 				Select the games you own and indicate if you have the Shiny Charm.
 			</Typography>
 
