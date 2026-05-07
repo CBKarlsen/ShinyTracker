@@ -1,27 +1,21 @@
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import {
 	Autocomplete,
 	Box,
 	Button,
 	CircularProgress,
-	Modal,
+	Dialog,
+	DialogContent,
+	Divider,
 	TextField,
 	Typography,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { colors } from "../palette";
+import { getShowdownGif } from "../utils/pokemon";
 
-const style = {
-	position: "absolute" as "absolute",
-	top: "50%",
-	left: "50%",
-	transform: "translate(-50%, -50%)",
-	width: 500,
-	bgcolor: "background.paper",
-	borderRadius: 4,
-	boxShadow: 24,
-	p: 4,
-};
 
 interface Pokemon {
 	id: number;
@@ -38,6 +32,7 @@ interface EncounterDetail {
 	avg_time_seconds: number;
 	base_rolls: number;
 	charm_rolls: number;
+	is_recommended: boolean;
 }
 
 interface Props {
@@ -55,6 +50,17 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 	const [loadingSearch, setLoadingSearch] = useState(false);
 	const [loadingEncounters, setLoadingEncounters] = useState(false);
 	const [search, setSearch] = useState("");
+	const [startingRecommended, setStartingRecommended] = useState(false);
+
+	const showdownGifUrl = useMemo(
+		() => (selectedPokemon ? getShowdownGif(selectedPokemon.name) : ""),
+		[selectedPokemon],
+	);
+
+	const recommendedEncounter = useMemo(
+		() => encountersData.find((e) => e.is_recommended) ?? null,
+		[encountersData],
+	);
 
 	const gameOptions = useMemo(() => {
 		const seen = new Set<string>();
@@ -79,6 +85,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 			setSelectedGame(null);
 			setSelectedMethod(null);
 			setSearch("");
+			setStartingRecommended(false);
 		}
 	}, [open]);
 
@@ -128,8 +135,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 		fetchEncounters();
 	}, [selectedPokemon, token]);
 
-	const handleStart = async () => {
-		if (!selectedMethod || !selectedPokemon) return;
+	const startHunt = async (encounter: EncounterDetail) => {
+		if (!selectedPokemon) return;
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts", {
 				method: "POST",
@@ -138,9 +145,9 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
-					encounter_id: selectedMethod.id,
+					encounter_id: encounter.id,
 					pokemon_id: selectedPokemon.id,
-					method_name: selectedMethod.method_name,
+					method_name: encounter.method_name,
 				}),
 			});
 			if (res.ok) {
@@ -152,14 +159,33 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 		}
 	};
 
+	const handleStart = async () => {
+		if (!selectedMethod) return;
+		await startHunt(selectedMethod);
+	};
+
+	const handleStartRecommended = async () => {
+		if (!recommendedEncounter) return;
+		setStartingRecommended(true);
+		await startHunt(recommendedEncounter);
+		setStartingRecommended(false);
+	};
+
 	return (
-		<Modal open={open} onClose={onClose}>
-			<Box
-				sx={style}
-				component={motion.div}
-				initial={{ opacity: 0, scale: 0.9 }}
-				animate={{ opacity: 1, scale: 1 }}
-			>
+		<Dialog
+			open={open}
+			onClose={onClose}
+			maxWidth="sm"
+			fullWidth
+			scroll="paper"
+			slotProps={{ paper: { sx: { borderRadius: 4, mt: "6vh" } } }}
+		>
+			<DialogContent>
+				<Box
+					component={motion.div}
+					initial={{ opacity: 0, scale: 0.9 }}
+					animate={{ opacity: 1, scale: 1 }}
+				>
 				<Typography variant="h5" gutterBottom>
 					Start a New Hunt
 				</Typography>
@@ -203,24 +229,6 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 								margin="normal"
 								InputProps={{
 									...InputProps,
-									startAdornment: (
-										<React.Fragment>
-											{selectedPokemon && (
-												<img
-													src={selectedPokemon.sprite_url}
-													alt={selectedPokemon.name}
-													width={32}
-													height={32}
-													style={{
-														imageRendering: "pixelated",
-														marginLeft: 8,
-														marginRight: 8,
-													}}
-												/>
-											)}
-											{InputProps?.startAdornment}
-										</React.Fragment>
-									),
 									endAdornment: (
 										<React.Fragment>
 											{loadingSearch ? (
@@ -235,72 +243,260 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 					}}
 				/>
 
-				{/* Step 2: Game */}
-				<Box sx={{ mt: 2 }}>
-					<Autocomplete
-						options={gameOptions}
-						value={selectedGame}
-						onChange={(_, value) => {
-							setSelectedGame(value);
-							setSelectedMethod(null);
+				{/* ── Pokémon GIF Showcase ── */}
+				{selectedPokemon && (
+					<Box
+						component={motion.div}
+						key={selectedPokemon.id}
+						initial={{ opacity: 0, scale: 0.85 }}
+						animate={{ opacity: 1, scale: 1 }}
+						transition={{ duration: 0.3, ease: "easeOut" }}
+						sx={{
+							mt: 1,
+							mb: 1,
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "center",
+							gap: 0.5,
+							py: 2,
+							borderRadius: 3,
+							bgcolor: colors.bgSubtle,
+							border: `1px solid ${colors.border}`,
 						}}
-						disabled={encountersData.length === 0}
-						renderInput={(params) => {
-							const { InputProps, ...rest } = params;
-							return (
-								<TextField
-									{...rest}
-									label={
-										selectedPokemon &&
-										encountersData.length === 0 &&
-										!loadingEncounters
-											? "Shiny Locked / Unavailable"
-											: "Choose Game"
-									}
-									variant="outlined"
-									InputProps={{
-										...InputProps,
-										endAdornment: (
-											<React.Fragment>
-												{loadingEncounters ? (
-													<CircularProgress color="inherit" size={20} />
-												) : null}
-												{InputProps?.endAdornment}
-											</React.Fragment>
-										),
-									}}
-								/>
-							);
-						}}
-					/>
-				</Box>
+					>
+						<img
+							src={showdownGifUrl}
+							alt={selectedPokemon.name}
+							width={120}
+							height={120}
+							style={{ objectFit: "contain" }}
+							onError={(e) => {
+								e.currentTarget.onerror = null;
+								e.currentTarget.src = selectedPokemon.sprite_url;
+							}}
+						/>
+						<Typography
+							variant="subtitle1"
+							sx={{
+								textTransform: "capitalize",
+								fontWeight: 600,
+								color: colors.textPrimary,
+								letterSpacing: "0.5px",
+							}}
+						>
+							{selectedPokemon.name}
+						</Typography>
+					</Box>
+				)}
 
-				{/* Step 3: Method */}
-				<Box sx={{ mt: 2 }}>
-					<Autocomplete
-						options={methodOptions}
-						getOptionLabel={(option) =>
-							typeof option === "string" ? option : option.method_name || ""
-						}
-						isOptionEqualToValue={(option, value) =>
-							value ? option.id === value.id : false
-						}
-						value={selectedMethod}
-						onChange={(_, value) => setSelectedMethod(value)}
-						disabled={!selectedGame}
-						renderInput={(params) => {
-							const { InputProps, ...rest } = params;
-							return (
-								<TextField
-									{...rest}
-									label="Choose Method"
-									variant="outlined"
-									InputProps={{ ...InputProps }}
-								/>
-							);
+				{/* Loading state */}
+				{loadingEncounters && selectedPokemon && (
+					<Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+						<CircularProgress size={28} />
+					</Box>
+				)}
+
+				{/* ── Recommended Hunt Card ── */}
+				{!loadingEncounters && recommendedEncounter && selectedPokemon && (
+					<Box
+						component={motion.div}
+						initial={{ opacity: 0, y: 12 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.35, ease: "easeOut" }}
+						sx={{
+							mt: 2.5,
+							p: 2.5,
+							borderRadius: 3,
+							border: `1.5px solid ${colors.warning}`,
+							background: `linear-gradient(135deg, ${colors.warning}08 0%, ${colors.warning}14 100%)`,
+							boxShadow: `0 0 20px ${colors.warning}18, 0 2px 8px rgba(0,0,0,0.3)`,
+							position: "relative",
+							overflow: "hidden",
+							"&::before": {
+								content: '""',
+								position: "absolute",
+								top: 0,
+								left: 0,
+								right: 0,
+								height: "2px",
+								background: `linear-gradient(90deg, transparent, ${colors.warning}, transparent)`,
+								opacity: 0.6,
+							},
 						}}
-					/>
-				</Box>
+					>
+						<Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+							<AutoAwesomeIcon sx={{ color: colors.warning, fontSize: 20 }} />
+							<Typography
+								variant="subtitle2"
+								sx={{
+									color: colors.warning,
+									fontWeight: 700,
+									letterSpacing: "0.5px",
+									textTransform: "uppercase",
+									fontSize: "0.75rem",
+								}}
+							>
+								Recommended Hunt
+							</Typography>
+						</Box>
+
+						<Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+							<img
+								src={showdownGifUrl}
+								alt={selectedPokemon.name}
+								width={56}
+								height={56}
+								style={{ objectFit: "contain" }}
+								onError={(e) => {
+									e.currentTarget.onerror = null;
+									e.currentTarget.src = selectedPokemon.sprite_url;
+								}}
+							/>
+							<Box>
+								<Typography
+									variant="body1"
+									sx={{ fontWeight: 600, color: colors.textPrimary }}
+								>
+									{recommendedEncounter.game_title}
+								</Typography>
+								<Typography
+									variant="body2"
+									sx={{ color: colors.textSecondary }}
+								>
+									{recommendedEncounter.method_name}
+								</Typography>
+							</Box>
+						</Box>
+
+						<Button
+							variant="contained"
+							fullWidth
+							onClick={handleStartRecommended}
+							disabled={startingRecommended}
+							startIcon={
+								startingRecommended ? (
+									<CircularProgress size={16} color="inherit" />
+								) : (
+									<AutoAwesomeIcon />
+								)
+							}
+							sx={{
+								background: `linear-gradient(135deg, ${colors.warning} 0%, #D97706 100%)`,
+								color: "#1a1a1a",
+								fontWeight: 700,
+								fontSize: "0.9rem",
+								py: 1.2,
+								boxShadow: `0 4px 14px ${colors.warning}40`,
+								"&:hover": {
+									background: `linear-gradient(135deg, #FBBF24 0%, ${colors.warning} 100%)`,
+									boxShadow: `0 6px 20px ${colors.warning}60`,
+								},
+								"&:disabled": {
+									background: colors.bgSubtle,
+									color: colors.textSecondary,
+								},
+							}}
+						>
+							{startingRecommended ? "Starting…" : "Start Recommended Hunt"}
+						</Button>
+					</Box>
+				)}
+
+				{/* ── Divider between recommended and manual ── */}
+				{!loadingEncounters && recommendedEncounter && selectedPokemon && (
+					<Divider
+						sx={{
+							mt: 3,
+							mb: 2,
+							"&::before, &::after": {
+								borderColor: colors.border,
+							},
+						}}
+					>
+						<Typography
+							variant="caption"
+							sx={{
+								color: colors.textSecondary,
+								fontWeight: 500,
+								letterSpacing: "0.3px",
+								px: 1,
+							}}
+						>
+							Or choose manually
+						</Typography>
+					</Divider>
+				)}
+
+				{/* ── Manual Selection: Game ── */}
+				{!loadingEncounters && (
+					<Box sx={{ mt: recommendedEncounter && selectedPokemon ? 0 : 2 }}>
+						<Autocomplete
+							options={gameOptions}
+							value={selectedGame}
+							onChange={(_, value) => {
+								setSelectedGame(value);
+								setSelectedMethod(null);
+							}}
+							disabled={encountersData.length === 0}
+							renderInput={(params) => {
+								const { InputProps, ...rest } = params;
+								return (
+									<TextField
+										{...rest}
+										label={
+											selectedPokemon &&
+												encountersData.length === 0 &&
+												!loadingEncounters
+												? "Shiny Locked / Unavailable"
+												: "Choose Game"
+										}
+										variant="outlined"
+										InputProps={{
+											...InputProps,
+											endAdornment: (
+												<React.Fragment>
+													{loadingEncounters ? (
+														<CircularProgress color="inherit" size={20} />
+													) : null}
+													{InputProps?.endAdornment}
+												</React.Fragment>
+											),
+										}}
+									/>
+								);
+							}}
+						/>
+					</Box>
+				)}
+
+				{/* ── Manual Selection: Method ── */}
+				{!loadingEncounters && (
+					<Box sx={{ mt: 2 }}>
+						<Autocomplete
+							options={methodOptions}
+							getOptionLabel={(option) =>
+								typeof option === "string" ? option : option.method_name || ""
+							}
+							isOptionEqualToValue={(option, value) =>
+								value ? option.id === value.id : false
+							}
+							value={selectedMethod}
+							onChange={(_, value) => setSelectedMethod(value)}
+							disabled={!selectedGame}
+							renderInput={(params) => {
+								const { InputProps, ...rest } = params;
+								return (
+									<TextField
+										{...rest}
+										label="Choose Method"
+										variant="outlined"
+										InputProps={{ ...InputProps }}
+									/>
+								);
+							}}
+						/>
+					</Box>
+				)}
 
 				<Box
 					sx={{ mt: 3, display: "flex", justifyContent: "flex-end", gap: 2 }}
@@ -317,8 +513,9 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose }) => {
 						Start Hunt
 					</Button>
 				</Box>
-			</Box>
-		</Modal>
+				</Box>
+			</DialogContent>
+		</Dialog>
 	);
 };
 

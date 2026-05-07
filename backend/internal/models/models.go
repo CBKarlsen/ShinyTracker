@@ -58,7 +58,13 @@ type UserHunt struct {
 
 type UserHuntDetail struct {
 	UserHunt
-	PokemonName string  `json:"pokemon_name"`
-	MethodName  *string `json:"method_name"`
-	GameTitle   *string `json:"game_title"`
+	PokemonName      string  `json:"pokemon_name"`
+	MethodName       *string `json:"method_name"`
+	GameTitle        *string `json:"game_title"`
+	TotalTimeSeconds int     `json:"total_time_seconds"`
+	BaseRolls        *int    `json:"base_rolls"`
+	CharmRolls       *int    `json:"charm_rolls"`
+	AvgTimeSeconds   *int    `json:"avg_time_seconds"`
+	BaseOdds         *int    `json:"base_odds"`
+	HasShinyCharm    *bool   `json:"has_shiny_charm"`
 }

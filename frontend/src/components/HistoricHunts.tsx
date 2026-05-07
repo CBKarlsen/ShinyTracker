@@ -58,14 +58,14 @@ const HistoricHunts: React.FC = () => {
 			</Typography>
 			<Grid container spacing={3}>
 				{hunts.length === 0 ? (
-					<Grid item xs={12}>
+					<Grid size={{ xs: 12 }}>
 						<Typography variant="body1" color="text.secondary">
 							You haven't completed any shiny hunts yet. Get hunting!
 						</Typography>
 					</Grid>
 				) : (
 					hunts.map((hunt) => (
-						<Grid item xs={12} sm={6} md={4} key={hunt.id}>
+						<Grid size={{ xs: 12, sm: 6, md: 4 }} key={hunt.id}>
 							<Card sx={{ border: '2px solid', borderColor: 'success.main' }}>
 								<CardContent>
 									<Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
