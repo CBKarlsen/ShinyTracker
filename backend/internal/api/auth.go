@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/casper/shinytracker/internal/database"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -89,6 +91,26 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 		// Add userID to request header for context
 		r.Header.Set("X-User-ID", userID)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// AdminMiddleware rejects requests from non-admin users with 403.
+// Must be used after AuthMiddleware (relies on X-User-ID being set).
+func AdminMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Header.Get("X-User-ID")
+		if userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		var isAdmin bool
+		err := database.DB.QueryRow(context.Background(),
+			"SELECT is_admin FROM users WHERE id = $1", userID).Scan(&isAdmin)
+		if err != nil || !isAdmin {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

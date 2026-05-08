@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/casper/shinytracker/internal/calc"
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
 	"github.com/casper/shinytracker/internal/services"
@@ -148,6 +149,42 @@ func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
 }
 
+func RemoveUserGameHandler(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "id")
+	gameID := chi.URLParam(r, "gameId")
+	authUserID := r.Header.Get("X-User-ID")
+
+	if userID != authUserID {
+		http.Error(w, "Unauthorized access", http.StatusForbidden)
+		return
+	}
+
+	_, err := database.DB.Exec(context.Background(),
+		"DELETE FROM user_games WHERE user_id = $1 AND game_id = $2",
+		userID, gameID)
+	if err != nil {
+		http.Error(w, "Failed to remove user game", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
+}
+
+func MeHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	var user models.User
+	err := database.DB.QueryRow(context.Background(),
+		"SELECT id, username, email, is_admin, created_at FROM users WHERE id = $1", userID).
+		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
 func SyncHandler(w http.ResponseWriter, r *http.Request) {
 	go services.SyncPokemonData()
 	w.WriteHeader(http.StatusAccepted)
@@ -218,6 +255,118 @@ type EncounterDetail struct {
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
 	IsRecommended  bool   `json:"is_recommended"`
+}
+
+type MethodDetail struct {
+	ID             int    `json:"id"`
+	GameID         int    `json:"game_id"`
+	GameTitle      string `json:"game_title"`
+	MethodName     string `json:"method_name"`
+	BaseRolls      int    `json:"base_rolls"`
+	CharmRolls     int    `json:"charm_rolls"`
+	AvgTimeSeconds int    `json:"avg_time_seconds"`
+	IsRecommended  bool   `json:"is_recommended"`
+}
+
+type OddsResponse struct {
+	Fraction           string  `json:"fraction"`
+	Percentage         string  `json:"percentage"`
+	ExpectedEncounters int     `json:"expected_encounters"`
+	ETAHours           float64 `json:"eta_hours"`
+}
+
+func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
+	gameIDStr := r.URL.Query().Get("game_id")
+	gameID := 0
+	if gameIDStr != "" {
+		var err error
+		gameID, err = strconv.Atoi(gameIDStr)
+		if err != nil {
+			http.Error(w, "game_id must be an integer", http.StatusBadRequest)
+			return
+		}
+	}
+
+	rows, err := database.DB.Query(context.Background(), `
+		SELECT DISTINCT ON (e.game_id, e.method_name)
+			e.id, e.game_id, g.title, e.method_name,
+			e.base_rolls, e.charm_rolls, e.avg_time_seconds, e.is_recommended
+		FROM encounters e
+		JOIN games g ON e.game_id = g.id
+		WHERE ($1 = 0 OR e.game_id = $1)
+		ORDER BY e.game_id ASC, e.method_name ASC
+	`, gameID)
+	if err != nil {
+		http.Error(w, "Failed to fetch methods", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var methods []MethodDetail
+	for rows.Next() {
+		var m MethodDetail
+		if err := rows.Scan(&m.ID, &m.GameID, &m.GameTitle, &m.MethodName,
+			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.IsRecommended); err == nil {
+			methods = append(methods, m)
+		}
+	}
+	if methods == nil {
+		methods = []MethodDetail{}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(methods)
+}
+
+func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
+	encounterIDStr := r.URL.Query().Get("encounter_id")
+	if encounterIDStr == "" {
+		http.Error(w, "encounter_id is required", http.StatusBadRequest)
+		return
+	}
+	encounterID, err := strconv.Atoi(encounterIDStr)
+	if err != nil {
+		http.Error(w, "encounter_id must be an integer", http.StatusBadRequest)
+		return
+	}
+	shinyCharm := r.URL.Query().Get("shiny_charm") == "true"
+
+	var baseRolls, charmRolls, avgTimeSeconds, baseOdds int
+	err = database.DB.QueryRow(context.Background(), `
+		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds
+		FROM encounters e
+		JOIN games g ON e.game_id = g.id
+		WHERE e.id = $1
+	`, encounterID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds)
+	if err != nil {
+		http.Error(w, "Encounter not found", http.StatusNotFound)
+		return
+	}
+
+	totalRolls := baseRolls
+	if shinyCharm {
+		totalRolls += charmRolls
+	}
+	if totalRolls <= 0 {
+		totalRolls = 1
+	}
+
+	expectedEncounters := baseOdds / totalRolls
+	etaHours := calc.CalculateEstimatedTimeHours(calc.OddsConfig{
+		BaseOdds:       baseOdds,
+		BaseRolls:      baseRolls,
+		CharmRolls:     charmRolls,
+		HasShinyCharm:  shinyCharm,
+		AvgTimeSeconds: avgTimeSeconds,
+	})
+
+	resp := OddsResponse{
+		Fraction:           fmt.Sprintf("1/%d", expectedEncounters),
+		Percentage:         fmt.Sprintf("%.4f%%", float64(totalRolls)/float64(baseOdds)*100),
+		ExpectedEncounters: expectedEncounters,
+		ETAHours:           float64(int(etaHours*10+0.5)) / 10,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {

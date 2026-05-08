@@ -26,19 +26,44 @@ func NewRouter() *chi.Mux {
 		r.Post("/sync", SyncHandler)
 		r.Get("/games", GetGamesHandler)
 		r.Get("/pokemon", GetPokemonHandler)
+		r.Get("/methods", GetMethodsHandler)
+		r.Get("/odds", GetOddsHandler)
 
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware)
+			r.Get("/me", MeHandler)
+
 			r.Get("/user/{id}/games", GetUserGamesHandler)
 			r.Post("/user/{id}/games/{gameId}", ToggleUserGameHandler)
-			
+			r.Delete("/user/{id}/games/{gameId}", RemoveUserGameHandler)
+
 			r.Get("/hunts", GetHuntsHandler)
 			r.Post("/hunts", CreateHuntHandler)
 			r.Post("/hunts/manual", ManualCatchHandler)
 			r.Patch("/hunts/{id}", UpdateHuntHandler)
+			r.Post("/hunts/{id}/phases", LogPhaseHandler)
 			r.Delete("/hunts/manual/{pokemonId}", RemoveManualCatchHandler)
 
 			r.Get("/encounters", GetEncountersHandler)
+
+			r.Group(func(r chi.Router) {
+				r.Use(AdminMiddleware)
+				r.Get("/admin/encounters", AdminGetEncounters)
+				r.Post("/admin/encounters", AdminCreateEncounter)
+				r.Put("/admin/encounters/{id}", AdminUpdateEncounter)
+				r.Delete("/admin/encounters/{id}", AdminDeleteEncounter)
+
+				r.Get("/admin/games", AdminGetGames)
+				r.Post("/admin/games", AdminCreateGame)
+				r.Put("/admin/games/{id}", AdminUpdateGame)
+				r.Delete("/admin/games/{id}", AdminDeleteGame)
+
+				r.Get("/admin/availability", AdminGetAvailability)
+				r.Put("/admin/availability", AdminSetAvailability)
+
+				r.Get("/admin/users", AdminGetUsers)
+				r.Patch("/admin/users/{id}", AdminPatchUser)
+			})
 		})
 	})
 
