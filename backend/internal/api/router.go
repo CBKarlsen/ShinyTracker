@@ -44,14 +44,14 @@ func NewRouter() *chi.Mux {
 			r.Post("/hunts/{id}/phases", LogPhaseHandler)
 			r.Delete("/hunts/manual/{pokemonId}", RemoveManualCatchHandler)
 
-			r.Get("/encounters", GetEncountersHandler)
+			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
 			r.Group(func(r chi.Router) {
 				r.Use(AdminMiddleware)
-				r.Get("/admin/encounters", AdminGetEncounters)
-				r.Post("/admin/encounters", AdminCreateEncounter)
-				r.Put("/admin/encounters/{id}", AdminUpdateEncounter)
-				r.Delete("/admin/encounters/{id}", AdminDeleteEncounter)
+				r.Get("/admin/hunt-methods", AdminGetHuntMethods)
+				r.Post("/admin/hunt-methods", AdminCreateHuntMethod)
+				r.Put("/admin/hunt-methods/{id}", AdminUpdateHuntMethod)
+				r.Delete("/admin/hunt-methods/{id}", AdminDeleteHuntMethod)
 
 				r.Get("/admin/games", AdminGetGames)
 				r.Post("/admin/games", AdminCreateGame)

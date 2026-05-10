@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS user_games (
     PRIMARY KEY (user_id, game_id)
 );
 
-CREATE TABLE IF NOT EXISTS encounters (
+CREATE TABLE IF NOT EXISTS hunt_methods (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
-    encounter_id INTEGER REFERENCES encounters(id) ON DELETE CASCADE,
+    hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
     acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED')),
     encounter_count INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'active', -- 'active' or 'completed'

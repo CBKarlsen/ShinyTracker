@@ -105,8 +105,8 @@ func SyncPokemonData() error {
 		return fmt.Errorf("failed to load game IDs: %w", err)
 	}
 
-	// 3. Clear encounters table to avoid duplicates during resync
-	_, _ = database.DB.Exec(context.Background(), "TRUNCATE TABLE encounters CASCADE")
+	// 3. Clear hunt_methods table to avoid duplicates during resync
+	_, _ = database.DB.Exec(context.Background(), "TRUNCATE TABLE hunt_methods CASCADE")
 
 	// Fetch up to Gen 9
 	resp, err := http.Get("https://pokeapi.co/api/v2/pokemon?limit=1025")
@@ -231,7 +231,7 @@ func syncEncounters(pokemonID int) {
 				charmRolls := 2 // Standard shiny charm is +2 rolls
 
 				_, err = database.DB.Exec(context.Background(),
-					`INSERT INTO encounters (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
+					`INSERT INTO hunt_methods (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
 					 VALUES ($1, $2, $3, $4, $5, $6)`,
 					pokemonID, gameID, methodName, avgTime, baseRolls, charmRolls)
 				if err != nil {
@@ -244,7 +244,7 @@ func syncEncounters(pokemonID int) {
 	// Always inject Masuda Method for any game this Pokemon was found in natively
 	for gameID := range gameMethodsFound {
 		_, _ = database.DB.Exec(context.Background(),
-			`INSERT INTO encounters (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
+			`INSERT INTO hunt_methods (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
 			 VALUES ($1, $2, $3, $4, $5, $6)`,
 			pokemonID, gameID, "masuda-method", 45, 6, 2)
 	}

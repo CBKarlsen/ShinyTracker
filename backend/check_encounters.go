@@ -47,12 +47,12 @@ func main() {
 	}
 	rows.Close()
 
-	// Fetch encounters for Magikarp, grouped by game
+	// Fetch hunt methods for Magikarp, grouped by game
 	encRows, err := pool.Query(context.Background(),
-		`SELECT game_id, method_name FROM encounters WHERE pokemon_id = $1 ORDER BY game_id ASC`,
+		`SELECT game_id, method_name FROM hunt_methods WHERE pokemon_id = $1 ORDER BY game_id ASC`,
 		pokemonID)
 	if err != nil {
-		log.Fatal("Failed to fetch encounters:", err)
+		log.Fatal("Failed to fetch hunt methods:", err)
 	}
 	encountersByGame := make(map[int][]string)
 	for encRows.Next() {
@@ -65,7 +65,7 @@ func main() {
 	encRows.Close()
 
 	// Report
-	fmt.Printf("Encounter coverage for %s (ID %d)\n", pokemonName, pokemonID)
+	fmt.Printf("Hunt method coverage for %s (ID %d)\n", pokemonName, pokemonID)
 	fmt.Println("============================================")
 
 	var missing []string

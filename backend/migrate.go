@@ -26,7 +26,7 @@ func main() {
 	queries := []string{
 		`ALTER TABLE user_hunts ADD COLUMN IF NOT EXISTS pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE`,
 		`ALTER TABLE user_hunts ADD COLUMN IF NOT EXISTS acquisition_type VARCHAR DEFAULT 'HUNTED'`,
-		`UPDATE user_hunts uh SET pokemon_id = e.pokemon_id FROM encounters e WHERE uh.encounter_id = e.id AND uh.pokemon_id IS NULL`,
+		`UPDATE user_hunts uh SET pokemon_id = e.pokemon_id FROM hunt_methods e WHERE uh.hunt_method_id = e.id AND uh.pokemon_id IS NULL`,
 		`ALTER TABLE user_hunts ALTER COLUMN pokemon_id SET NOT NULL`,
 		`ALTER TABLE user_hunts ALTER COLUMN acquisition_type SET NOT NULL`,
 		`ALTER TABLE user_hunts ALTER COLUMN encounter_id DROP NOT NULL`,
@@ -45,9 +45,9 @@ func main() {
 			PRIMARY KEY (pokemon_id, game_id)
 		)`,
 
-		// Backfill availability from existing wild encounter data
+		// Backfill availability from existing hunt method data
 		`INSERT INTO pokemon_availability (pokemon_id, game_id)
-		 SELECT DISTINCT pokemon_id, game_id FROM encounters
+		 SELECT DISTINCT pokemon_id, game_id FROM hunt_methods
 		 ON CONFLICT DO NOTHING`,
 	}
 

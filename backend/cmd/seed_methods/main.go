@@ -117,10 +117,10 @@ func main() {
 		baseRolls, charmRolls, avgTime := getOdds(methodName)
 
 		tag, err := database.DB.Exec(context.Background(),
-			`INSERT INTO encounters (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
+			`INSERT INTO hunt_methods (pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls)
 			 SELECT $1, $2, $3, $4, $5, $6
 			 WHERE NOT EXISTS (
-				 SELECT 1 FROM encounters
+				 SELECT 1 FROM hunt_methods
 				 WHERE pokemon_id = $1 AND game_id = $2 AND method_name = $3
 			 )`,
 			pokemonID, gameID, methodName, avgTime, baseRolls, charmRolls,

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress, Tooltip, ToggleButtonGroup, ToggleButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import type { HuntDetail } from "./HistoricHunts";
 
@@ -8,14 +8,26 @@ interface Pokemon {
 	name: string;
 }
 
+const GEN_RANGES: [number, number, number][] = [
+	[1, 1, 151],
+	[2, 152, 251],
+	[3, 252, 386],
+	[4, 387, 493],
+	[5, 494, 649],
+	[6, 650, 721],
+	[7, 722, 809],
+	[8, 810, 905],
+	[9, 906, 1025],
+];
+const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+
 const Collection: React.FC = () => {
 	const { token } = useAuth();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 	const [caughtIds, setCaughtIds] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(true);
-	const [filterMode, setFilterMode] = useState<"all" | "owned">("all");
-	const [dialogOpen, setDialogOpen] = useState(false);
-	const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
+	const [filter, setFilter] = useState<"all" | "owned" | "missing">("all");
+	const [removeTarget, setRemoveTarget] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -26,19 +38,14 @@ const Collection: React.FC = () => {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);
-
 				if (pokeRes.ok && huntsRes.ok) {
-					const pokeData = (await pokeRes.json()) || [];
-					const huntsData = (await huntsRes.json()) || [];
-
+					const pokeData: Pokemon[] = (await pokeRes.json()) || [];
+					const huntsData: HuntDetail[] = (await huntsRes.json()) || [];
 					setPokemon(pokeData);
-
 					const caught = new Set<number>();
-					huntsData.forEach((h: HuntDetail) => {
-						if (h.status === "completed") {
-							caught.add(h.pokemon_id);
-						}
-					});
+					for (const h of huntsData) {
+						if (h.status === "completed") caught.add(h.pokemon_id);
+					}
 					setCaughtIds(caught);
 				}
 			} catch (err) {
@@ -50,146 +57,227 @@ const Collection: React.FC = () => {
 		fetchData();
 	}, [token]);
 
-	const handleCatchToggle = async (pokemonId: number, isCurrentlyCaught: boolean) => {
-		if (isCurrentlyCaught) {
-			setSelectedPokemonId(pokemonId);
-			setDialogOpen(true);
+	const handleToggle = async (pokemonId: number, isCaught: boolean) => {
+		if (isCaught) {
+			setRemoveTarget(pokemonId);
 			return;
 		}
-
-		// Optimistic update for un-caught -> caught
 		const prev = new Set(caughtIds);
 		const next = new Set(caughtIds);
 		next.add(pokemonId);
 		setCaughtIds(next);
-
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts/manual", {
 				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
 				body: JSON.stringify({ pokemon_id: pokemonId }),
 			});
-			if (!res.ok) throw new Error("Failed to catch");
-		} catch (err) {
-			console.error(err);
-			setCaughtIds(prev); // Revert
+			if (!res.ok) throw new Error();
+		} catch {
+			setCaughtIds(prev);
 		}
 	};
 
-	const confirmRemoveCatch = async () => {
-		if (selectedPokemonId === null) return;
-		const pid = selectedPokemonId;
-		
-		setDialogOpen(false);
-		setSelectedPokemonId(null);
-
-		// Optimistic update for caught -> un-caught
+	const confirmRemove = async () => {
+		if (removeTarget === null) return;
+		const pid = removeTarget;
+		setRemoveTarget(null);
 		const prev = new Set(caughtIds);
 		const next = new Set(caughtIds);
 		next.delete(pid);
 		setCaughtIds(next);
-
 		try {
 			const res = await fetch(`http://localhost:8080/api/hunts/manual/${pid}`, {
 				method: "DELETE",
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			if (!res.ok) throw new Error("Failed to remove catch");
-		} catch (err) {
-			console.error(err);
-			setCaughtIds(prev); // Revert
+			if (!res.ok) throw new Error();
+		} catch {
+			setCaughtIds(prev);
 		}
 	};
 
-	if (loading) return <CircularProgress />;
+	if (loading) {
+		return (
+			<div className="page" style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+				Loading Pokédex…
+			</div>
+		);
+	}
 
-	const displayedPokemon = pokemon.filter((p) => {
-		if (filterMode === "owned") return caughtIds.has(p.id);
-		return true;
-	});
+	const total = pokemon.length || 1025;
+	const caughtCount = caughtIds.size;
 
 	return (
-		<Box>
-			<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-				<Typography variant="h4">Shiny Living Dex</Typography>
-				
-				<Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-					<ToggleButtonGroup
-						value={filterMode}
-						exclusive
-						onChange={(_, newVal) => { if (newVal) setFilterMode(newVal); }}
-						size="small"
+		<div className="page">
+			<div className="page-head">
+				<div>
+					<div className="sub">Workspace · Collection</div>
+					<h1>Shiny Living Dex</h1>
+					<div
+						style={{
+							fontFamily: "var(--font-mono)",
+							fontSize: 11,
+							color: "var(--ink-3)",
+							marginTop: 8,
+							letterSpacing: "0.04em",
+						}}
 					>
-						<ToggleButton value="all">Show All</ToggleButton>
-						<ToggleButton value="owned">Owned Only</ToggleButton>
-					</ToggleButtonGroup>
-
-					<Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-						Caught: {caughtIds.size} / {pokemon.length}
-					</Typography>
-				</Box>
-			</Box>
-			
-			<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-				{displayedPokemon.map((p) => {
-					const isCaught = caughtIds.has(p.id);
-					return (
-						<Tooltip key={p.id} title={p.name.charAt(0).toUpperCase() + p.name.slice(1)} arrow>
-							<Box
-								onClick={() => handleCatchToggle(p.id, isCaught)}
-								sx={{
-									width: 64,
-									height: 64,
-									display: 'flex',
-									justifyContent: 'center',
-									alignItems: 'center',
-									bgcolor: isCaught ? 'primary.light' : 'background.paper',
-									borderRadius: 2,
-									border: '1px solid',
-									borderColor: isCaught ? 'primary.main' : 'divider',
-									cursor: 'pointer',
-									transition: 'all 0.2s',
-									'&:hover': {
-										transform: 'scale(1.1)',
-										zIndex: 1,
-										boxShadow: 3
-									}
+						{caughtCount} of {total} shinies · {((caughtCount / total) * 100).toFixed(1)}% complete
+					</div>
+				</div>
+				<div className="ctas">
+					<div
+						style={{
+							display: "flex",
+							gap: 6,
+							background: "var(--bg-2)",
+							border: "1px solid var(--line-1)",
+							borderRadius: 8,
+							padding: 3,
+						}}
+					>
+						{(["all", "owned", "missing"] as const).map((f) => (
+							<button
+								key={f}
+								onClick={() => setFilter(f)}
+								className="btn ghost"
+								style={{
+									padding: "6px 12px",
+									fontSize: 11.5,
+									textTransform: "capitalize",
+									background: filter === f ? "var(--bg-3)" : "transparent",
+									color: filter === f ? "var(--ink-1)" : "var(--ink-3)",
+									boxShadow: filter === f ? "inset 0 0 0 1px var(--line-2)" : "none",
 								}}
 							>
-								<img
-									src={isCaught 
-										? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${p.id}.png`
-										: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-									alt={p.name}
-									width={56}
-									height={56}
-									style={{ 
-										imageRendering: "pixelated",
-										filter: isCaught ? 'none' : 'brightness(0) opacity(0.3)',
-									}}
-								/>
-							</Box>
-						</Tooltip>
-					);
-				})}
-			</Box>
+								{f}
+							</button>
+						))}
+					</div>
+				</div>
+			</div>
 
-			<Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-				<DialogTitle>Remove Shiny?</DialogTitle>
-				<DialogContent>
-					<DialogContentText>
-						Are you sure you want to remove this Pokémon from your caught list? This action will delete the completed hunt record.
-					</DialogContentText>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={() => setDialogOpen(false)} color="inherit">Cancel</Button>
-					<Button onClick={confirmRemoveCatch} color="error" variant="contained">Remove</Button>
-				</DialogActions>
-			</Dialog>
-		</Box>
+			{/* Completion bar */}
+			<div className="card" style={{ marginBottom: 20, padding: 18 }}>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "space-between",
+						marginBottom: 10,
+					}}
+				>
+					<div className="t-label">Completion progress</div>
+					<div className="t-mono" style={{ fontSize: 12, color: "var(--gold)" }}>
+						{caughtCount} / {total}
+					</div>
+				</div>
+				<div style={{ height: 6, background: "var(--bg-3)", borderRadius: 99, overflow: "hidden" }}>
+					<div
+						style={{
+							height: "100%",
+							width: `${(caughtCount / total) * 100}%`,
+							background: "linear-gradient(90deg, var(--gold), #FFE08A)",
+							borderRadius: 99,
+						}}
+					/>
+				</div>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						marginTop: 10,
+						fontFamily: "var(--font-mono)",
+						fontSize: 10.5,
+						color: "var(--ink-3)",
+						letterSpacing: "0.04em",
+					}}
+				>
+					{GEN_RANGES.map(([gen, lo, hi]) => {
+						const count = Array.from(caughtIds).filter((id) => id >= lo && id <= hi).length;
+						return (
+							<div key={gen} style={{ textAlign: "center" }}>
+								<div>Gen {ROMAN[gen]}</div>
+								<div style={{ color: count > 0 ? "var(--gold)" : "var(--ink-4)", marginTop: 2 }}>
+									{count}/{hi - lo + 1}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* Grid by generation */}
+			{GEN_RANGES.map(([gen, lo, hi]) => {
+				const cellsInGen = pokemon
+					.filter((p) => p.id >= lo && p.id <= hi)
+					.filter((p) => {
+						const caught = caughtIds.has(p.id);
+						if (filter === "owned") return caught;
+						if (filter === "missing") return !caught;
+						return true;
+					});
+				if (cellsInGen.length === 0) return null;
+				const caughtInGen = Array.from(caughtIds).filter((id) => id >= lo && id <= hi).length;
+				return (
+					<div key={gen}>
+						<div className="gen-head">
+							<span className="lbl">Generation {ROMAN[gen]}</span>
+							<span className="line" />
+							<span className="count">
+								<b>{caughtInGen}</b> / {hi - lo + 1}
+							</span>
+						</div>
+						<div className="dex-grid">
+							{cellsInGen.map((p) => {
+								const caught = caughtIds.has(p.id);
+								return (
+									<div
+										key={p.id}
+										className={`dex-cell ${caught ? "caught" : "uncaught"}`}
+										onClick={() => handleToggle(p.id, caught)}
+										title={p.name}
+									>
+										<img
+											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${p.id}.png`}
+											alt={p.name}
+											loading="lazy"
+										/>
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				);
+			})}
+
+			{/* Remove confirmation */}
+			{removeTarget !== null && (
+				<div className="scrim" onClick={() => setRemoveTarget(null)}>
+					<div
+						className="drawer"
+						onClick={(e) => e.stopPropagation()}
+						style={{ width: 380, padding: 28 }}
+					>
+						<div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 12 }}>
+							Remove shiny?
+						</div>
+						<div style={{ color: "var(--ink-3)", fontSize: 13, marginBottom: 24 }}>
+							This will delete the completed hunt record for this Pokémon.
+						</div>
+						<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+							<button className="btn ghost" onClick={() => setRemoveTarget(null)}>
+								Cancel
+							</button>
+							<button className="btn danger" onClick={confirmRemove}>
+								Remove
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
 	);
 };
 

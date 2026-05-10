@@ -245,7 +245,7 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pokemon)
 }
 
-type EncounterDetail struct {
+type HuntMethodDetail struct {
 	ID             int    `json:"id"`
 	PokemonID      int    `json:"pokemon_id"`
 	GameID         int    `json:"game_id"`
@@ -291,7 +291,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		SELECT DISTINCT ON (e.game_id, e.method_name)
 			e.id, e.game_id, g.title, e.method_name,
 			e.base_rolls, e.charm_rolls, e.avg_time_seconds, e.is_recommended
-		FROM encounters e
+		FROM hunt_methods e
 		JOIN games g ON e.game_id = g.id
 		WHERE ($1 = 0 OR e.game_id = $1)
 		ORDER BY e.game_id ASC, e.method_name ASC
@@ -318,14 +318,14 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
-	encounterIDStr := r.URL.Query().Get("encounter_id")
-	if encounterIDStr == "" {
-		http.Error(w, "encounter_id is required", http.StatusBadRequest)
+	huntMethodIDStr := r.URL.Query().Get("hunt_method_id")
+	if huntMethodIDStr == "" {
+		http.Error(w, "hunt_method_id is required", http.StatusBadRequest)
 		return
 	}
-	encounterID, err := strconv.Atoi(encounterIDStr)
+	huntMethodID, err := strconv.Atoi(huntMethodIDStr)
 	if err != nil {
-		http.Error(w, "encounter_id must be an integer", http.StatusBadRequest)
+		http.Error(w, "hunt_method_id must be an integer", http.StatusBadRequest)
 		return
 	}
 	shinyCharm := r.URL.Query().Get("shiny_charm") == "true"
@@ -333,12 +333,12 @@ func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
 	var baseRolls, charmRolls, avgTimeSeconds, baseOdds int
 	err = database.DB.QueryRow(context.Background(), `
 		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds
-		FROM encounters e
+		FROM hunt_methods e
 		JOIN games g ON e.game_id = g.id
 		WHERE e.id = $1
-	`, encounterID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds)
+	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds)
 	if err != nil {
-		http.Error(w, "Encounter not found", http.StatusNotFound)
+		http.Error(w, "Hunt method not found", http.StatusNotFound)
 		return
 	}
 
@@ -369,7 +369,7 @@ func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
+func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	pokemonIDStr := r.URL.Query().Get("pokemon_id")
 	if pokemonIDStr == "" {
 		http.Error(w, "pokemon_id is required", http.StatusBadRequest)
@@ -387,34 +387,34 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Step 1: wild encounters filtered to games the user owns
+	// Step 1: hunt methods filtered to games the user owns
 	wildRows, err := database.DB.Query(context.Background(), `
 		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls, e.is_recommended
-		FROM encounters e
+		FROM hunt_methods e
 		JOIN games g ON e.game_id = g.id
 		JOIN user_games ug ON g.id = ug.game_id
 		WHERE e.pokemon_id = $1 AND ug.user_id = $2
 		ORDER BY g.generation ASC, g.id ASC
 	`, pokemonID, userID)
 	if err != nil {
-		http.Error(w, "Failed to fetch encounters", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch hunt methods", http.StatusInternalServerError)
 		return
 	}
 	defer wildRows.Close()
 
 	seen := make(map[string]bool)
-	var encounters []EncounterDetail
+	var methods []HuntMethodDetail
 
 	for wildRows.Next() {
-		var enc EncounterDetail
+		var m HuntMethodDetail
 		if err := wildRows.Scan(
-			&enc.ID, &enc.PokemonID, &enc.GameID, &enc.GameTitle,
-			&enc.MethodName, &enc.AvgTimeSeconds, &enc.BaseRolls, &enc.CharmRolls, &enc.IsRecommended,
+			&m.ID, &m.PokemonID, &m.GameID, &m.GameTitle,
+			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.IsRecommended,
 		); err != nil {
 			continue
 		}
-		seen[fmt.Sprintf("%d:%s", enc.GameID, enc.MethodName)] = true
-		encounters = append(encounters, enc)
+		seen[fmt.Sprintf("%d:%s", m.GameID, m.MethodName)] = true
+		methods = append(methods, m)
 	}
 	wildRows.Close()
 
@@ -444,7 +444,7 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		seen[key] = true
-		encounters = append(encounters, EncounterDetail{
+		methods = append(methods, HuntMethodDetail{
 			PokemonID:      pokemonID,
 			GameID:         gameID,
 			GameTitle:      gameTitle,
@@ -456,10 +456,10 @@ func GetEncountersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 4: sort combined slice by game_id
-	sort.Slice(encounters, func(i, j int) bool {
-		return encounters[i].GameID < encounters[j].GameID
+	sort.Slice(methods, func(i, j int) bool {
+		return methods[i].GameID < methods[j].GameID
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(encounters)
+	json.NewEncoder(w).Encode(methods)
 }

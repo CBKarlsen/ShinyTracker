@@ -34,7 +34,7 @@ type UserGame struct {
 	HasShinyCharm bool   `json:"has_shiny_charm"`
 }
 
-type Encounter struct {
+type HuntMethod struct {
 	ID             int    `json:"id"`
 	PokemonID      int    `json:"pokemon_id"`
 	GameID         int    `json:"game_id"`
@@ -48,7 +48,7 @@ type UserHunt struct {
 	ID              string          `json:"id"`
 	UserID          string          `json:"user_id"`
 	PokemonID       int             `json:"pokemon_id"`
-	EncounterID     *int            `json:"encounter_id"`
+	HuntMethodID    *int            `json:"hunt_method_id"`
 	EncounterCount  int             `json:"encounter_count"`
 	PhaseCount      int             `json:"phase_count"`
 	Status          string          `json:"status"`

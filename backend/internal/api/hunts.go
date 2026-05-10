@@ -43,12 +43,12 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
 	rows, err := database.DB.Query(context.Background(),
-		`SELECT h.id, h.user_id, h.pokemon_id, h.encounter_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
+		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name as pokemon_name, e.method_name, g.title as game_title,
 		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm
 		 FROM user_hunts h
 		 JOIN pokemon p ON h.pokemon_id = p.id
-		 LEFT JOIN encounters e ON h.encounter_id = e.id
+		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
 		 LEFT JOIN games g ON e.game_id = g.id
 		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.user_id = $1
@@ -64,7 +64,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var h models.UserHuntDetail
 		if err := rows.Scan(
-			&h.ID, &h.UserID, &h.PokemonID, &h.EncounterID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
+			&h.ID, &h.UserID, &h.PokemonID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
 			&h.PokemonName, &h.MethodName, &h.GameTitle,
 			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm,
 		); err != nil {
@@ -92,9 +92,9 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
 	var req struct {
-		EncounterID int    `json:"encounter_id"`
-		PokemonID   int    `json:"pokemon_id"`
-		MethodName  string `json:"method_name"`
+		HuntMethodID int    `json:"hunt_method_id"`
+		PokemonID    int    `json:"pokemon_id"`
+		MethodName   string `json:"method_name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -102,38 +102,38 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var pokemonID int
-	var encounterID *int
+	var huntMethodID *int
 	var huntParameters json.RawMessage
 
-	if req.EncounterID == 0 {
-		// Synthetic encounter (e.g. Masuda Method) — no row in encounters table.
+	if req.HuntMethodID == 0 {
+		// Synthetic method (e.g. Masuda Method) — no row in hunt_methods table.
 		if req.PokemonID == 0 {
-			http.Error(w, "pokemon_id required for synthetic encounters", http.StatusBadRequest)
+			http.Error(w, "pokemon_id required for synthetic hunt methods", http.StatusBadRequest)
 			return
 		}
 		pokemonID = req.PokemonID
-		encounterID = nil
+		huntMethodID = nil
 		params, _ := json.Marshal(map[string]string{"method": req.MethodName})
 		huntParameters = params
 	} else {
-		// Real encounter — resolve pokemon_id from the encounters table.
+		// Real hunt method — resolve pokemon_id from the hunt_methods table.
 		err := database.DB.QueryRow(context.Background(),
-			`SELECT pokemon_id FROM encounters WHERE id = $1`, req.EncounterID).Scan(&pokemonID)
+			`SELECT pokemon_id FROM hunt_methods WHERE id = $1`, req.HuntMethodID).Scan(&pokemonID)
 		if err != nil {
-			http.Error(w, "Invalid encounter ID", http.StatusBadRequest)
+			http.Error(w, "Invalid hunt method ID", http.StatusBadRequest)
 			return
 		}
-		encounterID = &req.EncounterID
+		huntMethodID = &req.HuntMethodID
 		huntParameters = json.RawMessage(`{}`)
 	}
 
 	var hunt models.UserHunt
 	err := database.DB.QueryRow(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, encounter_id, acquisition_type, hunt_parameters)
+		`INSERT INTO user_hunts (user_id, pokemon_id, hunt_method_id, acquisition_type, hunt_parameters)
 		 VALUES ($1, $2, $3, 'HUNTED', $4)
-		 RETURNING id, user_id, pokemon_id, encounter_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		userID, pokemonID, encounterID, huntParameters).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
+		userID, pokemonID, huntMethodID, huntParameters).
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, "Failed to create hunt", http.StatusInternalServerError)
@@ -178,9 +178,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		`UPDATE user_hunts
 		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3
 		 WHERE id = $4 AND user_id = $5
-		 RETURNING id, user_id, pokemon_id, encounter_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
+		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
 		req.EncounterCount, req.Status, newTotalTime, huntID, userID).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)
@@ -243,7 +243,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Add phase pokemon to collection (completed hunt entry).
 	if _, err := tx.Exec(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, encounter_id, acquisition_type, encounter_count, status, hunt_parameters)
+		`INSERT INTO user_hunts (user_id, pokemon_id, hunt_method_id, acquisition_type, encounter_count, status, hunt_parameters)
 		 VALUES ($1, $2, NULL, 'HUNTED', $3, 'completed', '{}')`,
 		userID, req.PokemonID, currentCount); err != nil {
 		http.Error(w, "Failed to add phase pokemon to collection", http.StatusInternalServerError)
@@ -258,17 +258,17 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 	// Load full hunt detail with phases for response.
 	var hunt models.UserHuntDetail
 	if err := database.DB.QueryRow(context.Background(),
-		`SELECT h.id, h.user_id, h.pokemon_id, h.encounter_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
+		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name, e.method_name, g.title,
 		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm
 		 FROM user_hunts h
 		 JOIN pokemon p ON h.pokemon_id = p.id
-		 LEFT JOIN encounters e ON h.encounter_id = e.id
+		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
 		 LEFT JOIN games g ON e.game_id = g.id
 		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.id = $1 AND h.user_id = $2`,
 		huntID, userID).Scan(
-		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
+		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
 		&hunt.PokemonName, &hunt.MethodName, &hunt.GameTitle,
 		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm,
 	); err != nil {
@@ -300,11 +300,11 @@ func ManualCatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	var hunt models.UserHunt
 	err := database.DB.QueryRow(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, encounter_id, acquisition_type, encounter_count, status, hunt_parameters)
+		`INSERT INTO user_hunts (user_id, pokemon_id, hunt_method_id, acquisition_type, encounter_count, status, hunt_parameters)
 		 VALUES ($1, $2, NULL, 'MANUAL_OVERRIDE', 1, 'completed', '{"manual": true}')
-		 RETURNING id, user_id, pokemon_id, encounter_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
+		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
 		userID, req.PokemonID).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.EncounterID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, "Failed to create manual catch", http.StatusInternalServerError)

@@ -17,10 +17,10 @@ func main() {
 	}
 	defer database.CloseDB()
 
-	_, err := database.DB.Exec(context.Background(), "TRUNCATE TABLE encounters CASCADE;")
+	_, err := database.DB.Exec(context.Background(), "TRUNCATE TABLE hunt_methods CASCADE;")
 	if err != nil {
-		log.Fatal("Failed to truncate encounters:", err)
+		log.Fatal("Failed to truncate hunt_methods:", err)
 	}
 
-	fmt.Println("✅ encounters table truncated successfully.")
+	fmt.Println("✅ hunt_methods table truncated successfully.")
 }
