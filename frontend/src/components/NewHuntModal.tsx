@@ -53,6 +53,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 	const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
 	const [huntMethods, setHuntMethods] = useState<HuntMethod[]>([]);
 	const [selectedMethod, setSelectedMethod] = useState<HuntMethod | null>(null);
+	const [useCustomMethod, setUseCustomMethod] = useState(false);
+	const [customMethodName, setCustomMethodName] = useState("");
 	const [userGameCount, setUserGameCount] = useState<number | null>(null);
 	const [loadingSearch, setLoadingSearch] = useState(false);
 	const [loadingEncounters, setLoadingEncounters] = useState(false);
@@ -66,6 +68,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 			setSelectedPokemon(null);
 			setHuntMethods([]);
 			setSelectedMethod(null);
+			setUseCustomMethod(false);
+			setCustomMethodName("");
 		}
 	}, [open]);
 
@@ -139,8 +143,29 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		setStarting(false);
 	};
 
+	const startCustomHunt = async () => {
+		if (!selectedPokemon || !customMethodName.trim()) return;
+		setStarting(true);
+		try {
+			const res = await fetch("http://localhost:8080/api/hunts", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				body: JSON.stringify({
+					pokemon_id: selectedPokemon.id,
+					custom_method_name: customMethodName.trim(),
+				}),
+			});
+			if (res.ok) {
+				onClose();
+				window.location.reload();
+			}
+		} catch { /* ignore */ }
+		setStarting(false);
+	};
+
 	const handleStartSelected = () => {
-		if (selectedMethod) startHunt(selectedMethod);
+		if (useCustomMethod) startCustomHunt();
+		else if (selectedMethod) startHunt(selectedMethod);
 	};
 
 	if (!open) return null;
@@ -362,6 +387,35 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 								</div>
 							)}
 
+							{!loadingEncounters && (
+								<>
+									<div className="t-label" style={{ margin: "12px 0 6px" }}>
+										Custom method
+									</div>
+									<div
+										className={`opt-row ${useCustomMethod ? "sel" : ""}`}
+										onClick={() => {
+											setUseCustomMethod(true);
+											setSelectedMethod(null);
+										}}
+										style={{ alignItems: "center", gap: 8 }}
+									>
+										<div className="method" style={{ flex: 1 }}>Use custom method</div>
+										<div className="t-label" style={{ fontSize: 11 }}>no odds data</div>
+									</div>
+									{useCustomMethod && (
+										<input
+											className="input"
+											placeholder="e.g. Chain fishing, DexNav, Outbreak…"
+											value={customMethodName}
+											onChange={(e) => setCustomMethodName(e.target.value)}
+											style={{ marginTop: 8 }}
+											autoFocus
+										/>
+									)}
+								</>
+							)}
+
 							<div
 								style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}
 							>
@@ -370,9 +424,12 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 								</button>
 								<button
 									className="btn gold"
-									disabled={!selectedMethod}
-									onClick={() => selectedMethod && setStep(3)}
-									style={!selectedMethod ? { opacity: 0.4, pointerEvents: "none" } : {}}
+									disabled={useCustomMethod ? !customMethodName.trim() : !selectedMethod}
+									onClick={() => {
+										if (useCustomMethod && customMethodName.trim()) setStep(3);
+										else if (selectedMethod) setStep(3);
+									}}
+									style={(useCustomMethod ? !customMethodName.trim() : !selectedMethod) ? { opacity: 0.4, pointerEvents: "none" } : {}}
 								>
 									Configure →
 								</button>
@@ -381,7 +438,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 					)}
 
 					{/* Step 3: Confirm */}
-					{step === 3 && selectedPokemon && selectedMethod && (
+					{step === 3 && selectedPokemon && (selectedMethod || (useCustomMethod && customMethodName.trim())) && (
 						<div>
 							<div className="t-label" style={{ marginBottom: 14 }}>
 								Confirm hunt
@@ -425,60 +482,68 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 												marginTop: 4,
 											}}
 										>
-											{selectedMethod.game_title} · {selectedMethod.method_name}
+											{useCustomMethod
+												? `Custom · ${customMethodName.trim()}`
+												: `${selectedMethod!.game_title} · ${selectedMethod!.method_name}`}
 										</div>
 									</div>
 								</div>
-								<div
-									style={{
-										display: "grid",
-										gridTemplateColumns: "1fr 1fr 1fr",
-										gap: 8,
-										marginTop: 16,
-										paddingTop: 16,
-										borderTop: "1px solid var(--line-1)",
-									}}
-								>
-									<div>
-										<div className="t-label">Base odds</div>
-										<div
-											className="t-mono"
-											style={{ fontSize: 14, marginTop: 2 }}
-										>
-											1 / {baseOdds.toLocaleString()}
+								{!useCustomMethod && selectedMethod && (
+									<div
+										style={{
+											display: "grid",
+											gridTemplateColumns: "1fr 1fr 1fr",
+											gap: 8,
+											marginTop: 16,
+											paddingTop: 16,
+											borderTop: "1px solid var(--line-1)",
+										}}
+									>
+										<div>
+											<div className="t-label">Base odds</div>
+											<div className="t-mono" style={{ fontSize: 14, marginTop: 2 }}>
+												1 / {baseOdds.toLocaleString()}
+											</div>
+										</div>
+										<div>
+											<div className="t-label">w/ Charm</div>
+											<div className="t-mono" style={{ fontSize: 14, marginTop: 2, color: "var(--gold)" }}>
+												1 /{" "}
+												{Math.floor(
+													baseOdds / (selectedMethod.base_rolls + selectedMethod.charm_rolls),
+												).toLocaleString()}
+											</div>
+										</div>
+										<div>
+											<div className="t-label">ETA expected</div>
+											<div className="t-mono" style={{ fontSize: 14, marginTop: 2 }}>
+												~
+												{Math.round(
+													(baseOdds / (selectedMethod.base_rolls + selectedMethod.charm_rolls)) *
+														selectedMethod.avg_time_seconds /
+														3600,
+												)}
+												h
+											</div>
 										</div>
 									</div>
-									<div>
-										<div className="t-label">w/ Charm</div>
-										<div
-											className="t-mono"
-											style={{ fontSize: 14, marginTop: 2, color: "var(--gold)" }}
-										>
-											1 /{" "}
-											{Math.floor(
-												baseOdds /
-													(selectedMethod.base_rolls + selectedMethod.charm_rolls),
-											).toLocaleString()}
-										</div>
+								)}
+								{useCustomMethod && (
+									<div
+										style={{
+											marginTop: 16,
+											paddingTop: 16,
+											borderTop: "1px solid var(--line-1)",
+											fontSize: 12,
+											color: "var(--ink-3)",
+											fontFamily: "var(--font-mono)",
+										}}
+									>
+										Custom method — no odds data
 									</div>
-									<div>
-										<div className="t-label">ETA expected</div>
-										<div className="t-mono" style={{ fontSize: 14, marginTop: 2 }}>
-											~
-											{Math.round(
-												(baseOdds /
-													(selectedMethod.base_rolls + selectedMethod.charm_rolls)) *
-													selectedMethod.avg_time_seconds /
-													3600,
-											)}
-											h
-										</div>
-									</div>
-								</div>
+								)}
 							</div>
-							<div
-								style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
-							>
+							<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
 								<button className="btn ghost" onClick={() => setStep(2)}>
 									Back
 								</button>

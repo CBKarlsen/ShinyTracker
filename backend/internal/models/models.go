@@ -70,9 +70,10 @@ type HuntPhase struct {
 
 type UserHuntDetail struct {
 	UserHunt
-	PokemonName      string      `json:"pokemon_name"`
-	MethodName       *string     `json:"method_name"`
-	GameTitle        *string     `json:"game_title"`
+	PokemonName        string      `json:"pokemon_name"`
+	MethodName         *string     `json:"method_name"`
+	CustomMethodName   *string     `json:"custom_method_name"`
+	GameTitle          *string     `json:"game_title"`
 	TotalTimeSeconds int         `json:"total_time_seconds"`
 	BaseRolls        *int        `json:"base_rolls"`
 	CharmRolls       *int        `json:"charm_rolls"`

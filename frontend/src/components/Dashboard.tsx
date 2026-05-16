@@ -27,6 +27,7 @@ interface Hunt {
 	pokemon_id: number;
 	pokemon_name: string;
 	method_name: string | null;
+	custom_method_name: string | null;
 	game_title: string | null;
 	total_time_seconds: number;
 	base_rolls: number | null;
@@ -328,8 +329,10 @@ function HeroHunt({
 						<div className="pname">{hunt.pokemon_name}</div>
 						<div className="pmeta" style={{ marginTop: 4 }}>
 							<span>
-								<b>{hunt.game_title || "Manual"}</b>
-								{hunt.method_name ? ` · ${hunt.method_name}` : ""}
+								{hunt.custom_method_name
+									? <><b>Custom</b> · {hunt.custom_method_name}</>
+									: <><b>{hunt.game_title || "Manual"}</b>{hunt.method_name ? ` · ${hunt.method_name}` : ""}</>
+								}
 							</span>
 							<span>
 								Hunt #{hunt.id.slice(-4)} · since{" "}
@@ -411,7 +414,13 @@ function HeroHunt({
 						}}
 					/>
 				</div>
-				{hunt.base_odds != null && <OddsCurve hunt={hunt} />}
+				{hunt.custom_method_name ? (
+					<div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginTop: 8 }}>
+						Custom method — no odds data
+					</div>
+				) : hunt.base_odds != null ? (
+					<OddsCurve hunt={hunt} />
+				) : null}
 			</div>
 		</div>
 	);
@@ -449,8 +458,8 @@ function HuntRow({
 					{hunt.phase_count > 0 && <span className="phase-pill">P{hunt.phase_count + 1}</span>}
 				</div>
 				<div className="meta">
-					<span className="pill">{gameShort(hunt.game_title)}</span>
-					<span>{hunt.method_name || "—"}</span>
+					<span className="pill">{hunt.custom_method_name ? "Custom" : gameShort(hunt.game_title)}</span>
+					<span>{hunt.custom_method_name || hunt.method_name || "—"}</span>
 					{hunt.has_shiny_charm && (
 						<span className="charm-pill">
 							<SparkSm size={8} />

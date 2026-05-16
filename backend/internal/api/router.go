@@ -50,6 +50,7 @@ func NewRouter() *chi.Mux {
 				r.Use(AdminMiddleware)
 				r.Get("/admin/hunt-methods", AdminGetHuntMethods)
 				r.Post("/admin/hunt-methods", AdminCreateHuntMethod)
+				r.Post("/admin/hunt-methods/import", AdminImportHuntMethods)
 				r.Put("/admin/hunt-methods/{id}", AdminUpdateHuntMethod)
 				r.Delete("/admin/hunt-methods/{id}", AdminDeleteHuntMethod)
 
