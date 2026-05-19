@@ -33,12 +33,12 @@ function App() {
 			/>
 			<div className="main" id="main-scroll">
 				<Topbar route={route} onNew={() => setNewHuntOpen(true)} />
-				{route === "dash" && (
+				<div style={{ display: route === "dash" ? "contents" : "none" }}>
 					<Dashboard
 						onNewHunt={() => setNewHuntOpen(true)}
 						onHuntCountChange={setActiveHuntCount}
 					/>
-				)}
+				</div>
 				{route === "historic" && <HistoricHunts />}
 				{route === "dex" && <Collection />}
 				{route === "games" && <CollectionManager />}

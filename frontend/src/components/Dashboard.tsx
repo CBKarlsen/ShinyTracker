@@ -86,10 +86,27 @@ function gameShort(title: string | null): string {
 }
 
 function computeExpected(hunt: Hunt): number | null {
-	if (!hunt.base_odds || !hunt.base_rolls || !hunt.charm_rolls) return null;
-	const rolls = hunt.base_rolls + (hunt.has_shiny_charm ? hunt.charm_rolls : 0);
-	if (rolls <= 0) return null;
+	if (!hunt.base_odds || !hunt.base_rolls) return null;
+	const rolls = getEffectiveRolls(hunt);
+	if (!rolls || rolls <= 0) return null;
 	return Math.floor(hunt.base_odds / rolls);
+}
+
+function getEffectiveRolls(hunt: Hunt): number | null {
+	if (hunt.base_rolls == null) return null;
+	return hunt.base_rolls + (hunt.has_shiny_charm && hunt.charm_rolls != null ? hunt.charm_rolls : 0);
+}
+
+function calcCumulativeOdds(encounters: number, baseOdds: number, rolls: number): number {
+	if (rolls <= 0 || baseOdds <= 0 || encounters <= 0) return 0;
+	return 1 - Math.pow(1 - rolls / baseOdds, encounters);
+}
+
+function getLuckLabel(pct: number): string {
+	if (pct < 0.33) return "running lucky";
+	if (pct < 0.67) return "about average";
+	if (pct < 0.90) return "pushing your luck";
+	return "overdue";
 }
 
 // ── SparkSm icon ─────────────────────────────────────────────────────────────
@@ -135,11 +152,13 @@ type TimerStatus = "live" | "idle" | "paused";
 
 function TimerDisplay({
 	sessionSec,
+	totalSec,
 	status,
 	onToggle,
 	onReset,
 }: {
 	sessionSec: number;
+	totalSec: number;
 	status: TimerStatus;
 	onToggle: () => void;
 	onReset: () => void;
@@ -176,6 +195,9 @@ function TimerDisplay({
 					</button>
 				)}
 			</div>
+			<div className="timer-meta" style={{ marginTop: 2 }}>
+				<span>total · {fmtHM(totalSec)}</span>
+			</div>
 		</div>
 	);
 }
@@ -184,7 +206,7 @@ function TimerDisplay({
 
 function OddsCurve({ hunt }: { hunt: Hunt }) {
 	const odds = hunt.base_odds || 4096;
-	const rolls = (hunt.base_rolls || 1) + (hunt.has_shiny_charm ? hunt.charm_rolls || 0 : 0);
+	const rolls = getEffectiveRolls(hunt) || 1;
 	const expected = Math.floor(odds / rolls);
 	const max = Math.max(expected * 3, hunt.encounter_count * 1.4, 100);
 	const W = 600;
@@ -254,9 +276,10 @@ function HeroHunt({
 	const expected = computeExpected(hunt);
 	const isOver = expected !== null && hunt.encounter_count > expected;
 	const ratio = expected ? Math.min(hunt.encounter_count / expected, 1) : 0;
-	const odds = hunt.base_odds || 4096;
-	const rolls = (hunt.base_rolls || 1) + (hunt.has_shiny_charm ? hunt.charm_rolls || 0 : 0);
-	const cumP = 1 - Math.pow(1 - rolls / odds, hunt.encounter_count);
+	const effectiveRolls = getEffectiveRolls(hunt);
+	const cumP = hunt.base_odds != null && effectiveRolls != null
+		? calcCumulativeOdds(hunt.encounter_count, hunt.base_odds, effectiveRolls)
+		: null;
 
 	const btnRef = useRef<HTMLButtonElement>(null);
 	const [bumping, setBumping] = useState(false);
@@ -347,6 +370,7 @@ function HeroHunt({
 					<span className="lbl">encounters</span>
 					<TimerDisplay
 						sessionSec={sessionSec}
+						totalSec={totalSeconds}
 						status={timerStatus}
 						onToggle={() => setManualPaused((p) => !p)}
 						onReset={() => setSessionSec(0)}
@@ -359,7 +383,9 @@ function HeroHunt({
 					</div>
 					<div className="hero-progress-meta">
 						<span>
-							{(cumP * 100).toFixed(1)}% cumulative · {fmtHM(totalSeconds)} hunted
+							{cumP != null ? (
+								hunt.encounter_count > 0 ? getLuckLabel(cumP) : "—"
+							) : "no odds data"}
 						</span>
 						{isOver ? (
 							<span className="over">
@@ -443,7 +469,10 @@ function HuntRow({
 }) {
 	const expected = computeExpected(hunt);
 	const isOver = expected !== null && hunt.encounter_count > expected;
-	const ratio = expected ? Math.min(hunt.encounter_count / expected, 1) : 0;
+	const effectiveRolls = getEffectiveRolls(hunt);
+	const cumP = hunt.base_odds != null && effectiveRolls != null
+		? calcCumulativeOdds(hunt.encounter_count, hunt.base_odds, effectiveRolls)
+		: null;
 	const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
 
 	return (
@@ -476,20 +505,29 @@ function HuntRow({
 				<small>hunted</small>
 			</div>
 			<div className="col-bar">
-				<div className={`barwrap${isOver ? " over" : ""}`}>
-					<span style={{ width: `${(isOver ? 1 : ratio) * 100}%` }} />
-				</div>
-				<div
-					style={{
-						fontFamily: "var(--font-mono)",
-						fontSize: 10,
-						color: "var(--ink-3)",
-						marginTop: 4,
-						letterSpacing: "0.04em",
-					}}
-				>
-					{expected ? `${((hunt.encounter_count / expected) * 100).toFixed(0)}% of expected` : "—"}
-				</div>
+				{cumP != null ? (
+					<>
+						<div className="barwrap">
+							<span style={{ width: `${Math.min(cumP * 100, 100)}%`, background: "var(--gold)", opacity: 0.8 }} />
+						</div>
+						<div
+							style={{
+								fontFamily: "var(--font-mono)",
+								fontSize: 10,
+								color: "var(--ink-3)",
+								marginTop: 4,
+								letterSpacing: "0.04em",
+								display: "flex",
+								gap: 6,
+							}}
+						>
+							<span style={{ color: "var(--ink-2)" }}>{(cumP * 100).toFixed(1)}%</span>
+							{hunt.encounter_count > 0 && <span>· {getLuckLabel(cumP)}</span>}
+						</div>
+					</>
+				) : (
+					<div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-4)" }}>—</div>
+				)}
 			</div>
 			<div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
 				<button
@@ -684,6 +722,29 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 	useEffect(() => {
 		fetchHunts();
 	}, [token]);
+
+	// Heartbeat: flush current encounter counts every 60s so total_time_seconds
+	// stays accurate and counts survive a refresh even between +1 clicks.
+	useEffect(() => {
+		const id = setInterval(async () => {
+			const active = Object.entries(localCounts);
+			if (active.length === 0) return;
+			await Promise.allSettled(
+				active.map(([huntId, count]) => {
+					const hunt = hunts.find((h) => h.id === huntId);
+					if (!hunt) return Promise.resolve();
+					return fetch(`http://localhost:8080/api/hunts/${huntId}`, {
+						method: "PATCH",
+						headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+						body: JSON.stringify({ encounter_count: count, status: hunt.status }),
+					}).then((res) => {
+						if (res.ok) committedRef.current[huntId] = count;
+					});
+				}),
+			);
+		}, 60_000);
+		return () => clearInterval(id);
+	}, [localCounts, hunts, token]);
 
 	// SPACE key → increment primary hunt
 	useEffect(() => {
