@@ -1,0 +1,278 @@
+- generic [ref=e35]:
+  - complementary [ref=e36]:
+    - generic [ref=e37]:
+      - img [ref=e39]
+      - generic [ref=e41]:
+        - generic [ref=e42]: ShinyTracker
+        - generic [ref=e43]: Pro
+    - generic [ref=e44]:
+      - generic [ref=e45]: Workspace
+      - navigation [ref=e46]:
+        - button "Dashboard" [ref=e47] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e53]: Dashboard
+        - button "Historic Hunts" [ref=e54] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e58]: Historic Hunts
+        - button "Living Dex" [ref=e59] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e63]: Living Dex
+        - button "Games" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: Games
+        - button "Stats" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e72]: Stats
+      - generic [ref=e73]: Tools
+      - navigation [ref=e74]:
+        - button "Odds Calculator" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: Odds Calculator
+        - button "Method Library" [ref=e80] [cursor=pointer]:
+          - img [ref=e81]
+          - generic [ref=e84]: Method Library
+    - generic [ref=e85]:
+      - generic [ref=e86]: S
+      - generic [ref=e87]:
+        - generic [ref=e88]: Trainer
+        - generic [ref=e89]: Shiny hunter
+      - button "Log out" [ref=e90] [cursor=pointer]:
+        - img [ref=e91]
+  - generic [ref=e94]:
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - generic [ref=e97]: Workspace
+        - generic [ref=e98]: /
+        - generic [ref=e99]: Dashboard
+      - generic [ref=e100]:
+        - img [ref=e101]
+        - textbox "Search hunts, Pokémon…" [ref=e104]
+        - generic [ref=e105]: ⌘K
+      - button "New Hunt" [ref=e106] [cursor=pointer]:
+        - img [ref=e107]
+        - text: New Hunt
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - generic [ref=e112]: Workspace · Dashboard
+          - heading "No active hunts" [level=1] [ref=e113]
+        - button "Start hunting" [ref=e115] [cursor=pointer]:
+          - img [ref=e116]
+          - text: Start hunting
+      - generic [ref=e118]:
+        - img [ref=e120]
+        - generic [ref=e122]: Start your first hunt
+        - generic [ref=e123]: Pick a Pokémon, choose a method, and we'll track odds, encounters and ETA. Hit SPACE to count.
+        - button "New hunt" [ref=e124] [cursor=pointer]:
+          - img [ref=e125]
+          - text: New hunt
+  - generic [ref=e128]:
+    - generic [ref=e129]:
+      - heading "Start a new hunt" [level=2] [ref=e130]
+      - button [ref=e135] [cursor=pointer]:
+        - img [ref=e136]
+    - generic [ref=e139]:
+      - generic [ref=e140]:
+        - generic [ref=e141]: 1 · Pokémon
+        - textbox "Search any Pokémon…" [active] [ref=e142]
+      - generic [ref=e143]:
+        - generic [ref=e144] [cursor=pointer]:
+          - img "bulbasaur" [ref=e145]
+          - generic [ref=e146]: bulbasaur
+          - generic [ref=e147]: "#0001"
+        - generic [ref=e148] [cursor=pointer]:
+          - img "ivysaur" [ref=e149]
+          - generic [ref=e150]: ivysaur
+          - generic [ref=e151]: "#0002"
+        - generic [ref=e152] [cursor=pointer]:
+          - img "venusaur" [ref=e153]
+          - generic [ref=e154]: venusaur
+          - generic [ref=e155]: "#0003"
+        - generic [ref=e156] [cursor=pointer]:
+          - img "charmander" [ref=e157]
+          - generic [ref=e158]: charmander
+          - generic [ref=e159]: "#0004"
+        - generic [ref=e160] [cursor=pointer]:
+          - img "charmeleon" [ref=e161]
+          - generic [ref=e162]: charmeleon
+          - generic [ref=e163]: "#0005"
+        - generic [ref=e164] [cursor=pointer]:
+          - img "charizard" [ref=e165]
+          - generic [ref=e166]: charizard
+          - generic [ref=e167]: "#0006"
+        - generic [ref=e168] [cursor=pointer]:
+          - img "squirtle" [ref=e169]
+          - generic [ref=e170]: squirtle
+          - generic [ref=e171]: "#0007"
+        - generic [ref=e172] [cursor=pointer]:
+          - img "wartortle" [ref=e173]
+          - generic [ref=e174]: wartortle
+          - generic [ref=e175]: "#0008"
+        - generic [ref=e176] [cursor=pointer]:
+          - img "blastoise" [ref=e177]
+          - generic [ref=e178]: blastoise
+          - generic [ref=e179]: "#0009"
+        - generic [ref=e180] [cursor=pointer]:
+          - img "caterpie" [ref=e181]
+          - generic [ref=e182]: caterpie
+          - generic [ref=e183]: "#0010"
+        - generic [ref=e184] [cursor=pointer]:
+          - img "metapod" [ref=e185]
+          - generic [ref=e186]: metapod
+          - generic [ref=e187]: "#0011"
+        - generic [ref=e188] [cursor=pointer]:
+          - img "butterfree" [ref=e189]
+          - generic [ref=e190]: butterfree
+          - generic [ref=e191]: "#0012"
+        - generic [ref=e192] [cursor=pointer]:
+          - img "weedle" [ref=e193]
+          - generic [ref=e194]: weedle
+          - generic [ref=e195]: "#0013"
+        - generic [ref=e196] [cursor=pointer]:
+          - img "kakuna" [ref=e197]
+          - generic [ref=e198]: kakuna
+          - generic [ref=e199]: "#0014"
+        - generic [ref=e200] [cursor=pointer]:
+          - img "beedrill" [ref=e201]
+          - generic [ref=e202]: beedrill
+          - generic [ref=e203]: "#0015"
+        - generic [ref=e204] [cursor=pointer]:
+          - img "pidgey" [ref=e205]
+          - generic [ref=e206]: pidgey
+          - generic [ref=e207]: "#0016"
+        - generic [ref=e208] [cursor=pointer]:
+          - img "pidgeotto" [ref=e209]
+          - generic [ref=e210]: pidgeotto
+          - generic [ref=e211]: "#0017"
+        - generic [ref=e212] [cursor=pointer]:
+          - img "pidgeot" [ref=e213]
+          - generic [ref=e214]: pidgeot
+          - generic [ref=e215]: "#0018"
+        - generic [ref=e216] [cursor=pointer]:
+          - img "rattata" [ref=e217]
+          - generic [ref=e218]: rattata
+          - generic [ref=e219]: "#0019"
+        - generic [ref=e220] [cursor=pointer]:
+          - img "raticate" [ref=e221]
+          - generic [ref=e222]: raticate
+          - generic [ref=e223]: "#0020"
+        - generic [ref=e224] [cursor=pointer]:
+          - img "spearow" [ref=e225]
+          - generic [ref=e226]: spearow
+          - generic [ref=e227]: "#0021"
+        - generic [ref=e228] [cursor=pointer]:
+          - img "fearow" [ref=e229]
+          - generic [ref=e230]: fearow
+          - generic [ref=e231]: "#0022"
+        - generic [ref=e232] [cursor=pointer]:
+          - img "ekans" [ref=e233]
+          - generic [ref=e234]: ekans
+          - generic [ref=e235]: "#0023"
+        - generic [ref=e236] [cursor=pointer]:
+          - img "arbok" [ref=e237]
+          - generic [ref=e238]: arbok
+          - generic [ref=e239]: "#0024"
+        - generic [ref=e240] [cursor=pointer]:
+          - img "pikachu" [ref=e241]
+          - generic [ref=e242]: pikachu
+          - generic [ref=e243]: "#0025"
+        - generic [ref=e244] [cursor=pointer]:
+          - img "raichu" [ref=e245]
+          - generic [ref=e246]: raichu
+          - generic [ref=e247]: "#0026"
+        - generic [ref=e248] [cursor=pointer]:
+          - img "sandshrew" [ref=e249]
+          - generic [ref=e250]: sandshrew
+          - generic [ref=e251]: "#0027"
+        - generic [ref=e252] [cursor=pointer]:
+          - img "sandslash" [ref=e253]
+          - generic [ref=e254]: sandslash
+          - generic [ref=e255]: "#0028"
+        - generic [ref=e256] [cursor=pointer]:
+          - img "nidoran-f" [ref=e257]
+          - generic [ref=e258]: nidoran-f
+          - generic [ref=e259]: "#0029"
+        - generic [ref=e260] [cursor=pointer]:
+          - img "nidorina" [ref=e261]
+          - generic [ref=e262]: nidorina
+          - generic [ref=e263]: "#0030"
+        - generic [ref=e264] [cursor=pointer]:
+          - img "nidoqueen" [ref=e265]
+          - generic [ref=e266]: nidoqueen
+          - generic [ref=e267]: "#0031"
+        - generic [ref=e268] [cursor=pointer]:
+          - img "nidoran-m" [ref=e269]
+          - generic [ref=e270]: nidoran-m
+          - generic [ref=e271]: "#0032"
+        - generic [ref=e272] [cursor=pointer]:
+          - img "nidorino" [ref=e273]
+          - generic [ref=e274]: nidorino
+          - generic [ref=e275]: "#0033"
+        - generic [ref=e276] [cursor=pointer]:
+          - img "nidoking" [ref=e277]
+          - generic [ref=e278]: nidoking
+          - generic [ref=e279]: "#0034"
+        - generic [ref=e280] [cursor=pointer]:
+          - img "clefairy" [ref=e281]
+          - generic [ref=e282]: clefairy
+          - generic [ref=e283]: "#0035"
+        - generic [ref=e284] [cursor=pointer]:
+          - img "clefable" [ref=e285]
+          - generic [ref=e286]: clefable
+          - generic [ref=e287]: "#0036"
+        - generic [ref=e288] [cursor=pointer]:
+          - img "vulpix" [ref=e289]
+          - generic [ref=e290]: vulpix
+          - generic [ref=e291]: "#0037"
+        - generic [ref=e292] [cursor=pointer]:
+          - img "ninetales" [ref=e293]
+          - generic [ref=e294]: ninetales
+          - generic [ref=e295]: "#0038"
+        - generic [ref=e296] [cursor=pointer]:
+          - img "jigglypuff" [ref=e297]
+          - generic [ref=e298]: jigglypuff
+          - generic [ref=e299]: "#0039"
+        - generic [ref=e300] [cursor=pointer]:
+          - img "wigglytuff" [ref=e301]
+          - generic [ref=e302]: wigglytuff
+          - generic [ref=e303]: "#0040"
+        - generic [ref=e304] [cursor=pointer]:
+          - img "zubat" [ref=e305]
+          - generic [ref=e306]: zubat
+          - generic [ref=e307]: "#0041"
+        - generic [ref=e308] [cursor=pointer]:
+          - img "golbat" [ref=e309]
+          - generic [ref=e310]: golbat
+          - generic [ref=e311]: "#0042"
+        - generic [ref=e312] [cursor=pointer]:
+          - img "oddish" [ref=e313]
+          - generic [ref=e314]: oddish
+          - generic [ref=e315]: "#0043"
+        - generic [ref=e316] [cursor=pointer]:
+          - img "gloom" [ref=e317]
+          - generic [ref=e318]: gloom
+          - generic [ref=e319]: "#0044"
+        - generic [ref=e320] [cursor=pointer]:
+          - img "vileplume" [ref=e321]
+          - generic [ref=e322]: vileplume
+          - generic [ref=e323]: "#0045"
+        - generic [ref=e324] [cursor=pointer]:
+          - img "paras" [ref=e325]
+          - generic [ref=e326]: paras
+          - generic [ref=e327]: "#0046"
+        - generic [ref=e328] [cursor=pointer]:
+          - img "parasect" [ref=e329]
+          - generic [ref=e330]: parasect
+          - generic [ref=e331]: "#0047"
+        - generic [ref=e332] [cursor=pointer]:
+          - img "venonat" [ref=e333]
+          - generic [ref=e334]: venonat
+          - generic [ref=e335]: "#0048"
+        - generic [ref=e336] [cursor=pointer]:
+          - img "venomoth" [ref=e337]
+          - generic [ref=e338]: venomoth
+          - generic [ref=e339]: "#0049"
+        - generic [ref=e340] [cursor=pointer]:
+          - img "diglett" [ref=e341]
+          - generic [ref=e342]: diglett
+          - generic [ref=e343]: "#0050"

@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-22T23:06:00Z",
+  "title": "Design System: ShinyTracker",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Sparkle Gold",
+        "canonical": "oklch(82.6% 0.17 84)",
+        "tonalRamp": [
+          "oklch(25% 0.05 84)",
+          "oklch(35% 0.07 84)",
+          "oklch(50% 0.10 84)",
+          "oklch(65% 0.13 84)",
+          "oklch(75% 0.15 84)",
+          "oklch(82.6% 0.17 84)",
+          "oklch(90% 0.10 84)",
+          "oklch(96% 0.05 84)"
+        ]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Lure Blue",
+        "canonical": "oklch(68.5% 0.15 260)",
+        "tonalRamp": [
+          "oklch(20% 0.05 260)",
+          "oklch(35% 0.08 260)",
+          "oklch(50% 0.12 260)",
+          "oklch(60% 0.14 260)",
+          "oklch(68.5% 0.15 260)",
+          "oklch(78% 0.12 260)",
+          "oklch(88% 0.08 260)",
+          "oklch(95% 0.03 260)"
+        ]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Void Black",
+        "canonical": "#060608",
+        "tonalRamp": [
+          "#020203",
+          "#060608",
+          "#0b0b10",
+          "#111118",
+          "#181822",
+          "#1f1f2b",
+          "#2d2d3d",
+          "#f4f2ec"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display Space",
+        "purpose": "Title headers, active shiny hunt counters, large metrics."
+      },
+      "body": {
+        "displayName": "Body Tight",
+        "purpose": "Standard text, descriptions, table contents."
+      }
+    },
+    "shadows": [
+      {
+        "name": "Gold Glow",
+        "value": "0 0 0 1px rgba(245, 198, 97, 0.33), 0 0 24px -8px #f5c661",
+        "purpose": "Highlights the currently active target Pokémon tracking card."
+      },
+      {
+        "name": "Blue Glow",
+        "value": "0 0 0 1px rgba(123, 155, 255, 0.33), 0 0 24px -8px #7b9bff",
+        "purpose": "Interactive inputs or navigation panels upon focus/active states."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Standard transition for buttons, links, list items, and navigation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Used for key tracker workflows, increment counters, and positive outcomes.",
+      "html": "<button class=\"ds-btn-primary\">Found It!</button>",
+      "css": ".ds-btn-primary { background: #f5c661; color: #060608; border: none; font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 700; font-size: 0.95rem; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; } .ds-btn-primary:hover { transform: scale(1.02); box-shadow: 0 0 12px rgba(245, 198, 97, 0.5); }"
+    },
+    {
+      "name": "Tracking Card",
+      "kind": "card",
+      "refersTo": "card-container",
+      "description": "Standard container for tracking a hunt or display metrics.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Active Hunt</h3><p class=\"ds-card-text\">Incubating shiny target...</p></div>",
+      "css": ".ds-card { background: #111118; border: 1px solid #1a1a22; border-radius: 10px; padding: 24px; transition: border-color 0.2s ease, box-shadow 0.2s ease; } .ds-card-title { font-family: 'Space Grotesk', sans-serif; color: #f4f2ec; margin-top: 0; margin-bottom: 8px; } .ds-card-text { font-family: 'Inter Tight', sans-serif; color: #b6b5c0; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Trainer Command Center",
+    "overview": "Trainer Command Center is a data-dense monitoring panel designed for high-focus, keyboard-first, and late-night hunting sessions. The layout emphasizes data density, structural clarity, and efficient shortcuts, mirroring the aesthetic precision of professional tools like Linear and Raycast.",
+    "keyCharacteristics": [
+      "High data density optimized for clean observability.",
+      "Keyboard-centric navigation and shortcuts.",
+      "Void-black dark mode interface with neon status highlights.",
+      "Ambient glow states for active interactions."
+    ],
+    "rules": [
+      {
+        "name": "The One Sparkle Rule",
+        "body": "Neon glowing elements must be used selectively (≤10% of the screen area). The primary Sparkle Gold glow is reserved for active targets and rare milestones; diluting it with general usage is forbidden.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ambient State Rule",
+        "body": "Containers are flat at rest. Glowing borders and shadows are strictly reactive and appear only during active hunting or component hover/focus states to direct user attention.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use JetBrains Mono for all numeric statistics, odds calculations, and pace parameters to ensure strict tabular alignment.",
+      "Do apply --glow-gold exclusively to the active Pokémon tracking card to emphasize its role as the focus of the application.",
+      "Do design layout spacing with strict vertical rhythm using spacing scale steps (8px, 16px, 24px)."
+    ],
+    "donts": [
+      "Don't use standard white cards or pure grey backgrounds; all neutrals must be tinted with deep slate and void tones.",
+      "Don't use side-stripe borders (e.g. border-left or border-right thicker than 1px) to indicate card category. Use tags or subtle background tints instead.",
+      "Don't introduce nested card structures; use border dividers or tonal differences inside a single card container.",
+      "Don't create multi-step modals for simple two-step selections. Show inline previews or collapsable sections instead."
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+- generic [ref=e27]:
+  - complementary [ref=e28]:
+    - generic [ref=e29]:
+      - img [ref=e31]
+      - generic [ref=e33]:
+        - generic [ref=e34]: ShinyTracker
+        - generic [ref=e35]: Pro
+    - generic [ref=e36]:
+      - generic [ref=e37]: Workspace
+      - navigation [ref=e38]:
+        - button "Dashboard" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e45]: Dashboard
+        - button "Historic Hunts" [ref=e46] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e50]: Historic Hunts
+        - button "Living Dex" [ref=e51] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e55]: Living Dex
+        - button "Games" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+          - generic [ref=e60]: Games
+        - button "Stats" [ref=e61] [cursor=pointer]:
+          - img [ref=e62]
+          - generic [ref=e64]: Stats
+      - generic [ref=e65]: Tools
+      - navigation [ref=e66]:
+        - button "Odds Calculator" [active] [ref=e67] [cursor=pointer]:
+          - img [ref=e68]
+          - generic [ref=e71]: Odds Calculator
+        - button "Method Library" [ref=e72] [cursor=pointer]:
+          - img [ref=e73]
+          - generic [ref=e76]: Method Library
+    - generic [ref=e77]:
+      - generic [ref=e78]: S
+      - generic [ref=e79]:
+        - generic [ref=e80]: Trainer
+        - generic [ref=e81]: Shiny hunter
+      - button "Log out" [ref=e82] [cursor=pointer]:
+        - img [ref=e83]
+  - generic [ref=e86]:
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]: Workspace
+        - generic [ref=e90]: /
+        - generic [ref=e91]: Odds Calculator
+      - generic [ref=e92]:
+        - img [ref=e93]
+        - textbox "Search hunts, Pokémon…" [ref=e96]
+        - generic [ref=e97]: ⌘K
+      - button "New Hunt" [ref=e98] [cursor=pointer]:
+        - img [ref=e99]
+        - text: New Hunt
+    - generic [ref=e119]:
+      - generic [ref=e121]:
+        - generic [ref=e122]: Workspace · Tools
+        - heading "Odds Calculator" [level=1] [ref=e123]
+        - generic [ref=e124]: Estimate shiny odds and hunt duration for any method
+      - generic [ref=e125]:
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]: Game
+            - combobox [ref=e129]:
+              - option "Select a game…"
+              - option "Red/Blue/Yellow"
+              - option "Gold/Silver/Crystal"
+              - option "Ruby/Sapphire/Emerald"
+              - option "FireRed/LeafGreen"
+              - option "Diamond/Pearl/Platinum"
+              - option "HeartGold/SoulSilver"
+              - option "Black/White"
+              - option "Black 2/White 2"
+              - option "X/Y"
+              - option "Omega Ruby/Alpha Sapphire"
+              - option "Sun/Moon"
+              - option "Ultra Sun/Ultra Moon"
+              - option "Let's Go Pikachu/Eevee"
+              - option "Sword/Shield" [selected]
+              - option "Brilliant Diamond/Shining Pearl"
+              - 'option "Legends: Arceus"'
+              - option "Scarlet/Violet"
+          - generic [ref=e130]:
+            - generic [ref=e131]: Encounter Method
+            - generic [ref=e132]: No methods available for this game
+          - generic [ref=e133] [cursor=pointer]:
+            - checkbox "Shiny Charm" [ref=e134]
+            - generic [ref=e135]: Shiny Charm
+        - generic [ref=e137]: Select a game and method to see odds

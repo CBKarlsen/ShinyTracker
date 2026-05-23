@@ -1,19 +1,27 @@
 import { useState } from "react";
-import { useAuth } from "./context/AuthContext";
-import Sidebar from "./components/Sidebar";
-import Topbar from "./components/Topbar";
-import Login from "./components/Login";
-import Dashboard from "./components/Dashboard";
-import HistoricHunts from "./components/HistoricHunts";
+import Admin from "./components/admin/Admin";
 import Collection from "./components/Collection";
 import CollectionManager from "./components/CollectionManager";
-import Stats from "./components/Stats";
-import OddsCalculator from "./components/OddsCalculator";
+import Dashboard from "./components/Dashboard";
+import HistoricHunts from "./components/HistoricHunts";
+import Login from "./components/Login";
 import MethodLibrary from "./components/MethodLibrary";
-import Admin from "./components/admin/Admin";
 import NewHuntModal from "./components/NewHuntModal";
+import OddsCalculator from "./components/OddsCalculator";
+import Sidebar from "./components/Sidebar";
+import Stats from "./components/Stats";
+import Topbar from "./components/Topbar";
+import { useAuth } from "./context/AuthContext";
 
-export type Route = "dash" | "historic" | "dex" | "games" | "stats" | "odds-calc" | "method-library" | "admin";
+export type Route =
+	| "dash"
+	| "historic"
+	| "dex"
+	| "games"
+	| "stats"
+	| "odds-calc"
+	| "method-library"
+	| "admin";
 
 function App() {
 	const { token, logout } = useAuth();
@@ -50,7 +58,10 @@ function App() {
 			<NewHuntModal
 				open={newHuntOpen}
 				onClose={() => setNewHuntOpen(false)}
-				onGoToGames={() => { setNewHuntOpen(false); setRoute("games"); }}
+				onGoToGames={() => {
+					setNewHuntOpen(false);
+					setRoute("games");
+				}}
 			/>
 		</div>
 	);

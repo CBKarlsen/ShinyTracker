@@ -1,0 +1,122 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]:
+        - generic [ref=e10]: ShinyTracker
+        - generic [ref=e11]: Pro
+    - generic [ref=e12]:
+      - generic [ref=e13]: Workspace
+      - navigation [ref=e14]:
+        - button "Dashboard 1" [ref=e78] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e21]: Dashboard
+          - generic [ref=e79]: "1"
+        - button "Historic Hunts" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: Historic Hunts
+        - button "Living Dex" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: Living Dex
+        - button "Games" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Games
+        - button "Stats" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: Stats
+      - generic [ref=e41]: Tools
+      - navigation [ref=e42]:
+        - button "Odds Calculator" [ref=e43] [cursor=pointer]:
+          - img [ref=e44]
+          - generic [ref=e47]: Odds Calculator
+        - button "Method Library" [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+          - generic [ref=e52]: Method Library
+    - generic [ref=e53]:
+      - generic [ref=e54]: S
+      - generic [ref=e55]:
+        - generic [ref=e56]: Trainer
+        - generic [ref=e57]: Shiny hunter
+      - button "Log out" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]: Workspace
+        - generic [ref=e66]: /
+        - generic [ref=e67]: Dashboard
+      - generic [ref=e68]:
+        - img [ref=e69]
+        - textbox "Search hunts, Pokémon…" [ref=e72]
+        - generic [ref=e73]: ⌘K
+      - button "New Hunt" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+        - text: New Hunt
+    - generic [ref=e77]:
+      - generic [ref=e80]:
+        - generic [ref=e81]:
+          - generic [ref=e82]: Workspace · Saturday, May 9
+          - heading "Dashboard" [level=1] [ref=e83]
+          - generic [ref=e84]: 1 active · 3 encounters · 0m hunted
+        - generic [ref=e85]:
+          - button "Filter" [ref=e86] [cursor=pointer]
+          - button "New hunt" [ref=e87] [cursor=pointer]:
+            - img [ref=e88]
+            - text: New hunt
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - generic [ref=e93]:
+            - img [ref=e94]
+            - text: Active Hunt · Pinned
+          - generic [ref=e97]:
+            - generic [ref=e98]: wooloo
+            - generic [ref=e99]:
+              - generic [ref=e100]: Manual
+              - generic [ref=e101]: "Hunt #ce84 · since 09/05/2026"
+          - generic [ref=e102]:
+            - generic [ref=e103]: "3"
+            - generic [ref=e104]: encounters
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e108]: 00:23
+                - button "Resume" [active] [ref=e147] [cursor=pointer]:
+                  - img [ref=e148]
+              - generic [ref=e113]:
+                - generic [ref=e114]: session · paused
+                - button "reset" [ref=e150] [cursor=pointer]
+          - generic [ref=e118]: 0.1% cumulative · 0m hunted
+          - generic [ref=e119]:
+            - button "+1 encounter SPACE" [ref=e120] [cursor=pointer]:
+              - img [ref=e121]
+              - text: +1 encounter
+              - generic [ref=e123]: SPACE
+            - button "Log phase" [ref=e124] [cursor=pointer]:
+              - img [ref=e125]
+              - text: Log phase
+            - button "Found it!" [ref=e127] [cursor=pointer]:
+              - img [ref=e128]
+              - text: Found it!
+        - generic [ref=e131]:
+          - generic:
+            - generic:
+              - img
+            - generic:
+              - img
+            - generic:
+              - img
+            - generic:
+              - img
+          - img "wooloo" [ref=e132]
+      - generic [ref=e134]:
+        - generic [ref=e135]:
+          - generic [ref=e136]: Active Hunts
+          - generic [ref=e137]: "1"
+        - generic [ref=e138]:
+          - generic [ref=e139]: Total Encounters
+          - generic [ref=e140]: "3"
+        - generic [ref=e141]:
+          - generic [ref=e142]: Total Hunted
+          - generic [ref=e143]: 0m
+        - generic [ref=e144]:
+          - generic [ref=e145]: Avg per Hunt
+          - generic [ref=e146]: "3"

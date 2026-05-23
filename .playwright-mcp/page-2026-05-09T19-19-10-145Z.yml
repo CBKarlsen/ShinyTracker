@@ -1,0 +1,20 @@
+- generic [ref=e2757]:
+  - generic [ref=e2758]:
+    - img [ref=e2762]
+    - generic [ref=e2764]:
+      - generic [ref=e2765]: ShinyTracker
+      - generic [ref=e2766]: Shiny Pokémon Tracker
+  - generic [ref=e2767]:
+    - button "Sign in" [ref=e2768] [cursor=pointer]
+    - button "Register" [ref=e2769] [cursor=pointer]
+  - generic [ref=e2770]:
+    - generic [ref=e2771]:
+      - generic [ref=e2772]: Email
+      - textbox "you@example.com" [ref=e2773]
+    - generic [ref=e2774]:
+      - generic [ref=e2775]: Password
+      - textbox "••••••••" [ref=e2776]
+    - button "Sign in →" [ref=e2777] [cursor=pointer]:
+      - text: Sign in
+      - generic [ref=e2778]: →
+  - generic [ref=e2779]: Track your shiny journey

@@ -42,12 +42,14 @@ type HuntMethod struct {
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
+	FormulaType    string `json:"formula_type"`
 }
 
 type UserHunt struct {
 	ID              string          `json:"id"`
 	UserID          string          `json:"user_id"`
 	PokemonID       int             `json:"pokemon_id"`
+	GameID          *int            `json:"game_id"`
 	HuntMethodID    *int            `json:"hunt_method_id"`
 	EncounterCount  int             `json:"encounter_count"`
 	PhaseCount      int             `json:"phase_count"`
@@ -74,12 +76,13 @@ type UserHuntDetail struct {
 	MethodName         *string     `json:"method_name"`
 	CustomMethodName   *string     `json:"custom_method_name"`
 	GameTitle          *string     `json:"game_title"`
-	TotalTimeSeconds int         `json:"total_time_seconds"`
-	BaseRolls        *int        `json:"base_rolls"`
-	CharmRolls       *int        `json:"charm_rolls"`
-	AvgTimeSeconds   *int        `json:"avg_time_seconds"`
-	BaseOdds         *int        `json:"base_odds"`
-	HasShinyCharm    *bool       `json:"has_shiny_charm"`
-	PhaseCount       int         `json:"phase_count"`
-	Phases           []HuntPhase `json:"phases"`
+	TotalTimeSeconds   int         `json:"total_time_seconds"`
+	BaseRolls          *int        `json:"base_rolls"`
+	CharmRolls         *int        `json:"charm_rolls"`
+	AvgTimeSeconds     *int        `json:"avg_time_seconds"`
+	BaseOdds           *int        `json:"base_odds"`
+	HasShinyCharm      *bool       `json:"has_shiny_charm"`
+	FormulaType        *string     `json:"formula_type"`
+	PhaseCount         int         `json:"phase_count"`
+	Phases             []HuntPhase `json:"phases"`
 }

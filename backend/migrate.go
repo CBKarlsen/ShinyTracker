@@ -49,14 +49,21 @@ func main() {
 		`INSERT INTO pokemon_availability (pokemon_id, game_id)
 		 SELECT DISTINCT pokemon_id, game_id FROM hunt_methods
 		 ON CONFLICT DO NOTHING`,
+
+		// Add formula_type column to hunt_methods table
+		`ALTER TABLE hunt_methods ADD COLUMN IF NOT EXISTS formula_type TEXT NOT NULL DEFAULT 'static'`,
+
+		// Add can_breed column to pokemon table
+		`ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS can_breed BOOLEAN NOT NULL DEFAULT TRUE`,
 	}
 
 	for i, q := range queries {
 		_, err := pool.Exec(context.Background(), q)
 		if err != nil {
-			log.Fatalf("Error executing query %d: %v\nQuery: %s", i, err, q)
+			log.Printf("Warning: Error executing query %d: %v\nQuery: %s", i, err, q)
+		} else {
+			fmt.Printf("Successfully executed query %d\n", i)
 		}
-		fmt.Printf("Successfully executed query %d\n", i)
 	}
 	fmt.Println("Migration complete!")
 }

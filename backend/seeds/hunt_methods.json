@@ -1,0 +1,65 @@
+[
+  {
+    "generation": 9,
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "is_recommended": false
+  },
+  {
+    "generation": 9,
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "is_recommended": true
+  },
+  {
+    "generation": 4,
+    "method_name": "Poké Radar",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "radar_chain_gen4",
+    "is_recommended": true
+  },
+  {
+    "generation": 4,
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "is_recommended": false
+  },
+  {
+    "generation": 9,
+    "method_name": "Paldea Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "is_recommended": true
+  },
+  {
+    "generation": 9,
+    "method_name": "Kitakami Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "is_recommended": true
+  },
+  {
+    "generation": 9,
+    "method_name": "Terarium Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "is_recommended": true
+  }
+]

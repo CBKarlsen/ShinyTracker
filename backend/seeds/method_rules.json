@@ -1,0 +1,37 @@
+[
+  {
+    "generation": 9,
+    "method_name": "Random Encounter",
+    "condition": "always_true"
+  },
+  {
+    "generation": 9,
+    "method_name": "Masuda Method",
+    "condition": "is_breedable"
+  },
+  {
+    "generation": 4,
+    "method_name": "Random Encounter",
+    "condition": "always_true"
+  },
+  {
+    "generation": 4,
+    "method_name": "Poké Radar",
+    "condition": "always_true"
+  },
+  {
+    "generation": 9,
+    "method_name": "Paldea Mass Outbreak",
+    "condition": "always_false"
+  },
+  {
+    "generation": 9,
+    "method_name": "Kitakami Mass Outbreak",
+    "condition": "always_false"
+  },
+  {
+    "generation": 9,
+    "method_name": "Terarium Mass Outbreak",
+    "condition": "always_false"
+  }
+]

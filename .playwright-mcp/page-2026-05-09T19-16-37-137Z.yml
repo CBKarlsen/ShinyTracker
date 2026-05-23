@@ -1,0 +1,188 @@
+- generic [ref=e35]:
+  - complementary [ref=e36]:
+    - generic [ref=e37]:
+      - img [ref=e39]
+      - generic [ref=e41]:
+        - generic [ref=e42]: ShinyTracker
+        - generic [ref=e43]: Pro
+    - generic [ref=e44]:
+      - generic [ref=e45]: Workspace
+      - navigation [ref=e46]:
+        - button "Dashboard" [ref=e47] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e53]: Dashboard
+        - button "Historic Hunts" [ref=e54] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e58]: Historic Hunts
+        - button "Living Dex" [ref=e59] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e63]: Living Dex
+        - button "Games" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: Games
+        - button "Stats" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e72]: Stats
+      - generic [ref=e73]: Tools
+      - navigation [ref=e74]:
+        - button "Odds Calculator" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: Odds Calculator
+        - button "Method Library" [ref=e80] [cursor=pointer]:
+          - img [ref=e81]
+          - generic [ref=e84]: Method Library
+    - generic [ref=e85]:
+      - generic [ref=e86]: S
+      - generic [ref=e87]:
+        - generic [ref=e88]: Trainer
+        - generic [ref=e89]: Shiny hunter
+      - button "Log out" [ref=e90] [cursor=pointer]:
+        - img [ref=e91]
+  - generic [ref=e94]:
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - generic [ref=e97]: Workspace
+        - generic [ref=e98]: /
+        - generic [ref=e99]: Game Library
+      - generic [ref=e100]:
+        - img [ref=e101]
+        - textbox "Search hunts, Pokémon…" [ref=e104]
+        - generic [ref=e105]: ⌘K
+      - button "New Hunt" [ref=e106] [cursor=pointer]:
+        - img [ref=e107]
+        - text: New Hunt
+    - generic [ref=e356]:
+      - generic [ref=e358]:
+        - generic [ref=e359]: Workspace · Library
+        - heading "Game Library" [level=1] [ref=e360]
+        - generic [ref=e361]: 1 games owned · 1 shiny charms collected
+      - generic [ref=e362]:
+        - generic [ref=e363]:
+          - generic [ref=e364]: Games Owned
+          - generic [ref=e365]:
+            - text: "1"
+            - generic [ref=e366]: / 17
+        - generic [ref=e367]:
+          - generic [ref=e368]: Shiny Charms
+          - generic [ref=e369]: "1"
+        - generic [ref=e370]:
+          - generic [ref=e371]: Charm-Eligible
+          - generic [ref=e372]:
+            - text: "1"
+            - generic [ref=e373]: / 10
+        - generic [ref=e374]:
+          - generic [ref=e375]: Generations
+          - generic [ref=e376]: 1/ 9
+      - generic [ref=e377]:
+        - generic [ref=e378]:
+          - generic [ref=e379]: Generation I
+          - generic [ref=e381]: 0 / 1
+        - generic [ref=e383] [cursor=pointer]:
+          - generic [ref=e384]: Red/Blue/Yellow
+          - generic [ref=e385]: Gen I · Click to add
+      - generic [ref=e386]:
+        - generic [ref=e387]:
+          - generic [ref=e388]: Generation II
+          - generic [ref=e390]: 0 / 1
+        - generic [ref=e392] [cursor=pointer]:
+          - generic [ref=e393]: Gold/Silver/Crystal
+          - generic [ref=e394]: Gen II · Click to add
+      - generic [ref=e395]:
+        - generic [ref=e396]:
+          - generic [ref=e397]: Generation III
+          - generic [ref=e399]: 0 / 2
+        - generic [ref=e400]:
+          - generic [ref=e401] [cursor=pointer]:
+            - generic [ref=e402]: Ruby/Sapphire/Emerald
+            - generic [ref=e403]: Gen III · Click to add
+          - generic [ref=e404] [cursor=pointer]:
+            - generic [ref=e405]: FireRed/LeafGreen
+            - generic [ref=e406]: Gen III · Click to add
+      - generic [ref=e407]:
+        - generic [ref=e408]:
+          - generic [ref=e409]: Generation IV
+          - generic [ref=e411]: 0 / 2
+        - generic [ref=e412]:
+          - generic [ref=e413] [cursor=pointer]:
+            - generic [ref=e414]: Diamond/Pearl/Platinum
+            - generic [ref=e415]: Gen IV · Click to add
+          - generic [ref=e416] [cursor=pointer]:
+            - generic [ref=e417]: HeartGold/SoulSilver
+            - generic [ref=e418]: Gen IV · Click to add
+      - generic [ref=e419]:
+        - generic [ref=e420]:
+          - generic [ref=e421]: Generation V
+          - generic [ref=e423]: 0 / 2
+        - generic [ref=e424]:
+          - generic [ref=e425] [cursor=pointer]:
+            - generic [ref=e426]: Black/White
+            - generic [ref=e427]: Gen V · Click to add
+          - generic [ref=e428] [cursor=pointer]:
+            - generic [ref=e429]: Black 2/White 2
+            - generic [ref=e430]: Gen V · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e431]:
+        - generic [ref=e432]:
+          - generic [ref=e433]: Generation VI
+          - generic [ref=e435]: 0 / 2
+        - generic [ref=e436]:
+          - generic [ref=e437] [cursor=pointer]:
+            - generic [ref=e438]: X/Y
+            - generic [ref=e439]: Gen VI · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e440] [cursor=pointer]:
+            - generic [ref=e441]: Omega Ruby/Alpha Sapphire
+            - generic [ref=e442]: Gen VI · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e443]:
+        - generic [ref=e444]:
+          - generic [ref=e445]: Generation VII
+          - generic [ref=e447]: 0 / 3
+        - generic [ref=e448]:
+          - generic [ref=e449] [cursor=pointer]:
+            - generic [ref=e450]: Sun/Moon
+            - generic [ref=e451]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e452] [cursor=pointer]:
+            - generic [ref=e453]: Ultra Sun/Ultra Moon
+            - generic [ref=e454]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e455] [cursor=pointer]:
+            - generic [ref=e456]: Let's Go Pikachu/Eevee
+            - generic [ref=e457]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e458]:
+        - generic [ref=e459]:
+          - generic [ref=e460]: Generation VIII
+          - generic [ref=e462]: 1 / 3
+        - generic [ref=e463]:
+          - generic [ref=e464] [cursor=pointer]:
+            - generic [ref=e465]: Sword/Shield
+            - generic [ref=e466]: Gen VIII · Owned
+            - button "Remove Shiny Charm" [active] [ref=e485]:
+              - img [ref=e483]
+          - generic [ref=e467] [cursor=pointer]:
+            - generic [ref=e468]: Brilliant Diamond/Shining Pearl
+            - generic [ref=e469]: Gen VIII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e470] [cursor=pointer]:
+            - generic [ref=e471]: "Legends: Arceus"
+            - generic [ref=e472]: Gen VIII · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e473]:
+        - generic [ref=e474]:
+          - generic [ref=e475]: Generation IX
+          - generic [ref=e477]: 0 / 1
+        - generic [ref=e479] [cursor=pointer]:
+          - generic [ref=e480]: Scarlet/Violet
+          - generic [ref=e481]: Gen IX · Click to add
+          - button "Add Shiny Charm":
+            - img

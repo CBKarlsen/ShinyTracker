@@ -1,0 +1,68 @@
+- generic [ref=e27]:
+  - complementary [ref=e28]:
+    - generic [ref=e29]:
+      - img [ref=e31]
+      - generic [ref=e33]:
+        - generic [ref=e34]: ShinyTracker
+        - generic [ref=e35]: Pro
+    - generic [ref=e36]:
+      - generic [ref=e37]: Workspace
+      - navigation [ref=e38]:
+        - button "Dashboard" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+          - generic [ref=e45]: Dashboard
+        - button "Historic Hunts" [ref=e46] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e50]: Historic Hunts
+        - button "Living Dex" [ref=e51] [cursor=pointer]:
+          - img [ref=e52]
+          - generic [ref=e55]: Living Dex
+        - button "Games" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+          - generic [ref=e60]: Games
+        - button "Stats" [ref=e61] [cursor=pointer]:
+          - img [ref=e62]
+          - generic [ref=e64]: Stats
+      - generic [ref=e65]: Tools
+      - navigation [ref=e66]:
+        - button "Odds Calculator" [ref=e67] [cursor=pointer]:
+          - img [ref=e68]
+          - generic [ref=e71]: Odds Calculator
+        - button "Method Library" [ref=e72] [cursor=pointer]:
+          - img [ref=e73]
+          - generic [ref=e76]: Method Library
+    - generic [ref=e77]:
+      - generic [ref=e78]: S
+      - generic [ref=e79]:
+        - generic [ref=e80]: Trainer
+        - generic [ref=e81]: Shiny hunter
+      - button "Log out" [ref=e82] [cursor=pointer]:
+        - img [ref=e83]
+  - generic [ref=e86]:
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]: Workspace
+        - generic [ref=e90]: /
+        - generic [ref=e91]: Dashboard
+      - generic [ref=e92]:
+        - img [ref=e93]
+        - textbox "Search hunts, Pokémon…" [ref=e96]
+        - generic [ref=e97]: ⌘K
+      - button "New Hunt" [ref=e98] [cursor=pointer]:
+        - img [ref=e99]
+        - text: New Hunt
+    - generic [ref=e101]:
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - generic [ref=e104]: Workspace · Dashboard
+          - heading "No active hunts" [level=1] [ref=e105]
+        - button "Start hunting" [ref=e107] [cursor=pointer]:
+          - img [ref=e108]
+          - text: Start hunting
+      - generic [ref=e110]:
+        - img [ref=e112]
+        - generic [ref=e114]: Start your first hunt
+        - generic [ref=e115]: Pick a Pokémon, choose a method, and we'll track odds, encounters and ETA. Hit SPACE to count.
+        - button "New hunt" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+          - text: New hunt

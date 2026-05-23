@@ -1,0 +1,136 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]:
+        - generic [ref=e10]: ShinyTracker
+        - generic [ref=e11]: Pro
+    - generic [ref=e12]:
+      - generic [ref=e13]: Workspace
+      - navigation [ref=e14]:
+        - button "Dashboard" [ref=e155] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e21]: Dashboard
+        - button "Historic Hunts" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: Historic Hunts
+        - button "Living Dex" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: Living Dex
+        - button "Games" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Games
+        - button "Stats" [active] [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: Stats
+      - generic [ref=e41]: Tools
+      - navigation [ref=e42]:
+        - button "Odds Calculator" [ref=e43] [cursor=pointer]:
+          - img [ref=e44]
+          - generic [ref=e47]: Odds Calculator
+        - button "Method Library" [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+          - generic [ref=e52]: Method Library
+    - generic [ref=e53]:
+      - generic [ref=e54]: S
+      - generic [ref=e55]:
+        - generic [ref=e56]: Trainer
+        - generic [ref=e57]: Shiny hunter
+      - button "Log out" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]: Workspace
+        - generic [ref=e66]: /
+        - generic [ref=e67]: Stats
+      - generic [ref=e68]:
+        - img [ref=e69]
+        - textbox "Search hunts, Pokémon…" [ref=e72]
+        - generic [ref=e73]: ⌘K
+      - button "New Hunt" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+        - text: New Hunt
+    - generic [ref=e2346]:
+      - generic [ref=e2348]:
+        - generic [ref=e2349]: Workspace · Analytics
+        - heading "Stats & Records" [level=1] [ref=e2350]
+        - generic [ref=e2351]: Lifetime performance
+      - generic [ref=e2352]:
+        - generic [ref=e2353]:
+          - generic [ref=e2354]: Total Shinies
+          - generic [ref=e2355]: "1"
+        - generic [ref=e2356]:
+          - generic [ref=e2357]: Total Encounters
+          - generic [ref=e2358]: "3"
+        - generic [ref=e2359]:
+          - generic [ref=e2360]: Hunt Hours
+          - generic [ref=e2361]: 0h
+        - generic [ref=e2362]:
+          - generic [ref=e2363]: Avg per Shiny
+          - generic [ref=e2364]: "3"
+      - generic [ref=e2365]:
+        - generic [ref=e2366]:
+          - generic [ref=e2367]:
+            - heading "Encounters · last 30 days" [level=3] [ref=e2368]
+            - generic [ref=e2369]: peak 3
+          - generic [ref=e2370]:
+            - generic "0 encounters" [ref=e2371]
+            - generic "0 encounters" [ref=e2372]
+            - generic "0 encounters" [ref=e2373]
+            - generic "0 encounters" [ref=e2374]
+            - generic "0 encounters" [ref=e2375]
+            - generic "0 encounters" [ref=e2376]
+            - generic "0 encounters" [ref=e2377]
+            - generic "0 encounters" [ref=e2378]
+            - generic "0 encounters" [ref=e2379]
+            - generic "0 encounters" [ref=e2380]
+            - generic "0 encounters" [ref=e2381]
+            - generic "0 encounters" [ref=e2382]
+            - generic "0 encounters" [ref=e2383]
+            - generic "0 encounters" [ref=e2384]
+            - generic "0 encounters" [ref=e2385]
+            - generic "0 encounters" [ref=e2386]
+            - generic "0 encounters" [ref=e2387]
+            - generic "0 encounters" [ref=e2388]
+            - generic "0 encounters" [ref=e2389]
+            - generic "0 encounters" [ref=e2390]
+            - generic "0 encounters" [ref=e2391]
+            - generic "0 encounters" [ref=e2392]
+            - generic "0 encounters" [ref=e2393]
+            - generic "0 encounters" [ref=e2394]
+            - generic "0 encounters" [ref=e2395]
+            - generic "0 encounters" [ref=e2396]
+            - generic "0 encounters" [ref=e2397]
+            - generic "0 encounters" [ref=e2398]
+            - generic "0 encounters" [ref=e2399]
+            - generic "3 encounters" [ref=e2400]
+          - generic [ref=e2401]:
+            - generic [ref=e2402]: 30 days ago
+            - generic [ref=e2403]: today
+        - generic [ref=e2404]:
+          - heading "Method Breakdown" [level=3] [ref=e2405]
+          - generic [ref=e2406]:
+            - generic [ref=e2407]: Unknown
+            - generic [ref=e2410]: "1"
+      - generic [ref=e2411]:
+        - heading "Records" [level=3] [ref=e2413]
+        - generic [ref=e2414]:
+          - generic [ref=e2415]:
+            - img "wooloo" [ref=e2416]
+            - generic [ref=e2417]:
+              - generic [ref=e2418]: Most encounters
+              - generic [ref=e2419]: wooloo
+            - generic [ref=e2420]: "3"
+          - generic [ref=e2421]:
+            - img "wooloo" [ref=e2422]
+            - generic [ref=e2423]:
+              - generic [ref=e2424]: Luckiest catch
+              - generic [ref=e2425]: wooloo
+            - generic [ref=e2426]: 3 enc
+          - generic [ref=e2427]:
+            - img [ref=e2429]
+            - generic [ref=e2431]:
+              - generic [ref=e2432]: Total time hunted
+              - generic [ref=e2433]: All hunts
+            - generic [ref=e2434]: 0m

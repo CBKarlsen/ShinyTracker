@@ -1,0 +1,1 @@
+ALTER TABLE user_hunts ADD COLUMN IF NOT EXISTS total_time_seconds INT NOT NULL DEFAULT 0;

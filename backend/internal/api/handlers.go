@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 
 	"github.com/casper/shinytracker/internal/calc"
@@ -255,6 +254,7 @@ type HuntMethodDetail struct {
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
 	IsRecommended  bool   `json:"is_recommended"`
+	FormulaType    string `json:"formula_type"`
 }
 
 type MethodDetail struct {
@@ -266,6 +266,7 @@ type MethodDetail struct {
 	CharmRolls     int    `json:"charm_rolls"`
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
 	IsRecommended  bool   `json:"is_recommended"`
+	FormulaType    string `json:"formula_type"`
 }
 
 type OddsResponse struct {
@@ -288,15 +289,16 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := database.DB.Query(context.Background(), `
-		SELECT DISTINCT ON (e.game_id, e.method_name)
-			e.id, e.game_id, g.title, e.method_name,
-			e.base_rolls, e.charm_rolls, e.avg_time_seconds, e.is_recommended
-		FROM hunt_methods e
-		JOIN games g ON e.game_id = g.id
-		WHERE ($1 = 0 OR e.game_id = $1)
-		ORDER BY e.game_id ASC, e.method_name ASC
+		SELECT DISTINCT ON (g.id, hm.method_name)
+			hm.id, g.id as game_id, g.title, hm.method_name,
+			hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.is_recommended, hm.formula_type
+		FROM hunt_methods hm
+		JOIN games g ON g.generation = hm.generation
+		WHERE ($1 = 0 OR g.id = $1)
+		ORDER BY g.id ASC, hm.method_name ASC
 	`, gameID)
 	if err != nil {
+		fmt.Println("GetMethodsHandler error:", err)
 		http.Error(w, "Failed to fetch methods", http.StatusInternalServerError)
 		return
 	}
@@ -306,7 +308,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var m MethodDetail
 		if err := rows.Scan(&m.ID, &m.GameID, &m.GameTitle, &m.MethodName,
-			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.IsRecommended); err == nil {
+			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.IsRecommended, &m.FormulaType); err == nil {
 			methods = append(methods, m)
 		}
 	}
@@ -387,78 +389,33 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Step 1: hunt methods filtered to games the user owns
-	wildRows, err := database.DB.Query(context.Background(), `
-		SELECT e.id, e.pokemon_id, e.game_id, g.title, e.method_name, e.avg_time_seconds, e.base_rolls, e.charm_rolls, e.is_recommended
-		FROM hunt_methods e
-		JOIN games g ON e.game_id = g.id
+	// Fetch methods from our new rules-based availability table
+	rows, err := database.DB.Query(context.Background(), `
+		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name, hm.avg_time_seconds, hm.base_rolls, hm.charm_rolls, hm.is_recommended, hm.formula_type
+		FROM method_availability ma
+		JOIN hunt_methods hm ON ma.method_id = hm.id
+		JOIN games g ON g.generation = hm.generation
 		JOIN user_games ug ON g.id = ug.game_id
-		WHERE e.pokemon_id = $1 AND ug.user_id = $2
+		WHERE ma.pokemon_id = $1 AND ug.user_id = $2
 		ORDER BY g.generation ASC, g.id ASC
 	`, pokemonID, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch hunt methods", http.StatusInternalServerError)
 		return
 	}
-	defer wildRows.Close()
+	defer rows.Close()
 
-	seen := make(map[string]bool)
 	var methods []HuntMethodDetail
-
-	for wildRows.Next() {
+	for rows.Next() {
 		var m HuntMethodDetail
-		if err := wildRows.Scan(
+		if err := rows.Scan(
 			&m.ID, &m.PokemonID, &m.GameID, &m.GameTitle,
-			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.IsRecommended,
+			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.IsRecommended, &m.FormulaType,
 		); err != nil {
 			continue
 		}
-		seen[fmt.Sprintf("%d:%s", m.GameID, m.MethodName)] = true
 		methods = append(methods, m)
 	}
-	wildRows.Close()
-
-	// Step 2: games where this Pokémon is available and breeding is supported
-	breedRows, err := database.DB.Query(context.Background(), `
-		SELECT g.id, g.title
-		FROM pokemon_availability pa
-		JOIN games g ON pa.game_id = g.id
-		JOIN user_games ug ON g.id = ug.game_id
-		WHERE pa.pokemon_id = $1 AND ug.user_id = $2 AND g.supports_breeding = TRUE
-	`, pokemonID, userID)
-	if err != nil {
-		http.Error(w, "Failed to fetch availability", http.StatusInternalServerError)
-		return
-	}
-	defer breedRows.Close()
-
-	// Step 3: inject a synthetic Masuda entry for each eligible game not already present
-	for breedRows.Next() {
-		var gameID int
-		var gameTitle string
-		if err := breedRows.Scan(&gameID, &gameTitle); err != nil {
-			continue
-		}
-		key := fmt.Sprintf("%d:masuda-method", gameID)
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-		methods = append(methods, HuntMethodDetail{
-			PokemonID:      pokemonID,
-			GameID:         gameID,
-			GameTitle:      gameTitle,
-			MethodName:     "masuda-method",
-			AvgTimeSeconds: 45,
-			BaseRolls:      6,
-			CharmRolls:     2,
-		})
-	}
-
-	// Step 4: sort combined slice by game_id
-	sort.Slice(methods, func(i, j int) bool {
-		return methods[i].GameID < methods[j].GameID
-	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(methods)

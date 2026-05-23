@@ -1,0 +1,24 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - img [ref=e9]
+    - generic [ref=e11]:
+      - generic [ref=e12]: ShinyTracker
+      - generic [ref=e13]: Shiny Pokémon Tracker
+  - generic [ref=e14]:
+    - button "Sign in" [ref=e15] [cursor=pointer]
+    - button "Register" [ref=e16] [cursor=pointer]
+  - generic [ref=e32]: Invalid credentials or email already taken.
+  - generic [ref=e17]:
+    - generic [ref=e28]:
+      - generic [ref=e29]: Username
+      - textbox "trainer_name" [ref=e30]: testuser
+    - generic [ref=e18]:
+      - generic [ref=e19]: Email
+      - textbox "you@example.com" [ref=e20]: casperbkarlsen@gmail.com
+    - generic [ref=e21]:
+      - generic [ref=e22]: Password
+      - textbox "••••••••" [ref=e23]: password123
+    - button "Create account →" [active] [ref=e31] [cursor=pointer]:
+      - text: Create account
+      - generic [ref=e25]: →
+  - generic [ref=e26]: By registering you accept the ToS.
