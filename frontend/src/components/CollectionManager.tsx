@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 
 interface Game {
 	id: number;
@@ -45,6 +46,7 @@ function fmtNum(n: number) {
 
 const CollectionManager: React.FC = () => {
 	const { token, userId } = useAuth();
+	const { showError } = useNotification();
 	const [games, setGames] = useState<Game[]>([]);
 	const [userGames, setUserGames] = useState<UserGame[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -61,8 +63,11 @@ const CollectionManager: React.FC = () => {
 				if (gamesRes.ok && userGamesRes.ok) {
 					setGames(await gamesRes.json());
 					setUserGames((await userGamesRes.json()) || []);
+				} else {
+					showError("Failed to fetch game library information.");
 				}
-			} catch (err) {
+			} catch (err: any) {
+				showError(err.message || "Failed to fetch game library information.");
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -73,51 +78,97 @@ const CollectionManager: React.FC = () => {
 
 	const handleOwnershipToggle = async (gameId: number, isOwned: boolean) => {
 		if (isOwned) {
+			const confirm = window.confirm(
+				"Are you sure you want to remove this game from your library? Any active hunts using this game will lose their method data.",
+			);
+			if (!confirm) return;
 			setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
 			try {
-				await fetch(`http://localhost:8080/api/user/${userId}/games/${gameId}`, {
-					method: "DELETE",
-					headers: { Authorization: `Bearer ${token}` },
-				});
-			} catch {
-				setUserGames((prev) => [...prev, { game_id: gameId, has_shiny_charm: false }]);
+				const res = await fetch(
+					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+					{
+						method: "DELETE",
+						headers: { Authorization: `Bearer ${token}` },
+					},
+				);
+				if (!res.ok) throw new Error("Could not remove game ownership.");
+			} catch (err: any) {
+				setUserGames((prev) => [
+					...prev,
+					{ game_id: gameId, has_shiny_charm: false },
+				]);
+				showError(err.message || "Failed to remove game.");
 			}
 		} else {
-			setUserGames((prev) => [...prev, { game_id: gameId, has_shiny_charm: false }]);
+			setUserGames((prev) => [
+				...prev,
+				{ game_id: gameId, has_shiny_charm: false },
+			]);
 			try {
-				await fetch(`http://localhost:8080/api/user/${userId}/games/${gameId}`, {
-					method: "POST",
-					headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-					body: JSON.stringify({ has_shiny_charm: false }),
-				});
-			} catch {
+				const res = await fetch(
+					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+					{
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: `Bearer ${token}`,
+						},
+						body: JSON.stringify({ has_shiny_charm: false }),
+					},
+				);
+				if (!res.ok) throw new Error("Could not add game ownership.");
+			} catch (err: any) {
 				setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
+				showError(err.message || "Failed to add game.");
 			}
 		}
 	};
 
-	const handleCharmToggle = async (e: React.MouseEvent, gameId: number, currentCharm: boolean) => {
+	const handleCharmToggle = async (
+		e: React.MouseEvent,
+		gameId: number,
+		currentCharm: boolean,
+	) => {
 		e.stopPropagation();
 		const newCharm = !currentCharm;
 		setUserGames((prev) =>
-			prev.map((ug) => (ug.game_id === gameId ? { ...ug, has_shiny_charm: newCharm } : ug)),
+			prev.map((ug) =>
+				ug.game_id === gameId ? { ...ug, has_shiny_charm: newCharm } : ug,
+			),
 		);
 		try {
-			await fetch(`http://localhost:8080/api/user/${userId}/games/${gameId}`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-				body: JSON.stringify({ has_shiny_charm: newCharm }),
-			});
-		} catch {
-			setUserGames((prev) =>
-				prev.map((ug) => (ug.game_id === gameId ? { ...ug, has_shiny_charm: currentCharm } : ug)),
+			const res = await fetch(
+				`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({ has_shiny_charm: newCharm }),
+				},
 			);
+			if (!res.ok) throw new Error("Could not update Shiny Charm status.");
+		} catch (err: any) {
+			setUserGames((prev) =>
+				prev.map((ug) =>
+					ug.game_id === gameId ? { ...ug, has_shiny_charm: currentCharm } : ug,
+				),
+			);
+			showError(err.message || "Failed to toggle Shiny Charm.");
 		}
 	};
 
 	if (loading) {
 		return (
-			<div className="page" style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+			<div
+				className="page"
+				style={{
+					color: "var(--ink-3)",
+					fontFamily: "var(--font-mono)",
+					fontSize: 12,
+				}}
+			>
 				Loading games…
 			</div>
 		);
@@ -129,7 +180,9 @@ const CollectionManager: React.FC = () => {
 		(acc[g.generation] ??= []).push(g);
 		return acc;
 	}, {});
-	const generations = Object.keys(byGen).map(Number).sort((a, b) => a - b);
+	const generations = Object.keys(byGen)
+		.map(Number)
+		.sort((a, b) => a - b);
 
 	return (
 		<div className="page">
@@ -154,37 +207,56 @@ const CollectionManager: React.FC = () => {
 			<div className="stat-row" style={{ marginBottom: 20 }}>
 				<div className="stat-tile">
 					<div className="t-label">Games Owned</div>
-					<div className="v">{owned}<span className="unit">/ {games.length}</span></div>
+					<div className="v">
+						{owned}
+						<span className="unit">/ {games.length}</span>
+					</div>
 				</div>
 				<div className="stat-tile">
 					<div className="t-label">Shiny Charms</div>
-					<div className="v" style={{ color: "var(--gold)" }}>{fmtNum(charms)}</div>
+					<div className="v" style={{ color: "var(--gold)" }}>
+						{fmtNum(charms)}
+					</div>
 				</div>
 				<div className="stat-tile">
 					<div className="t-label">Charm-Eligible</div>
 					<div className="v">
-						{userGames.filter((ug) => {
-							const g = games.find((g) => g.id === ug.game_id);
-							return g && supportsShinyCharm(g);
-						}).length}
-						<span className="unit">/ {games.filter(supportsShinyCharm).length}</span>
+						{
+							userGames.filter((ug) => {
+								const g = games.find((g) => g.id === ug.game_id);
+								return g && supportsShinyCharm(g);
+							}).length
+						}
+						<span className="unit">
+							/ {games.filter(supportsShinyCharm).length}
+						</span>
 					</div>
 				</div>
 				<div className="stat-tile">
 					<div className="t-label">Generations</div>
 					<div className="v">
-						{generations.filter((gen) => byGen[gen].some((g) => userGames.some((ug) => ug.game_id === g.id))).length}
+						{
+							generations.filter((gen) =>
+								byGen[gen].some((g) =>
+									userGames.some((ug) => ug.game_id === g.id),
+								),
+							).length
+						}
 						<span className="unit">/ 9</span>
 					</div>
 				</div>
 			</div>
 
 			{generations.map((gen) => {
-				const genOwned = byGen[gen].filter((g) => userGames.some((ug) => ug.game_id === g.id)).length;
+				const genOwned = byGen[gen].filter((g) =>
+					userGames.some((ug) => ug.game_id === g.id),
+				).length;
 				return (
 					<div key={gen} style={{ marginBottom: 18 }}>
 						<div className="gen-head">
-							<span className="lbl">{GEN_NAMES[gen] ?? `Generation ${gen}`}</span>
+							<span className="lbl">
+								{GEN_NAMES[gen] ?? `Generation ${gen}`}
+							</span>
 							<span className="line" />
 							<span className="count">
 								<b>{genOwned}</b> / {byGen[gen].length}
@@ -205,13 +277,16 @@ const CollectionManager: React.FC = () => {
 									>
 										<div className="ttl">{g.title}</div>
 										<div className="gen">
-											Gen {ROMAN[g.generation]} · {isOwned ? "Owned" : "Click to add"}
+											Gen {ROMAN[g.generation]} ·{" "}
+											{isOwned ? "Owned" : "Click to add"}
 										</div>
 										{charmSupported && (
 											<button
 												className={`charm-toggle ${hasCharm ? "active" : ""} ${!isOwned ? "disabled" : ""}`}
 												onClick={(e) => handleCharmToggle(e, g.id, hasCharm)}
-												title={hasCharm ? "Remove Shiny Charm" : "Add Shiny Charm"}
+												title={
+													hasCharm ? "Remove Shiny Charm" : "Add Shiny Charm"
+												}
 											>
 												<SparkSm size={11} />
 											</button>

@@ -48,9 +48,9 @@ func NewRouter() *chi.Mux {
 
 			r.Group(func(r chi.Router) {
 				r.Use(AdminMiddleware)
+				// hunt_methods are global, derived availability — read-only view
+				// plus edit/delete of the global method by id. No create/import.
 				r.Get("/admin/hunt-methods", AdminGetHuntMethods)
-				r.Post("/admin/hunt-methods", AdminCreateHuntMethod)
-				r.Post("/admin/hunt-methods/import", AdminImportHuntMethods)
 				r.Put("/admin/hunt-methods/{id}", AdminUpdateHuntMethod)
 				r.Delete("/admin/hunt-methods/{id}", AdminDeleteHuntMethod)
 

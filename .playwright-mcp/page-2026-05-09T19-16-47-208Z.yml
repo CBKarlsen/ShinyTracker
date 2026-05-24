@@ -1,0 +1,398 @@
+- generic [ref=e35]:
+  - complementary [ref=e36]:
+    - generic [ref=e37]:
+      - img [ref=e39]
+      - generic [ref=e41]:
+        - generic [ref=e42]: ShinyTracker
+        - generic [ref=e43]: Pro
+    - generic [ref=e44]:
+      - generic [ref=e45]: Workspace
+      - navigation [ref=e46]:
+        - button "Dashboard" [ref=e47] [cursor=pointer]:
+          - img [ref=e48]
+          - generic [ref=e53]: Dashboard
+        - button "Historic Hunts" [ref=e54] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e58]: Historic Hunts
+        - button "Living Dex" [ref=e59] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e63]: Living Dex
+        - button "Games" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: Games
+        - button "Stats" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e72]: Stats
+      - generic [ref=e73]: Tools
+      - navigation [ref=e74]:
+        - button "Odds Calculator" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: Odds Calculator
+        - button "Method Library" [ref=e80] [cursor=pointer]:
+          - img [ref=e81]
+          - generic [ref=e84]: Method Library
+    - generic [ref=e85]:
+      - generic [ref=e86]: S
+      - generic [ref=e87]:
+        - generic [ref=e88]: Trainer
+        - generic [ref=e89]: Shiny hunter
+      - button "Log out" [ref=e90] [cursor=pointer]:
+        - img [ref=e91]
+  - generic [ref=e94]:
+    - generic [ref=e95]:
+      - generic [ref=e96]:
+        - generic [ref=e97]: Workspace
+        - generic [ref=e98]: /
+        - generic [ref=e99]: Game Library
+      - generic [ref=e100]:
+        - img [ref=e101]
+        - textbox "Search hunts, Pokémon…" [ref=e104]
+        - generic [ref=e105]: ⌘K
+      - button "New Hunt" [ref=e106] [cursor=pointer]:
+        - img [ref=e107]
+        - text: New Hunt
+    - generic [ref=e356]:
+      - generic [ref=e358]:
+        - generic [ref=e359]: Workspace · Library
+        - heading "Game Library" [level=1] [ref=e360]
+        - generic [ref=e361]: 1 games owned · 1 shiny charms collected
+      - generic [ref=e362]:
+        - generic [ref=e363]:
+          - generic [ref=e364]: Games Owned
+          - generic [ref=e365]:
+            - text: "1"
+            - generic [ref=e366]: / 17
+        - generic [ref=e367]:
+          - generic [ref=e368]: Shiny Charms
+          - generic [ref=e369]: "1"
+        - generic [ref=e370]:
+          - generic [ref=e371]: Charm-Eligible
+          - generic [ref=e372]:
+            - text: "1"
+            - generic [ref=e373]: / 10
+        - generic [ref=e374]:
+          - generic [ref=e375]: Generations
+          - generic [ref=e376]: 1/ 9
+      - generic [ref=e377]:
+        - generic [ref=e378]:
+          - generic [ref=e379]: Generation I
+          - generic [ref=e381]: 0 / 1
+        - generic [ref=e383] [cursor=pointer]:
+          - generic [ref=e384]: Red/Blue/Yellow
+          - generic [ref=e385]: Gen I · Click to add
+      - generic [ref=e386]:
+        - generic [ref=e387]:
+          - generic [ref=e388]: Generation II
+          - generic [ref=e390]: 0 / 1
+        - generic [ref=e392] [cursor=pointer]:
+          - generic [ref=e393]: Gold/Silver/Crystal
+          - generic [ref=e394]: Gen II · Click to add
+      - generic [ref=e395]:
+        - generic [ref=e396]:
+          - generic [ref=e397]: Generation III
+          - generic [ref=e399]: 0 / 2
+        - generic [ref=e400]:
+          - generic [ref=e401] [cursor=pointer]:
+            - generic [ref=e402]: Ruby/Sapphire/Emerald
+            - generic [ref=e403]: Gen III · Click to add
+          - generic [ref=e404] [cursor=pointer]:
+            - generic [ref=e405]: FireRed/LeafGreen
+            - generic [ref=e406]: Gen III · Click to add
+      - generic [ref=e407]:
+        - generic [ref=e408]:
+          - generic [ref=e409]: Generation IV
+          - generic [ref=e411]: 0 / 2
+        - generic [ref=e412]:
+          - generic [ref=e413] [cursor=pointer]:
+            - generic [ref=e414]: Diamond/Pearl/Platinum
+            - generic [ref=e415]: Gen IV · Click to add
+          - generic [ref=e416] [cursor=pointer]:
+            - generic [ref=e417]: HeartGold/SoulSilver
+            - generic [ref=e418]: Gen IV · Click to add
+      - generic [ref=e419]:
+        - generic [ref=e420]:
+          - generic [ref=e421]: Generation V
+          - generic [ref=e423]: 0 / 2
+        - generic [ref=e424]:
+          - generic [ref=e425] [cursor=pointer]:
+            - generic [ref=e426]: Black/White
+            - generic [ref=e427]: Gen V · Click to add
+          - generic [ref=e428] [cursor=pointer]:
+            - generic [ref=e429]: Black 2/White 2
+            - generic [ref=e430]: Gen V · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e431]:
+        - generic [ref=e432]:
+          - generic [ref=e433]: Generation VI
+          - generic [ref=e435]: 0 / 2
+        - generic [ref=e436]:
+          - generic [ref=e437] [cursor=pointer]:
+            - generic [ref=e438]: X/Y
+            - generic [ref=e439]: Gen VI · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e440] [cursor=pointer]:
+            - generic [ref=e441]: Omega Ruby/Alpha Sapphire
+            - generic [ref=e442]: Gen VI · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e443]:
+        - generic [ref=e444]:
+          - generic [ref=e445]: Generation VII
+          - generic [ref=e447]: 0 / 3
+        - generic [ref=e448]:
+          - generic [ref=e449] [cursor=pointer]:
+            - generic [ref=e450]: Sun/Moon
+            - generic [ref=e451]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e452] [cursor=pointer]:
+            - generic [ref=e453]: Ultra Sun/Ultra Moon
+            - generic [ref=e454]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e455] [cursor=pointer]:
+            - generic [ref=e456]: Let's Go Pikachu/Eevee
+            - generic [ref=e457]: Gen VII · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e458]:
+        - generic [ref=e459]:
+          - generic [ref=e460]: Generation VIII
+          - generic [ref=e462]: 1 / 3
+        - generic [ref=e463]:
+          - generic [ref=e464] [cursor=pointer]:
+            - generic [ref=e465]: Sword/Shield
+            - generic [ref=e466]: Gen VIII · Owned
+            - button "Remove Shiny Charm" [ref=e485]:
+              - img [ref=e483]
+          - generic [ref=e467] [cursor=pointer]:
+            - generic [ref=e468]: Brilliant Diamond/Shining Pearl
+            - generic [ref=e469]: Gen VIII · Click to add
+            - button "Add Shiny Charm":
+              - img
+          - generic [ref=e470] [cursor=pointer]:
+            - generic [ref=e471]: "Legends: Arceus"
+            - generic [ref=e472]: Gen VIII · Click to add
+            - button "Add Shiny Charm":
+              - img
+      - generic [ref=e473]:
+        - generic [ref=e474]:
+          - generic [ref=e475]: Generation IX
+          - generic [ref=e477]: 0 / 1
+        - generic [ref=e479] [cursor=pointer]:
+          - generic [ref=e480]: Scarlet/Violet
+          - generic [ref=e481]: Gen IX · Click to add
+          - button "Add Shiny Charm":
+            - img
+  - generic [ref=e487]:
+    - generic [ref=e488]:
+      - heading "Start a new hunt" [level=2] [ref=e489]
+      - button [ref=e494] [cursor=pointer]:
+        - img [ref=e495]
+    - generic [ref=e498]:
+      - generic [ref=e499]:
+        - generic [ref=e500]: 1 · Pokémon
+        - textbox "Search any Pokémon…" [active] [ref=e501]
+      - generic [ref=e502]:
+        - generic [ref=e503] [cursor=pointer]:
+          - img "bulbasaur" [ref=e504]
+          - generic [ref=e505]: bulbasaur
+          - generic [ref=e506]: "#0001"
+        - generic [ref=e507] [cursor=pointer]:
+          - img "ivysaur" [ref=e508]
+          - generic [ref=e509]: ivysaur
+          - generic [ref=e510]: "#0002"
+        - generic [ref=e511] [cursor=pointer]:
+          - img "venusaur" [ref=e512]
+          - generic [ref=e513]: venusaur
+          - generic [ref=e514]: "#0003"
+        - generic [ref=e515] [cursor=pointer]:
+          - img "charmander" [ref=e516]
+          - generic [ref=e517]: charmander
+          - generic [ref=e518]: "#0004"
+        - generic [ref=e519] [cursor=pointer]:
+          - img "charmeleon" [ref=e520]
+          - generic [ref=e521]: charmeleon
+          - generic [ref=e522]: "#0005"
+        - generic [ref=e523] [cursor=pointer]:
+          - img "charizard" [ref=e524]
+          - generic [ref=e525]: charizard
+          - generic [ref=e526]: "#0006"
+        - generic [ref=e527] [cursor=pointer]:
+          - img "squirtle" [ref=e528]
+          - generic [ref=e529]: squirtle
+          - generic [ref=e530]: "#0007"
+        - generic [ref=e531] [cursor=pointer]:
+          - img "wartortle" [ref=e532]
+          - generic [ref=e533]: wartortle
+          - generic [ref=e534]: "#0008"
+        - generic [ref=e535] [cursor=pointer]:
+          - img "blastoise" [ref=e536]
+          - generic [ref=e537]: blastoise
+          - generic [ref=e538]: "#0009"
+        - generic [ref=e539] [cursor=pointer]:
+          - img "caterpie" [ref=e540]
+          - generic [ref=e541]: caterpie
+          - generic [ref=e542]: "#0010"
+        - generic [ref=e543] [cursor=pointer]:
+          - img "metapod" [ref=e544]
+          - generic [ref=e545]: metapod
+          - generic [ref=e546]: "#0011"
+        - generic [ref=e547] [cursor=pointer]:
+          - img "butterfree" [ref=e548]
+          - generic [ref=e549]: butterfree
+          - generic [ref=e550]: "#0012"
+        - generic [ref=e551] [cursor=pointer]:
+          - img "weedle" [ref=e552]
+          - generic [ref=e553]: weedle
+          - generic [ref=e554]: "#0013"
+        - generic [ref=e555] [cursor=pointer]:
+          - img "kakuna" [ref=e556]
+          - generic [ref=e557]: kakuna
+          - generic [ref=e558]: "#0014"
+        - generic [ref=e559] [cursor=pointer]:
+          - img "beedrill" [ref=e560]
+          - generic [ref=e561]: beedrill
+          - generic [ref=e562]: "#0015"
+        - generic [ref=e563] [cursor=pointer]:
+          - img "pidgey" [ref=e564]
+          - generic [ref=e565]: pidgey
+          - generic [ref=e566]: "#0016"
+        - generic [ref=e567] [cursor=pointer]:
+          - img "pidgeotto" [ref=e568]
+          - generic [ref=e569]: pidgeotto
+          - generic [ref=e570]: "#0017"
+        - generic [ref=e571] [cursor=pointer]:
+          - img "pidgeot" [ref=e572]
+          - generic [ref=e573]: pidgeot
+          - generic [ref=e574]: "#0018"
+        - generic [ref=e575] [cursor=pointer]:
+          - img "rattata" [ref=e576]
+          - generic [ref=e577]: rattata
+          - generic [ref=e578]: "#0019"
+        - generic [ref=e579] [cursor=pointer]:
+          - img "raticate" [ref=e580]
+          - generic [ref=e581]: raticate
+          - generic [ref=e582]: "#0020"
+        - generic [ref=e583] [cursor=pointer]:
+          - img "spearow" [ref=e584]
+          - generic [ref=e585]: spearow
+          - generic [ref=e586]: "#0021"
+        - generic [ref=e587] [cursor=pointer]:
+          - img "fearow" [ref=e588]
+          - generic [ref=e589]: fearow
+          - generic [ref=e590]: "#0022"
+        - generic [ref=e591] [cursor=pointer]:
+          - img "ekans" [ref=e592]
+          - generic [ref=e593]: ekans
+          - generic [ref=e594]: "#0023"
+        - generic [ref=e595] [cursor=pointer]:
+          - img "arbok" [ref=e596]
+          - generic [ref=e597]: arbok
+          - generic [ref=e598]: "#0024"
+        - generic [ref=e599] [cursor=pointer]:
+          - img "pikachu" [ref=e600]
+          - generic [ref=e601]: pikachu
+          - generic [ref=e602]: "#0025"
+        - generic [ref=e603] [cursor=pointer]:
+          - img "raichu" [ref=e604]
+          - generic [ref=e605]: raichu
+          - generic [ref=e606]: "#0026"
+        - generic [ref=e607] [cursor=pointer]:
+          - img "sandshrew" [ref=e608]
+          - generic [ref=e609]: sandshrew
+          - generic [ref=e610]: "#0027"
+        - generic [ref=e611] [cursor=pointer]:
+          - img "sandslash" [ref=e612]
+          - generic [ref=e613]: sandslash
+          - generic [ref=e614]: "#0028"
+        - generic [ref=e615] [cursor=pointer]:
+          - img "nidoran-f" [ref=e616]
+          - generic [ref=e617]: nidoran-f
+          - generic [ref=e618]: "#0029"
+        - generic [ref=e619] [cursor=pointer]:
+          - img "nidorina" [ref=e620]
+          - generic [ref=e621]: nidorina
+          - generic [ref=e622]: "#0030"
+        - generic [ref=e623] [cursor=pointer]:
+          - img "nidoqueen" [ref=e624]
+          - generic [ref=e625]: nidoqueen
+          - generic [ref=e626]: "#0031"
+        - generic [ref=e627] [cursor=pointer]:
+          - img "nidoran-m" [ref=e628]
+          - generic [ref=e629]: nidoran-m
+          - generic [ref=e630]: "#0032"
+        - generic [ref=e631] [cursor=pointer]:
+          - img "nidorino" [ref=e632]
+          - generic [ref=e633]: nidorino
+          - generic [ref=e634]: "#0033"
+        - generic [ref=e635] [cursor=pointer]:
+          - img "nidoking" [ref=e636]
+          - generic [ref=e637]: nidoking
+          - generic [ref=e638]: "#0034"
+        - generic [ref=e639] [cursor=pointer]:
+          - img "clefairy" [ref=e640]
+          - generic [ref=e641]: clefairy
+          - generic [ref=e642]: "#0035"
+        - generic [ref=e643] [cursor=pointer]:
+          - img "clefable" [ref=e644]
+          - generic [ref=e645]: clefable
+          - generic [ref=e646]: "#0036"
+        - generic [ref=e647] [cursor=pointer]:
+          - img "vulpix" [ref=e648]
+          - generic [ref=e649]: vulpix
+          - generic [ref=e650]: "#0037"
+        - generic [ref=e651] [cursor=pointer]:
+          - img "ninetales" [ref=e652]
+          - generic [ref=e653]: ninetales
+          - generic [ref=e654]: "#0038"
+        - generic [ref=e655] [cursor=pointer]:
+          - img "jigglypuff" [ref=e656]
+          - generic [ref=e657]: jigglypuff
+          - generic [ref=e658]: "#0039"
+        - generic [ref=e659] [cursor=pointer]:
+          - img "wigglytuff" [ref=e660]
+          - generic [ref=e661]: wigglytuff
+          - generic [ref=e662]: "#0040"
+        - generic [ref=e663] [cursor=pointer]:
+          - img "zubat" [ref=e664]
+          - generic [ref=e665]: zubat
+          - generic [ref=e666]: "#0041"
+        - generic [ref=e667] [cursor=pointer]:
+          - img "golbat" [ref=e668]
+          - generic [ref=e669]: golbat
+          - generic [ref=e670]: "#0042"
+        - generic [ref=e671] [cursor=pointer]:
+          - img "oddish" [ref=e672]
+          - generic [ref=e673]: oddish
+          - generic [ref=e674]: "#0043"
+        - generic [ref=e675] [cursor=pointer]:
+          - img "gloom" [ref=e676]
+          - generic [ref=e677]: gloom
+          - generic [ref=e678]: "#0044"
+        - generic [ref=e679] [cursor=pointer]:
+          - img "vileplume" [ref=e680]
+          - generic [ref=e681]: vileplume
+          - generic [ref=e682]: "#0045"
+        - generic [ref=e683] [cursor=pointer]:
+          - img "paras" [ref=e684]
+          - generic [ref=e685]: paras
+          - generic [ref=e686]: "#0046"
+        - generic [ref=e687] [cursor=pointer]:
+          - img "parasect" [ref=e688]
+          - generic [ref=e689]: parasect
+          - generic [ref=e690]: "#0047"
+        - generic [ref=e691] [cursor=pointer]:
+          - img "venonat" [ref=e692]
+          - generic [ref=e693]: venonat
+          - generic [ref=e694]: "#0048"
+        - generic [ref=e695] [cursor=pointer]:
+          - img "venomoth" [ref=e696]
+          - generic [ref=e697]: venomoth
+          - generic [ref=e698]: "#0049"
+        - generic [ref=e699] [cursor=pointer]:
+          - img "diglett" [ref=e700]
+          - generic [ref=e701]: diglett
+          - generic [ref=e702]: "#0050"

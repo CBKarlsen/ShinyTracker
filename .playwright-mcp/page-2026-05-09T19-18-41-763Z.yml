@@ -1,0 +1,2190 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]:
+        - generic [ref=e10]: ShinyTracker
+        - generic [ref=e11]: Pro
+    - generic [ref=e12]:
+      - generic [ref=e13]: Workspace
+      - navigation [ref=e14]:
+        - button "Dashboard" [ref=e155] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e21]: Dashboard
+        - button "Historic Hunts" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: Historic Hunts
+        - button "Living Dex" [active] [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: Living Dex
+        - button "Games" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Games
+        - button "Stats" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: Stats
+      - generic [ref=e41]: Tools
+      - navigation [ref=e42]:
+        - button "Odds Calculator" [ref=e43] [cursor=pointer]:
+          - img [ref=e44]
+          - generic [ref=e47]: Odds Calculator
+        - button "Method Library" [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+          - generic [ref=e52]: Method Library
+    - generic [ref=e53]:
+      - generic [ref=e54]: S
+      - generic [ref=e55]:
+        - generic [ref=e56]: Trainer
+        - generic [ref=e57]: Shiny hunter
+      - button "Log out" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]: Workspace
+        - generic [ref=e66]: /
+        - generic [ref=e67]: Living Dex
+      - generic [ref=e68]:
+        - img [ref=e69]
+        - textbox "Search hunts, Pokémon…" [ref=e72]
+        - generic [ref=e73]: ⌘K
+      - button "New Hunt" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+        - text: New Hunt
+    - generic [ref=e197]:
+      - generic [ref=e198]:
+        - generic [ref=e199]:
+          - generic [ref=e200]: Workspace · Collection
+          - heading "Shiny Living Dex" [level=1] [ref=e201]
+          - generic [ref=e202]: 1 of 1025 shinies · 0.1% complete
+        - generic [ref=e204]:
+          - button "all" [ref=e205] [cursor=pointer]
+          - button "owned" [ref=e206] [cursor=pointer]
+          - button "missing" [ref=e207] [cursor=pointer]
+      - generic [ref=e208]:
+        - generic [ref=e209]:
+          - generic [ref=e210]: Completion progress
+          - generic [ref=e211]: 1 / 1025
+        - generic [ref=e214]:
+          - generic [ref=e215]:
+            - generic [ref=e216]: Gen I
+            - generic [ref=e217]: 0/151
+          - generic [ref=e218]:
+            - generic [ref=e219]: Gen II
+            - generic [ref=e220]: 0/100
+          - generic [ref=e221]:
+            - generic [ref=e222]: Gen III
+            - generic [ref=e223]: 0/135
+          - generic [ref=e224]:
+            - generic [ref=e225]: Gen IV
+            - generic [ref=e226]: 0/107
+          - generic [ref=e227]:
+            - generic [ref=e228]: Gen V
+            - generic [ref=e229]: 0/156
+          - generic [ref=e230]:
+            - generic [ref=e231]: Gen VI
+            - generic [ref=e232]: 0/72
+          - generic [ref=e233]:
+            - generic [ref=e234]: Gen VII
+            - generic [ref=e235]: 0/88
+          - generic [ref=e236]:
+            - generic [ref=e237]: Gen VIII
+            - generic [ref=e238]: 1/96
+          - generic [ref=e239]:
+            - generic [ref=e240]: Gen IX
+            - generic [ref=e241]: 0/120
+      - generic [ref=e242]:
+        - generic [ref=e243]:
+          - generic [ref=e244]: Generation I
+          - generic [ref=e246]: 0 / 151
+        - generic [ref=e247]:
+          - generic "bulbasaur" [ref=e248] [cursor=pointer]:
+            - img "bulbasaur" [ref=e249]
+          - generic "ivysaur" [ref=e250] [cursor=pointer]:
+            - img "ivysaur" [ref=e251]
+          - generic "venusaur" [ref=e252] [cursor=pointer]:
+            - img "venusaur" [ref=e253]
+          - generic "charmander" [ref=e254] [cursor=pointer]:
+            - img "charmander" [ref=e255]
+          - generic "charmeleon" [ref=e256] [cursor=pointer]:
+            - img "charmeleon" [ref=e257]
+          - generic "charizard" [ref=e258] [cursor=pointer]:
+            - img "charizard" [ref=e259]
+          - generic "squirtle" [ref=e260] [cursor=pointer]:
+            - img "squirtle" [ref=e261]
+          - generic "wartortle" [ref=e262] [cursor=pointer]:
+            - img "wartortle" [ref=e263]
+          - generic "blastoise" [ref=e264] [cursor=pointer]:
+            - img "blastoise" [ref=e265]
+          - generic "caterpie" [ref=e266] [cursor=pointer]:
+            - img "caterpie" [ref=e267]
+          - generic "metapod" [ref=e268] [cursor=pointer]:
+            - img "metapod" [ref=e269]
+          - generic "butterfree" [ref=e270] [cursor=pointer]:
+            - img "butterfree" [ref=e271]
+          - generic "weedle" [ref=e272] [cursor=pointer]:
+            - img "weedle" [ref=e273]
+          - generic "kakuna" [ref=e274] [cursor=pointer]:
+            - img "kakuna" [ref=e275]
+          - generic "beedrill" [ref=e276] [cursor=pointer]:
+            - img "beedrill" [ref=e277]
+          - generic "pidgey" [ref=e278] [cursor=pointer]:
+            - img "pidgey" [ref=e279]
+          - generic "pidgeotto" [ref=e280] [cursor=pointer]:
+            - img "pidgeotto" [ref=e281]
+          - generic "pidgeot" [ref=e282] [cursor=pointer]:
+            - img "pidgeot" [ref=e283]
+          - generic "rattata" [ref=e284] [cursor=pointer]:
+            - img "rattata" [ref=e285]
+          - generic "raticate" [ref=e286] [cursor=pointer]:
+            - img "raticate" [ref=e287]
+          - generic "spearow" [ref=e288] [cursor=pointer]:
+            - img "spearow" [ref=e289]
+          - generic "fearow" [ref=e290] [cursor=pointer]:
+            - img "fearow" [ref=e291]
+          - generic "ekans" [ref=e292] [cursor=pointer]:
+            - img "ekans" [ref=e293]
+          - generic "arbok" [ref=e294] [cursor=pointer]:
+            - img "arbok" [ref=e295]
+          - generic "pikachu" [ref=e296] [cursor=pointer]:
+            - img "pikachu" [ref=e297]
+          - generic "raichu" [ref=e298] [cursor=pointer]:
+            - img "raichu" [ref=e299]
+          - generic "sandshrew" [ref=e300] [cursor=pointer]:
+            - img "sandshrew" [ref=e301]
+          - generic "sandslash" [ref=e302] [cursor=pointer]:
+            - img "sandslash" [ref=e303]
+          - generic "nidoran-f" [ref=e304] [cursor=pointer]:
+            - img "nidoran-f" [ref=e305]
+          - generic "nidorina" [ref=e306] [cursor=pointer]:
+            - img "nidorina" [ref=e307]
+          - generic "nidoqueen" [ref=e308] [cursor=pointer]:
+            - img "nidoqueen" [ref=e309]
+          - generic "nidoran-m" [ref=e310] [cursor=pointer]:
+            - img "nidoran-m" [ref=e311]
+          - generic "nidorino" [ref=e312] [cursor=pointer]:
+            - img "nidorino" [ref=e313]
+          - generic "nidoking" [ref=e314] [cursor=pointer]:
+            - img "nidoking" [ref=e315]
+          - generic "clefairy" [ref=e316] [cursor=pointer]:
+            - img "clefairy" [ref=e317]
+          - generic "clefable" [ref=e318] [cursor=pointer]:
+            - img "clefable" [ref=e319]
+          - generic "vulpix" [ref=e320] [cursor=pointer]:
+            - img "vulpix" [ref=e321]
+          - generic "ninetales" [ref=e322] [cursor=pointer]:
+            - img "ninetales" [ref=e323]
+          - generic "jigglypuff" [ref=e324] [cursor=pointer]:
+            - img "jigglypuff" [ref=e325]
+          - generic "wigglytuff" [ref=e326] [cursor=pointer]:
+            - img "wigglytuff" [ref=e327]
+          - generic "zubat" [ref=e328] [cursor=pointer]:
+            - img "zubat" [ref=e329]
+          - generic "golbat" [ref=e330] [cursor=pointer]:
+            - img "golbat" [ref=e331]
+          - generic "oddish" [ref=e332] [cursor=pointer]:
+            - img "oddish" [ref=e333]
+          - generic "gloom" [ref=e334] [cursor=pointer]:
+            - img "gloom" [ref=e335]
+          - generic "vileplume" [ref=e336] [cursor=pointer]:
+            - img "vileplume" [ref=e337]
+          - generic "paras" [ref=e338] [cursor=pointer]:
+            - img "paras" [ref=e339]
+          - generic "parasect" [ref=e340] [cursor=pointer]:
+            - img "parasect" [ref=e341]
+          - generic "venonat" [ref=e342] [cursor=pointer]:
+            - img "venonat" [ref=e343]
+          - generic "venomoth" [ref=e344] [cursor=pointer]:
+            - img "venomoth" [ref=e345]
+          - generic "diglett" [ref=e346] [cursor=pointer]:
+            - img "diglett" [ref=e347]
+          - generic "dugtrio" [ref=e348] [cursor=pointer]:
+            - img "dugtrio" [ref=e349]
+          - generic "meowth" [ref=e350] [cursor=pointer]:
+            - img "meowth" [ref=e351]
+          - generic "persian" [ref=e352] [cursor=pointer]:
+            - img "persian" [ref=e353]
+          - generic "psyduck" [ref=e354] [cursor=pointer]:
+            - img "psyduck" [ref=e355]
+          - generic "golduck" [ref=e356] [cursor=pointer]:
+            - img "golduck" [ref=e357]
+          - generic "mankey" [ref=e358] [cursor=pointer]:
+            - img "mankey" [ref=e359]
+          - generic "primeape" [ref=e360] [cursor=pointer]:
+            - img "primeape" [ref=e361]
+          - generic "growlithe" [ref=e362] [cursor=pointer]:
+            - img "growlithe" [ref=e363]
+          - generic "arcanine" [ref=e364] [cursor=pointer]:
+            - img "arcanine" [ref=e365]
+          - generic "poliwag" [ref=e366] [cursor=pointer]:
+            - img "poliwag" [ref=e367]
+          - generic "poliwhirl" [ref=e368] [cursor=pointer]:
+            - img "poliwhirl" [ref=e369]
+          - generic "poliwrath" [ref=e370] [cursor=pointer]:
+            - img "poliwrath" [ref=e371]
+          - generic "abra" [ref=e372] [cursor=pointer]:
+            - img "abra" [ref=e373]
+          - generic "kadabra" [ref=e374] [cursor=pointer]:
+            - img "kadabra" [ref=e375]
+          - generic "alakazam" [ref=e376] [cursor=pointer]:
+            - img "alakazam" [ref=e377]
+          - generic "machop" [ref=e378] [cursor=pointer]:
+            - img "machop" [ref=e379]
+          - generic "machoke" [ref=e380] [cursor=pointer]:
+            - img "machoke" [ref=e381]
+          - generic "machamp" [ref=e382] [cursor=pointer]:
+            - img "machamp" [ref=e383]
+          - generic "bellsprout" [ref=e384] [cursor=pointer]:
+            - img "bellsprout" [ref=e385]
+          - generic "weepinbell" [ref=e386] [cursor=pointer]:
+            - img "weepinbell" [ref=e387]
+          - generic "victreebel" [ref=e388] [cursor=pointer]:
+            - img "victreebel" [ref=e389]
+          - generic "tentacool" [ref=e390] [cursor=pointer]:
+            - img "tentacool" [ref=e391]
+          - generic "tentacruel" [ref=e392] [cursor=pointer]:
+            - img "tentacruel" [ref=e393]
+          - generic "geodude" [ref=e394] [cursor=pointer]:
+            - img "geodude" [ref=e395]
+          - generic "graveler" [ref=e396] [cursor=pointer]:
+            - img "graveler" [ref=e397]
+          - generic "golem" [ref=e398] [cursor=pointer]:
+            - img "golem" [ref=e399]
+          - generic "ponyta" [ref=e400] [cursor=pointer]:
+            - img "ponyta" [ref=e401]
+          - generic "rapidash" [ref=e402] [cursor=pointer]:
+            - img "rapidash" [ref=e403]
+          - generic "slowpoke" [ref=e404] [cursor=pointer]:
+            - img "slowpoke" [ref=e405]
+          - generic "slowbro" [ref=e406] [cursor=pointer]:
+            - img "slowbro" [ref=e407]
+          - generic "magnemite" [ref=e408] [cursor=pointer]:
+            - img "magnemite" [ref=e409]
+          - generic "magneton" [ref=e410] [cursor=pointer]:
+            - img "magneton" [ref=e411]
+          - generic "farfetchd" [ref=e412] [cursor=pointer]:
+            - img "farfetchd" [ref=e413]
+          - generic "doduo" [ref=e414] [cursor=pointer]:
+            - img "doduo" [ref=e415]
+          - generic "dodrio" [ref=e416] [cursor=pointer]:
+            - img "dodrio" [ref=e417]
+          - generic "seel" [ref=e418] [cursor=pointer]:
+            - img "seel" [ref=e419]
+          - generic "dewgong" [ref=e420] [cursor=pointer]:
+            - img "dewgong" [ref=e421]
+          - generic "grimer" [ref=e422] [cursor=pointer]:
+            - img "grimer" [ref=e423]
+          - generic "muk" [ref=e424] [cursor=pointer]:
+            - img "muk" [ref=e425]
+          - generic "shellder" [ref=e426] [cursor=pointer]:
+            - img "shellder" [ref=e427]
+          - generic "cloyster" [ref=e428] [cursor=pointer]:
+            - img "cloyster" [ref=e429]
+          - generic "gastly" [ref=e430] [cursor=pointer]:
+            - img "gastly" [ref=e431]
+          - generic "haunter" [ref=e432] [cursor=pointer]:
+            - img "haunter" [ref=e433]
+          - generic "gengar" [ref=e434] [cursor=pointer]:
+            - img "gengar" [ref=e435]
+          - generic "onix" [ref=e436] [cursor=pointer]:
+            - img "onix" [ref=e437]
+          - generic "drowzee" [ref=e438] [cursor=pointer]:
+            - img "drowzee" [ref=e439]
+          - generic "hypno" [ref=e440] [cursor=pointer]:
+            - img "hypno" [ref=e441]
+          - generic "krabby" [ref=e442] [cursor=pointer]:
+            - img "krabby" [ref=e443]
+          - generic "kingler" [ref=e444] [cursor=pointer]:
+            - img "kingler" [ref=e445]
+          - generic "voltorb" [ref=e446] [cursor=pointer]:
+            - img "voltorb" [ref=e447]
+          - generic "electrode" [ref=e448] [cursor=pointer]:
+            - img "electrode" [ref=e449]
+          - generic "exeggcute" [ref=e450] [cursor=pointer]:
+            - img "exeggcute" [ref=e451]
+          - generic "exeggutor" [ref=e452] [cursor=pointer]:
+            - img "exeggutor" [ref=e453]
+          - generic "cubone" [ref=e454] [cursor=pointer]:
+            - img "cubone" [ref=e455]
+          - generic "marowak" [ref=e456] [cursor=pointer]:
+            - img "marowak" [ref=e457]
+          - generic "hitmonlee" [ref=e458] [cursor=pointer]:
+            - img "hitmonlee" [ref=e459]
+          - generic "hitmonchan" [ref=e460] [cursor=pointer]:
+            - img "hitmonchan" [ref=e461]
+          - generic "lickitung" [ref=e462] [cursor=pointer]:
+            - img "lickitung" [ref=e463]
+          - generic "koffing" [ref=e464] [cursor=pointer]:
+            - img "koffing" [ref=e465]
+          - generic "weezing" [ref=e466] [cursor=pointer]:
+            - img "weezing" [ref=e467]
+          - generic "rhyhorn" [ref=e468] [cursor=pointer]:
+            - img "rhyhorn" [ref=e469]
+          - generic "rhydon" [ref=e470] [cursor=pointer]:
+            - img "rhydon" [ref=e471]
+          - generic "chansey" [ref=e472] [cursor=pointer]:
+            - img "chansey" [ref=e473]
+          - generic "tangela" [ref=e474] [cursor=pointer]:
+            - img "tangela" [ref=e475]
+          - generic "kangaskhan" [ref=e476] [cursor=pointer]:
+            - img "kangaskhan" [ref=e477]
+          - generic "horsea" [ref=e478] [cursor=pointer]:
+            - img "horsea" [ref=e479]
+          - generic "seadra" [ref=e480] [cursor=pointer]:
+            - img "seadra" [ref=e481]
+          - generic "goldeen" [ref=e482] [cursor=pointer]:
+            - img "goldeen" [ref=e483]
+          - generic "seaking" [ref=e484] [cursor=pointer]:
+            - img "seaking" [ref=e485]
+          - generic "staryu" [ref=e486] [cursor=pointer]:
+            - img "staryu" [ref=e487]
+          - generic "starmie" [ref=e488] [cursor=pointer]:
+            - img "starmie" [ref=e489]
+          - generic "mr-mime" [ref=e490] [cursor=pointer]:
+            - img "mr-mime" [ref=e491]
+          - generic "scyther" [ref=e492] [cursor=pointer]:
+            - img "scyther" [ref=e493]
+          - generic "jynx" [ref=e494] [cursor=pointer]:
+            - img "jynx" [ref=e495]
+          - generic "electabuzz" [ref=e496] [cursor=pointer]:
+            - img "electabuzz" [ref=e497]
+          - generic "magmar" [ref=e498] [cursor=pointer]:
+            - img "magmar" [ref=e499]
+          - generic "pinsir" [ref=e500] [cursor=pointer]:
+            - img "pinsir" [ref=e501]
+          - generic "tauros" [ref=e502] [cursor=pointer]:
+            - img "tauros" [ref=e503]
+          - generic "magikarp" [ref=e504] [cursor=pointer]:
+            - img "magikarp" [ref=e505]
+          - generic "gyarados" [ref=e506] [cursor=pointer]:
+            - img "gyarados" [ref=e507]
+          - generic "lapras" [ref=e508] [cursor=pointer]:
+            - img "lapras" [ref=e509]
+          - generic "ditto" [ref=e510] [cursor=pointer]:
+            - img "ditto" [ref=e511]
+          - generic "eevee" [ref=e512] [cursor=pointer]:
+            - img "eevee" [ref=e513]
+          - generic "vaporeon" [ref=e514] [cursor=pointer]:
+            - img "vaporeon" [ref=e515]
+          - generic "jolteon" [ref=e516] [cursor=pointer]:
+            - img "jolteon" [ref=e517]
+          - generic "flareon" [ref=e518] [cursor=pointer]:
+            - img "flareon" [ref=e519]
+          - generic "porygon" [ref=e520] [cursor=pointer]:
+            - img "porygon" [ref=e521]
+          - generic "omanyte" [ref=e522] [cursor=pointer]:
+            - img "omanyte" [ref=e523]
+          - generic "omastar" [ref=e524] [cursor=pointer]:
+            - img "omastar" [ref=e525]
+          - generic "kabuto" [ref=e526] [cursor=pointer]:
+            - img "kabuto" [ref=e527]
+          - generic "kabutops" [ref=e528] [cursor=pointer]:
+            - img "kabutops" [ref=e529]
+          - generic "aerodactyl" [ref=e530] [cursor=pointer]:
+            - img "aerodactyl" [ref=e531]
+          - generic "snorlax" [ref=e532] [cursor=pointer]:
+            - img "snorlax" [ref=e533]
+          - generic "articuno" [ref=e534] [cursor=pointer]:
+            - img "articuno" [ref=e535]
+          - generic "zapdos" [ref=e536] [cursor=pointer]:
+            - img "zapdos" [ref=e537]
+          - generic "moltres" [ref=e538] [cursor=pointer]:
+            - img "moltres" [ref=e539]
+          - generic "dratini" [ref=e540] [cursor=pointer]:
+            - img "dratini" [ref=e541]
+          - generic "dragonair" [ref=e542] [cursor=pointer]:
+            - img "dragonair" [ref=e543]
+          - generic "dragonite" [ref=e544] [cursor=pointer]:
+            - img "dragonite" [ref=e545]
+          - generic "mewtwo" [ref=e546] [cursor=pointer]:
+            - img "mewtwo" [ref=e547]
+          - generic "mew" [ref=e548] [cursor=pointer]:
+            - img "mew" [ref=e549]
+      - generic [ref=e550]:
+        - generic [ref=e551]:
+          - generic [ref=e552]: Generation II
+          - generic [ref=e554]: 0 / 100
+        - generic [ref=e555]:
+          - generic "chikorita" [ref=e556] [cursor=pointer]:
+            - img "chikorita" [ref=e557]
+          - generic "bayleef" [ref=e558] [cursor=pointer]:
+            - img "bayleef" [ref=e559]
+          - generic "meganium" [ref=e560] [cursor=pointer]:
+            - img "meganium" [ref=e561]
+          - generic "cyndaquil" [ref=e562] [cursor=pointer]:
+            - img "cyndaquil" [ref=e563]
+          - generic "quilava" [ref=e564] [cursor=pointer]:
+            - img "quilava" [ref=e565]
+          - generic "typhlosion" [ref=e566] [cursor=pointer]:
+            - img "typhlosion" [ref=e567]
+          - generic "totodile" [ref=e568] [cursor=pointer]:
+            - img "totodile" [ref=e569]
+          - generic "croconaw" [ref=e570] [cursor=pointer]:
+            - img "croconaw" [ref=e571]
+          - generic "feraligatr" [ref=e572] [cursor=pointer]:
+            - img "feraligatr" [ref=e573]
+          - generic "sentret" [ref=e574] [cursor=pointer]:
+            - img "sentret" [ref=e575]
+          - generic "furret" [ref=e576] [cursor=pointer]:
+            - img "furret" [ref=e577]
+          - generic "hoothoot" [ref=e578] [cursor=pointer]:
+            - img "hoothoot" [ref=e579]
+          - generic "noctowl" [ref=e580] [cursor=pointer]:
+            - img "noctowl" [ref=e581]
+          - generic "ledyba" [ref=e582] [cursor=pointer]:
+            - img "ledyba" [ref=e583]
+          - generic "ledian" [ref=e584] [cursor=pointer]:
+            - img "ledian" [ref=e585]
+          - generic "spinarak" [ref=e586] [cursor=pointer]:
+            - img "spinarak" [ref=e587]
+          - generic "ariados" [ref=e588] [cursor=pointer]:
+            - img "ariados" [ref=e589]
+          - generic "crobat" [ref=e590] [cursor=pointer]:
+            - img "crobat" [ref=e591]
+          - generic "chinchou" [ref=e592] [cursor=pointer]:
+            - img "chinchou" [ref=e593]
+          - generic "lanturn" [ref=e594] [cursor=pointer]:
+            - img "lanturn" [ref=e595]
+          - generic "pichu" [ref=e596] [cursor=pointer]:
+            - img "pichu" [ref=e597]
+          - generic "cleffa" [ref=e598] [cursor=pointer]:
+            - img "cleffa" [ref=e599]
+          - generic "igglybuff" [ref=e600] [cursor=pointer]:
+            - img "igglybuff" [ref=e601]
+          - generic "togepi" [ref=e602] [cursor=pointer]:
+            - img "togepi" [ref=e603]
+          - generic "togetic" [ref=e604] [cursor=pointer]:
+            - img "togetic" [ref=e605]
+          - generic "natu" [ref=e606] [cursor=pointer]:
+            - img "natu" [ref=e607]
+          - generic "xatu" [ref=e608] [cursor=pointer]:
+            - img "xatu" [ref=e609]
+          - generic "mareep" [ref=e610] [cursor=pointer]:
+            - img "mareep" [ref=e611]
+          - generic "flaaffy" [ref=e612] [cursor=pointer]:
+            - img "flaaffy" [ref=e613]
+          - generic "ampharos" [ref=e614] [cursor=pointer]:
+            - img "ampharos" [ref=e615]
+          - generic "bellossom" [ref=e616] [cursor=pointer]:
+            - img "bellossom" [ref=e617]
+          - generic "marill" [ref=e618] [cursor=pointer]:
+            - img "marill" [ref=e619]
+          - generic "azumarill" [ref=e620] [cursor=pointer]:
+            - img "azumarill" [ref=e621]
+          - generic "sudowoodo" [ref=e622] [cursor=pointer]:
+            - img "sudowoodo" [ref=e623]
+          - generic "politoed" [ref=e624] [cursor=pointer]:
+            - img "politoed" [ref=e625]
+          - generic "hoppip" [ref=e626] [cursor=pointer]:
+            - img "hoppip" [ref=e627]
+          - generic "skiploom" [ref=e628] [cursor=pointer]:
+            - img "skiploom" [ref=e629]
+          - generic "jumpluff" [ref=e630] [cursor=pointer]:
+            - img "jumpluff" [ref=e631]
+          - generic "aipom" [ref=e632] [cursor=pointer]:
+            - img "aipom" [ref=e633]
+          - generic "sunkern" [ref=e634] [cursor=pointer]:
+            - img "sunkern" [ref=e635]
+          - generic "sunflora" [ref=e636] [cursor=pointer]:
+            - img "sunflora" [ref=e637]
+          - generic "yanma" [ref=e638] [cursor=pointer]:
+            - img "yanma" [ref=e639]
+          - generic "wooper" [ref=e640] [cursor=pointer]:
+            - img "wooper" [ref=e641]
+          - generic "quagsire" [ref=e642] [cursor=pointer]:
+            - img "quagsire" [ref=e643]
+          - generic "espeon" [ref=e644] [cursor=pointer]:
+            - img "espeon" [ref=e645]
+          - generic "umbreon" [ref=e646] [cursor=pointer]:
+            - img "umbreon" [ref=e647]
+          - generic "murkrow" [ref=e648] [cursor=pointer]:
+            - img "murkrow" [ref=e649]
+          - generic "slowking" [ref=e650] [cursor=pointer]:
+            - img "slowking" [ref=e651]
+          - generic "misdreavus" [ref=e652] [cursor=pointer]:
+            - img "misdreavus" [ref=e653]
+          - generic "unown" [ref=e654] [cursor=pointer]:
+            - img "unown" [ref=e655]
+          - generic "wobbuffet" [ref=e656] [cursor=pointer]:
+            - img "wobbuffet" [ref=e657]
+          - generic "girafarig" [ref=e658] [cursor=pointer]:
+            - img "girafarig" [ref=e659]
+          - generic "pineco" [ref=e660] [cursor=pointer]:
+            - img "pineco" [ref=e661]
+          - generic "forretress" [ref=e662] [cursor=pointer]:
+            - img "forretress" [ref=e663]
+          - generic "dunsparce" [ref=e664] [cursor=pointer]:
+            - img "dunsparce" [ref=e665]
+          - generic "gligar" [ref=e666] [cursor=pointer]:
+            - img "gligar" [ref=e667]
+          - generic "steelix" [ref=e668] [cursor=pointer]:
+            - img "steelix" [ref=e669]
+          - generic "snubbull" [ref=e670] [cursor=pointer]:
+            - img "snubbull" [ref=e671]
+          - generic "granbull" [ref=e672] [cursor=pointer]:
+            - img "granbull" [ref=e673]
+          - generic "qwilfish" [ref=e674] [cursor=pointer]:
+            - img "qwilfish" [ref=e675]
+          - generic "scizor" [ref=e676] [cursor=pointer]:
+            - img "scizor" [ref=e677]
+          - generic "shuckle" [ref=e678] [cursor=pointer]:
+            - img "shuckle" [ref=e679]
+          - generic "heracross" [ref=e680] [cursor=pointer]:
+            - img "heracross" [ref=e681]
+          - generic "sneasel" [ref=e682] [cursor=pointer]:
+            - img "sneasel" [ref=e683]
+          - generic "teddiursa" [ref=e684] [cursor=pointer]:
+            - img "teddiursa" [ref=e685]
+          - generic "ursaring" [ref=e686] [cursor=pointer]:
+            - img "ursaring" [ref=e687]
+          - generic "slugma" [ref=e688] [cursor=pointer]:
+            - img "slugma" [ref=e689]
+          - generic "magcargo" [ref=e690] [cursor=pointer]:
+            - img "magcargo" [ref=e691]
+          - generic "swinub" [ref=e692] [cursor=pointer]:
+            - img "swinub" [ref=e693]
+          - generic "piloswine" [ref=e694] [cursor=pointer]:
+            - img "piloswine" [ref=e695]
+          - generic "corsola" [ref=e696] [cursor=pointer]:
+            - img "corsola" [ref=e697]
+          - generic "remoraid" [ref=e698] [cursor=pointer]:
+            - img "remoraid" [ref=e699]
+          - generic "octillery" [ref=e700] [cursor=pointer]:
+            - img "octillery" [ref=e701]
+          - generic "delibird" [ref=e702] [cursor=pointer]:
+            - img "delibird" [ref=e703]
+          - generic "mantine" [ref=e704] [cursor=pointer]:
+            - img "mantine" [ref=e705]
+          - generic "skarmory" [ref=e706] [cursor=pointer]:
+            - img "skarmory" [ref=e707]
+          - generic "houndour" [ref=e708] [cursor=pointer]:
+            - img "houndour" [ref=e709]
+          - generic "houndoom" [ref=e710] [cursor=pointer]:
+            - img "houndoom" [ref=e711]
+          - generic "kingdra" [ref=e712] [cursor=pointer]:
+            - img "kingdra" [ref=e713]
+          - generic "phanpy" [ref=e714] [cursor=pointer]:
+            - img "phanpy" [ref=e715]
+          - generic "donphan" [ref=e716] [cursor=pointer]:
+            - img "donphan" [ref=e717]
+          - generic "porygon2" [ref=e718] [cursor=pointer]:
+            - img "porygon2" [ref=e719]
+          - generic "stantler" [ref=e720] [cursor=pointer]:
+            - img "stantler" [ref=e721]
+          - generic "smeargle" [ref=e722] [cursor=pointer]:
+            - img "smeargle" [ref=e723]
+          - generic "tyrogue" [ref=e724] [cursor=pointer]:
+            - img "tyrogue" [ref=e725]
+          - generic "hitmontop" [ref=e726] [cursor=pointer]:
+            - img "hitmontop" [ref=e727]
+          - generic "smoochum" [ref=e728] [cursor=pointer]:
+            - img "smoochum" [ref=e729]
+          - generic "elekid" [ref=e730] [cursor=pointer]:
+            - img "elekid" [ref=e731]
+          - generic "magby" [ref=e732] [cursor=pointer]:
+            - img "magby" [ref=e733]
+          - generic "miltank" [ref=e734] [cursor=pointer]:
+            - img "miltank" [ref=e735]
+          - generic "blissey" [ref=e736] [cursor=pointer]:
+            - img "blissey" [ref=e737]
+          - generic "raikou" [ref=e738] [cursor=pointer]:
+            - img "raikou" [ref=e739]
+          - generic "entei" [ref=e740] [cursor=pointer]:
+            - img "entei" [ref=e741]
+          - generic "suicune" [ref=e742] [cursor=pointer]:
+            - img "suicune" [ref=e743]
+          - generic "larvitar" [ref=e744] [cursor=pointer]:
+            - img "larvitar" [ref=e745]
+          - generic "pupitar" [ref=e746] [cursor=pointer]:
+            - img "pupitar" [ref=e747]
+          - generic "tyranitar" [ref=e748] [cursor=pointer]:
+            - img "tyranitar" [ref=e749]
+          - generic "lugia" [ref=e750] [cursor=pointer]:
+            - img "lugia" [ref=e751]
+          - generic "ho-oh" [ref=e752] [cursor=pointer]:
+            - img "ho-oh" [ref=e753]
+          - generic "celebi" [ref=e754] [cursor=pointer]:
+            - img "celebi" [ref=e755]
+      - generic [ref=e756]:
+        - generic [ref=e757]:
+          - generic [ref=e758]: Generation III
+          - generic [ref=e760]: 0 / 135
+        - generic [ref=e761]:
+          - generic "treecko" [ref=e762] [cursor=pointer]:
+            - img "treecko" [ref=e763]
+          - generic "grovyle" [ref=e764] [cursor=pointer]:
+            - img "grovyle" [ref=e765]
+          - generic "sceptile" [ref=e766] [cursor=pointer]:
+            - img "sceptile" [ref=e767]
+          - generic "torchic" [ref=e768] [cursor=pointer]:
+            - img "torchic" [ref=e769]
+          - generic "combusken" [ref=e770] [cursor=pointer]:
+            - img "combusken" [ref=e771]
+          - generic "blaziken" [ref=e772] [cursor=pointer]:
+            - img "blaziken" [ref=e773]
+          - generic "mudkip" [ref=e774] [cursor=pointer]:
+            - img "mudkip" [ref=e775]
+          - generic "marshtomp" [ref=e776] [cursor=pointer]:
+            - img "marshtomp" [ref=e777]
+          - generic "swampert" [ref=e778] [cursor=pointer]:
+            - img "swampert" [ref=e779]
+          - generic "poochyena" [ref=e780] [cursor=pointer]:
+            - img "poochyena" [ref=e781]
+          - generic "mightyena" [ref=e782] [cursor=pointer]:
+            - img "mightyena" [ref=e783]
+          - generic "zigzagoon" [ref=e784] [cursor=pointer]:
+            - img "zigzagoon" [ref=e785]
+          - generic "linoone" [ref=e786] [cursor=pointer]:
+            - img "linoone" [ref=e787]
+          - generic "wurmple" [ref=e788] [cursor=pointer]:
+            - img "wurmple" [ref=e789]
+          - generic "silcoon" [ref=e790] [cursor=pointer]:
+            - img "silcoon" [ref=e791]
+          - generic "beautifly" [ref=e792] [cursor=pointer]:
+            - img "beautifly" [ref=e793]
+          - generic "cascoon" [ref=e794] [cursor=pointer]:
+            - img "cascoon" [ref=e795]
+          - generic "dustox" [ref=e796] [cursor=pointer]:
+            - img "dustox" [ref=e797]
+          - generic "lotad" [ref=e798] [cursor=pointer]:
+            - img "lotad" [ref=e799]
+          - generic "lombre" [ref=e800] [cursor=pointer]:
+            - img "lombre" [ref=e801]
+          - generic "ludicolo" [ref=e802] [cursor=pointer]:
+            - img "ludicolo" [ref=e803]
+          - generic "seedot" [ref=e804] [cursor=pointer]:
+            - img "seedot" [ref=e805]
+          - generic "nuzleaf" [ref=e806] [cursor=pointer]:
+            - img "nuzleaf" [ref=e807]
+          - generic "shiftry" [ref=e808] [cursor=pointer]:
+            - img "shiftry" [ref=e809]
+          - generic "taillow" [ref=e810] [cursor=pointer]:
+            - img "taillow" [ref=e811]
+          - generic "swellow" [ref=e812] [cursor=pointer]:
+            - img "swellow" [ref=e813]
+          - generic "wingull" [ref=e814] [cursor=pointer]:
+            - img "wingull" [ref=e815]
+          - generic "pelipper" [ref=e816] [cursor=pointer]:
+            - img "pelipper" [ref=e817]
+          - generic "ralts" [ref=e818] [cursor=pointer]:
+            - img "ralts" [ref=e819]
+          - generic "kirlia" [ref=e820] [cursor=pointer]:
+            - img "kirlia" [ref=e821]
+          - generic "gardevoir" [ref=e822] [cursor=pointer]:
+            - img "gardevoir" [ref=e823]
+          - generic "surskit" [ref=e824] [cursor=pointer]:
+            - img "surskit" [ref=e825]
+          - generic "masquerain" [ref=e826] [cursor=pointer]:
+            - img "masquerain" [ref=e827]
+          - generic "shroomish" [ref=e828] [cursor=pointer]:
+            - img "shroomish" [ref=e829]
+          - generic "breloom" [ref=e830] [cursor=pointer]:
+            - img "breloom" [ref=e831]
+          - generic "slakoth" [ref=e832] [cursor=pointer]:
+            - img "slakoth" [ref=e833]
+          - generic "vigoroth" [ref=e834] [cursor=pointer]:
+            - img "vigoroth" [ref=e835]
+          - generic "slaking" [ref=e836] [cursor=pointer]:
+            - img "slaking" [ref=e837]
+          - generic "nincada" [ref=e838] [cursor=pointer]:
+            - img "nincada" [ref=e839]
+          - generic "ninjask" [ref=e840] [cursor=pointer]:
+            - img "ninjask" [ref=e841]
+          - generic "shedinja" [ref=e842] [cursor=pointer]:
+            - img "shedinja" [ref=e843]
+          - generic "whismur" [ref=e844] [cursor=pointer]:
+            - img "whismur" [ref=e845]
+          - generic "loudred" [ref=e846] [cursor=pointer]:
+            - img "loudred" [ref=e847]
+          - generic "exploud" [ref=e848] [cursor=pointer]:
+            - img "exploud" [ref=e849]
+          - generic "makuhita" [ref=e850] [cursor=pointer]:
+            - img "makuhita" [ref=e851]
+          - generic "hariyama" [ref=e852] [cursor=pointer]:
+            - img "hariyama" [ref=e853]
+          - generic "azurill" [ref=e854] [cursor=pointer]:
+            - img "azurill" [ref=e855]
+          - generic "nosepass" [ref=e856] [cursor=pointer]:
+            - img "nosepass" [ref=e857]
+          - generic "skitty" [ref=e858] [cursor=pointer]:
+            - img "skitty" [ref=e859]
+          - generic "delcatty" [ref=e860] [cursor=pointer]:
+            - img "delcatty" [ref=e861]
+          - generic "sableye" [ref=e862] [cursor=pointer]:
+            - img "sableye" [ref=e863]
+          - generic "mawile" [ref=e864] [cursor=pointer]:
+            - img "mawile" [ref=e865]
+          - generic "aron" [ref=e866] [cursor=pointer]:
+            - img "aron" [ref=e867]
+          - generic "lairon" [ref=e868] [cursor=pointer]:
+            - img "lairon" [ref=e869]
+          - generic "aggron" [ref=e870] [cursor=pointer]:
+            - img "aggron" [ref=e871]
+          - generic "meditite" [ref=e872] [cursor=pointer]:
+            - img "meditite" [ref=e873]
+          - generic "medicham" [ref=e874] [cursor=pointer]:
+            - img "medicham" [ref=e875]
+          - generic "electrike" [ref=e876] [cursor=pointer]:
+            - img "electrike" [ref=e877]
+          - generic "manectric" [ref=e878] [cursor=pointer]:
+            - img "manectric" [ref=e879]
+          - generic "plusle" [ref=e880] [cursor=pointer]:
+            - img "plusle" [ref=e881]
+          - generic "minun" [ref=e882] [cursor=pointer]:
+            - img "minun" [ref=e883]
+          - generic "volbeat" [ref=e884] [cursor=pointer]:
+            - img "volbeat" [ref=e885]
+          - generic "illumise" [ref=e886] [cursor=pointer]:
+            - img "illumise" [ref=e887]
+          - generic "roselia" [ref=e888] [cursor=pointer]:
+            - img "roselia" [ref=e889]
+          - generic "gulpin" [ref=e890] [cursor=pointer]:
+            - img "gulpin" [ref=e891]
+          - generic "swalot" [ref=e892] [cursor=pointer]:
+            - img "swalot" [ref=e893]
+          - generic "carvanha" [ref=e894] [cursor=pointer]:
+            - img "carvanha" [ref=e895]
+          - generic "sharpedo" [ref=e896] [cursor=pointer]:
+            - img "sharpedo" [ref=e897]
+          - generic "wailmer" [ref=e898] [cursor=pointer]:
+            - img "wailmer" [ref=e899]
+          - generic "wailord" [ref=e900] [cursor=pointer]:
+            - img "wailord" [ref=e901]
+          - generic "numel" [ref=e902] [cursor=pointer]:
+            - img "numel" [ref=e903]
+          - generic "camerupt" [ref=e904] [cursor=pointer]:
+            - img "camerupt" [ref=e905]
+          - generic "torkoal" [ref=e906] [cursor=pointer]:
+            - img "torkoal" [ref=e907]
+          - generic "spoink" [ref=e908] [cursor=pointer]:
+            - img "spoink" [ref=e909]
+          - generic "grumpig" [ref=e910] [cursor=pointer]:
+            - img "grumpig" [ref=e911]
+          - generic "spinda" [ref=e912] [cursor=pointer]:
+            - img "spinda" [ref=e913]
+          - generic "trapinch" [ref=e914] [cursor=pointer]:
+            - img "trapinch" [ref=e915]
+          - generic "vibrava" [ref=e916] [cursor=pointer]:
+            - img "vibrava" [ref=e917]
+          - generic "flygon" [ref=e918] [cursor=pointer]:
+            - img "flygon" [ref=e919]
+          - generic "cacnea" [ref=e920] [cursor=pointer]:
+            - img "cacnea" [ref=e921]
+          - generic "cacturne" [ref=e922] [cursor=pointer]:
+            - img "cacturne" [ref=e923]
+          - generic "swablu" [ref=e924] [cursor=pointer]:
+            - img "swablu" [ref=e925]
+          - generic "altaria" [ref=e926] [cursor=pointer]:
+            - img "altaria" [ref=e927]
+          - generic "zangoose" [ref=e928] [cursor=pointer]:
+            - img "zangoose" [ref=e929]
+          - generic "seviper" [ref=e930] [cursor=pointer]:
+            - img "seviper" [ref=e931]
+          - generic "lunatone" [ref=e932] [cursor=pointer]:
+            - img "lunatone" [ref=e933]
+          - generic "solrock" [ref=e934] [cursor=pointer]:
+            - img "solrock" [ref=e935]
+          - generic "barboach" [ref=e936] [cursor=pointer]:
+            - img "barboach" [ref=e937]
+          - generic "whiscash" [ref=e938] [cursor=pointer]:
+            - img "whiscash" [ref=e939]
+          - generic "corphish" [ref=e940] [cursor=pointer]:
+            - img "corphish" [ref=e941]
+          - generic "crawdaunt" [ref=e942] [cursor=pointer]:
+            - img "crawdaunt" [ref=e943]
+          - generic "baltoy" [ref=e944] [cursor=pointer]:
+            - img "baltoy" [ref=e945]
+          - generic "claydol" [ref=e946] [cursor=pointer]:
+            - img "claydol" [ref=e947]
+          - generic "lileep" [ref=e948] [cursor=pointer]:
+            - img "lileep" [ref=e949]
+          - generic "cradily" [ref=e950] [cursor=pointer]:
+            - img "cradily" [ref=e951]
+          - generic "anorith" [ref=e952] [cursor=pointer]:
+            - img "anorith" [ref=e953]
+          - generic "armaldo" [ref=e954] [cursor=pointer]:
+            - img "armaldo" [ref=e955]
+          - generic "feebas" [ref=e956] [cursor=pointer]:
+            - img "feebas" [ref=e957]
+          - generic "milotic" [ref=e958] [cursor=pointer]:
+            - img "milotic" [ref=e959]
+          - generic "castform" [ref=e960] [cursor=pointer]:
+            - img "castform" [ref=e961]
+          - generic "kecleon" [ref=e962] [cursor=pointer]:
+            - img "kecleon" [ref=e963]
+          - generic "shuppet" [ref=e964] [cursor=pointer]:
+            - img "shuppet" [ref=e965]
+          - generic "banette" [ref=e966] [cursor=pointer]:
+            - img "banette" [ref=e967]
+          - generic "duskull" [ref=e968] [cursor=pointer]:
+            - img "duskull" [ref=e969]
+          - generic "dusclops" [ref=e970] [cursor=pointer]:
+            - img "dusclops" [ref=e971]
+          - generic "tropius" [ref=e972] [cursor=pointer]:
+            - img "tropius" [ref=e973]
+          - generic "chimecho" [ref=e974] [cursor=pointer]:
+            - img "chimecho" [ref=e975]
+          - generic "absol" [ref=e976] [cursor=pointer]:
+            - img "absol" [ref=e977]
+          - generic "wynaut" [ref=e978] [cursor=pointer]:
+            - img "wynaut" [ref=e979]
+          - generic "snorunt" [ref=e980] [cursor=pointer]:
+            - img "snorunt" [ref=e981]
+          - generic "glalie" [ref=e982] [cursor=pointer]:
+            - img "glalie" [ref=e983]
+          - generic "spheal" [ref=e984] [cursor=pointer]:
+            - img "spheal" [ref=e985]
+          - generic "sealeo" [ref=e986] [cursor=pointer]:
+            - img "sealeo" [ref=e987]
+          - generic "walrein" [ref=e988] [cursor=pointer]:
+            - img "walrein" [ref=e989]
+          - generic "clamperl" [ref=e990] [cursor=pointer]:
+            - img "clamperl" [ref=e991]
+          - generic "huntail" [ref=e992] [cursor=pointer]:
+            - img "huntail" [ref=e993]
+          - generic "gorebyss" [ref=e994] [cursor=pointer]:
+            - img "gorebyss" [ref=e995]
+          - generic "relicanth" [ref=e996] [cursor=pointer]:
+            - img "relicanth" [ref=e997]
+          - generic "luvdisc" [ref=e998] [cursor=pointer]:
+            - img "luvdisc" [ref=e999]
+          - generic "bagon" [ref=e1000] [cursor=pointer]:
+            - img "bagon" [ref=e1001]
+          - generic "shelgon" [ref=e1002] [cursor=pointer]:
+            - img "shelgon" [ref=e1003]
+          - generic "salamence" [ref=e1004] [cursor=pointer]:
+            - img "salamence" [ref=e1005]
+          - generic "beldum" [ref=e1006] [cursor=pointer]:
+            - img "beldum" [ref=e1007]
+          - generic "metang" [ref=e1008] [cursor=pointer]:
+            - img "metang" [ref=e1009]
+          - generic "metagross" [ref=e1010] [cursor=pointer]:
+            - img "metagross" [ref=e1011]
+          - generic "regirock" [ref=e1012] [cursor=pointer]:
+            - img "regirock" [ref=e1013]
+          - generic "regice" [ref=e1014] [cursor=pointer]:
+            - img "regice" [ref=e1015]
+          - generic "registeel" [ref=e1016] [cursor=pointer]:
+            - img "registeel" [ref=e1017]
+          - generic "latias" [ref=e1018] [cursor=pointer]:
+            - img "latias" [ref=e1019]
+          - generic "latios" [ref=e1020] [cursor=pointer]:
+            - img "latios" [ref=e1021]
+          - generic "kyogre" [ref=e1022] [cursor=pointer]:
+            - img "kyogre" [ref=e1023]
+          - generic "groudon" [ref=e1024] [cursor=pointer]:
+            - img "groudon" [ref=e1025]
+          - generic "rayquaza" [ref=e1026] [cursor=pointer]:
+            - img "rayquaza" [ref=e1027]
+          - generic "jirachi" [ref=e1028] [cursor=pointer]:
+            - img "jirachi" [ref=e1029]
+          - generic "deoxys-normal" [ref=e1030] [cursor=pointer]:
+            - img "deoxys-normal" [ref=e1031]
+      - generic [ref=e1032]:
+        - generic [ref=e1033]:
+          - generic [ref=e1034]: Generation IV
+          - generic [ref=e1036]: 0 / 107
+        - generic [ref=e1037]:
+          - generic "turtwig" [ref=e1038] [cursor=pointer]:
+            - img "turtwig" [ref=e1039]
+          - generic "grotle" [ref=e1040] [cursor=pointer]:
+            - img "grotle" [ref=e1041]
+          - generic "torterra" [ref=e1042] [cursor=pointer]:
+            - img "torterra" [ref=e1043]
+          - generic "chimchar" [ref=e1044] [cursor=pointer]:
+            - img "chimchar" [ref=e1045]
+          - generic "monferno" [ref=e1046] [cursor=pointer]:
+            - img "monferno" [ref=e1047]
+          - generic "infernape" [ref=e1048] [cursor=pointer]:
+            - img "infernape" [ref=e1049]
+          - generic "piplup" [ref=e1050] [cursor=pointer]:
+            - img "piplup" [ref=e1051]
+          - generic "prinplup" [ref=e1052] [cursor=pointer]:
+            - img "prinplup" [ref=e1053]
+          - generic "empoleon" [ref=e1054] [cursor=pointer]:
+            - img "empoleon" [ref=e1055]
+          - generic "starly" [ref=e1056] [cursor=pointer]:
+            - img "starly" [ref=e1057]
+          - generic "staravia" [ref=e1058] [cursor=pointer]:
+            - img "staravia" [ref=e1059]
+          - generic "staraptor" [ref=e1060] [cursor=pointer]:
+            - img "staraptor" [ref=e1061]
+          - generic "bidoof" [ref=e1062] [cursor=pointer]:
+            - img "bidoof" [ref=e1063]
+          - generic "bibarel" [ref=e1064] [cursor=pointer]:
+            - img "bibarel" [ref=e1065]
+          - generic "kricketot" [ref=e1066] [cursor=pointer]:
+            - img "kricketot" [ref=e1067]
+          - generic "kricketune" [ref=e1068] [cursor=pointer]:
+            - img "kricketune" [ref=e1069]
+          - generic "shinx" [ref=e1070] [cursor=pointer]:
+            - img "shinx" [ref=e1071]
+          - generic "luxio" [ref=e1072] [cursor=pointer]:
+            - img "luxio" [ref=e1073]
+          - generic "luxray" [ref=e1074] [cursor=pointer]:
+            - img "luxray" [ref=e1075]
+          - generic "budew" [ref=e1076] [cursor=pointer]:
+            - img "budew" [ref=e1077]
+          - generic "roserade" [ref=e1078] [cursor=pointer]:
+            - img "roserade" [ref=e1079]
+          - generic "cranidos" [ref=e1080] [cursor=pointer]:
+            - img "cranidos" [ref=e1081]
+          - generic "rampardos" [ref=e1082] [cursor=pointer]:
+            - img "rampardos" [ref=e1083]
+          - generic "shieldon" [ref=e1084] [cursor=pointer]:
+            - img "shieldon" [ref=e1085]
+          - generic "bastiodon" [ref=e1086] [cursor=pointer]:
+            - img "bastiodon" [ref=e1087]
+          - generic "burmy" [ref=e1088] [cursor=pointer]:
+            - img "burmy" [ref=e1089]
+          - generic "wormadam-plant" [ref=e1090] [cursor=pointer]:
+            - img "wormadam-plant" [ref=e1091]
+          - generic "mothim" [ref=e1092] [cursor=pointer]:
+            - img "mothim" [ref=e1093]
+          - generic "combee" [ref=e1094] [cursor=pointer]:
+            - img "combee" [ref=e1095]
+          - generic "vespiquen" [ref=e1096] [cursor=pointer]:
+            - img "vespiquen" [ref=e1097]
+          - generic "pachirisu" [ref=e1098] [cursor=pointer]:
+            - img "pachirisu" [ref=e1099]
+          - generic "buizel" [ref=e1100] [cursor=pointer]:
+            - img "buizel" [ref=e1101]
+          - generic "floatzel" [ref=e1102] [cursor=pointer]:
+            - img "floatzel" [ref=e1103]
+          - generic "cherubi" [ref=e1104] [cursor=pointer]:
+            - img "cherubi" [ref=e1105]
+          - generic "cherrim" [ref=e1106] [cursor=pointer]:
+            - img "cherrim" [ref=e1107]
+          - generic "shellos" [ref=e1108] [cursor=pointer]:
+            - img "shellos" [ref=e1109]
+          - generic "gastrodon" [ref=e1110] [cursor=pointer]:
+            - img "gastrodon" [ref=e1111]
+          - generic "ambipom" [ref=e1112] [cursor=pointer]:
+            - img "ambipom" [ref=e1113]
+          - generic "drifloon" [ref=e1114] [cursor=pointer]:
+            - img "drifloon" [ref=e1115]
+          - generic "drifblim" [ref=e1116] [cursor=pointer]:
+            - img "drifblim" [ref=e1117]
+          - generic "buneary" [ref=e1118] [cursor=pointer]:
+            - img "buneary" [ref=e1119]
+          - generic "lopunny" [ref=e1120] [cursor=pointer]:
+            - img "lopunny" [ref=e1121]
+          - generic "mismagius" [ref=e1122] [cursor=pointer]:
+            - img "mismagius" [ref=e1123]
+          - generic "honchkrow" [ref=e1124] [cursor=pointer]:
+            - img "honchkrow" [ref=e1125]
+          - generic "glameow" [ref=e1126] [cursor=pointer]:
+            - img "glameow" [ref=e1127]
+          - generic "purugly" [ref=e1128] [cursor=pointer]:
+            - img "purugly" [ref=e1129]
+          - generic "chingling" [ref=e1130] [cursor=pointer]:
+            - img "chingling" [ref=e1131]
+          - generic "stunky" [ref=e1132] [cursor=pointer]:
+            - img "stunky" [ref=e1133]
+          - generic "skuntank" [ref=e1134] [cursor=pointer]:
+            - img "skuntank" [ref=e1135]
+          - generic "bronzor" [ref=e1136] [cursor=pointer]:
+            - img "bronzor" [ref=e1137]
+          - generic "bronzong" [ref=e1138] [cursor=pointer]:
+            - img "bronzong" [ref=e1139]
+          - generic "bonsly" [ref=e1140] [cursor=pointer]:
+            - img "bonsly" [ref=e1141]
+          - generic "mime-jr" [ref=e1142] [cursor=pointer]:
+            - img "mime-jr" [ref=e1143]
+          - generic "happiny" [ref=e1144] [cursor=pointer]:
+            - img "happiny" [ref=e1145]
+          - generic "chatot" [ref=e1146] [cursor=pointer]:
+            - img "chatot" [ref=e1147]
+          - generic "spiritomb" [ref=e1148] [cursor=pointer]:
+            - img "spiritomb" [ref=e1149]
+          - generic "gible" [ref=e1150] [cursor=pointer]:
+            - img "gible" [ref=e1151]
+          - generic "gabite" [ref=e1152] [cursor=pointer]:
+            - img "gabite" [ref=e1153]
+          - generic "garchomp" [ref=e1154] [cursor=pointer]:
+            - img "garchomp" [ref=e1155]
+          - generic "munchlax" [ref=e1156] [cursor=pointer]:
+            - img "munchlax" [ref=e1157]
+          - generic "riolu" [ref=e1158] [cursor=pointer]:
+            - img "riolu" [ref=e1159]
+          - generic "lucario" [ref=e1160] [cursor=pointer]:
+            - img "lucario" [ref=e1161]
+          - generic "hippopotas" [ref=e1162] [cursor=pointer]:
+            - img "hippopotas" [ref=e1163]
+          - generic "hippowdon" [ref=e1164] [cursor=pointer]:
+            - img "hippowdon" [ref=e1165]
+          - generic "skorupi" [ref=e1166] [cursor=pointer]:
+            - img "skorupi" [ref=e1167]
+          - generic "drapion" [ref=e1168] [cursor=pointer]:
+            - img "drapion" [ref=e1169]
+          - generic "croagunk" [ref=e1170] [cursor=pointer]:
+            - img "croagunk" [ref=e1171]
+          - generic "toxicroak" [ref=e1172] [cursor=pointer]:
+            - img "toxicroak" [ref=e1173]
+          - generic "carnivine" [ref=e1174] [cursor=pointer]:
+            - img "carnivine" [ref=e1175]
+          - generic "finneon" [ref=e1176] [cursor=pointer]:
+            - img "finneon" [ref=e1177]
+          - generic "lumineon" [ref=e1178] [cursor=pointer]:
+            - img "lumineon" [ref=e1179]
+          - generic "mantyke" [ref=e1180] [cursor=pointer]:
+            - img "mantyke" [ref=e1181]
+          - generic "snover" [ref=e1182] [cursor=pointer]:
+            - img "snover" [ref=e1183]
+          - generic "abomasnow" [ref=e1184] [cursor=pointer]:
+            - img "abomasnow" [ref=e1185]
+          - generic "weavile" [ref=e1186] [cursor=pointer]:
+            - img "weavile" [ref=e1187]
+          - generic "magnezone" [ref=e1188] [cursor=pointer]:
+            - img "magnezone" [ref=e1189]
+          - generic "lickilicky" [ref=e1190] [cursor=pointer]:
+            - img "lickilicky" [ref=e1191]
+          - generic "rhyperior" [ref=e1192] [cursor=pointer]:
+            - img "rhyperior" [ref=e1193]
+          - generic "tangrowth" [ref=e1194] [cursor=pointer]:
+            - img "tangrowth" [ref=e1195]
+          - generic "electivire" [ref=e1196] [cursor=pointer]:
+            - img "electivire" [ref=e1197]
+          - generic "magmortar" [ref=e1198] [cursor=pointer]:
+            - img "magmortar" [ref=e1199]
+          - generic "togekiss" [ref=e1200] [cursor=pointer]:
+            - img "togekiss" [ref=e1201]
+          - generic "yanmega" [ref=e1202] [cursor=pointer]:
+            - img "yanmega" [ref=e1203]
+          - generic "leafeon" [ref=e1204] [cursor=pointer]:
+            - img "leafeon" [ref=e1205]
+          - generic "glaceon" [ref=e1206] [cursor=pointer]:
+            - img "glaceon" [ref=e1207]
+          - generic "gliscor" [ref=e1208] [cursor=pointer]:
+            - img "gliscor" [ref=e1209]
+          - generic "mamoswine" [ref=e1210] [cursor=pointer]:
+            - img "mamoswine" [ref=e1211]
+          - generic "porygon-z" [ref=e1212] [cursor=pointer]:
+            - img "porygon-z" [ref=e1213]
+          - generic "gallade" [ref=e1214] [cursor=pointer]:
+            - img "gallade" [ref=e1215]
+          - generic "probopass" [ref=e1216] [cursor=pointer]:
+            - img "probopass" [ref=e1217]
+          - generic "dusknoir" [ref=e1218] [cursor=pointer]:
+            - img "dusknoir" [ref=e1219]
+          - generic "froslass" [ref=e1220] [cursor=pointer]:
+            - img "froslass" [ref=e1221]
+          - generic "rotom" [ref=e1222] [cursor=pointer]:
+            - img "rotom" [ref=e1223]
+          - generic "uxie" [ref=e1224] [cursor=pointer]:
+            - img "uxie" [ref=e1225]
+          - generic "mesprit" [ref=e1226] [cursor=pointer]:
+            - img "mesprit" [ref=e1227]
+          - generic "azelf" [ref=e1228] [cursor=pointer]:
+            - img "azelf" [ref=e1229]
+          - generic "dialga" [ref=e1230] [cursor=pointer]:
+            - img "dialga" [ref=e1231]
+          - generic "palkia" [ref=e1232] [cursor=pointer]:
+            - img "palkia" [ref=e1233]
+          - generic "heatran" [ref=e1234] [cursor=pointer]:
+            - img "heatran" [ref=e1235]
+          - generic "regigigas" [ref=e1236] [cursor=pointer]:
+            - img "regigigas" [ref=e1237]
+          - generic "giratina-altered" [ref=e1238] [cursor=pointer]:
+            - img "giratina-altered" [ref=e1239]
+          - generic "cresselia" [ref=e1240] [cursor=pointer]:
+            - img "cresselia" [ref=e1241]
+          - generic "phione" [ref=e1242] [cursor=pointer]:
+            - img "phione" [ref=e1243]
+          - generic "manaphy" [ref=e1244] [cursor=pointer]:
+            - img "manaphy" [ref=e1245]
+          - generic "darkrai" [ref=e1246] [cursor=pointer]:
+            - img "darkrai" [ref=e1247]
+          - generic "shaymin-land" [ref=e1248] [cursor=pointer]:
+            - img "shaymin-land" [ref=e1249]
+          - generic "arceus" [ref=e1250] [cursor=pointer]:
+            - img "arceus" [ref=e1251]
+      - generic [ref=e1252]:
+        - generic [ref=e1253]:
+          - generic [ref=e1254]: Generation V
+          - generic [ref=e1256]: 0 / 156
+        - generic [ref=e1257]:
+          - generic "victini" [ref=e1258] [cursor=pointer]:
+            - img "victini" [ref=e1259]
+          - generic "snivy" [ref=e1260] [cursor=pointer]:
+            - img "snivy" [ref=e1261]
+          - generic "servine" [ref=e1262] [cursor=pointer]:
+            - img "servine" [ref=e1263]
+          - generic "serperior" [ref=e1264] [cursor=pointer]:
+            - img "serperior" [ref=e1265]
+          - generic "tepig" [ref=e1266] [cursor=pointer]:
+            - img "tepig" [ref=e1267]
+          - generic "pignite" [ref=e1268] [cursor=pointer]:
+            - img "pignite" [ref=e1269]
+          - generic "emboar" [ref=e1270] [cursor=pointer]:
+            - img "emboar" [ref=e1271]
+          - generic "oshawott" [ref=e1272] [cursor=pointer]:
+            - img "oshawott" [ref=e1273]
+          - generic "dewott" [ref=e1274] [cursor=pointer]:
+            - img "dewott" [ref=e1275]
+          - generic "samurott" [ref=e1276] [cursor=pointer]:
+            - img "samurott" [ref=e1277]
+          - generic "patrat" [ref=e1278] [cursor=pointer]:
+            - img "patrat" [ref=e1279]
+          - generic "watchog" [ref=e1280] [cursor=pointer]:
+            - img "watchog" [ref=e1281]
+          - generic "lillipup" [ref=e1282] [cursor=pointer]:
+            - img "lillipup" [ref=e1283]
+          - generic "herdier" [ref=e1284] [cursor=pointer]:
+            - img "herdier" [ref=e1285]
+          - generic "stoutland" [ref=e1286] [cursor=pointer]:
+            - img "stoutland" [ref=e1287]
+          - generic "purrloin" [ref=e1288] [cursor=pointer]:
+            - img "purrloin" [ref=e1289]
+          - generic "liepard" [ref=e1290] [cursor=pointer]:
+            - img "liepard" [ref=e1291]
+          - generic "pansage" [ref=e1292] [cursor=pointer]:
+            - img "pansage" [ref=e1293]
+          - generic "simisage" [ref=e1294] [cursor=pointer]:
+            - img "simisage" [ref=e1295]
+          - generic "pansear" [ref=e1296] [cursor=pointer]:
+            - img "pansear" [ref=e1297]
+          - generic "simisear" [ref=e1298] [cursor=pointer]:
+            - img "simisear" [ref=e1299]
+          - generic "panpour" [ref=e1300] [cursor=pointer]:
+            - img "panpour" [ref=e1301]
+          - generic "simipour" [ref=e1302] [cursor=pointer]:
+            - img "simipour" [ref=e1303]
+          - generic "munna" [ref=e1304] [cursor=pointer]:
+            - img "munna" [ref=e1305]
+          - generic "musharna" [ref=e1306] [cursor=pointer]:
+            - img "musharna" [ref=e1307]
+          - generic "pidove" [ref=e1308] [cursor=pointer]:
+            - img "pidove" [ref=e1309]
+          - generic "tranquill" [ref=e1310] [cursor=pointer]:
+            - img "tranquill" [ref=e1311]
+          - generic "unfezant" [ref=e1312] [cursor=pointer]:
+            - img "unfezant" [ref=e1313]
+          - generic "blitzle" [ref=e1314] [cursor=pointer]:
+            - img "blitzle" [ref=e1315]
+          - generic "zebstrika" [ref=e1316] [cursor=pointer]:
+            - img "zebstrika" [ref=e1317]
+          - generic "roggenrola" [ref=e1318] [cursor=pointer]:
+            - img "roggenrola" [ref=e1319]
+          - generic "boldore" [ref=e1320] [cursor=pointer]:
+            - img "boldore" [ref=e1321]
+          - generic "gigalith" [ref=e1322] [cursor=pointer]:
+            - img "gigalith" [ref=e1323]
+          - generic "woobat" [ref=e1324] [cursor=pointer]:
+            - img "woobat" [ref=e1325]
+          - generic "swoobat" [ref=e1326] [cursor=pointer]:
+            - img "swoobat" [ref=e1327]
+          - generic "drilbur" [ref=e1328] [cursor=pointer]:
+            - img "drilbur" [ref=e1329]
+          - generic "excadrill" [ref=e1330] [cursor=pointer]:
+            - img "excadrill" [ref=e1331]
+          - generic "audino" [ref=e1332] [cursor=pointer]:
+            - img "audino" [ref=e1333]
+          - generic "timburr" [ref=e1334] [cursor=pointer]:
+            - img "timburr" [ref=e1335]
+          - generic "gurdurr" [ref=e1336] [cursor=pointer]:
+            - img "gurdurr" [ref=e1337]
+          - generic "conkeldurr" [ref=e1338] [cursor=pointer]:
+            - img "conkeldurr" [ref=e1339]
+          - generic "tympole" [ref=e1340] [cursor=pointer]:
+            - img "tympole" [ref=e1341]
+          - generic "palpitoad" [ref=e1342] [cursor=pointer]:
+            - img "palpitoad" [ref=e1343]
+          - generic "seismitoad" [ref=e1344] [cursor=pointer]:
+            - img "seismitoad" [ref=e1345]
+          - generic "throh" [ref=e1346] [cursor=pointer]:
+            - img "throh" [ref=e1347]
+          - generic "sawk" [ref=e1348] [cursor=pointer]:
+            - img "sawk" [ref=e1349]
+          - generic "sewaddle" [ref=e1350] [cursor=pointer]:
+            - img "sewaddle" [ref=e1351]
+          - generic "swadloon" [ref=e1352] [cursor=pointer]:
+            - img "swadloon" [ref=e1353]
+          - generic "leavanny" [ref=e1354] [cursor=pointer]:
+            - img "leavanny" [ref=e1355]
+          - generic "venipede" [ref=e1356] [cursor=pointer]:
+            - img "venipede" [ref=e1357]
+          - generic "whirlipede" [ref=e1358] [cursor=pointer]:
+            - img "whirlipede" [ref=e1359]
+          - generic "scolipede" [ref=e1360] [cursor=pointer]:
+            - img "scolipede" [ref=e1361]
+          - generic "cottonee" [ref=e1362] [cursor=pointer]:
+            - img "cottonee" [ref=e1363]
+          - generic "whimsicott" [ref=e1364] [cursor=pointer]:
+            - img "whimsicott" [ref=e1365]
+          - generic "petilil" [ref=e1366] [cursor=pointer]:
+            - img "petilil" [ref=e1367]
+          - generic "lilligant" [ref=e1368] [cursor=pointer]:
+            - img "lilligant" [ref=e1369]
+          - generic "basculin-red-striped" [ref=e1370] [cursor=pointer]:
+            - img "basculin-red-striped" [ref=e1371]
+          - generic "sandile" [ref=e1372] [cursor=pointer]:
+            - img "sandile" [ref=e1373]
+          - generic "krokorok" [ref=e1374] [cursor=pointer]:
+            - img "krokorok" [ref=e1375]
+          - generic "krookodile" [ref=e1376] [cursor=pointer]:
+            - img "krookodile" [ref=e1377]
+          - generic "darumaka" [ref=e1378] [cursor=pointer]:
+            - img "darumaka" [ref=e1379]
+          - generic "darmanitan-standard" [ref=e1380] [cursor=pointer]:
+            - img "darmanitan-standard" [ref=e1381]
+          - generic "maractus" [ref=e1382] [cursor=pointer]:
+            - img "maractus" [ref=e1383]
+          - generic "dwebble" [ref=e1384] [cursor=pointer]:
+            - img "dwebble" [ref=e1385]
+          - generic "crustle" [ref=e1386] [cursor=pointer]:
+            - img "crustle" [ref=e1387]
+          - generic "scraggy" [ref=e1388] [cursor=pointer]:
+            - img "scraggy" [ref=e1389]
+          - generic "scrafty" [ref=e1390] [cursor=pointer]:
+            - img "scrafty" [ref=e1391]
+          - generic "sigilyph" [ref=e1392] [cursor=pointer]:
+            - img "sigilyph" [ref=e1393]
+          - generic "yamask" [ref=e1394] [cursor=pointer]:
+            - img "yamask" [ref=e1395]
+          - generic "cofagrigus" [ref=e1396] [cursor=pointer]:
+            - img "cofagrigus" [ref=e1397]
+          - generic "tirtouga" [ref=e1398] [cursor=pointer]:
+            - img "tirtouga" [ref=e1399]
+          - generic "carracosta" [ref=e1400] [cursor=pointer]:
+            - img "carracosta" [ref=e1401]
+          - generic "archen" [ref=e1402] [cursor=pointer]:
+            - img "archen" [ref=e1403]
+          - generic "archeops" [ref=e1404] [cursor=pointer]:
+            - img "archeops" [ref=e1405]
+          - generic "trubbish" [ref=e1406] [cursor=pointer]:
+            - img "trubbish" [ref=e1407]
+          - generic "garbodor" [ref=e1408] [cursor=pointer]:
+            - img "garbodor" [ref=e1409]
+          - generic "zorua" [ref=e1410] [cursor=pointer]:
+            - img "zorua" [ref=e1411]
+          - generic "zoroark" [ref=e1412] [cursor=pointer]:
+            - img "zoroark" [ref=e1413]
+          - generic "minccino" [ref=e1414] [cursor=pointer]:
+            - img "minccino" [ref=e1415]
+          - generic "cinccino" [ref=e1416] [cursor=pointer]:
+            - img "cinccino" [ref=e1417]
+          - generic "gothita" [ref=e1418] [cursor=pointer]:
+            - img "gothita" [ref=e1419]
+          - generic "gothorita" [ref=e1420] [cursor=pointer]:
+            - img "gothorita" [ref=e1421]
+          - generic "gothitelle" [ref=e1422] [cursor=pointer]:
+            - img "gothitelle" [ref=e1423]
+          - generic "solosis" [ref=e1424] [cursor=pointer]:
+            - img "solosis" [ref=e1425]
+          - generic "duosion" [ref=e1426] [cursor=pointer]:
+            - img "duosion" [ref=e1427]
+          - generic "reuniclus" [ref=e1428] [cursor=pointer]:
+            - img "reuniclus" [ref=e1429]
+          - generic "ducklett" [ref=e1430] [cursor=pointer]:
+            - img "ducklett" [ref=e1431]
+          - generic "swanna" [ref=e1432] [cursor=pointer]:
+            - img "swanna" [ref=e1433]
+          - generic "vanillite" [ref=e1434] [cursor=pointer]:
+            - img "vanillite" [ref=e1435]
+          - generic "vanillish" [ref=e1436] [cursor=pointer]:
+            - img "vanillish" [ref=e1437]
+          - generic "vanilluxe" [ref=e1438] [cursor=pointer]:
+            - img "vanilluxe" [ref=e1439]
+          - generic "deerling" [ref=e1440] [cursor=pointer]:
+            - img "deerling" [ref=e1441]
+          - generic "sawsbuck" [ref=e1442] [cursor=pointer]:
+            - img "sawsbuck" [ref=e1443]
+          - generic "emolga" [ref=e1444] [cursor=pointer]:
+            - img "emolga" [ref=e1445]
+          - generic "karrablast" [ref=e1446] [cursor=pointer]:
+            - img "karrablast" [ref=e1447]
+          - generic "escavalier" [ref=e1448] [cursor=pointer]:
+            - img "escavalier" [ref=e1449]
+          - generic "foongus" [ref=e1450] [cursor=pointer]:
+            - img "foongus" [ref=e1451]
+          - generic "amoonguss" [ref=e1452] [cursor=pointer]:
+            - img "amoonguss" [ref=e1453]
+          - generic "frillish-male" [ref=e1454] [cursor=pointer]:
+            - img "frillish-male" [ref=e1455]
+          - generic "jellicent-male" [ref=e1456] [cursor=pointer]:
+            - img "jellicent-male" [ref=e1457]
+          - generic "alomomola" [ref=e1458] [cursor=pointer]:
+            - img "alomomola" [ref=e1459]
+          - generic "joltik" [ref=e1460] [cursor=pointer]:
+            - img "joltik" [ref=e1461]
+          - generic "galvantula" [ref=e1462] [cursor=pointer]:
+            - img "galvantula" [ref=e1463]
+          - generic "ferroseed" [ref=e1464] [cursor=pointer]:
+            - img "ferroseed" [ref=e1465]
+          - generic "ferrothorn" [ref=e1466] [cursor=pointer]:
+            - img "ferrothorn" [ref=e1467]
+          - generic "klink" [ref=e1468] [cursor=pointer]:
+            - img "klink" [ref=e1469]
+          - generic "klang" [ref=e1470] [cursor=pointer]:
+            - img "klang" [ref=e1471]
+          - generic "klinklang" [ref=e1472] [cursor=pointer]:
+            - img "klinklang" [ref=e1473]
+          - generic "tynamo" [ref=e1474] [cursor=pointer]:
+            - img "tynamo" [ref=e1475]
+          - generic "eelektrik" [ref=e1476] [cursor=pointer]:
+            - img "eelektrik" [ref=e1477]
+          - generic "eelektross" [ref=e1478] [cursor=pointer]:
+            - img "eelektross" [ref=e1479]
+          - generic "elgyem" [ref=e1480] [cursor=pointer]:
+            - img "elgyem" [ref=e1481]
+          - generic "beheeyem" [ref=e1482] [cursor=pointer]:
+            - img "beheeyem" [ref=e1483]
+          - generic "litwick" [ref=e1484] [cursor=pointer]:
+            - img "litwick" [ref=e1485]
+          - generic "lampent" [ref=e1486] [cursor=pointer]:
+            - img "lampent" [ref=e1487]
+          - generic "chandelure" [ref=e1488] [cursor=pointer]:
+            - img "chandelure" [ref=e1489]
+          - generic "axew" [ref=e1490] [cursor=pointer]:
+            - img "axew" [ref=e1491]
+          - generic "fraxure" [ref=e1492] [cursor=pointer]:
+            - img "fraxure" [ref=e1493]
+          - generic "haxorus" [ref=e1494] [cursor=pointer]:
+            - img "haxorus" [ref=e1495]
+          - generic "cubchoo" [ref=e1496] [cursor=pointer]:
+            - img "cubchoo" [ref=e1497]
+          - generic "beartic" [ref=e1498] [cursor=pointer]:
+            - img "beartic" [ref=e1499]
+          - generic "cryogonal" [ref=e1500] [cursor=pointer]:
+            - img "cryogonal" [ref=e1501]
+          - generic "shelmet" [ref=e1502] [cursor=pointer]:
+            - img "shelmet" [ref=e1503]
+          - generic "accelgor" [ref=e1504] [cursor=pointer]:
+            - img "accelgor" [ref=e1505]
+          - generic "stunfisk" [ref=e1506] [cursor=pointer]:
+            - img "stunfisk" [ref=e1507]
+          - generic "mienfoo" [ref=e1508] [cursor=pointer]:
+            - img "mienfoo" [ref=e1509]
+          - generic "mienshao" [ref=e1510] [cursor=pointer]:
+            - img "mienshao" [ref=e1511]
+          - generic "druddigon" [ref=e1512] [cursor=pointer]:
+            - img "druddigon" [ref=e1513]
+          - generic "golett" [ref=e1514] [cursor=pointer]:
+            - img "golett" [ref=e1515]
+          - generic "golurk" [ref=e1516] [cursor=pointer]:
+            - img "golurk" [ref=e1517]
+          - generic "pawniard" [ref=e1518] [cursor=pointer]:
+            - img "pawniard" [ref=e1519]
+          - generic "bisharp" [ref=e1520] [cursor=pointer]:
+            - img "bisharp" [ref=e1521]
+          - generic "bouffalant" [ref=e1522] [cursor=pointer]:
+            - img "bouffalant" [ref=e1523]
+          - generic "rufflet" [ref=e1524] [cursor=pointer]:
+            - img "rufflet" [ref=e1525]
+          - generic "braviary" [ref=e1526] [cursor=pointer]:
+            - img "braviary" [ref=e1527]
+          - generic "vullaby" [ref=e1528] [cursor=pointer]:
+            - img "vullaby" [ref=e1529]
+          - generic "mandibuzz" [ref=e1530] [cursor=pointer]:
+            - img "mandibuzz" [ref=e1531]
+          - generic "heatmor" [ref=e1532] [cursor=pointer]:
+            - img "heatmor" [ref=e1533]
+          - generic "durant" [ref=e1534] [cursor=pointer]:
+            - img "durant" [ref=e1535]
+          - generic "deino" [ref=e1536] [cursor=pointer]:
+            - img "deino" [ref=e1537]
+          - generic "zweilous" [ref=e1538] [cursor=pointer]:
+            - img "zweilous" [ref=e1539]
+          - generic "hydreigon" [ref=e1540] [cursor=pointer]:
+            - img "hydreigon" [ref=e1541]
+          - generic "larvesta" [ref=e1542] [cursor=pointer]:
+            - img "larvesta" [ref=e1543]
+          - generic "volcarona" [ref=e1544] [cursor=pointer]:
+            - img "volcarona" [ref=e1545]
+          - generic "cobalion" [ref=e1546] [cursor=pointer]:
+            - img "cobalion" [ref=e1547]
+          - generic "terrakion" [ref=e1548] [cursor=pointer]:
+            - img "terrakion" [ref=e1549]
+          - generic "virizion" [ref=e1550] [cursor=pointer]:
+            - img "virizion" [ref=e1551]
+          - generic "tornadus-incarnate" [ref=e1552] [cursor=pointer]:
+            - img "tornadus-incarnate" [ref=e1553]
+          - generic "thundurus-incarnate" [ref=e1554] [cursor=pointer]:
+            - img "thundurus-incarnate" [ref=e1555]
+          - generic "reshiram" [ref=e1556] [cursor=pointer]:
+            - img "reshiram" [ref=e1557]
+          - generic "zekrom" [ref=e1558] [cursor=pointer]:
+            - img "zekrom" [ref=e1559]
+          - generic "landorus-incarnate" [ref=e1560] [cursor=pointer]:
+            - img "landorus-incarnate" [ref=e1561]
+          - generic "kyurem" [ref=e1562] [cursor=pointer]:
+            - img "kyurem" [ref=e1563]
+          - generic "keldeo-ordinary" [ref=e1564] [cursor=pointer]:
+            - img "keldeo-ordinary" [ref=e1565]
+          - generic "meloetta-aria" [ref=e1566] [cursor=pointer]:
+            - img "meloetta-aria" [ref=e1567]
+          - generic "genesect" [ref=e1568] [cursor=pointer]:
+            - img "genesect" [ref=e1569]
+      - generic [ref=e1570]:
+        - generic [ref=e1571]:
+          - generic [ref=e1572]: Generation VI
+          - generic [ref=e1574]: 0 / 72
+        - generic [ref=e1575]:
+          - generic "chespin" [ref=e1576] [cursor=pointer]:
+            - img "chespin" [ref=e1577]
+          - generic "quilladin" [ref=e1578] [cursor=pointer]:
+            - img "quilladin" [ref=e1579]
+          - generic "chesnaught" [ref=e1580] [cursor=pointer]:
+            - img "chesnaught" [ref=e1581]
+          - generic "fennekin" [ref=e1582] [cursor=pointer]:
+            - img "fennekin" [ref=e1583]
+          - generic "braixen" [ref=e1584] [cursor=pointer]:
+            - img "braixen" [ref=e1585]
+          - generic "delphox" [ref=e1586] [cursor=pointer]:
+            - img "delphox" [ref=e1587]
+          - generic "froakie" [ref=e1588] [cursor=pointer]:
+            - img "froakie" [ref=e1589]
+          - generic "frogadier" [ref=e1590] [cursor=pointer]:
+            - img "frogadier" [ref=e1591]
+          - generic "greninja" [ref=e1592] [cursor=pointer]:
+            - img "greninja" [ref=e1593]
+          - generic "bunnelby" [ref=e1594] [cursor=pointer]:
+            - img "bunnelby" [ref=e1595]
+          - generic "diggersby" [ref=e1596] [cursor=pointer]:
+            - img "diggersby" [ref=e1597]
+          - generic "fletchling" [ref=e1598] [cursor=pointer]:
+            - img "fletchling" [ref=e1599]
+          - generic "fletchinder" [ref=e1600] [cursor=pointer]:
+            - img "fletchinder" [ref=e1601]
+          - generic "talonflame" [ref=e1602] [cursor=pointer]:
+            - img "talonflame" [ref=e1603]
+          - generic "scatterbug" [ref=e1604] [cursor=pointer]:
+            - img "scatterbug" [ref=e1605]
+          - generic "spewpa" [ref=e1606] [cursor=pointer]:
+            - img "spewpa" [ref=e1607]
+          - generic "vivillon" [ref=e1608] [cursor=pointer]:
+            - img "vivillon" [ref=e1609]
+          - generic "litleo" [ref=e1610] [cursor=pointer]:
+            - img "litleo" [ref=e1611]
+          - generic "pyroar-male" [ref=e1612] [cursor=pointer]:
+            - img "pyroar-male" [ref=e1613]
+          - generic "flabebe" [ref=e1614] [cursor=pointer]:
+            - img "flabebe" [ref=e1615]
+          - generic "floette" [ref=e1616] [cursor=pointer]:
+            - img "floette" [ref=e1617]
+          - generic "florges" [ref=e1618] [cursor=pointer]:
+            - img "florges" [ref=e1619]
+          - generic "skiddo" [ref=e1620] [cursor=pointer]:
+            - img "skiddo" [ref=e1621]
+          - generic "gogoat" [ref=e1622] [cursor=pointer]:
+            - img "gogoat" [ref=e1623]
+          - generic "pancham" [ref=e1624] [cursor=pointer]:
+            - img "pancham" [ref=e1625]
+          - generic "pangoro" [ref=e1626] [cursor=pointer]:
+            - img "pangoro" [ref=e1627]
+          - generic "furfrou" [ref=e1628] [cursor=pointer]:
+            - img "furfrou" [ref=e1629]
+          - generic "espurr" [ref=e1630] [cursor=pointer]:
+            - img "espurr" [ref=e1631]
+          - generic "meowstic-male" [ref=e1632] [cursor=pointer]:
+            - img "meowstic-male" [ref=e1633]
+          - generic "honedge" [ref=e1634] [cursor=pointer]:
+            - img "honedge" [ref=e1635]
+          - generic "doublade" [ref=e1636] [cursor=pointer]:
+            - img "doublade" [ref=e1637]
+          - generic "aegislash-shield" [ref=e1638] [cursor=pointer]:
+            - img "aegislash-shield" [ref=e1639]
+          - generic "spritzee" [ref=e1640] [cursor=pointer]:
+            - img "spritzee" [ref=e1641]
+          - generic "aromatisse" [ref=e1642] [cursor=pointer]:
+            - img "aromatisse" [ref=e1643]
+          - generic "swirlix" [ref=e1644] [cursor=pointer]:
+            - img "swirlix" [ref=e1645]
+          - generic "slurpuff" [ref=e1646] [cursor=pointer]:
+            - img "slurpuff" [ref=e1647]
+          - generic "inkay" [ref=e1648] [cursor=pointer]:
+            - img "inkay" [ref=e1649]
+          - generic "malamar" [ref=e1650] [cursor=pointer]:
+            - img "malamar" [ref=e1651]
+          - generic "binacle" [ref=e1652] [cursor=pointer]:
+            - img "binacle" [ref=e1653]
+          - generic "barbaracle" [ref=e1654] [cursor=pointer]:
+            - img "barbaracle" [ref=e1655]
+          - generic "skrelp" [ref=e1656] [cursor=pointer]:
+            - img "skrelp" [ref=e1657]
+          - generic "dragalge" [ref=e1658] [cursor=pointer]:
+            - img "dragalge" [ref=e1659]
+          - generic "clauncher" [ref=e1660] [cursor=pointer]:
+            - img "clauncher" [ref=e1661]
+          - generic "clawitzer" [ref=e1662] [cursor=pointer]:
+            - img "clawitzer" [ref=e1663]
+          - generic "helioptile" [ref=e1664] [cursor=pointer]:
+            - img "helioptile" [ref=e1665]
+          - generic "heliolisk" [ref=e1666] [cursor=pointer]:
+            - img "heliolisk" [ref=e1667]
+          - generic "tyrunt" [ref=e1668] [cursor=pointer]:
+            - img "tyrunt" [ref=e1669]
+          - generic "tyrantrum" [ref=e1670] [cursor=pointer]:
+            - img "tyrantrum" [ref=e1671]
+          - generic "amaura" [ref=e1672] [cursor=pointer]:
+            - img "amaura" [ref=e1673]
+          - generic "aurorus" [ref=e1674] [cursor=pointer]:
+            - img "aurorus" [ref=e1675]
+          - generic "sylveon" [ref=e1676] [cursor=pointer]:
+            - img "sylveon" [ref=e1677]
+          - generic "hawlucha" [ref=e1678] [cursor=pointer]:
+            - img "hawlucha" [ref=e1679]
+          - generic "dedenne" [ref=e1680] [cursor=pointer]:
+            - img "dedenne" [ref=e1681]
+          - generic "carbink" [ref=e1682] [cursor=pointer]:
+            - img "carbink" [ref=e1683]
+          - generic "goomy" [ref=e1684] [cursor=pointer]:
+            - img "goomy" [ref=e1685]
+          - generic "sliggoo" [ref=e1686] [cursor=pointer]:
+            - img "sliggoo" [ref=e1687]
+          - generic "goodra" [ref=e1688] [cursor=pointer]:
+            - img "goodra" [ref=e1689]
+          - generic "klefki" [ref=e1690] [cursor=pointer]:
+            - img "klefki" [ref=e1691]
+          - generic "phantump" [ref=e1692] [cursor=pointer]:
+            - img "phantump" [ref=e1693]
+          - generic "trevenant" [ref=e1694] [cursor=pointer]:
+            - img "trevenant" [ref=e1695]
+          - generic "pumpkaboo-average" [ref=e1696] [cursor=pointer]:
+            - img "pumpkaboo-average" [ref=e1697]
+          - generic "gourgeist-average" [ref=e1698] [cursor=pointer]:
+            - img "gourgeist-average" [ref=e1699]
+          - generic "bergmite" [ref=e1700] [cursor=pointer]:
+            - img "bergmite" [ref=e1701]
+          - generic "avalugg" [ref=e1702] [cursor=pointer]:
+            - img "avalugg" [ref=e1703]
+          - generic "noibat" [ref=e1704] [cursor=pointer]:
+            - img "noibat" [ref=e1705]
+          - generic "noivern" [ref=e1706] [cursor=pointer]:
+            - img "noivern" [ref=e1707]
+          - generic "xerneas" [ref=e1708] [cursor=pointer]:
+            - img "xerneas" [ref=e1709]
+          - generic "yveltal" [ref=e1710] [cursor=pointer]:
+            - img "yveltal" [ref=e1711]
+          - generic "zygarde-50" [ref=e1712] [cursor=pointer]:
+            - img "zygarde-50" [ref=e1713]
+          - generic "diancie" [ref=e1714] [cursor=pointer]:
+            - img "diancie" [ref=e1715]
+          - generic "hoopa" [ref=e1716] [cursor=pointer]:
+            - img "hoopa" [ref=e1717]
+          - generic "volcanion" [ref=e1718] [cursor=pointer]:
+            - img "volcanion" [ref=e1719]
+      - generic [ref=e1720]:
+        - generic [ref=e1721]:
+          - generic [ref=e1722]: Generation VII
+          - generic [ref=e1724]: 0 / 88
+        - generic [ref=e1725]:
+          - generic "rowlet" [ref=e1726] [cursor=pointer]:
+            - img "rowlet" [ref=e1727]
+          - generic "dartrix" [ref=e1728] [cursor=pointer]:
+            - img "dartrix" [ref=e1729]
+          - generic "decidueye" [ref=e1730] [cursor=pointer]:
+            - img "decidueye" [ref=e1731]
+          - generic "litten" [ref=e1732] [cursor=pointer]:
+            - img "litten" [ref=e1733]
+          - generic "torracat" [ref=e1734] [cursor=pointer]:
+            - img "torracat" [ref=e1735]
+          - generic "incineroar" [ref=e1736] [cursor=pointer]:
+            - img "incineroar" [ref=e1737]
+          - generic "popplio" [ref=e1738] [cursor=pointer]:
+            - img "popplio" [ref=e1739]
+          - generic "brionne" [ref=e1740] [cursor=pointer]:
+            - img "brionne" [ref=e1741]
+          - generic "primarina" [ref=e1742] [cursor=pointer]:
+            - img "primarina" [ref=e1743]
+          - generic "pikipek" [ref=e1744] [cursor=pointer]:
+            - img "pikipek" [ref=e1745]
+          - generic "trumbeak" [ref=e1746] [cursor=pointer]:
+            - img "trumbeak" [ref=e1747]
+          - generic "toucannon" [ref=e1748] [cursor=pointer]:
+            - img "toucannon" [ref=e1749]
+          - generic "yungoos" [ref=e1750] [cursor=pointer]:
+            - img "yungoos" [ref=e1751]
+          - generic "gumshoos" [ref=e1752] [cursor=pointer]:
+            - img "gumshoos" [ref=e1753]
+          - generic "grubbin" [ref=e1754] [cursor=pointer]:
+            - img "grubbin" [ref=e1755]
+          - generic "charjabug" [ref=e1756] [cursor=pointer]:
+            - img "charjabug" [ref=e1757]
+          - generic "vikavolt" [ref=e1758] [cursor=pointer]:
+            - img "vikavolt" [ref=e1759]
+          - generic "crabrawler" [ref=e1760] [cursor=pointer]:
+            - img "crabrawler" [ref=e1761]
+          - generic "crabominable" [ref=e1762] [cursor=pointer]:
+            - img "crabominable" [ref=e1763]
+          - generic "oricorio-baile" [ref=e1764] [cursor=pointer]:
+            - img "oricorio-baile" [ref=e1765]
+          - generic "cutiefly" [ref=e1766] [cursor=pointer]:
+            - img "cutiefly" [ref=e1767]
+          - generic "ribombee" [ref=e1768] [cursor=pointer]:
+            - img "ribombee" [ref=e1769]
+          - generic "rockruff" [ref=e1770] [cursor=pointer]:
+            - img "rockruff" [ref=e1771]
+          - generic "lycanroc-midday" [ref=e1772] [cursor=pointer]:
+            - img "lycanroc-midday" [ref=e1773]
+          - generic "wishiwashi-solo" [ref=e1774] [cursor=pointer]:
+            - img "wishiwashi-solo" [ref=e1775]
+          - generic "mareanie" [ref=e1776] [cursor=pointer]:
+            - img "mareanie" [ref=e1777]
+          - generic "toxapex" [ref=e1778] [cursor=pointer]:
+            - img "toxapex" [ref=e1779]
+          - generic "mudbray" [ref=e1780] [cursor=pointer]:
+            - img "mudbray" [ref=e1781]
+          - generic "mudsdale" [ref=e1782] [cursor=pointer]:
+            - img "mudsdale" [ref=e1783]
+          - generic "dewpider" [ref=e1784] [cursor=pointer]:
+            - img "dewpider" [ref=e1785]
+          - generic "araquanid" [ref=e1786] [cursor=pointer]:
+            - img "araquanid" [ref=e1787]
+          - generic "fomantis" [ref=e1788] [cursor=pointer]:
+            - img "fomantis" [ref=e1789]
+          - generic "lurantis" [ref=e1790] [cursor=pointer]:
+            - img "lurantis" [ref=e1791]
+          - generic "morelull" [ref=e1792] [cursor=pointer]:
+            - img "morelull" [ref=e1793]
+          - generic "shiinotic" [ref=e1794] [cursor=pointer]:
+            - img "shiinotic" [ref=e1795]
+          - generic "salandit" [ref=e1796] [cursor=pointer]:
+            - img "salandit" [ref=e1797]
+          - generic "salazzle" [ref=e1798] [cursor=pointer]:
+            - img "salazzle" [ref=e1799]
+          - generic "stufful" [ref=e1800] [cursor=pointer]:
+            - img "stufful" [ref=e1801]
+          - generic "bewear" [ref=e1802] [cursor=pointer]:
+            - img "bewear" [ref=e1803]
+          - generic "bounsweet" [ref=e1804] [cursor=pointer]:
+            - img "bounsweet" [ref=e1805]
+          - generic "steenee" [ref=e1806] [cursor=pointer]:
+            - img "steenee" [ref=e1807]
+          - generic "tsareena" [ref=e1808] [cursor=pointer]:
+            - img "tsareena" [ref=e1809]
+          - generic "comfey" [ref=e1810] [cursor=pointer]:
+            - img "comfey" [ref=e1811]
+          - generic "oranguru" [ref=e1812] [cursor=pointer]:
+            - img "oranguru" [ref=e1813]
+          - generic "passimian" [ref=e1814] [cursor=pointer]:
+            - img "passimian" [ref=e1815]
+          - generic "wimpod" [ref=e1816] [cursor=pointer]:
+            - img "wimpod" [ref=e1817]
+          - generic "golisopod" [ref=e1818] [cursor=pointer]:
+            - img "golisopod" [ref=e1819]
+          - generic "sandygast" [ref=e1820] [cursor=pointer]:
+            - img "sandygast" [ref=e1821]
+          - generic "palossand" [ref=e1822] [cursor=pointer]:
+            - img "palossand" [ref=e1823]
+          - generic "pyukumuku" [ref=e1824] [cursor=pointer]:
+            - img "pyukumuku" [ref=e1825]
+          - generic "type-null" [ref=e1826] [cursor=pointer]:
+            - img "type-null" [ref=e1827]
+          - generic "silvally" [ref=e1828] [cursor=pointer]:
+            - img "silvally" [ref=e1829]
+          - generic "minior-red-meteor" [ref=e1830] [cursor=pointer]:
+            - img "minior-red-meteor" [ref=e1831]
+          - generic "komala" [ref=e1832] [cursor=pointer]:
+            - img "komala" [ref=e1833]
+          - generic "turtonator" [ref=e1834] [cursor=pointer]:
+            - img "turtonator" [ref=e1835]
+          - generic "togedemaru" [ref=e1836] [cursor=pointer]:
+            - img "togedemaru" [ref=e1837]
+          - generic "mimikyu-disguised" [ref=e1838] [cursor=pointer]:
+            - img "mimikyu-disguised" [ref=e1839]
+          - generic "bruxish" [ref=e1840] [cursor=pointer]:
+            - img "bruxish" [ref=e1841]
+          - generic "drampa" [ref=e1842] [cursor=pointer]:
+            - img "drampa" [ref=e1843]
+          - generic "dhelmise" [ref=e1844] [cursor=pointer]:
+            - img "dhelmise" [ref=e1845]
+          - generic "jangmo-o" [ref=e1846] [cursor=pointer]:
+            - img "jangmo-o" [ref=e1847]
+          - generic "hakamo-o" [ref=e1848] [cursor=pointer]:
+            - img "hakamo-o" [ref=e1849]
+          - generic "kommo-o" [ref=e1850] [cursor=pointer]:
+            - img "kommo-o" [ref=e1851]
+          - generic "tapu-koko" [ref=e1852] [cursor=pointer]:
+            - img "tapu-koko" [ref=e1853]
+          - generic "tapu-lele" [ref=e1854] [cursor=pointer]:
+            - img "tapu-lele" [ref=e1855]
+          - generic "tapu-bulu" [ref=e1856] [cursor=pointer]:
+            - img "tapu-bulu" [ref=e1857]
+          - generic "tapu-fini" [ref=e1858] [cursor=pointer]:
+            - img "tapu-fini" [ref=e1859]
+          - generic "cosmog" [ref=e1860] [cursor=pointer]:
+            - img "cosmog" [ref=e1861]
+          - generic "cosmoem" [ref=e1862] [cursor=pointer]:
+            - img "cosmoem" [ref=e1863]
+          - generic "solgaleo" [ref=e1864] [cursor=pointer]:
+            - img "solgaleo" [ref=e1865]
+          - generic "lunala" [ref=e1866] [cursor=pointer]:
+            - img "lunala" [ref=e1867]
+          - generic "nihilego" [ref=e1868] [cursor=pointer]:
+            - img "nihilego" [ref=e1869]
+          - generic "buzzwole" [ref=e1870] [cursor=pointer]:
+            - img "buzzwole" [ref=e1871]
+          - generic "pheromosa" [ref=e1872] [cursor=pointer]:
+            - img "pheromosa" [ref=e1873]
+          - generic "xurkitree" [ref=e1874] [cursor=pointer]:
+            - img "xurkitree" [ref=e1875]
+          - generic "celesteela" [ref=e1876] [cursor=pointer]:
+            - img "celesteela" [ref=e1877]
+          - generic "kartana" [ref=e1878] [cursor=pointer]:
+            - img "kartana" [ref=e1879]
+          - generic "guzzlord" [ref=e1880] [cursor=pointer]:
+            - img "guzzlord" [ref=e1881]
+          - generic "necrozma" [ref=e1882] [cursor=pointer]:
+            - img "necrozma" [ref=e1883]
+          - generic "magearna" [ref=e1884] [cursor=pointer]:
+            - img "magearna" [ref=e1885]
+          - generic "marshadow" [ref=e1886] [cursor=pointer]:
+            - img "marshadow" [ref=e1887]
+          - generic "poipole" [ref=e1888] [cursor=pointer]:
+            - img "poipole" [ref=e1889]
+          - generic "naganadel" [ref=e1890] [cursor=pointer]:
+            - img "naganadel" [ref=e1891]
+          - generic "stakataka" [ref=e1892] [cursor=pointer]:
+            - img "stakataka" [ref=e1893]
+          - generic "blacephalon" [ref=e1894] [cursor=pointer]:
+            - img "blacephalon" [ref=e1895]
+          - generic "zeraora" [ref=e1896] [cursor=pointer]:
+            - img "zeraora" [ref=e1897]
+          - generic "meltan" [ref=e1898] [cursor=pointer]:
+            - img "meltan" [ref=e1899]
+          - generic "melmetal" [ref=e1900] [cursor=pointer]:
+            - img "melmetal" [ref=e1901]
+      - generic [ref=e1902]:
+        - generic [ref=e1903]:
+          - generic [ref=e1904]: Generation VIII
+          - generic [ref=e1906]: 1 / 96
+        - generic [ref=e1907]:
+          - generic "grookey" [ref=e1908] [cursor=pointer]:
+            - img "grookey" [ref=e1909]
+          - generic "thwackey" [ref=e1910] [cursor=pointer]:
+            - img "thwackey" [ref=e1911]
+          - generic "rillaboom" [ref=e1912] [cursor=pointer]:
+            - img "rillaboom" [ref=e1913]
+          - generic "scorbunny" [ref=e1914] [cursor=pointer]:
+            - img "scorbunny" [ref=e1915]
+          - generic "raboot" [ref=e1916] [cursor=pointer]:
+            - img "raboot" [ref=e1917]
+          - generic "cinderace" [ref=e1918] [cursor=pointer]:
+            - img "cinderace" [ref=e1919]
+          - generic "sobble" [ref=e1920] [cursor=pointer]:
+            - img "sobble" [ref=e1921]
+          - generic "drizzile" [ref=e1922] [cursor=pointer]:
+            - img "drizzile" [ref=e1923]
+          - generic "inteleon" [ref=e1924] [cursor=pointer]:
+            - img "inteleon" [ref=e1925]
+          - generic "skwovet" [ref=e1926] [cursor=pointer]:
+            - img "skwovet" [ref=e1927]
+          - generic "greedent" [ref=e1928] [cursor=pointer]:
+            - img "greedent" [ref=e1929]
+          - generic "rookidee" [ref=e1930] [cursor=pointer]:
+            - img "rookidee" [ref=e1931]
+          - generic "corvisquire" [ref=e1932] [cursor=pointer]:
+            - img "corvisquire" [ref=e1933]
+          - generic "corviknight" [ref=e1934] [cursor=pointer]:
+            - img "corviknight" [ref=e1935]
+          - generic "blipbug" [ref=e1936] [cursor=pointer]:
+            - img "blipbug" [ref=e1937]
+          - generic "dottler" [ref=e1938] [cursor=pointer]:
+            - img "dottler" [ref=e1939]
+          - generic "orbeetle" [ref=e1940] [cursor=pointer]:
+            - img "orbeetle" [ref=e1941]
+          - generic "nickit" [ref=e1942] [cursor=pointer]:
+            - img "nickit" [ref=e1943]
+          - generic "thievul" [ref=e1944] [cursor=pointer]:
+            - img "thievul" [ref=e1945]
+          - generic "gossifleur" [ref=e1946] [cursor=pointer]:
+            - img "gossifleur" [ref=e1947]
+          - generic "eldegoss" [ref=e1948] [cursor=pointer]:
+            - img "eldegoss" [ref=e1949]
+          - generic "wooloo" [ref=e1950] [cursor=pointer]:
+            - img "wooloo" [ref=e1951]
+          - generic "dubwool" [ref=e1952] [cursor=pointer]:
+            - img "dubwool" [ref=e1953]
+          - generic "chewtle" [ref=e1954] [cursor=pointer]:
+            - img "chewtle" [ref=e1955]
+          - generic "drednaw" [ref=e1956] [cursor=pointer]:
+            - img "drednaw" [ref=e1957]
+          - generic "yamper" [ref=e1958] [cursor=pointer]:
+            - img "yamper" [ref=e1959]
+          - generic "boltund" [ref=e1960] [cursor=pointer]:
+            - img "boltund" [ref=e1961]
+          - generic "rolycoly" [ref=e1962] [cursor=pointer]:
+            - img "rolycoly" [ref=e1963]
+          - generic "carkol" [ref=e1964] [cursor=pointer]:
+            - img "carkol" [ref=e1965]
+          - generic "coalossal" [ref=e1966] [cursor=pointer]:
+            - img "coalossal" [ref=e1967]
+          - generic "applin" [ref=e1968] [cursor=pointer]:
+            - img "applin" [ref=e1969]
+          - generic "flapple" [ref=e1970] [cursor=pointer]:
+            - img "flapple" [ref=e1971]
+          - generic "appletun" [ref=e1972] [cursor=pointer]:
+            - img "appletun" [ref=e1973]
+          - generic "silicobra" [ref=e1974] [cursor=pointer]:
+            - img "silicobra" [ref=e1975]
+          - generic "sandaconda" [ref=e1976] [cursor=pointer]:
+            - img "sandaconda" [ref=e1977]
+          - generic "cramorant" [ref=e1978] [cursor=pointer]:
+            - img "cramorant" [ref=e1979]
+          - generic "arrokuda" [ref=e1980] [cursor=pointer]:
+            - img "arrokuda" [ref=e1981]
+          - generic "barraskewda" [ref=e1982] [cursor=pointer]:
+            - img "barraskewda" [ref=e1983]
+          - generic "toxel" [ref=e1984] [cursor=pointer]:
+            - img "toxel" [ref=e1985]
+          - generic "toxtricity-amped" [ref=e1986] [cursor=pointer]:
+            - img "toxtricity-amped" [ref=e1987]
+          - generic "sizzlipede" [ref=e1988] [cursor=pointer]:
+            - img "sizzlipede" [ref=e1989]
+          - generic "centiskorch" [ref=e1990] [cursor=pointer]:
+            - img "centiskorch" [ref=e1991]
+          - generic "clobbopus" [ref=e1992] [cursor=pointer]:
+            - img "clobbopus" [ref=e1993]
+          - generic "grapploct" [ref=e1994] [cursor=pointer]:
+            - img "grapploct" [ref=e1995]
+          - generic "sinistea" [ref=e1996] [cursor=pointer]:
+            - img "sinistea" [ref=e1997]
+          - generic "polteageist" [ref=e1998] [cursor=pointer]:
+            - img "polteageist" [ref=e1999]
+          - generic "hatenna" [ref=e2000] [cursor=pointer]:
+            - img "hatenna" [ref=e2001]
+          - generic "hattrem" [ref=e2002] [cursor=pointer]:
+            - img "hattrem" [ref=e2003]
+          - generic "hatterene" [ref=e2004] [cursor=pointer]:
+            - img "hatterene" [ref=e2005]
+          - generic "impidimp" [ref=e2006] [cursor=pointer]:
+            - img "impidimp" [ref=e2007]
+          - generic "morgrem" [ref=e2008] [cursor=pointer]:
+            - img "morgrem" [ref=e2009]
+          - generic "grimmsnarl" [ref=e2010] [cursor=pointer]:
+            - img "grimmsnarl" [ref=e2011]
+          - generic "obstagoon" [ref=e2012] [cursor=pointer]:
+            - img "obstagoon" [ref=e2013]
+          - generic "perrserker" [ref=e2014] [cursor=pointer]:
+            - img "perrserker" [ref=e2015]
+          - generic "cursola" [ref=e2016] [cursor=pointer]:
+            - img "cursola" [ref=e2017]
+          - generic "sirfetchd" [ref=e2018] [cursor=pointer]:
+            - img "sirfetchd" [ref=e2019]
+          - generic "mr-rime" [ref=e2020] [cursor=pointer]:
+            - img "mr-rime" [ref=e2021]
+          - generic "runerigus" [ref=e2022] [cursor=pointer]:
+            - img "runerigus" [ref=e2023]
+          - generic "milcery" [ref=e2024] [cursor=pointer]:
+            - img "milcery" [ref=e2025]
+          - generic "alcremie" [ref=e2026] [cursor=pointer]:
+            - img "alcremie" [ref=e2027]
+          - generic "falinks" [ref=e2028] [cursor=pointer]:
+            - img "falinks" [ref=e2029]
+          - generic "pincurchin" [ref=e2030] [cursor=pointer]:
+            - img "pincurchin" [ref=e2031]
+          - generic "snom" [ref=e2032] [cursor=pointer]:
+            - img "snom" [ref=e2033]
+          - generic "frosmoth" [ref=e2034] [cursor=pointer]:
+            - img "frosmoth" [ref=e2035]
+          - generic "stonjourner" [ref=e2036] [cursor=pointer]:
+            - img "stonjourner" [ref=e2037]
+          - generic "eiscue-ice" [ref=e2038] [cursor=pointer]:
+            - img "eiscue-ice" [ref=e2039]
+          - generic "indeedee-male" [ref=e2040] [cursor=pointer]:
+            - img "indeedee-male" [ref=e2041]
+          - generic "morpeko-full-belly" [ref=e2042] [cursor=pointer]:
+            - img "morpeko-full-belly" [ref=e2043]
+          - generic "cufant" [ref=e2044] [cursor=pointer]:
+            - img "cufant" [ref=e2045]
+          - generic "copperajah" [ref=e2046] [cursor=pointer]:
+            - img "copperajah" [ref=e2047]
+          - generic "dracozolt" [ref=e2048] [cursor=pointer]:
+            - img "dracozolt" [ref=e2049]
+          - generic "arctozolt" [ref=e2050] [cursor=pointer]:
+            - img "arctozolt" [ref=e2051]
+          - generic "dracovish" [ref=e2052] [cursor=pointer]:
+            - img "dracovish" [ref=e2053]
+          - generic "arctovish" [ref=e2054] [cursor=pointer]:
+            - img "arctovish" [ref=e2055]
+          - generic "duraludon" [ref=e2056] [cursor=pointer]:
+            - img "duraludon" [ref=e2057]
+          - generic "dreepy" [ref=e2058] [cursor=pointer]:
+            - img "dreepy" [ref=e2059]
+          - generic "drakloak" [ref=e2060] [cursor=pointer]:
+            - img "drakloak" [ref=e2061]
+          - generic "dragapult" [ref=e2062] [cursor=pointer]:
+            - img "dragapult" [ref=e2063]
+          - generic "zacian" [ref=e2064] [cursor=pointer]:
+            - img "zacian" [ref=e2065]
+          - generic "zamazenta" [ref=e2066] [cursor=pointer]:
+            - img "zamazenta" [ref=e2067]
+          - generic "eternatus" [ref=e2068] [cursor=pointer]:
+            - img "eternatus" [ref=e2069]
+          - generic "kubfu" [ref=e2070] [cursor=pointer]:
+            - img "kubfu" [ref=e2071]
+          - generic "urshifu-single-strike" [ref=e2072] [cursor=pointer]:
+            - img "urshifu-single-strike" [ref=e2073]
+          - generic "zarude" [ref=e2074] [cursor=pointer]:
+            - img "zarude" [ref=e2075]
+          - generic "regieleki" [ref=e2076] [cursor=pointer]:
+            - img "regieleki" [ref=e2077]
+          - generic "regidrago" [ref=e2078] [cursor=pointer]:
+            - img "regidrago" [ref=e2079]
+          - generic "glastrier" [ref=e2080] [cursor=pointer]:
+            - img "glastrier" [ref=e2081]
+          - generic "spectrier" [ref=e2082] [cursor=pointer]:
+            - img "spectrier" [ref=e2083]
+          - generic "calyrex" [ref=e2084] [cursor=pointer]:
+            - img "calyrex" [ref=e2085]
+          - generic "wyrdeer" [ref=e2086] [cursor=pointer]:
+            - img "wyrdeer" [ref=e2087]
+          - generic "kleavor" [ref=e2088] [cursor=pointer]:
+            - img "kleavor" [ref=e2089]
+          - generic "ursaluna" [ref=e2090] [cursor=pointer]:
+            - img "ursaluna" [ref=e2091]
+          - generic "basculegion-male" [ref=e2092] [cursor=pointer]:
+            - img "basculegion-male" [ref=e2093]
+          - generic "sneasler" [ref=e2094] [cursor=pointer]:
+            - img "sneasler" [ref=e2095]
+          - generic "overqwil" [ref=e2096] [cursor=pointer]:
+            - img "overqwil" [ref=e2097]
+          - generic "enamorus-incarnate" [ref=e2098] [cursor=pointer]:
+            - img "enamorus-incarnate" [ref=e2099]
+      - generic [ref=e2100]:
+        - generic [ref=e2101]:
+          - generic [ref=e2102]: Generation IX
+          - generic [ref=e2104]: 0 / 120
+        - generic [ref=e2105]:
+          - generic "sprigatito" [ref=e2106] [cursor=pointer]:
+            - img "sprigatito" [ref=e2107]
+          - generic "floragato" [ref=e2108] [cursor=pointer]:
+            - img "floragato" [ref=e2109]
+          - generic "meowscarada" [ref=e2110] [cursor=pointer]:
+            - img "meowscarada" [ref=e2111]
+          - generic "fuecoco" [ref=e2112] [cursor=pointer]:
+            - img "fuecoco" [ref=e2113]
+          - generic "crocalor" [ref=e2114] [cursor=pointer]:
+            - img "crocalor" [ref=e2115]
+          - generic "skeledirge" [ref=e2116] [cursor=pointer]:
+            - img "skeledirge" [ref=e2117]
+          - generic "quaxly" [ref=e2118] [cursor=pointer]:
+            - img "quaxly" [ref=e2119]
+          - generic "quaxwell" [ref=e2120] [cursor=pointer]:
+            - img "quaxwell" [ref=e2121]
+          - generic "quaquaval" [ref=e2122] [cursor=pointer]:
+            - img "quaquaval" [ref=e2123]
+          - generic "lechonk" [ref=e2124] [cursor=pointer]:
+            - img "lechonk" [ref=e2125]
+          - generic "oinkologne-male" [ref=e2126] [cursor=pointer]:
+            - img "oinkologne-male" [ref=e2127]
+          - generic "tarountula" [ref=e2128] [cursor=pointer]:
+            - img "tarountula" [ref=e2129]
+          - generic "spidops" [ref=e2130] [cursor=pointer]:
+            - img "spidops" [ref=e2131]
+          - generic "nymble" [ref=e2132] [cursor=pointer]:
+            - img "nymble" [ref=e2133]
+          - generic "lokix" [ref=e2134] [cursor=pointer]:
+            - img "lokix" [ref=e2135]
+          - generic "pawmi" [ref=e2136] [cursor=pointer]:
+            - img "pawmi" [ref=e2137]
+          - generic "pawmo" [ref=e2138] [cursor=pointer]:
+            - img "pawmo" [ref=e2139]
+          - generic "pawmot" [ref=e2140] [cursor=pointer]:
+            - img "pawmot" [ref=e2141]
+          - generic "tandemaus" [ref=e2142] [cursor=pointer]:
+            - img "tandemaus" [ref=e2143]
+          - generic "maushold-family-of-four" [ref=e2144] [cursor=pointer]:
+            - img "maushold-family-of-four" [ref=e2145]
+          - generic "fidough" [ref=e2146] [cursor=pointer]:
+            - img "fidough" [ref=e2147]
+          - generic "dachsbun" [ref=e2148] [cursor=pointer]:
+            - img "dachsbun" [ref=e2149]
+          - generic "smoliv" [ref=e2150] [cursor=pointer]:
+            - img "smoliv" [ref=e2151]
+          - generic "dolliv" [ref=e2152] [cursor=pointer]:
+            - img "dolliv" [ref=e2153]
+          - generic "arboliva" [ref=e2154] [cursor=pointer]:
+            - img "arboliva" [ref=e2155]
+          - generic "squawkabilly-green-plumage" [ref=e2156] [cursor=pointer]:
+            - img "squawkabilly-green-plumage" [ref=e2157]
+          - generic "nacli" [ref=e2158] [cursor=pointer]:
+            - img "nacli" [ref=e2159]
+          - generic "naclstack" [ref=e2160] [cursor=pointer]:
+            - img "naclstack" [ref=e2161]
+          - generic "garganacl" [ref=e2162] [cursor=pointer]:
+            - img "garganacl" [ref=e2163]
+          - generic "charcadet" [ref=e2164] [cursor=pointer]:
+            - img "charcadet" [ref=e2165]
+          - generic "armarouge" [ref=e2166] [cursor=pointer]:
+            - img "armarouge" [ref=e2167]
+          - generic "ceruledge" [ref=e2168] [cursor=pointer]:
+            - img "ceruledge" [ref=e2169]
+          - generic "tadbulb" [ref=e2170] [cursor=pointer]:
+            - img "tadbulb" [ref=e2171]
+          - generic "bellibolt" [ref=e2172] [cursor=pointer]:
+            - img "bellibolt" [ref=e2173]
+          - generic "wattrel" [ref=e2174] [cursor=pointer]:
+            - img "wattrel" [ref=e2175]
+          - generic "kilowattrel" [ref=e2176] [cursor=pointer]:
+            - img "kilowattrel" [ref=e2177]
+          - generic "maschiff" [ref=e2178] [cursor=pointer]:
+            - img "maschiff" [ref=e2179]
+          - generic "mabosstiff" [ref=e2180] [cursor=pointer]:
+            - img "mabosstiff" [ref=e2181]
+          - generic "shroodle" [ref=e2182] [cursor=pointer]:
+            - img "shroodle" [ref=e2183]
+          - generic "grafaiai" [ref=e2184] [cursor=pointer]:
+            - img "grafaiai" [ref=e2185]
+          - generic "bramblin" [ref=e2186] [cursor=pointer]:
+            - img "bramblin" [ref=e2187]
+          - generic "brambleghast" [ref=e2188] [cursor=pointer]:
+            - img "brambleghast" [ref=e2189]
+          - generic "toedscool" [ref=e2190] [cursor=pointer]:
+            - img "toedscool" [ref=e2191]
+          - generic "toedscruel" [ref=e2192] [cursor=pointer]:
+            - img "toedscruel" [ref=e2193]
+          - generic "klawf" [ref=e2194] [cursor=pointer]:
+            - img "klawf" [ref=e2195]
+          - generic "capsakid" [ref=e2196] [cursor=pointer]:
+            - img "capsakid" [ref=e2197]
+          - generic "scovillain" [ref=e2198] [cursor=pointer]:
+            - img "scovillain" [ref=e2199]
+          - generic "rellor" [ref=e2200] [cursor=pointer]:
+            - img "rellor" [ref=e2201]
+          - generic "rabsca" [ref=e2202] [cursor=pointer]:
+            - img "rabsca" [ref=e2203]
+          - generic "flittle" [ref=e2204] [cursor=pointer]:
+            - img "flittle" [ref=e2205]
+          - generic "espathra" [ref=e2206] [cursor=pointer]:
+            - img "espathra" [ref=e2207]
+          - generic "tinkatink" [ref=e2208] [cursor=pointer]:
+            - img "tinkatink" [ref=e2209]
+          - generic "tinkatuff" [ref=e2210] [cursor=pointer]:
+            - img "tinkatuff" [ref=e2211]
+          - generic "tinkaton" [ref=e2212] [cursor=pointer]:
+            - img "tinkaton" [ref=e2213]
+          - generic "wiglett" [ref=e2214] [cursor=pointer]:
+            - img "wiglett" [ref=e2215]
+          - generic "wugtrio" [ref=e2216] [cursor=pointer]:
+            - img "wugtrio" [ref=e2217]
+          - generic "bombirdier" [ref=e2218] [cursor=pointer]:
+            - img "bombirdier" [ref=e2219]
+          - generic "finizen" [ref=e2220] [cursor=pointer]:
+            - img "finizen" [ref=e2221]
+          - generic "palafin-zero" [ref=e2222] [cursor=pointer]:
+            - img "palafin-zero" [ref=e2223]
+          - generic "varoom" [ref=e2224] [cursor=pointer]:
+            - img "varoom" [ref=e2225]
+          - generic "revavroom" [ref=e2226] [cursor=pointer]:
+            - img "revavroom" [ref=e2227]
+          - generic "cyclizar" [ref=e2228] [cursor=pointer]:
+            - img "cyclizar" [ref=e2229]
+          - generic "orthworm" [ref=e2230] [cursor=pointer]:
+            - img "orthworm" [ref=e2231]
+          - generic "glimmet" [ref=e2232] [cursor=pointer]:
+            - img "glimmet" [ref=e2233]
+          - generic "glimmora" [ref=e2234] [cursor=pointer]:
+            - img "glimmora" [ref=e2235]
+          - generic "greavard" [ref=e2236] [cursor=pointer]:
+            - img "greavard" [ref=e2237]
+          - generic "houndstone" [ref=e2238] [cursor=pointer]:
+            - img "houndstone" [ref=e2239]
+          - generic "flamigo" [ref=e2240] [cursor=pointer]:
+            - img "flamigo" [ref=e2241]
+          - generic "cetoddle" [ref=e2242] [cursor=pointer]:
+            - img "cetoddle" [ref=e2243]
+          - generic "cetitan" [ref=e2244] [cursor=pointer]:
+            - img "cetitan" [ref=e2245]
+          - generic "veluza" [ref=e2246] [cursor=pointer]:
+            - img "veluza" [ref=e2247]
+          - generic "dondozo" [ref=e2248] [cursor=pointer]:
+            - img "dondozo" [ref=e2249]
+          - generic "tatsugiri-curly" [ref=e2250] [cursor=pointer]:
+            - img "tatsugiri-curly" [ref=e2251]
+          - generic "annihilape" [ref=e2252] [cursor=pointer]:
+            - img "annihilape" [ref=e2253]
+          - generic "clodsire" [ref=e2254] [cursor=pointer]:
+            - img "clodsire" [ref=e2255]
+          - generic "farigiraf" [ref=e2256] [cursor=pointer]:
+            - img "farigiraf" [ref=e2257]
+          - generic "dudunsparce-two-segment" [ref=e2258] [cursor=pointer]:
+            - img "dudunsparce-two-segment" [ref=e2259]
+          - generic "kingambit" [ref=e2260] [cursor=pointer]:
+            - img "kingambit" [ref=e2261]
+          - generic "great-tusk" [ref=e2262] [cursor=pointer]:
+            - img "great-tusk" [ref=e2263]
+          - generic "scream-tail" [ref=e2264] [cursor=pointer]:
+            - img "scream-tail" [ref=e2265]
+          - generic "brute-bonnet" [ref=e2266] [cursor=pointer]:
+            - img "brute-bonnet" [ref=e2267]
+          - generic "flutter-mane" [ref=e2268] [cursor=pointer]:
+            - img "flutter-mane" [ref=e2269]
+          - generic "slither-wing" [ref=e2270] [cursor=pointer]:
+            - img "slither-wing" [ref=e2271]
+          - generic "sandy-shocks" [ref=e2272] [cursor=pointer]:
+            - img "sandy-shocks" [ref=e2273]
+          - generic "iron-treads" [ref=e2274] [cursor=pointer]:
+            - img "iron-treads" [ref=e2275]
+          - generic "iron-bundle" [ref=e2276] [cursor=pointer]:
+            - img "iron-bundle" [ref=e2277]
+          - generic "iron-hands" [ref=e2278] [cursor=pointer]:
+            - img "iron-hands" [ref=e2279]
+          - generic "iron-jugulis" [ref=e2280] [cursor=pointer]:
+            - img "iron-jugulis" [ref=e2281]
+          - generic "iron-moth" [ref=e2282] [cursor=pointer]:
+            - img "iron-moth" [ref=e2283]
+          - generic "iron-thorns" [ref=e2284] [cursor=pointer]:
+            - img "iron-thorns" [ref=e2285]
+          - generic "frigibax" [ref=e2286] [cursor=pointer]:
+            - img "frigibax" [ref=e2287]
+          - generic "arctibax" [ref=e2288] [cursor=pointer]:
+            - img "arctibax" [ref=e2289]
+          - generic "baxcalibur" [ref=e2290] [cursor=pointer]:
+            - img "baxcalibur" [ref=e2291]
+          - generic "gimmighoul" [ref=e2292] [cursor=pointer]:
+            - img "gimmighoul" [ref=e2293]
+          - generic "gholdengo" [ref=e2294] [cursor=pointer]:
+            - img "gholdengo" [ref=e2295]
+          - generic "wo-chien" [ref=e2296] [cursor=pointer]:
+            - img "wo-chien" [ref=e2297]
+          - generic "chien-pao" [ref=e2298] [cursor=pointer]:
+            - img "chien-pao" [ref=e2299]
+          - generic "ting-lu" [ref=e2300] [cursor=pointer]:
+            - img "ting-lu" [ref=e2301]
+          - generic "chi-yu" [ref=e2302] [cursor=pointer]:
+            - img "chi-yu" [ref=e2303]
+          - generic "roaring-moon" [ref=e2304] [cursor=pointer]:
+            - img "roaring-moon" [ref=e2305]
+          - generic "iron-valiant" [ref=e2306] [cursor=pointer]:
+            - img "iron-valiant" [ref=e2307]
+          - generic "koraidon" [ref=e2308] [cursor=pointer]:
+            - img "koraidon" [ref=e2309]
+          - generic "miraidon" [ref=e2310] [cursor=pointer]:
+            - img "miraidon" [ref=e2311]
+          - generic "walking-wake" [ref=e2312] [cursor=pointer]:
+            - img "walking-wake" [ref=e2313]
+          - generic "iron-leaves" [ref=e2314] [cursor=pointer]:
+            - img "iron-leaves" [ref=e2315]
+          - generic "dipplin" [ref=e2316] [cursor=pointer]:
+            - img "dipplin" [ref=e2317]
+          - generic "poltchageist" [ref=e2318] [cursor=pointer]:
+            - img "poltchageist" [ref=e2319]
+          - generic "sinistcha" [ref=e2320] [cursor=pointer]:
+            - img "sinistcha" [ref=e2321]
+          - generic "okidogi" [ref=e2322] [cursor=pointer]:
+            - img "okidogi" [ref=e2323]
+          - generic "munkidori" [ref=e2324] [cursor=pointer]:
+            - img "munkidori" [ref=e2325]
+          - generic "fezandipiti" [ref=e2326] [cursor=pointer]:
+            - img "fezandipiti" [ref=e2327]
+          - generic "ogerpon" [ref=e2328] [cursor=pointer]:
+            - img "ogerpon" [ref=e2329]
+          - generic "archaludon" [ref=e2330] [cursor=pointer]:
+            - img "archaludon" [ref=e2331]
+          - generic "hydrapple" [ref=e2332] [cursor=pointer]:
+            - img "hydrapple" [ref=e2333]
+          - generic "gouging-fire" [ref=e2334] [cursor=pointer]:
+            - img "gouging-fire" [ref=e2335]
+          - generic "raging-bolt" [ref=e2336] [cursor=pointer]:
+            - img "raging-bolt" [ref=e2337]
+          - generic "iron-boulder" [ref=e2338] [cursor=pointer]:
+            - img "iron-boulder" [ref=e2339]
+          - generic "iron-crown" [ref=e2340] [cursor=pointer]:
+            - img "iron-crown" [ref=e2341]
+          - generic "terapagos" [ref=e2342] [cursor=pointer]:
+            - img "terapagos" [ref=e2343]
+          - generic "pecharunt" [ref=e2344] [cursor=pointer]:
+            - img "pecharunt" [ref=e2345]

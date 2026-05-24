@@ -1,52 +1,23 @@
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
+import { calculateOdds } from "../utils/odds";
 import { getShowdownGif } from "../utils/pokemon";
-
-interface Pokemon {
-	id: number;
-	name: string;
-	sprite_url: string;
-}
-
-interface HuntMethod {
-	id: number;
-	pokemon_id: number;
-	game_id: number;
-	game_title: string;
-	method_name: string;
-	avg_time_seconds: number;
-	base_rolls: number;
-	charm_rolls: number;
-	is_recommended: boolean;
-}
+import type { Pokemon, HuntMethod } from "../types/models";
 
 interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
 }
-
-const SparkSm = ({ size = 9, color }: { size?: number; color?: string }) => (
-	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden>
-		<path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill={color || "currentColor"} />
-	</svg>
-);
-
-const IcClose = () => (
-	<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
-		<path d="M3 3l10 10M13 3L3 13" />
-	</svg>
-);
-
-const IcPlus = () => (
-	<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-		<path d="M8 3v10M3 8h10" />
-	</svg>
-);
+import { IcClose, IcPlus } from "./ui/icons";
+import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
+import { MethodPreview } from "../features/new-hunt/MethodPreview";
 
 const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 	const { token, userId } = useAuth();
+	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<Pokemon[]>([]);
@@ -55,7 +26,11 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 	const [selectedMethod, setSelectedMethod] = useState<HuntMethod | null>(null);
 	const [useCustomMethod, setUseCustomMethod] = useState(false);
 	const [customMethodName, setCustomMethodName] = useState("");
+	const [huntParams, setHuntParams] = useState<Record<string, any>>({});
 	const [userGameCount, setUserGameCount] = useState<number | null>(null);
+	const [userGames, setUserGames] = useState<
+		{ game_id: number; has_shiny_charm: boolean }[]
+	>([]);
 	const [loadingSearch, setLoadingSearch] = useState(false);
 	const [loadingEncounters, setLoadingEncounters] = useState(false);
 	const [starting, setStarting] = useState(false);
@@ -70,6 +45,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 			setSelectedMethod(null);
 			setUseCustomMethod(false);
 			setCustomMethodName("");
+			setHuntParams({});
 		}
 	}, [open]);
 
@@ -79,9 +55,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		const timer = setTimeout(async () => {
 			setLoadingSearch(true);
 			try {
-				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
+				const res = await fetch(
+					`http://localhost:8080/api/pokemon?q=${search}`,
+				);
 				if (res.ok) setOptions((await res.json()) || []);
-			} catch { /* ignore */ }
+			} catch (err: any) {
+				showError(err.message || "Failed to search Pokemon.");
+			}
 			setLoadingSearch(false);
 		}, 300);
 		return () => clearTimeout(timer);
@@ -98,29 +78,60 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 						`http://localhost:8080/api/hunt-methods?pokemon_id=${selectedPokemon.id}`,
 						{ headers: { Authorization: `Bearer ${token}` } },
 					),
-					fetch(
-						`http://localhost:8080/api/user/${userId}/games`,
-						{ headers: { Authorization: `Bearer ${token}` } },
-					),
+					fetch(`http://localhost:8080/api/user/${userId}/games`, {
+						headers: { Authorization: `Bearer ${token}` },
+					}),
 				]);
 				if (methodsRes.ok) {
-					setHuntMethods((await methodsRes.json()) || []);
-					setSelectedMethod(null);
+					const methods: HuntMethod[] = (await methodsRes.json()) || [];
+					setHuntMethods(methods);
+					// Default to the first (generation-ordered) method.
+					setSelectedMethod(methods[0] ?? null);
 				}
 				if (gamesRes.ok) {
 					const games = await gamesRes.json();
+					setUserGames(games || []);
 					setUserGameCount((games || []).length);
 				}
-			} catch { /* ignore */ }
+			} catch (err: any) {
+				showError(err.message || "Failed to fetch method information.");
+			}
 			setLoadingEncounters(false);
 		};
 		fetchData();
 	}, [selectedPokemon, token, userId]);
 
-	const recommended = useMemo(
-		() => huntMethods.find((e) => e.is_recommended) ?? null,
-		[huntMethods],
-	);
+	const getBaseOdds = (gameTitle: string) => {
+		const lower = gameTitle.toLowerCase();
+		if (
+			lower.includes("red/blue") ||
+			lower.includes("gold/silver") ||
+			lower.includes("ruby/sapphire") ||
+			lower.includes("firered") ||
+			lower.includes("diamond/pearl") ||
+			lower.includes("heartgold") ||
+			lower.includes("black/white") ||
+			lower.includes("black 2")
+		) {
+			return 8192;
+		}
+		return 4096;
+	};
+
+	const getOddsForMethod = (method: HuntMethod) => {
+		const userGame = userGames.find((ug) => ug.game_id === method.game_id);
+		const hasCharm = userGame?.has_shiny_charm ?? false;
+		const base = getBaseOdds(method.game_title);
+		const { denominator } = calculateOdds(
+			method.formula_type,
+			0, // starting encounters is 0
+			hasCharm,
+			base,
+			method.base_rolls,
+			method.charm_rolls,
+		);
+		return denominator;
+	};
 
 	const startHunt = async (method: HuntMethod) => {
 		if (!selectedPokemon) return;
@@ -128,18 +139,28 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({
 					hunt_method_id: method.id,
 					pokemon_id: selectedPokemon.id,
+					game_id: method.game_id,
 					method_name: method.method_name,
+					hunt_parameters: huntParams,
 				}),
 			});
 			if (res.ok) {
 				onClose();
 				window.location.reload();
+			} else {
+				const errText = await res.text();
+				showError(errText || "Failed to start hunt.");
 			}
-		} catch { /* ignore */ }
+		} catch (err: any) {
+			showError(err.message || "Failed to start hunt.");
+		}
 		setStarting(false);
 	};
 
@@ -149,7 +170,10 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({
 					pokemon_id: selectedPokemon.id,
 					custom_method_name: customMethodName.trim(),
@@ -158,8 +182,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 			if (res.ok) {
 				onClose();
 				window.location.reload();
+			} else {
+				const errText = await res.text();
+				showError(errText || "Failed to start custom hunt.");
 			}
-		} catch { /* ignore */ }
+		} catch (err: any) {
+			showError(err.message || "Failed to start custom hunt.");
+		}
 		setStarting(false);
 	};
 
@@ -171,15 +200,21 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 	if (!open) return null;
 
 	const gifUrl = selectedPokemon ? getShowdownGif(selectedPokemon.name) : "";
-	const baseOdds = 4096;
 
 	return (
 		<div className="scrim" onClick={onClose}>
 			<div className="drawer" onClick={(e) => e.stopPropagation()}>
 				<div className="drawer-head">
 					<h2>Start a new hunt</h2>
-					<div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 12 }}>
-						{[1, 2, 3].map((s) => (
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 4,
+							marginLeft: 12,
+						}}
+					>
+						{[1, 2].map((s) => (
 							<span
 								key={s}
 								style={{
@@ -198,53 +233,30 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 				</div>
 
 				<div className="drawer-body">
-					{/* Step 1: Pokémon */}
 					{step === 1 && (
-						<div>
-							<div className="field">
-								<label>1 · Pokémon</label>
-								<input
-									className="input"
-									placeholder="Search any Pokémon…"
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-									autoFocus
-								/>
-							</div>
-							<div className="poke-search-results">
-								{loadingSearch && (
-									<div className="empty" style={{ padding: 16 }}>Searching…</div>
-								)}
-								{!loadingSearch && options.length === 0 && (
-									<div className="empty">
-										{search.length > 0 ? "No matches" : "Type to search"}
-									</div>
-								)}
-								{options.map((p) => (
-									<div
-										key={p.id}
-										className="row"
-										onClick={() => {
-											setSelectedPokemon(p);
-											setStep(2);
-										}}
-									>
-										<img
-											src={p.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`}
-											alt={p.name}
-										/>
-										<div className="nm">{p.name}</div>
-										<div className="id">#{String(p.id).padStart(4, "0")}</div>
-									</div>
-								))}
-							</div>
-						</div>
+						<PokemonSearchStep
+							search={search}
+							setSearch={setSearch}
+							loadingSearch={loadingSearch}
+							options={options}
+							onSelect={(p) => {
+								setSelectedPokemon(p);
+								setStep(2);
+							}}
+						/>
 					)}
 
 					{/* Step 2: Method */}
 					{step === 2 && selectedPokemon && (
 						<div>
-							<div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: 14,
+									marginBottom: 18,
+								}}
+							>
 								<div
 									style={{
 										width: 64,
@@ -262,13 +274,20 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 										style={{
 											position: "absolute",
 											inset: 0,
-											background: "radial-gradient(circle at 30% 30%, var(--gold-soft), transparent 70%)",
+											background:
+												"radial-gradient(circle at 30% 30%, var(--gold-soft), transparent 70%)",
 										}}
 									/>
 									<img
 										src={gifUrl}
 										alt={selectedPokemon.name}
-										style={{ width: 56, height: 56, imageRendering: "pixelated", position: "relative", objectFit: "contain" }}
+										style={{
+											width: 56,
+											height: 56,
+											imageRendering: "pixelated",
+											position: "relative",
+											objectFit: "contain",
+										}}
 										onError={(e) => {
 											e.currentTarget.onerror = null;
 											e.currentTarget.src = selectedPokemon.sprite_url;
@@ -284,9 +303,30 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 											fontWeight: 600,
 											letterSpacing: "-0.02em",
 											textTransform: "capitalize",
+											display: "flex",
+											alignItems: "center",
+											gap: 8,
 										}}
 									>
 										{selectedPokemon.name}
+										{(selectedPokemon.is_legendary || selectedPokemon.is_mythical) && (
+											<div
+												style={{
+													fontSize: 10,
+													textTransform: "uppercase",
+													letterSpacing: "0.06em",
+													fontWeight: 700,
+													background: "var(--gold-soft)",
+													color: "var(--gold)",
+													border: "1px solid var(--gold-line)",
+													padding: "2px 6px",
+													borderRadius: 4,
+													fontFamily: "var(--font-mono)",
+												}}
+											>
+												Legendary
+											</div>
+										)}
 									</div>
 								</div>
 								<button
@@ -299,93 +339,90 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 							</div>
 
 							{loadingEncounters && (
-								<div className="empty" style={{ padding: 20 }}>Loading methods…</div>
-							)}
-
-							{!loadingEncounters && recommended && (
-								<div className="reco">
-									<div className="lbl">
-										<SparkSm size={9} color="var(--gold)" /> Recommended
-									</div>
-									<div className="row">
-										<img
-											src={selectedPokemon.sprite_url}
-											alt=""
-											style={{ imageRendering: "pixelated" }}
-										/>
-										<div style={{ flex: 1 }}>
-											<div className="nm">{recommended.game_title}</div>
-											<div className="meta">
-												{recommended.method_name} · ~{recommended.avg_time_seconds}s/enc · 1/
-												{Math.floor(baseOdds / (recommended.base_rolls + recommended.charm_rolls))} odds w/ charm
-											</div>
-										</div>
-										<button
-											className="btn gold"
-											onClick={() => {
-												setSelectedMethod(recommended);
-												setStep(3);
-											}}
-										>
-											Start <span style={{ opacity: 0.6 }}>→</span>
-										</button>
-									</div>
+								<div className="empty" style={{ padding: 20 }}>
+									Loading methods…
 								</div>
 							)}
 
-							{!loadingEncounters && huntMethods.filter((e) => !e.is_recommended).length > 0 && (
+							{!loadingEncounters && huntMethods.length > 0 && (
 								<>
 									<div className="t-label" style={{ margin: "4px 0 8px" }}>
 										All methods
 									</div>
 									<div className="opt-list">
-										{huntMethods
-											.filter((e) => !e.is_recommended)
-											.map((e) => (
-												<div
-													key={e.id}
-													className={`opt-row ${selectedMethod?.id === e.id ? "sel" : ""}`}
-													onClick={() => setSelectedMethod(e)}
-												>
-													<div className="game">{e.game_title}</div>
-													<div className="method">{e.method_name}</div>
-													<div className="num">~{e.avg_time_seconds}s</div>
-													<div className="num">{e.base_rolls}r</div>
-												</div>
-											))}
-									</div>
-								</>
-							)}
+										{huntMethods.map((e) => (
+													<div
+														key={e.id}
+														className={`opt-row ${selectedMethod?.id === e.id && !useCustomMethod ? "sel" : ""}`}
+														onClick={() => {
+															setSelectedMethod(e);
+															setUseCustomMethod(false);
+														}}
+													>
+														<div className="game">{e.game_title}</div>
+														<div className="method">{e.method_name}</div>
+														<div className="num">~{e.avg_time_seconds}s</div>
+														<div
+															className="num"
+															style={{ color: "var(--gold)", fontWeight: 500 }}
+														>
+															1/{getOddsForMethod(e).toLocaleString()}
+														</div>
+													</div>
+												))}
+										</div>
+									</>
+								)}
 
-							{!loadingEncounters && huntMethods.length === 0 && userGameCount === 0 && (
-								<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
-									<div style={{ marginBottom: 6 }}>You haven't added any games yet.</div>
-									<div className="t-label" style={{ marginBottom: 14 }}>
-										Add a game to your library to see available hunt methods.
+							{!loadingEncounters &&
+								huntMethods.length === 0 &&
+								userGameCount === 0 && (
+									<div
+										className="empty"
+										style={{ textAlign: "center", padding: "20px 0" }}
+									>
+										<div style={{ marginBottom: 6 }}>
+											You haven't added any games yet.
+										</div>
+										<div className="t-label" style={{ marginBottom: 14 }}>
+											Add a game to your library to see available hunt methods.
+										</div>
+										{onGoToGames && (
+											<button className="btn gold" onClick={onGoToGames}>
+												Go to Game Library →
+											</button>
+										)}
 									</div>
-									{onGoToGames && (
-										<button className="btn gold" onClick={onGoToGames}>
-											Go to Game Library →
-										</button>
-									)}
-								</div>
-							)}
+								)}
 
-							{!loadingEncounters && huntMethods.length === 0 && userGameCount !== null && userGameCount > 0 && (
-								<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
-									<div style={{ marginBottom: 6, textTransform: "capitalize" }}>
-										{selectedPokemon.name} isn't available in your games.
+							{!loadingEncounters &&
+								huntMethods.length === 0 &&
+								userGameCount !== null &&
+								userGameCount > 0 && (
+									<div
+										className="empty"
+										style={{ textAlign: "center", padding: "20px 0" }}
+									>
+										<div
+											style={{ marginBottom: 6, textTransform: "capitalize" }}
+										>
+											{selectedPokemon.name} isn't available in your games.
+										</div>
+										<div className="t-label" style={{ marginBottom: 14 }}>
+											Try adding a game that includes it, or it may be
+											shiny-locked.
+										</div>
+										{onGoToGames && (
+											<button
+												className="btn ghost"
+												onClick={onGoToGames}
+												style={{ fontSize: 12 }}
+											>
+												Manage games →
+											</button>
+										)}
 									</div>
-									<div className="t-label" style={{ marginBottom: 14 }}>
-										Try adding a game that includes it, or it may be shiny-locked.
-									</div>
-									{onGoToGames && (
-										<button className="btn ghost" onClick={onGoToGames} style={{ fontSize: 12 }}>
-											Manage games →
-										</button>
-									)}
-								</div>
-							)}
+								)}
 
 							{!loadingEncounters && (
 								<>
@@ -400,8 +437,12 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 										}}
 										style={{ alignItems: "center", gap: 8 }}
 									>
-										<div className="method" style={{ flex: 1 }}>Use custom method</div>
-										<div className="t-label" style={{ fontSize: 11 }}>no odds data</div>
+										<div className="method" style={{ flex: 1 }}>
+											Use custom method
+										</div>
+										<div className="t-label" style={{ fontSize: 11 }}>
+											no odds data
+										</div>
 									</div>
 									{useCustomMethod && (
 										<input
@@ -416,141 +457,48 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 								</>
 							)}
 
+							{/* Inline Preview Section */}
+							<MethodPreview
+								selectedPokemon={selectedPokemon}
+								selectedMethod={selectedMethod}
+								useCustomMethod={useCustomMethod}
+								customMethodName={customMethodName}
+								gifUrl={gifUrl}
+								huntParams={huntParams}
+								setHuntParams={setHuntParams}
+								getBaseOdds={getBaseOdds}
+								getOddsForMethod={getOddsForMethod}
+							/>
+
 							<div
-								style={{ display: "flex", gap: 8, marginTop: 18, justifyContent: "flex-end" }}
+								style={{
+									display: "flex",
+									gap: 8,
+									marginTop: 18,
+									justifyContent: "flex-end",
+								}}
 							>
 								<button className="btn ghost" onClick={onClose}>
 									Cancel
 								</button>
 								<button
 									className="btn gold"
-									disabled={useCustomMethod ? !customMethodName.trim() : !selectedMethod}
-									onClick={() => {
-										if (useCustomMethod && customMethodName.trim()) setStep(3);
-										else if (selectedMethod) setStep(3);
-									}}
-									style={(useCustomMethod ? !customMethodName.trim() : !selectedMethod) ? { opacity: 0.4, pointerEvents: "none" } : {}}
-								>
-									Configure →
-								</button>
-							</div>
-						</div>
-					)}
-
-					{/* Step 3: Confirm */}
-					{step === 3 && selectedPokemon && (selectedMethod || (useCustomMethod && customMethodName.trim())) && (
-						<div>
-							<div className="t-label" style={{ marginBottom: 14 }}>
-								Confirm hunt
-							</div>
-							<div
-								style={{
-									padding: 16,
-									background: "var(--bg-2)",
-									border: "1px solid var(--line-1)",
-									borderRadius: 12,
-									marginBottom: 16,
-								}}
-							>
-								<div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-									<img
-										src={gifUrl}
-										alt={selectedPokemon.name}
-										style={{ width: 72, height: 72, imageRendering: "pixelated", objectFit: "contain" }}
-										onError={(e) => {
-											e.currentTarget.onerror = null;
-											e.currentTarget.src = selectedPokemon.sprite_url;
-										}}
-									/>
-									<div>
-										<div
-											style={{
-												fontFamily: "var(--font-display)",
-												fontSize: 22,
-												fontWeight: 600,
-												letterSpacing: "-0.02em",
-												textTransform: "capitalize",
-											}}
-										>
-											{selectedPokemon.name}
-										</div>
-										<div
-											style={{
-												fontFamily: "var(--font-mono)",
-												fontSize: 11,
-												color: "var(--ink-3)",
-												marginTop: 4,
-											}}
-										>
-											{useCustomMethod
-												? `Custom · ${customMethodName.trim()}`
-												: `${selectedMethod!.game_title} · ${selectedMethod!.method_name}`}
-										</div>
-									</div>
-								</div>
-								{!useCustomMethod && selectedMethod && (
-									<div
-										style={{
-											display: "grid",
-											gridTemplateColumns: "1fr 1fr 1fr",
-											gap: 8,
-											marginTop: 16,
-											paddingTop: 16,
-											borderTop: "1px solid var(--line-1)",
-										}}
-									>
-										<div>
-											<div className="t-label">Base odds</div>
-											<div className="t-mono" style={{ fontSize: 14, marginTop: 2 }}>
-												1 / {baseOdds.toLocaleString()}
-											</div>
-										</div>
-										<div>
-											<div className="t-label">w/ Charm</div>
-											<div className="t-mono" style={{ fontSize: 14, marginTop: 2, color: "var(--gold)" }}>
-												1 /{" "}
-												{Math.floor(
-													baseOdds / (selectedMethod.base_rolls + selectedMethod.charm_rolls),
-												).toLocaleString()}
-											</div>
-										</div>
-										<div>
-											<div className="t-label">ETA expected</div>
-											<div className="t-mono" style={{ fontSize: 14, marginTop: 2 }}>
-												~
-												{Math.round(
-													(baseOdds / (selectedMethod.base_rolls + selectedMethod.charm_rolls)) *
-														selectedMethod.avg_time_seconds /
-														3600,
-												)}
-												h
-											</div>
-										</div>
-									</div>
-								)}
-								{useCustomMethod && (
-									<div
-										style={{
-											marginTop: 16,
-											paddingTop: 16,
-											borderTop: "1px solid var(--line-1)",
-											fontSize: 12,
-											color: "var(--ink-3)",
-											fontFamily: "var(--font-mono)",
-										}}
-									>
-										Custom method — no odds data
-									</div>
-								)}
-							</div>
-							<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-								<button className="btn ghost" onClick={() => setStep(2)}>
-									Back
-								</button>
-								<button
-									className="btn gold"
+									disabled={
+										starting ||
+										(useCustomMethod
+											? !customMethodName.trim()
+											: !selectedMethod)
+									}
 									onClick={handleStartSelected}
-									disabled={starting}
+									style={
+										(
+											useCustomMethod
+												? !customMethodName.trim()
+												: !selectedMethod
+										)
+											? { opacity: 0.4, pointerEvents: "none" }
+											: {}
+									}
 								>
 									{starting ? (
 										"Starting…"

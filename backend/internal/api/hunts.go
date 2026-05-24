@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -45,28 +46,30 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(context.Background(),
 		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name as pokemon_name, e.method_name, h.custom_method_name, g.title as game_title,
-		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm
+		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
+		        COALESCE(e.formula_type, 'static') AS formula_type
 		 FROM user_hunts h
 		 JOIN pokemon p ON h.pokemon_id = p.id
 		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
-		 LEFT JOIN games g ON e.game_id = g.id
+		 LEFT JOIN games g ON h.game_id = g.id
 		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.user_id = $1
 		 ORDER BY h.created_at DESC`, userID)
 	if err != nil {
+		fmt.Println("GetHunts error:", err)
 		http.Error(w, "Failed to fetch hunts", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var hunts []models.UserHuntDetail
-	var huntIDs []string
+	hunts := []models.UserHuntDetail{}
+	huntIDs := []string{}
 	for rows.Next() {
 		var h models.UserHuntDetail
 		if err := rows.Scan(
 			&h.ID, &h.UserID, &h.PokemonID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
 			&h.PokemonName, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
-			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm,
+			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType,
 		); err != nil {
 			continue
 		}
@@ -92,72 +95,78 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
 	var req struct {
-		HuntMethodID     int    `json:"hunt_method_id"`
-		PokemonID        int    `json:"pokemon_id"`
-		MethodName       string `json:"method_name"`
-		CustomMethodName string `json:"custom_method_name"`
+		HuntMethodID     int             `json:"hunt_method_id"`
+		PokemonID        int             `json:"pokemon_id"`
+		GameID           int             `json:"game_id"`
+		MethodName       string          `json:"method_name"`
+		CustomMethodName string          `json:"custom_method_name"`
+		HuntParameters   json.RawMessage `json:"hunt_parameters"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	hasCurated := req.HuntMethodID != 0
+	hasCurated := req.HuntMethodID > 0
+	hasSynthetic := req.HuntMethodID < 0
 	hasCustom := req.CustomMethodName != ""
 
-	if hasCurated && hasCustom {
+	if (hasCurated && hasCustom) || (hasCurated && hasSynthetic) || (hasCustom && hasSynthetic) {
 		http.Error(w, "Provide hunt_method_id or custom_method_name, not both", http.StatusBadRequest)
 		return
 	}
 
 	var pokemonID int
+	var gameID *int
 	var huntMethodID *int
 	var customMethodName *string
 	var huntParameters json.RawMessage
 
+	if len(req.HuntParameters) > 0 {
+		huntParameters = req.HuntParameters
+	} else {
+		huntParameters = json.RawMessage(`{}`)
+	}
+
 	if hasCustom {
-		// User-defined method — pokemon_id required, no hunt_methods row.
 		if req.PokemonID == 0 {
 			http.Error(w, "pokemon_id required for custom hunt methods", http.StatusBadRequest)
 			return
 		}
 		pokemonID = req.PokemonID
 		huntMethodID = nil
+		gameID = nil
 		customMethodName = &req.CustomMethodName
-		huntParameters = json.RawMessage(`{}`)
+	} else if hasSynthetic {
+		// No longer synthetic logic since rules handle it, but fallback just in case
+		http.Error(w, "Synthetic methods should no longer be passed as negative IDs", http.StatusBadRequest)
+		return
 	} else if hasCurated {
-		// Curated method — resolve pokemon_id from hunt_methods.
-		err := database.DB.QueryRow(context.Background(),
-			`SELECT pokemon_id FROM hunt_methods WHERE id = $1`, req.HuntMethodID).Scan(&pokemonID)
-		if err != nil {
-			http.Error(w, "Invalid hunt method ID", http.StatusBadRequest)
+		// Validating pokemonID and GameID are provided
+		if req.PokemonID == 0 || req.GameID == 0 {
+			http.Error(w, "pokemon_id and game_id required", http.StatusBadRequest)
 			return
 		}
+		pokemonID = req.PokemonID
+		gameID = &req.GameID
 		huntMethodID = &req.HuntMethodID
 		customMethodName = nil
 		huntParameters = json.RawMessage(`{}`)
 	} else {
-		// Legacy: synthetic method (Masuda etc.) — keep existing behaviour.
-		if req.PokemonID == 0 {
-			http.Error(w, "pokemon_id required", http.StatusBadRequest)
-			return
-		}
-		pokemonID = req.PokemonID
-		huntMethodID = nil
-		customMethodName = nil
-		params, _ := json.Marshal(map[string]string{"method": req.MethodName})
-		huntParameters = params
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
 	}
 
 	var hunt models.UserHunt
 	err := database.DB.QueryRow(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, hunt_method_id, custom_method_name, acquisition_type, hunt_parameters)
-		 VALUES ($1, $2, $3, $4, 'HUNTED', $5)
-		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		userID, pokemonID, huntMethodID, customMethodName, huntParameters).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		`INSERT INTO user_hunts (user_id, pokemon_id, game_id, hunt_method_id, custom_method_name, acquisition_type, hunt_parameters)
+		 VALUES ($1, $2, $3, $4, $5, 'HUNTED', $6)
+		 RETURNING id, user_id, pokemon_id, game_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
+		userID, pokemonID, gameID, huntMethodID, customMethodName, huntParameters).
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
+		fmt.Println("CreateHunt error:", err)
 		http.Error(w, "Failed to create hunt", http.StatusInternalServerError)
 		return
 	}
@@ -171,8 +180,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	huntID := chi.URLParam(r, "id")
 
 	var req struct {
-		EncounterCount int    `json:"encounter_count"`
-		Status         string `json:"status"`
+		EncounterCount int             `json:"encounter_count"`
+		Status         string          `json:"status"`
+		HuntParameters json.RawMessage `json:"hunt_parameters"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -181,9 +191,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	var prevUpdatedAt time.Time
 	var currentTotalTime int
+	var huntParameters json.RawMessage
 	err := database.DB.QueryRow(context.Background(),
-		`SELECT updated_at, total_time_seconds FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime)
+		`SELECT updated_at, total_time_seconds, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &huntParameters)
 	if err != nil {
 		http.Error(w, "Hunt not found", http.StatusNotFound)
 		return
@@ -195,13 +206,17 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		newTotalTime += int(delta.Seconds())
 	}
 
+	if len(req.HuntParameters) > 0 {
+		huntParameters = req.HuntParameters
+	}
+
 	var hunt models.UserHunt
 	err = database.DB.QueryRow(context.Background(),
 		`UPDATE user_hunts
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3
-		 WHERE id = $4 AND user_id = $5
+		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, hunt_parameters = $4
+		 WHERE id = $5 AND user_id = $6
 		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		req.EncounterCount, req.Status, newTotalTime, huntID, userID).
+		req.EncounterCount, req.Status, newTotalTime, huntParameters, huntID, userID).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {

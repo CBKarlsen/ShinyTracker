@@ -1,0 +1,252 @@
+[
+  {
+    "id": "random_encounter_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "masuda_method_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "egg"
+  },
+  {
+    "id": "poke_radar_dppt",
+    "games": [
+      "Diamond/Pearl/Platinum"
+    ],
+    "method_name": "Poké Radar",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "radar_chain_gen4",
+    "requires_kind": "wild",
+    "requires_terrain": "grass"
+  },
+  {
+    "id": "random_encounter_gen4",
+    "games": [
+      "Diamond/Pearl/Platinum",
+      "HeartGold/SoulSilver"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "outbreak_paldea_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Paldea Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "outbreak_kitakami_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Kitakami Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "outbreak_terarium_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Terarium Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "outbreak_defeats_sv",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "sos_chaining_gen7",
+    "games": [
+      "Sun/Moon",
+      "Ultra Sun/Ultra Moon"
+    ],
+    "method_name": "SOS Chaining",
+    "avg_time_seconds": 45,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "sos_chain_gen7",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "dexnav_gen6",
+    "games": [
+      "Omega Ruby/Alpha Sapphire"
+    ],
+    "method_name": "DexNav",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "dexnav_gen6",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "sandwich_hunting_sv",
+    "games": [
+      "Scarlet/Violet"
+    ],
+    "method_name": "Sandwich Hunting",
+    "avg_time_seconds": 25,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "sandwich_power_sv",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "dynamax_adventures_gen8",
+    "games": [
+      "Sword/Shield"
+    ],
+    "method_name": "Dynamax Adventures",
+    "avg_time_seconds": 600,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "dynamax_adventures_gen8",
+    "requires_kind": "raid"
+  },
+  {
+    "id": "masuda_method_gen8",
+    "games": [
+      "Sword/Shield",
+      "Brilliant Diamond/Shining Pearl"
+    ],
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "egg"
+  },
+  {
+    "id": "friend_safari_xy",
+    "games": [
+      "X/Y"
+    ],
+    "method_name": "Friend Safari",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "catch_combo_lgpe",
+    "games": [
+      "Let's Go Pikachu/Eevee"
+    ],
+    "method_name": "Catch Combo",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "catch_combo_lgpe",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "chain_fishing_gen6",
+    "games": [
+      "X/Y",
+      "Omega Ruby/Alpha Sapphire"
+    ],
+    "method_name": "Chain Fishing",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "chain_fishing_gen6",
+    "requires_kind": "wild",
+    "requires_terrain": "fishing"
+  },
+  {
+    "id": "ko_method_swsh",
+    "games": [
+      "Sword/Shield"
+    ],
+    "method_name": "KO Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "mass_outbreak_la",
+    "games": [
+      "Legends: Arceus"
+    ],
+    "method_name": "Mass Outbreak",
+    "avg_time_seconds": 15,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "soft_reset_static",
+    "games": [
+      "Red/Blue/Yellow",
+      "Gold/Silver/Crystal",
+      "Ruby/Sapphire/Emerald",
+      "FireRed/LeafGreen",
+      "Diamond/Pearl/Platinum",
+      "HeartGold/SoulSilver",
+      "Black/White",
+      "Black 2/White 2",
+      "X/Y",
+      "Omega Ruby/Alpha Sapphire",
+      "Sun/Moon",
+      "Ultra Sun/Ultra Moon",
+      "Sword/Shield",
+      "Brilliant Diamond/Shining Pearl",
+      "Scarlet/Violet"
+    ],
+    "method_name": "Soft Reset",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "static"
+  },
+  {
+    "id": "run_away",
+    "games": [
+      "Sword/Shield",
+      "Brilliant Diamond/Shining Pearl",
+      "Ruby/Sapphire/Emerald"
+    ],
+    "method_name": "Run Away",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  }
+]

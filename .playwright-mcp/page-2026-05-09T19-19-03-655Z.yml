@@ -1,0 +1,372 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e9]:
+        - generic [ref=e10]: ShinyTracker
+        - generic [ref=e11]: Pro
+    - generic [ref=e12]:
+      - generic [ref=e13]: Workspace
+      - navigation [ref=e14]:
+        - button "Dashboard" [ref=e155] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e21]: Dashboard
+        - button "Historic Hunts" [ref=e22] [cursor=pointer]:
+          - img [ref=e23]
+          - generic [ref=e26]: Historic Hunts
+        - button "Living Dex" [ref=e27] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e31]: Living Dex
+        - button "Games" [ref=e32] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: Games
+        - button "Stats" [ref=e37] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: Stats
+      - generic [ref=e41]: Tools
+      - navigation [ref=e42]:
+        - button "Odds Calculator" [ref=e43] [cursor=pointer]:
+          - img [ref=e44]
+          - generic [ref=e47]: Odds Calculator
+        - button "Method Library" [active] [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+          - generic [ref=e52]: Method Library
+    - generic [ref=e53]:
+      - generic [ref=e54]: S
+      - generic [ref=e55]:
+        - generic [ref=e56]: Trainer
+        - generic [ref=e57]: Shiny hunter
+      - button "Log out" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+  - generic [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e65]: Workspace
+        - generic [ref=e66]: /
+        - generic [ref=e67]: Method Library
+      - generic [ref=e68]:
+        - img [ref=e69]
+        - textbox "Search hunts, Pokémon…" [ref=e72]
+        - generic [ref=e73]: ⌘K
+      - button "New Hunt" [ref=e74] [cursor=pointer]:
+        - img [ref=e75]
+        - text: New Hunt
+    - generic [ref=e2454]:
+      - generic [ref=e2455]:
+        - generic [ref=e2456]:
+          - generic [ref=e2457]: Workspace · Tools
+          - heading "Method Library" [level=1] [ref=e2458]
+          - generic [ref=e2459]: Browse encounter methods, rolls, and timing across all games
+        - combobox [ref=e2461]:
+          - option "All games" [selected]
+          - option "Red/Blue/Yellow"
+          - option "Gold/Silver/Crystal"
+          - option "Ruby/Sapphire/Emerald"
+          - option "FireRed/LeafGreen"
+          - option "Diamond/Pearl/Platinum"
+          - option "HeartGold/SoulSilver"
+          - option "Black/White"
+          - option "Black 2/White 2"
+          - option "X/Y"
+          - option "Omega Ruby/Alpha Sapphire"
+          - option "Sun/Moon"
+          - option "Ultra Sun/Ultra Moon"
+          - option "Let's Go Pikachu/Eevee"
+          - option "Sword/Shield"
+          - option "Brilliant Diamond/Shining Pearl"
+          - 'option "Legends: Arceus"'
+          - option "Scarlet/Violet"
+      - generic [ref=e2462]:
+        - generic [ref=e2463]:
+          - generic [ref=e2464]:
+            - heading "Gold/Silver/Crystal" [level=3] [ref=e2465]
+            - generic [ref=e2466]: 1 method
+          - table [ref=e2467]:
+            - rowgroup [ref=e2468]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2469]:
+                - columnheader "Method" [ref=e2470]
+                - columnheader "Base rolls" [ref=e2471]
+                - columnheader "Charm rolls" [ref=e2472]
+                - columnheader "Avg time/enc" [ref=e2473]
+                - columnheader [ref=e2474]
+            - rowgroup [ref=e2475]:
+              - row "Soft Reset 1× +3 40s" [ref=e2476]:
+                - cell "Soft Reset" [ref=e2477]
+                - cell "1×" [ref=e2478]
+                - cell "+3" [ref=e2479]
+                - cell "40s" [ref=e2480]
+                - cell [ref=e2481]
+        - generic [ref=e2482]:
+          - generic [ref=e2483]:
+            - heading "Ruby/Sapphire/Emerald" [level=3] [ref=e2484]
+            - generic [ref=e2485]: 1 method
+          - table [ref=e2486]:
+            - rowgroup [ref=e2487]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2488]:
+                - columnheader "Method" [ref=e2489]
+                - columnheader "Base rolls" [ref=e2490]
+                - columnheader "Charm rolls" [ref=e2491]
+                - columnheader "Avg time/enc" [ref=e2492]
+                - columnheader [ref=e2493]
+            - rowgroup [ref=e2494]:
+              - row "Soft Reset 1× +3 40s" [ref=e2495]:
+                - cell "Soft Reset" [ref=e2496]
+                - cell "1×" [ref=e2497]
+                - cell "+3" [ref=e2498]
+                - cell "40s" [ref=e2499]
+                - cell [ref=e2500]
+        - generic [ref=e2501]:
+          - generic [ref=e2502]:
+            - heading "Diamond/Pearl/Platinum" [level=3] [ref=e2503]
+            - generic [ref=e2504]: 1 method
+          - table [ref=e2505]:
+            - rowgroup [ref=e2506]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2507]:
+                - columnheader "Method" [ref=e2508]
+                - columnheader "Base rolls" [ref=e2509]
+                - columnheader "Charm rolls" [ref=e2510]
+                - columnheader "Avg time/enc" [ref=e2511]
+                - columnheader [ref=e2512]
+            - rowgroup [ref=e2513]:
+              - row "PokéRadar 41× +41 1m" [ref=e2514]:
+                - cell "PokéRadar" [ref=e2515]
+                - cell "41×" [ref=e2516]
+                - cell "+41" [ref=e2517]
+                - cell "1m" [ref=e2518]
+                - cell [ref=e2519]
+        - generic [ref=e2520]:
+          - generic [ref=e2521]:
+            - heading "X/Y" [level=3] [ref=e2522]
+            - generic [ref=e2523]: 2 methods
+          - table [ref=e2524]:
+            - rowgroup [ref=e2525]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2526]:
+                - columnheader "Method" [ref=e2527]
+                - columnheader "Base rolls" [ref=e2528]
+                - columnheader "Charm rolls" [ref=e2529]
+                - columnheader "Avg time/enc" [ref=e2530]
+                - columnheader [ref=e2531]
+            - rowgroup [ref=e2532]:
+              - row "Chain Fishing 41× +41 15s" [ref=e2533]:
+                - cell "Chain Fishing" [ref=e2534]
+                - cell "41×" [ref=e2535]
+                - cell "+41" [ref=e2536]
+                - cell "15s" [ref=e2537]
+                - cell [ref=e2538]
+              - row "PokéRadar 41× +41 1m" [ref=e2539]:
+                - cell "PokéRadar" [ref=e2540]
+                - cell "41×" [ref=e2541]
+                - cell "+41" [ref=e2542]
+                - cell "1m" [ref=e2543]
+                - cell [ref=e2544]
+        - generic [ref=e2545]:
+          - generic [ref=e2546]:
+            - heading "Omega Ruby/Alpha Sapphire" [level=3] [ref=e2547]
+            - generic [ref=e2548]: 2 methods
+          - table [ref=e2549]:
+            - rowgroup [ref=e2550]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2551]:
+                - columnheader "Method" [ref=e2552]
+                - columnheader "Base rolls" [ref=e2553]
+                - columnheader "Charm rolls" [ref=e2554]
+                - columnheader "Avg time/enc" [ref=e2555]
+                - columnheader [ref=e2556]
+            - rowgroup [ref=e2557]:
+              - row "Chain Fishing 41× +41 15s" [ref=e2558]:
+                - cell "Chain Fishing" [ref=e2559]
+                - cell "41×" [ref=e2560]
+                - cell "+41" [ref=e2561]
+                - cell "15s" [ref=e2562]
+                - cell [ref=e2563]
+              - row "Horde Encounter 5× +7 10s" [ref=e2564]:
+                - cell "Horde Encounter" [ref=e2565]
+                - cell "5×" [ref=e2566]
+                - cell "+7" [ref=e2567]
+                - cell "10s" [ref=e2568]
+                - cell [ref=e2569]
+        - generic [ref=e2570]:
+          - generic [ref=e2571]:
+            - heading "Sun/Moon" [level=3] [ref=e2572]
+            - generic [ref=e2573]: 2 methods
+          - table [ref=e2574]:
+            - rowgroup [ref=e2575]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2576]:
+                - columnheader "Method" [ref=e2577]
+                - columnheader "Base rolls" [ref=e2578]
+                - columnheader "Charm rolls" [ref=e2579]
+                - columnheader "Avg time/enc" [ref=e2580]
+                - columnheader [ref=e2581]
+            - rowgroup [ref=e2582]:
+              - row "Soft Reset 1× +3 40s" [ref=e2583]:
+                - cell "Soft Reset" [ref=e2584]
+                - cell "1×" [ref=e2585]
+                - cell "+3" [ref=e2586]
+                - cell "40s" [ref=e2587]
+                - cell [ref=e2588]
+              - row "SOS Battle 13× +15 30s" [ref=e2589]:
+                - cell "SOS Battle" [ref=e2590]
+                - cell "13×" [ref=e2591]
+                - cell "+15" [ref=e2592]
+                - cell "30s" [ref=e2593]
+                - cell [ref=e2594]
+        - generic [ref=e2595]:
+          - generic [ref=e2596]:
+            - heading "Ultra Sun/Ultra Moon" [level=3] [ref=e2597]
+            - generic [ref=e2598]: 4 methods
+          - table [ref=e2599]:
+            - rowgroup [ref=e2600]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2601]:
+                - columnheader "Method" [ref=e2602]
+                - columnheader "Base rolls" [ref=e2603]
+                - columnheader "Charm rolls" [ref=e2604]
+                - columnheader "Avg time/enc" [ref=e2605]
+                - columnheader [ref=e2606]
+            - rowgroup [ref=e2607]:
+              - row "Chain Fishing 41× +41 15s" [ref=e2608]:
+                - cell "Chain Fishing" [ref=e2609]
+                - cell "41×" [ref=e2610]
+                - cell "+41" [ref=e2611]
+                - cell "15s" [ref=e2612]
+                - cell [ref=e2613]
+              - row "Random Encounter 1× +3 20s" [ref=e2614]:
+                - cell "Random Encounter" [ref=e2615]
+                - cell "1×" [ref=e2616]
+                - cell "+3" [ref=e2617]
+                - cell "20s" [ref=e2618]
+                - cell [ref=e2619]
+              - row "Roaming Soft Reset 1× +3 2m" [ref=e2620]:
+                - cell "Roaming Soft Reset" [ref=e2621]
+                - cell "1×" [ref=e2622]
+                - cell "+3" [ref=e2623]
+                - cell "2m" [ref=e2624]
+                - cell [ref=e2625]
+              - row "Soft Reset 1× +3 40s" [ref=e2626]:
+                - cell "Soft Reset" [ref=e2627]
+                - cell "1×" [ref=e2628]
+                - cell "+3" [ref=e2629]
+                - cell "40s" [ref=e2630]
+                - cell [ref=e2631]
+        - generic [ref=e2632]:
+          - generic [ref=e2633]:
+            - heading "Sword/Shield" [level=3] [ref=e2634]
+            - generic [ref=e2635]: 4 methods
+          - table [ref=e2636]:
+            - rowgroup [ref=e2637]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2638]:
+                - columnheader "Method" [ref=e2639]
+                - columnheader "Base rolls" [ref=e2640]
+                - columnheader "Charm rolls" [ref=e2641]
+                - columnheader "Avg time/enc" [ref=e2642]
+                - columnheader [ref=e2643]
+            - rowgroup [ref=e2644]:
+              - row "Fossil Soft Reset 1× +3 40s" [ref=e2645]:
+                - cell "Fossil Soft Reset" [ref=e2646]
+                - cell "1×" [ref=e2647]
+                - cell "+3" [ref=e2648]
+                - cell "40s" [ref=e2649]
+                - cell [ref=e2650]
+              - row "Max Raid Battle 14× +41 15m" [ref=e2651]:
+                - cell "Max Raid Battle" [ref=e2652]
+                - cell "14×" [ref=e2653]
+                - cell "+41" [ref=e2654]
+                - cell "15m" [ref=e2655]
+                - cell [ref=e2656]
+              - row "PokéDex Completion Gift 1× +1 0s" [ref=e2657]:
+                - cell "PokéDex Completion Gift" [ref=e2658]
+                - cell "1×" [ref=e2659]
+                - cell "+1" [ref=e2660]
+                - cell "0s" [ref=e2661]
+                - cell [ref=e2662]
+              - row "Soft Reset 1× +3 40s" [ref=e2663]:
+                - cell "Soft Reset" [ref=e2664]
+                - cell "1×" [ref=e2665]
+                - cell "+3" [ref=e2666]
+                - cell "40s" [ref=e2667]
+                - cell [ref=e2668]
+        - generic [ref=e2669]:
+          - generic [ref=e2670]:
+            - heading "Brilliant Diamond/Shining Pearl" [level=3] [ref=e2671]
+            - generic [ref=e2672]: 2 methods
+          - table [ref=e2673]:
+            - rowgroup [ref=e2674]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2675]:
+                - columnheader "Method" [ref=e2676]
+                - columnheader "Base rolls" [ref=e2677]
+                - columnheader "Charm rolls" [ref=e2678]
+                - columnheader "Avg time/enc" [ref=e2679]
+                - columnheader [ref=e2680]
+            - rowgroup [ref=e2681]:
+              - row "PokéDex Completion Gift 1× +1 0s" [ref=e2682]:
+                - cell "PokéDex Completion Gift" [ref=e2683]
+                - cell "1×" [ref=e2684]
+                - cell "+1" [ref=e2685]
+                - cell "0s" [ref=e2686]
+                - cell [ref=e2687]
+              - row "Soft Reset 1× +3 40s" [ref=e2688]:
+                - cell "Soft Reset" [ref=e2689]
+                - cell "1×" [ref=e2690]
+                - cell "+3" [ref=e2691]
+                - cell "40s" [ref=e2692]
+                - cell [ref=e2693]
+        - generic [ref=e2694]:
+          - generic [ref=e2695]:
+            - 'heading "Legends: Arceus" [level=3] [ref=e2696]'
+            - generic [ref=e2697]: 1 method
+          - table [ref=e2698]:
+            - rowgroup [ref=e2699]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2700]:
+                - columnheader "Method" [ref=e2701]
+                - columnheader "Base rolls" [ref=e2702]
+                - columnheader "Charm rolls" [ref=e2703]
+                - columnheader "Avg time/enc" [ref=e2704]
+                - columnheader [ref=e2705]
+            - rowgroup [ref=e2706]:
+              - row "Massive Mass Outbreak 12× +25 20s" [ref=e2707]:
+                - cell "Massive Mass Outbreak" [ref=e2708]
+                - cell "12×" [ref=e2709]
+                - cell "+25" [ref=e2710]
+                - cell "20s" [ref=e2711]
+                - cell [ref=e2712]
+        - generic [ref=e2713]:
+          - generic [ref=e2714]:
+            - heading "Scarlet/Violet" [level=3] [ref=e2715]
+            - generic [ref=e2716]: 5 methods
+          - table [ref=e2717]:
+            - rowgroup [ref=e2718]:
+              - row "Method Base rolls Charm rolls Avg time/enc" [ref=e2719]:
+                - columnheader "Method" [ref=e2720]
+                - columnheader "Base rolls" [ref=e2721]
+                - columnheader "Charm rolls" [ref=e2722]
+                - columnheader "Avg time/enc" [ref=e2723]
+                - columnheader [ref=e2724]
+            - rowgroup [ref=e2725]:
+              - row "Mass Outbreak 3× +5 15s" [ref=e2726]:
+                - cell "Mass Outbreak" [ref=e2727]
+                - cell "3×" [ref=e2728]
+                - cell "+5" [ref=e2729]
+                - cell "15s" [ref=e2730]
+                - cell [ref=e2731]
+              - row "Masuda Method 6× +8 45s" [ref=e2732]:
+                - cell "Masuda Method" [ref=e2733]
+                - cell "6×" [ref=e2734]
+                - cell "+8" [ref=e2735]
+                - cell "45s" [ref=e2736]
+                - cell [ref=e2737]
+              - row "PokéDex Completion Gift 1× +1 0s" [ref=e2738]:
+                - cell "PokéDex Completion Gift" [ref=e2739]
+                - cell "1×" [ref=e2740]
+                - cell "+1" [ref=e2741]
+                - cell "0s" [ref=e2742]
+                - cell [ref=e2743]
+              - row "Random Encounter 1× +3 20s" [ref=e2744]:
+                - cell "Random Encounter" [ref=e2745]
+                - cell "1×" [ref=e2746]
+                - cell "+3" [ref=e2747]
+                - cell "20s" [ref=e2748]
+                - cell [ref=e2749]
+              - row "Soft Reset 1× +3 40s" [ref=e2750]:
+                - cell "Soft Reset" [ref=e2751]
+                - cell "1×" [ref=e2752]
+                - cell "+3" [ref=e2753]
+                - cell "40s" [ref=e2754]
+                - cell [ref=e2755]

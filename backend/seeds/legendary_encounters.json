@@ -1,0 +1,100 @@
+[
+  {
+    "pokemon_id": 144,
+    "name": "Articuno",
+    "default_kind": "static",
+    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 145,
+    "name": "Zapdos",
+    "default_kind": "static",
+    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 146,
+    "name": "Moltres",
+    "default_kind": "static",
+    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 150,
+    "name": "Mewtwo",
+    "default_kind": "static",
+    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 249,
+    "name": "Lugia",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 250,
+    "name": "Ho-Oh",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 382,
+    "name": "Kyogre",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 383,
+    "name": "Groudon",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 384,
+    "name": "Rayquaza",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 487,
+    "name": "Giratina",
+    "default_kind": "static",
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 643,
+    "name": "Reshiram",
+    "default_kind": "static",
+    "default_games": ["Black/White", "Black 2/White 2"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 644,
+    "name": "Zekrom",
+    "default_kind": "static",
+    "default_games": ["Black/White", "Black 2/White 2"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 716,
+    "name": "Xerneas",
+    "default_kind": "static",
+    "default_games": ["X/Y"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 717,
+    "name": "Yveltal",
+    "default_kind": "static",
+    "default_games": ["X/Y"],
+    "overrides": { "@swsh-dynamax": "raid" }
+  }
+]

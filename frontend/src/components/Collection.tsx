@@ -1,6 +1,7 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import type { HuntDetail } from "./HistoricHunts";
 
 interface Pokemon {
@@ -23,6 +24,7 @@ const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 
 const Collection: React.FC = () => {
 	const { token } = useAuth();
+	const { showError } = useNotification();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 	const [caughtIds, setCaughtIds] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(true);
@@ -47,8 +49,11 @@ const Collection: React.FC = () => {
 						if (h.status === "completed") caught.add(h.pokemon_id);
 					}
 					setCaughtIds(caught);
+				} else {
+					showError("Failed to fetch Pokedex information.");
 				}
-			} catch (err) {
+			} catch (err: any) {
+				showError(err.message || "Failed to fetch Pokedex information.");
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -69,12 +74,16 @@ const Collection: React.FC = () => {
 		try {
 			const res = await fetch("http://localhost:8080/api/hunts/manual", {
 				method: "POST",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({ pokemon_id: pokemonId }),
 			});
-			if (!res.ok) throw new Error();
-		} catch {
+			if (!res.ok) throw new Error("Could not add manual catch.");
+		} catch (err: any) {
 			setCaughtIds(prev);
+			showError(err.message || "Failed to mark Pokémon as caught.");
 		}
 	};
 
@@ -91,15 +100,23 @@ const Collection: React.FC = () => {
 				method: "DELETE",
 				headers: { Authorization: `Bearer ${token}` },
 			});
-			if (!res.ok) throw new Error();
-		} catch {
+			if (!res.ok) throw new Error("Could not remove manual catch.");
+		} catch (err: any) {
 			setCaughtIds(prev);
+			showError(err.message || "Failed to remove Pokémon from dex.");
 		}
 	};
 
 	if (loading) {
 		return (
-			<div className="page" style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+			<div
+				className="page"
+				style={{
+					color: "var(--ink-3)",
+					fontFamily: "var(--font-mono)",
+					fontSize: 12,
+				}}
+			>
 				Loading Pokédex…
 			</div>
 		);
@@ -123,7 +140,11 @@ const Collection: React.FC = () => {
 							letterSpacing: "0.04em",
 						}}
 					>
-						{caughtCount} of {total} shinies · {((caughtCount / total) * 100).toFixed(1)}% complete
+						{caughtCount} of {total} shinies ·{" "}
+						{((caughtCount / total) * 100).toFixed(1)}% complete
+						<span style={{ color: "var(--ink-4)", marginLeft: 8 }}>
+							(Click any Pokémon below to toggle caught status)
+						</span>
 					</div>
 				</div>
 				<div className="ctas">
@@ -148,7 +169,8 @@ const Collection: React.FC = () => {
 									textTransform: "capitalize",
 									background: filter === f ? "var(--bg-3)" : "transparent",
 									color: filter === f ? "var(--ink-1)" : "var(--ink-3)",
-									boxShadow: filter === f ? "inset 0 0 0 1px var(--line-2)" : "none",
+									boxShadow:
+										filter === f ? "inset 0 0 0 1px var(--line-2)" : "none",
 								}}
 							>
 								{f}
@@ -169,11 +191,21 @@ const Collection: React.FC = () => {
 					}}
 				>
 					<div className="t-label">Completion progress</div>
-					<div className="t-mono" style={{ fontSize: 12, color: "var(--gold)" }}>
+					<div
+						className="t-mono"
+						style={{ fontSize: 12, color: "var(--gold)" }}
+					>
 						{caughtCount} / {total}
 					</div>
 				</div>
-				<div style={{ height: 6, background: "var(--bg-3)", borderRadius: 99, overflow: "hidden" }}>
+				<div
+					style={{
+						height: 6,
+						background: "var(--bg-3)",
+						borderRadius: 99,
+						overflow: "hidden",
+					}}
+				>
 					<div
 						style={{
 							height: "100%",
@@ -195,11 +227,18 @@ const Collection: React.FC = () => {
 					}}
 				>
 					{GEN_RANGES.map(([gen, lo, hi]) => {
-						const count = Array.from(caughtIds).filter((id) => id >= lo && id <= hi).length;
+						const count = Array.from(caughtIds).filter(
+							(id) => id >= lo && id <= hi,
+						).length;
 						return (
 							<div key={gen} style={{ textAlign: "center" }}>
 								<div>Gen {ROMAN[gen]}</div>
-								<div style={{ color: count > 0 ? "var(--gold)" : "var(--ink-4)", marginTop: 2 }}>
+								<div
+									style={{
+										color: count > 0 ? "var(--gold)" : "var(--ink-4)",
+										marginTop: 2,
+									}}
+								>
 									{count}/{hi - lo + 1}
 								</div>
 							</div>
@@ -219,7 +258,9 @@ const Collection: React.FC = () => {
 						return true;
 					});
 				if (cellsInGen.length === 0) return null;
-				const caughtInGen = Array.from(caughtIds).filter((id) => id >= lo && id <= hi).length;
+				const caughtInGen = Array.from(caughtIds).filter(
+					(id) => id >= lo && id <= hi,
+				).length;
 				return (
 					<div key={gen}>
 						<div className="gen-head">
@@ -237,7 +278,7 @@ const Collection: React.FC = () => {
 										key={p.id}
 										className={`dex-cell ${caught ? "caught" : "uncaught"}`}
 										onClick={() => handleToggle(p.id, caught)}
-										title={p.name}
+										title={`${p.name} - ${caught ? "Click to remove" : "Click to mark as caught"}`}
 									>
 										<img
 											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${p.id}.png`}
@@ -260,14 +301,28 @@ const Collection: React.FC = () => {
 						onClick={(e) => e.stopPropagation()}
 						style={{ width: 380, padding: 28 }}
 					>
-						<div style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 12 }}>
+						<div
+							style={{
+								fontFamily: "var(--font-display)",
+								fontSize: 18,
+								fontWeight: 600,
+								marginBottom: 12,
+							}}
+						>
 							Remove shiny?
 						</div>
-						<div style={{ color: "var(--ink-3)", fontSize: 13, marginBottom: 24 }}>
+						<div
+							style={{ color: "var(--ink-3)", fontSize: 13, marginBottom: 24 }}
+						>
 							This will delete the completed hunt record for this Pokémon.
 						</div>
-						<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-							<button className="btn ghost" onClick={() => setRemoveTarget(null)}>
+						<div
+							style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+						>
+							<button
+								className="btn ghost"
+								onClick={() => setRemoveTarget(null)}
+							>
 								Cancel
 							</button>
 							<button className="btn danger" onClick={confirmRemove}>

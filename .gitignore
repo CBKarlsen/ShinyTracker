@@ -1,0 +1,11 @@
+# Compiled Go binaries
+/backend/api
+/backend/seed
+/backend/bin/
+
+# Local scratch / generated files
+/backend/methods.json
+/fix_exceptions.js
+
+# Claude Code local state
+.claude/scheduled_tasks.lock

@@ -21,7 +21,10 @@ export interface HuntDetail {
 
 const SparkSm = ({ size = 9, color }: { size?: number; color?: string }) => (
 	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden>
-		<path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill={color || "currentColor"} />
+		<path
+			d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z"
+			fill={color || "currentColor"}
+		/>
 	</svg>
 );
 
@@ -62,7 +65,14 @@ const HistoricHunts: React.FC = () => {
 
 	if (loading) {
 		return (
-			<div className="page" style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", fontSize: 12 }}>
+			<div
+				className="page"
+				style={{
+					color: "var(--ink-3)",
+					fontFamily: "var(--font-mono)",
+					fontSize: 12,
+				}}
+			>
 				Loading…
 			</div>
 		);
@@ -87,7 +97,8 @@ const HistoricHunts: React.FC = () => {
 								letterSpacing: "0.04em",
 							}}
 						>
-							{hunts.length} shinies caught · {fmtNum(total)} encounters · {fmtHM(totalTime)} total
+							{hunts.length} shinies caught · {fmtNum(total)} encounters ·{" "}
+							{fmtHM(totalTime)} total
 						</div>
 					)}
 				</div>
@@ -95,7 +106,14 @@ const HistoricHunts: React.FC = () => {
 
 			{hunts.length === 0 ? (
 				<div className="card" style={{ padding: 48, textAlign: "center" }}>
-					<div style={{ color: "var(--ink-3)", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.06em" }}>
+					<div
+						style={{
+							color: "var(--ink-3)",
+							fontFamily: "var(--font-mono)",
+							fontSize: 12,
+							letterSpacing: "0.06em",
+						}}
+					>
 						No completed hunts yet. Keep hunting!
 					</div>
 				</div>
@@ -136,7 +154,9 @@ const HistoricHunts: React.FC = () => {
 												: ""}
 										</div>
 									</div>
-									<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+									<div
+										style={{ display: "flex", alignItems: "center", gap: 6 }}
+									>
 										<SparkSm size={9} color="var(--gold)" />
 										<span
 											style={{
