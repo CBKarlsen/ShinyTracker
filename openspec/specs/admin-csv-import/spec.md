@@ -1,3 +1,10 @@
+# admin-csv-import Specification
+
+## Purpose
+Defines admin bulk import of hunt methods via CSV upload, surfaced as a CSV import section on the Encounters admin page.
+
+## Requirements
+
 ### Requirement: Admin can upload a CSV of hunt methods
 The system SHALL expose `POST /api/admin/encounters/import` accepting a CSV body (content-type `text/csv` or multipart) with columns `pokemon_id,game_id,method_name,base_rolls,charm_rolls,avg_time_seconds,is_recommended`. Each row SHALL be upserted independently; failures on individual rows SHALL NOT roll back successful rows.
 

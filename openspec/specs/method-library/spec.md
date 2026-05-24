@@ -1,7 +1,10 @@
-## ADDED Requirements
+# method-library Specification
 
+## Purpose
+Defines the methods API endpoint and the Method Library sidebar widget for browsing encounter methods by game.
+## Requirements
 ### Requirement: Methods API endpoint
-The system SHALL expose `GET /api/methods` returning all encounter methods. An optional `?game_id=<id>` query parameter SHALL filter results to a single game.
+The system SHALL expose `GET /api/methods` returning all encounter methods. An optional `?game_id=<id>` query parameter SHALL filter results to a single game using strict game-method joins instead of generation matching.
 
 #### Scenario: Fetch all methods
 - **WHEN** a request is made to `GET /api/methods` with no query params
@@ -9,7 +12,7 @@ The system SHALL expose `GET /api/methods` returning all encounter methods. An o
 
 #### Scenario: Filter by game
 - **WHEN** a request is made with `?game_id=<id>`
-- **THEN** the response contains only encounters belonging to that game
+- **THEN** the response contains only encounters strictly mapped to that game via the method_games join table
 
 #### Scenario: Unknown game_id
 - **WHEN** `game_id` is provided but does not match any game
@@ -37,3 +40,4 @@ The left sidebar SHALL render a Method Library panel below the Odds Calculator p
 #### Scenario: No methods for selected game
 - **WHEN** the selected game has no encounter methods
 - **THEN** the list shows a "No methods found" empty state message
+

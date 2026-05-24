@@ -1,4 +1,9 @@
-## ADDED Requirements
+# odds-calculator Specification
+
+## Purpose
+Defines the odds API endpoint and the Odds Calculator sidebar widget.
+
+## Requirements
 
 ### Requirement: Odds API endpoint
 The system SHALL expose `GET /api/odds?encounter_id=<id>&shiny_charm=<bool>` returning computed shiny odds for a given encounter method.

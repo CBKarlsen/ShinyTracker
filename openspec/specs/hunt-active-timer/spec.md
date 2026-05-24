@@ -1,3 +1,8 @@
+# hunt-active-timer Specification
+
+## Purpose
+Defines per-hunt tracking of active hunting time, its exposure via the hunts API, and its display on the hunt card.
+
 ## Requirements
 
 ### Requirement: Active hunting time is persisted per hunt

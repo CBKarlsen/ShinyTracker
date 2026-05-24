@@ -43,6 +43,8 @@ export interface Pokemon {
 	id: number;
 	name: string;
 	sprite_url: string;
+	is_legendary?: boolean;
+	is_mythical?: boolean;
 }
 
 export interface HuntMethod {
@@ -54,7 +56,6 @@ export interface HuntMethod {
 	avg_time_seconds: number;
 	base_rolls: number;
 	charm_rolls: number;
-	is_recommended: boolean;
 	formula_type?: string;
 }
 

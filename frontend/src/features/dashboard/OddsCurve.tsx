@@ -11,7 +11,8 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 		hunt.has_shiny_charm || false,
 		odds,
 		hunt.base_rolls || 1,
-		hunt.charm_rolls || 0
+		hunt.charm_rolls || 0,
+		(hunt.hunt_parameters as Record<string, any>) || {}
 	);
 
 	const expected = currentDenominator;
@@ -35,7 +36,8 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 				hunt.has_shiny_charm || false,
 				odds,
 				hunt.base_rolls || 1,
-				hunt.charm_rolls || 0
+				hunt.charm_rolls || 0,
+				(hunt.hunt_parameters as Record<string, any>) || {}
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 			if (!foundYouP && e === hunt.encounter_count) {

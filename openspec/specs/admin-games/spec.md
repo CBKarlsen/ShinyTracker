@@ -1,4 +1,9 @@
-## ADDED Requirements
+# admin-games Specification
+
+## Purpose
+Defines admin CRUD for games (list, create, update, guarded delete) and the Games admin page.
+
+## Requirements
 
 ### Requirement: List all games (admin)
 The system SHALL expose `GET /api/admin/games` returning all games including `supports_breeding`.

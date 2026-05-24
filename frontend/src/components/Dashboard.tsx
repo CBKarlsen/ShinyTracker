@@ -7,6 +7,8 @@ import { HeroHunt } from "../features/dashboard/HeroHunt";
 import { HuntRow } from "../features/dashboard/HuntRow";
 import { PhaseModal } from "../features/dashboard/PhaseModal";
 import type { Hunt } from "../types/models";
+import { EmptyState } from "./ui/EmptyState";
+import { ErrorBanner } from "./ui/ErrorBanner";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -183,42 +185,16 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 						</button>
 					</div>
 				</div>
-				<div className="card" style={{ padding: 60, textAlign: "center" }}>
-					<div
-						style={{
-							display: "inline-grid",
-							placeItems: "center",
-							width: 64,
-							height: 64,
-							borderRadius: 16,
-							background: "var(--bg-2)",
-							border: "1px solid var(--line-1)",
-							marginBottom: 16,
-							color: "var(--ink-3)",
-						}}
-					>
-						<SparkSm size={28} />
-					</div>
-					<div
-						style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, marginBottom: 6 }}
-					>
-						Start your first hunt
-					</div>
-					<div
-						style={{
-							color: "var(--ink-3)",
-							maxWidth: 360,
-							margin: "0 auto 18px",
-							fontSize: 13,
-						}}
-					>
-						Pick a Pokémon, choose a method, and we'll track odds, encounters and ETA. Hit SPACE to
-						count.
-					</div>
-					<button className="btn gold" onClick={onNewHunt}>
-						<IcPlus /> New hunt
-					</button>
-				</div>
+				<EmptyState
+					icon={<SparkSm size={28} />}
+					title="Start your first hunt"
+					description="Pick a Pokémon, choose a method, and we'll track odds, encounters and ETA. Hit SPACE to count."
+					action={
+						<button className="btn gold" onClick={onNewHunt}>
+							<IcPlus /> New hunt
+						</button>
+					}
+				/>
 			</div>
 		);
 	}
@@ -262,12 +238,15 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 				</div>
 			</div>
 
+			<ErrorBanner message={errorMsg || ""} onDismiss={() => setErrorMsg(null)} />
+
 			<HeroHunt
 				key={primary.id}
 				hunt={primaryWithCount}
 				onIncrement={handleIncrement}
 				onComplete={handleComplete}
 				onPhase={setPhaseHunt}
+				onUpdate={(updated) => setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)))}
 			/>
 
 			<div style={{ height: 22 }} />
@@ -320,32 +299,6 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 				/>
 			)}
 
-			{errorMsg && (
-				<div
-					style={{
-						position: "fixed",
-						bottom: 24,
-						left: "50%",
-						transform: "translateX(-50%)",
-						background: "var(--red-soft)",
-						border: "1px solid var(--red)",
-						color: "var(--red)",
-						fontFamily: "var(--font-mono)",
-						fontSize: 12,
-						padding: "10px 18px",
-						borderRadius: 8,
-						zIndex: 100,
-					}}
-				>
-					{errorMsg}
-					<button
-						style={{ marginLeft: 12, color: "inherit", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-						onClick={() => setErrorMsg(null)}
-					>
-						dismiss
-					</button>
-				</div>
-			)}
 		</div>
 	);
 };

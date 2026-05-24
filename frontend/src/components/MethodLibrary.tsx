@@ -13,7 +13,6 @@ interface MethodRow {
 	base_rolls: number;
 	charm_rolls: number;
 	avg_time_seconds: number;
-	is_recommended: boolean;
 	formula_type?: string;
 }
 
@@ -145,7 +144,6 @@ function MethodTable({ rows }: { rows: MethodRow[] }) {
 					<th>Base rolls</th>
 					<th>Charm rolls</th>
 					<th>Avg time/enc</th>
-					<th />
 				</tr>
 			</thead>
 			<tbody>
@@ -182,9 +180,6 @@ function MethodTable({ rows }: { rows: MethodRow[] }) {
 							{m.charm_rolls > 0 ? `+${m.charm_rolls}` : "—"}
 						</td>
 						<td className="t-mono">{fmtTime(m.avg_time_seconds)}</td>
-						<td>
-							{m.is_recommended && <span className="reco-badge">★ Best</span>}
-						</td>
 					</tr>
 				))}
 			</tbody>

@@ -211,7 +211,7 @@ func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("q")
-	query := "SELECT id, name, sprite_url, types FROM pokemon"
+	query := "SELECT id, name, sprite_url, types, is_legendary, is_mythical FROM pokemon"
 	args := []interface{}{}
 	
 	limit := r.URL.Query().Get("limit")
@@ -236,7 +236,7 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	var pokemon []models.Pokemon
 	for rows.Next() {
 		var p models.Pokemon
-		if err := rows.Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types); err == nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types, &p.IsLegendary, &p.IsMythical); err == nil {
 			pokemon = append(pokemon, p)
 		}
 	}
@@ -253,7 +253,6 @@ type HuntMethodDetail struct {
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
-	IsRecommended  bool   `json:"is_recommended"`
 	FormulaType    string `json:"formula_type"`
 }
 
@@ -265,7 +264,6 @@ type MethodDetail struct {
 	BaseRolls      int    `json:"base_rolls"`
 	CharmRolls     int    `json:"charm_rolls"`
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
-	IsRecommended  bool   `json:"is_recommended"`
 	FormulaType    string `json:"formula_type"`
 }
 
@@ -291,9 +289,10 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(context.Background(), `
 		SELECT DISTINCT ON (g.id, hm.method_name)
 			hm.id, g.id as game_id, g.title, hm.method_name,
-			hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.is_recommended, hm.formula_type
-		FROM hunt_methods hm
-		JOIN games g ON g.generation = hm.generation
+			hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.formula_type
+		FROM method_games mg
+		JOIN hunt_methods hm ON mg.method_id = hm.id
+		JOIN games g ON g.id = mg.game_id
 		WHERE ($1 = 0 OR g.id = $1)
 		ORDER BY g.id ASC, hm.method_name ASC
 	`, gameID)
@@ -308,7 +307,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var m MethodDetail
 		if err := rows.Scan(&m.ID, &m.GameID, &m.GameTitle, &m.MethodName,
-			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.IsRecommended, &m.FormulaType); err == nil {
+			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.FormulaType); err == nil {
 			methods = append(methods, m)
 		}
 	}
@@ -333,12 +332,15 @@ func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
 	shinyCharm := r.URL.Query().Get("shiny_charm") == "true"
 
 	var baseRolls, charmRolls, avgTimeSeconds, baseOdds int
+	var formulaType string
 	err = database.DB.QueryRow(context.Background(), `
-		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds
+		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, e.formula_type
 		FROM hunt_methods e
-		JOIN games g ON e.game_id = g.id
+		JOIN method_games mg ON e.id = mg.method_id
+		JOIN games g ON mg.game_id = g.id
 		WHERE e.id = $1
-	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds)
+		LIMIT 1
+	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds, &formulaType)
 	if err != nil {
 		http.Error(w, "Hunt method not found", http.StatusNotFound)
 		return
@@ -353,11 +355,21 @@ func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	expectedEncounters := baseOdds / totalRolls
+	if formulaType == "dynamax_adventures_gen8" {
+		if shinyCharm {
+			expectedEncounters = 100
+		} else {
+			expectedEncounters = 300
+		}
+		totalRolls = 1
+		baseOdds = expectedEncounters
+	}
+
 	etaHours := calc.CalculateEstimatedTimeHours(calc.OddsConfig{
 		BaseOdds:       baseOdds,
-		BaseRolls:      baseRolls,
-		CharmRolls:     charmRolls,
-		HasShinyCharm:  shinyCharm,
+		BaseRolls:      totalRolls, // pass totalRolls as BaseRolls to bypass internal calc logic
+		CharmRolls:     0,
+		HasShinyCharm:  false,
 		AvgTimeSeconds: avgTimeSeconds,
 	})
 
@@ -391,10 +403,10 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch methods from our new rules-based availability table
 	rows, err := database.DB.Query(context.Background(), `
-		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name, hm.avg_time_seconds, hm.base_rolls, hm.charm_rolls, hm.is_recommended, hm.formula_type
+		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name, hm.avg_time_seconds, hm.base_rolls, hm.charm_rolls, hm.formula_type
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
-		JOIN games g ON g.generation = hm.generation
+		JOIN games g ON g.id = ma.game_id
 		JOIN user_games ug ON g.id = ug.game_id
 		WHERE ma.pokemon_id = $1 AND ug.user_id = $2
 		ORDER BY g.generation ASC, g.id ASC
@@ -410,7 +422,7 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		var m HuntMethodDetail
 		if err := rows.Scan(
 			&m.ID, &m.PokemonID, &m.GameID, &m.GameTitle,
-			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.IsRecommended, &m.FormulaType,
+			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.FormulaType,
 		); err != nil {
 			continue
 		}

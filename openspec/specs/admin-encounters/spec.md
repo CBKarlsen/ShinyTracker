@@ -1,4 +1,9 @@
-## ADDED Requirements
+# admin-encounters Specification
+
+## Purpose
+Defines admin CRUD for a Pokemon's encounter methods and the Encounters admin page.
+
+## Requirements
 
 ### Requirement: List encounters for a Pokémon
 The system SHALL expose `GET /api/admin/encounters?pokemon_id=<id>` returning all encounter rows for that Pokémon across all games.

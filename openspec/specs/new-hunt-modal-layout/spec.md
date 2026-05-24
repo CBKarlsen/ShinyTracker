@@ -1,4 +1,9 @@
-## ADDED Requirements
+# new-hunt-modal-layout Specification
+
+## Purpose
+Defines the layout behavior of the New Hunt modal: native centering, internal scrolling on short viewports, and width matching the existing design.
+
+## Requirements
 
 ### Requirement: Modal is centered using the framework's native centering mechanism
 The New Hunt modal SHALL use MUI `Dialog` for positioning instead of a manually calculated `position: absolute` / `transform` style, so that centering is handled by the component system and remains correct across viewport sizes.

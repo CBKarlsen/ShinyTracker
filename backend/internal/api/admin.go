@@ -29,7 +29,7 @@ func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := database.DB.Query(context.Background(), `
 		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name,
-		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.is_recommended, hm.formula_type
+		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.formula_type
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
 		JOIN games g ON g.generation = hm.generation
@@ -51,14 +51,13 @@ func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 		BaseRolls      int    `json:"base_rolls"`
 		CharmRolls     int    `json:"charm_rolls"`
 		AvgTimeSeconds int    `json:"avg_time_seconds"`
-		IsRecommended  bool   `json:"is_recommended"`
 		FormulaType    string `json:"formula_type"`
 	}
 	var result []row
 	for rows.Next() {
 		var enc row
 		if err := rows.Scan(&enc.ID, &enc.PokemonID, &enc.GameID, &enc.GameTitle,
-			&enc.MethodName, &enc.BaseRolls, &enc.CharmRolls, &enc.AvgTimeSeconds, &enc.IsRecommended, &enc.FormulaType); err == nil {
+			&enc.MethodName, &enc.BaseRolls, &enc.CharmRolls, &enc.AvgTimeSeconds, &enc.FormulaType); err == nil {
 			result = append(result, enc)
 		}
 	}
@@ -78,7 +77,6 @@ func AdminCreateHuntMethod(w http.ResponseWriter, r *http.Request) {
 		BaseRolls      int    `json:"base_rolls"`
 		CharmRolls     int    `json:"charm_rolls"`
 		AvgTimeSeconds int    `json:"avg_time_seconds"`
-		IsRecommended  bool   `json:"is_recommended"`
 		FormulaType    string `json:"formula_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -92,10 +90,10 @@ func AdminCreateHuntMethod(w http.ResponseWriter, r *http.Request) {
 
 	var id int
 	err := database.DB.QueryRow(context.Background(), `
-		INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, is_recommended, formula_type)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, formula_type)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
-	`, req.PokemonID, req.GameID, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.IsRecommended, req.FormulaType).Scan(&id)
+	`, req.PokemonID, req.GameID, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.FormulaType).Scan(&id)
 	if err != nil {
 		if isUniqueViolation(err) {
 			http.Error(w, "Hunt method with this pokemon/game/method already exists", http.StatusConflict)
@@ -123,7 +121,9 @@ func AdminImportHuntMethods(w http.ResponseWriter, r *http.Request) {
 	for i, h := range header {
 		colIdx[strings.ToLower(strings.TrimSpace(h))] = i
 	}
-	required := []string{"pokemon_id", "game_id", "method_name", "base_rolls", "charm_rolls", "avg_time_seconds", "is_recommended"}
+	// is_recommended is intentionally omitted: a legacy is_recommended column is
+	// accepted but ignored (see get/insert below).
+	required := []string{"pokemon_id", "game_id", "method_name", "base_rolls", "charm_rolls", "avg_time_seconds"}
 	for _, col := range required {
 		if _, ok := colIdx[col]; !ok {
 			http.Error(w, "Missing required column: "+col, http.StatusBadRequest)
@@ -167,17 +167,16 @@ func AdminImportHuntMethods(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		isRec := strings.ToLower(get("is_recommended")) == "true" || get("is_recommended") == "1"
 		formulaType := get("formula_type")
 		if formulaType == "" {
 			formulaType = "static"
 		}
 
 		tag, err := database.DB.Exec(context.Background(), `
-			INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, is_recommended, formula_type)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, formula_type)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (pokemon_id, game_id, method_name) DO NOTHING
-		`, pokemonID, gameID, methodName, baseRolls, charmRolls, avgTime, isRec, formulaType)
+		`, pokemonID, gameID, methodName, baseRolls, charmRolls, avgTime, formulaType)
 
 		if err != nil {
 			results = append(results, importResult{RowNumber: rowNum, Status: "error", Message: err.Error()})
@@ -213,7 +212,6 @@ func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
 		BaseRolls      *int    `json:"base_rolls"`
 		CharmRolls     *int    `json:"charm_rolls"`
 		AvgTimeSeconds *int    `json:"avg_time_seconds"`
-		IsRecommended  *bool   `json:"is_recommended"`
 		FormulaType    *string `json:"formula_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -227,10 +225,9 @@ func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
 			base_rolls      = COALESCE($3, base_rolls),
 			charm_rolls     = COALESCE($4, charm_rolls),
 			avg_time_seconds = COALESCE($5, avg_time_seconds),
-			is_recommended  = COALESCE($6, is_recommended),
-			formula_type    = COALESCE($7, formula_type)
+			formula_type    = COALESCE($6, formula_type)
 		WHERE id = $1
-	`, id, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.IsRecommended, req.FormulaType)
+	`, id, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.FormulaType)
 	if err != nil {
 		http.Error(w, "Failed to update hunt method", http.StatusInternalServerError)
 		return

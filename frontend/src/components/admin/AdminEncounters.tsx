@@ -19,7 +19,6 @@ interface HuntMethodRow {
 	base_rolls: number;
 	charm_rolls: number;
 	avg_time_seconds: number;
-	is_recommended: boolean;
 	formula_type: string;
 }
 interface ImportResult {
@@ -53,7 +52,6 @@ export default function AdminEncounters() {
 		base_rolls: "1",
 		charm_rolls: "0",
 		avg_time_seconds: "30",
-		is_recommended: false,
 		formula_type: "static",
 	});
 	const [error, setError] = useState("");
@@ -143,7 +141,6 @@ export default function AdminEncounters() {
 			base_rolls: Number(newRow.base_rolls),
 			charm_rolls: Number(newRow.charm_rolls),
 			avg_time_seconds: Number(newRow.avg_time_seconds),
-			is_recommended: newRow.is_recommended,
 			formula_type: newRow.formula_type,
 		};
 		const res = await fetch(`${API}/api/admin/hunt-methods`, {
@@ -169,7 +166,6 @@ export default function AdminEncounters() {
 			base_rolls: "1",
 			charm_rolls: "0",
 			avg_time_seconds: "30",
-			is_recommended: false,
 			formula_type: "static",
 		});
 	};
@@ -280,10 +276,6 @@ export default function AdminEncounters() {
 										],
 										["avg_time_seconds", "Seconds per encounter on average"],
 										[
-											"is_recommended",
-											"true or false — marks the fastest method",
-										],
-										[
 											"formula_type",
 											"Formula: static, radar_chain_gen4, catch_combo_lgpe, outbreak_defeats_sv, chain_fishing_gen6",
 										],
@@ -359,7 +351,7 @@ export default function AdminEncounters() {
 						className="input"
 						rows={6}
 						placeholder={
-							"pokemon_id,game_id,method_name,base_rolls,charm_rolls,avg_time_seconds,is_recommended,formula_type\n1,1,Wild encounter,1,2,15,true,static"
+							"pokemon_id,game_id,method_name,base_rolls,charm_rolls,avg_time_seconds,formula_type\n1,1,Wild encounter,1,2,15,static"
 						}
 						value={csvText}
 						onChange={(e) => setCsvText(e.target.value)}
@@ -508,28 +500,6 @@ export default function AdminEncounters() {
 								<option value="outbreak_defeats_sv">SV Outbreak Defeats</option>
 								<option value="chain_fishing_gen6">Gen 6 Chain Fishing</option>
 							</select>
-							<label
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 5,
-									fontSize: 12,
-									whiteSpace: "nowrap",
-								}}
-							>
-								<input
-									type="checkbox"
-									checked={newRow.is_recommended}
-									onChange={(e) =>
-										setNewRow((p) => ({
-											...p,
-											is_recommended: e.target.checked,
-										}))
-									}
-									style={{ accentColor: "var(--gold)" }}
-								/>
-								Best
-							</label>
 							<button className="btn primary" onClick={addEncounter}>
 								Save
 							</button>
@@ -548,7 +518,6 @@ export default function AdminEncounters() {
 								<th>Charm</th>
 								<th>Time (s)</th>
 								<th>Formula</th>
-								<th>Best</th>
 								<th />
 							</tr>
 						</thead>
@@ -664,21 +633,6 @@ export default function AdminEncounters() {
 													<option value="chain_fishing_gen6">Gen 6 Chain Fishing</option>
 												</select>
 											</td>
-											<td>
-												<input
-													type="checkbox"
-													checked={
-														editData.is_recommended ?? enc.is_recommended
-													}
-													onChange={(e) =>
-														setEditData((p) => ({
-															...p,
-															is_recommended: e.target.checked,
-														}))
-													}
-													style={{ accentColor: "var(--gold)" }}
-												/>
-											</td>
 											<td style={{ display: "flex", gap: 6 }}>
 												<button
 													className="btn primary"
@@ -716,11 +670,6 @@ export default function AdminEncounters() {
 												 enc.formula_type === "chain_fishing_gen6" ? "Gen 6 Chain Fishing" :
 												 enc.formula_type || "Static"}
 											</td>
-											<td>
-												{enc.is_recommended && (
-													<span className="reco-badge">★</span>
-												)}
-											</td>
 											<td style={{ display: "flex", gap: 6 }}>
 												<button
 													className="btn ghost"
@@ -747,7 +696,7 @@ export default function AdminEncounters() {
 							{huntMethods.length === 0 && (
 								<tr>
 									<td
-										colSpan={8}
+										colSpan={7}
 										className="empty"
 										style={{ padding: "20px 16px" }}
 									>

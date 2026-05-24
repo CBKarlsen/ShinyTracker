@@ -1,3 +1,10 @@
+# custom-hunt-method Specification
+
+## Purpose
+Defines starting a hunt with a user-supplied custom method name, its display on the dashboard, and the NewHuntModal fallback for entering one.
+
+## Requirements
+
 ### Requirement: User can start a hunt with a custom method name
 The system SHALL allow a user to create a hunt by providing a free-text `custom_method_name` instead of a `hunt_method_id`. A hunt with a custom method SHALL have no odds or ETA data.
 

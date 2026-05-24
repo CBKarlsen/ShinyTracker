@@ -1,4 +1,9 @@
-## ADDED Requirements
+# admin-auth Specification
+
+## Purpose
+Defines admin access control: the is_admin user flag, admin-only middleware, the profile endpoint, a bootstrap CLI for the first admin, and the admin sidebar section.
+
+## Requirements
 
 ### Requirement: is_admin flag on users
 The `users` table SHALL have an `is_admin` BOOLEAN column, NOT NULL, defaulting to FALSE.

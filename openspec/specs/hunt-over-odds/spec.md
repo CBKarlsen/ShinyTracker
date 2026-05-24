@@ -1,3 +1,8 @@
+# hunt-over-odds Specification
+
+## Purpose
+Defines detection of the over-odds state for a hunt and the distinct visual treatment of an over-odds card.
+
 ## Requirements
 
 ### Requirement: Hunt card detects over-odds state

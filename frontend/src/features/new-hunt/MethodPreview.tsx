@@ -1,4 +1,5 @@
 import type { Pokemon, HuntMethod } from "../../types/models";
+import { HuntParametersEditor } from "../../components/ui/HuntParametersEditor";
 
 interface Props {
 	selectedPokemon: Pokemon;
@@ -139,90 +140,11 @@ export function MethodPreview({
 					</div>
 				</div>
 			)}
-			{!useCustomMethod && selectedMethod?.formula_type === "outbreak_defeats_sv" && (
-				<div
-					style={{
-						marginTop: 14,
-						paddingTop: 14,
-						borderTop: "1px solid var(--line-1)",
-					}}
-				>
-					<div className="t-label" style={{ marginBottom: 6 }}>
-						Outbreak Defeats
-					</div>
-					<div style={{ display: "flex", gap: 12 }}>
-						<label
-							style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}
-						>
-							<input
-								type="radio"
-								name="defeated_count"
-								checked={
-									huntParams.defeated_count === 0 ||
-									!huntParams.defeated_count
-								}
-								onChange={() =>
-									setHuntParams({ ...huntParams, defeated_count: 0 })
-								}
-							/>{" "}
-							0-29
-						</label>
-						<label
-							style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}
-						>
-							<input
-								type="radio"
-								name="defeated_count"
-								checked={huntParams.defeated_count === 30}
-								onChange={() =>
-									setHuntParams({ ...huntParams, defeated_count: 30 })
-								}
-							/>{" "}
-							30-59
-						</label>
-						<label
-							style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}
-						>
-							<input
-								type="radio"
-								name="defeated_count"
-								checked={huntParams.defeated_count === 60}
-								onChange={() =>
-									setHuntParams({ ...huntParams, defeated_count: 60 })
-								}
-							/>{" "}
-							60+
-						</label>
-					</div>
-				</div>
-			)}
-			{!useCustomMethod && selectedMethod?.formula_type === "radar_chain_gen4" && (
-				<div
-					style={{
-						marginTop: 14,
-						paddingTop: 14,
-						borderTop: "1px solid var(--line-1)",
-					}}
-				>
-					<div className="t-label" style={{ marginBottom: 6 }}>
-						Chain Length
-					</div>
-					<input
-						type="number"
-						min={0}
-						max={40}
-						className="input"
-						style={{ width: 80, padding: "4px 8px" }}
-						value={huntParams.chain_length || 0}
-						onChange={(e) =>
-							setHuntParams({
-								...huntParams,
-								chain_length: parseInt(e.target.value) || 0,
-							})
-						}
-					/>
-				</div>
-			)}
+			<HuntParametersEditor
+				formulaType={!useCustomMethod ? selectedMethod?.formula_type : null}
+				huntParams={huntParams}
+				setHuntParams={setHuntParams}
+			/>
 			{useCustomMethod && (
 				<div
 					style={{

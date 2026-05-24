@@ -1,3 +1,8 @@
+# games-collection-grid Specification
+
+## Purpose
+Defines the Games collection view: a card grid grouped by generation, owned/unowned visual states, click-to-own, and the Shiny Charm toggle.
+
 ## Requirements
 
 ### Requirement: Games displayed as card grid grouped by generation

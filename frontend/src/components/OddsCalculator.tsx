@@ -12,7 +12,6 @@ interface MethodItem {
 	base_rolls: number;
 	charm_rolls: number;
 	avg_time_seconds: number;
-	is_recommended: boolean;
 	formula_type?: string;
 	game_title?: string;
 }
@@ -213,7 +212,6 @@ export default function OddsCalculator() {
 								{methods.map((m) => (
 									<option key={m.id} value={m.id}>
 										{fmtMethodName(m.method_name)}
-										{m.is_recommended ? " ★" : ""}
 									</option>
 								))}
 							</select>

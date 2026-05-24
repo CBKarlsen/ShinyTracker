@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { calculateOdds } from "../utils/odds";
@@ -11,7 +11,7 @@ interface Props {
 	onClose: () => void;
 	onGoToGames?: () => void;
 }
-import { SparkSm, IcClose, IcPlus } from "./ui/icons";
+import { IcClose, IcPlus } from "./ui/icons";
 import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
 import { MethodPreview } from "../features/new-hunt/MethodPreview";
 
@@ -83,8 +83,10 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 					}),
 				]);
 				if (methodsRes.ok) {
-					setHuntMethods((await methodsRes.json()) || []);
-					setSelectedMethod(null);
+					const methods: HuntMethod[] = (await methodsRes.json()) || [];
+					setHuntMethods(methods);
+					// Default to the first (generation-ordered) method.
+					setSelectedMethod(methods[0] ?? null);
 				}
 				if (gamesRes.ok) {
 					const games = await gamesRes.json();
@@ -98,11 +100,6 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		};
 		fetchData();
 	}, [selectedPokemon, token, userId]);
-
-	const recommended = useMemo(
-		() => huntMethods.find((e) => e.is_recommended) ?? null,
-		[huntMethods],
-	);
 
 	const getBaseOdds = (gameTitle: string) => {
 		const lower = gameTitle.toLowerCase();
@@ -306,9 +303,30 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 											fontWeight: 600,
 											letterSpacing: "-0.02em",
 											textTransform: "capitalize",
+											display: "flex",
+											alignItems: "center",
+											gap: 8,
 										}}
 									>
 										{selectedPokemon.name}
+										{(selectedPokemon.is_legendary || selectedPokemon.is_mythical) && (
+											<div
+												style={{
+													fontSize: 10,
+													textTransform: "uppercase",
+													letterSpacing: "0.06em",
+													fontWeight: 700,
+													background: "var(--gold-soft)",
+													color: "var(--gold)",
+													border: "1px solid var(--gold-line)",
+													padding: "2px 6px",
+													borderRadius: 4,
+													fontFamily: "var(--font-mono)",
+												}}
+											>
+												Legendary
+											</div>
+										)}
 									</div>
 								</div>
 								<button
@@ -326,70 +344,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 								</div>
 							)}
 
-							{!loadingEncounters && recommended && (
-								<div className="reco">
-									<div className="lbl">
-										<SparkSm size={9} color="var(--gold)" /> Recommended
+							{!loadingEncounters && huntMethods.length > 0 && (
+								<>
+									<div className="t-label" style={{ margin: "4px 0 8px" }}>
+										All methods
 									</div>
-									<div
-										className={`row ${selectedMethod?.id === recommended.id ? "sel" : ""}`}
-										style={{
-											cursor: "pointer",
-											display: "flex",
-											alignItems: "center",
-											gap: 10,
-											padding: "6px 8px",
-											borderRadius: 8,
-											border:
-												selectedMethod?.id === recommended.id
-													? "1px solid var(--blue-line)"
-													: "1px solid transparent",
-											background:
-												selectedMethod?.id === recommended.id
-													? "var(--blue-soft)"
-													: "transparent",
-										}}
-										onClick={() => {
-											setSelectedMethod(recommended);
-											setUseCustomMethod(false);
-										}}
-									>
-										<img
-											src={selectedPokemon.sprite_url}
-											alt=""
-											style={{ imageRendering: "pixelated" }}
-										/>
-										<div style={{ flex: 1 }}>
-											<div className="nm">{recommended.game_title}</div>
-											<div className="meta">
-												{recommended.method_name} · ~
-												{recommended.avg_time_seconds}s/enc · 1/
-												{getOddsForMethod(recommended).toLocaleString()} odds
-											</div>
-										</div>
-										<button
-											className="btn gold"
-											onClick={(e) => {
-												e.stopPropagation();
-												startHunt(recommended);
-											}}
-										>
-											Start <span style={{ opacity: 0.6 }}>→</span>
-										</button>
-									</div>
-								</div>
-							)}
-
-							{!loadingEncounters &&
-								huntMethods.filter((e) => e.id !== recommended?.id).length > 0 && (
-									<>
-										<div className="t-label" style={{ margin: "4px 0 8px" }}>
-											All methods
-										</div>
-										<div className="opt-list">
-											{huntMethods
-												.filter((e) => e.id !== recommended?.id)
-												.map((e) => (
+									<div className="opt-list">
+										{huntMethods.map((e) => (
 													<div
 														key={e.id}
 														className={`opt-row ${selectedMethod?.id === e.id && !useCustomMethod ? "sel" : ""}`}

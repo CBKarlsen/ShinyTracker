@@ -23,7 +23,6 @@ go run ./cmd/seed/main.go             # Seed Pokemon + encounters from PokeAPI
 go run ./cmd/seed_availability/main.go # Populate pokemon_availability table
 go run ./cmd/seed_fulldex/main.go     # Seed recommended methods from FullDexMethods.csv
 go run ./cmd/seed_methods/main.go     # Seed encounter methods from CSV
-go run ./cmd/migrate_recommended/main.go # Run migrations (add is_recommended column)
 go run ./cmd/truncate_encounters/main.go # Clear encounters for re-seeding
 ```
 
@@ -63,7 +62,7 @@ users            id (uuid), username, email, password_hash
 pokemon          id (int), name, sprite_url, types[]
 games            id (int), title, generation, base_odds, supports_breeding
 user_games       user_id, game_id, has_shiny_charm
-encounters       id, pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls, is_recommended
+encounters       id, pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls
 user_hunts       id (uuid), user_id, pokemon_id, encounter_id, encounter_count, status (active|completed),
                  acquisition_type (HUNTED|EVOLVED|MANUAL_OVERRIDE|TRADED), hunt_parameters (JSONB)
 pokemon_availability  pokemon_id, game_id  -- legal availability per game

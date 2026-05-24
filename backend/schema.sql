@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS pokemon (
     name TEXT NOT NULL,
     sprite_url TEXT,
     types JSONB DEFAULT '[]'::jsonb,
-    can_breed BOOLEAN NOT NULL DEFAULT TRUE
+    can_breed BOOLEAN NOT NULL DEFAULT TRUE,
+    is_legendary BOOLEAN NOT NULL DEFAULT FALSE,
+    is_mythical BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS games (
@@ -32,30 +34,53 @@ CREATE TABLE IF NOT EXISTS user_games (
 
 CREATE TABLE IF NOT EXISTS hunt_methods (
     id SERIAL PRIMARY KEY,
-    generation INTEGER NOT NULL,
     method_name TEXT NOT NULL,
     avg_time_seconds INTEGER NOT NULL,
     base_rolls INTEGER NOT NULL DEFAULT 1,
     charm_rolls INTEGER NOT NULL DEFAULT 0,
     formula_type TEXT NOT NULL DEFAULT 'static',
-    is_recommended BOOLEAN DEFAULT FALSE,
-    UNIQUE (generation, method_name)
+    -- The encounter kind this method consumes. A method is only valid for a
+    -- Pokemon in a game when that Pokemon has a matching pokemon_game_encounter row.
+    requires_kind TEXT NOT NULL DEFAULT 'wild' CHECK (requires_kind IN ('wild','static','raid','egg')),
+    -- Optional terrain restriction for wild methods (grass/surf/fishing/other).
+    -- NULL means the method matches any terrain.
+    requires_terrain TEXT
 );
 
-CREATE TABLE IF NOT EXISTS method_rules (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS method_games (
     method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
-    generation INTEGER NOT NULL,
-    condition TEXT NOT NULL -- e.g. "is_breedable" or "always_true"
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
+    PRIMARY KEY (method_id, game_id)
+);
+
+-- pokemon_availability: legal availability per game (which games a Pokemon can be obtained in).
+CREATE TABLE IF NOT EXISTS pokemon_availability (
+    pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
+    PRIMARY KEY (pokemon_id, game_id)
+);
+
+-- pokemon_game_encounter: the encounter kind(s) a Pokemon has in a game.
+-- wild/egg are auto-derived (PokeAPI encounters / breedable egg groups);
+-- static/raid are curated via seeds/legendary_encounters.json.
+-- terrain refines `wild` rows (grass/surf/fishing/other) so terrain-specific
+-- methods (e.g. Poké Radar = grass, Chain Fishing = fishing) only attach to the
+-- right Pokemon; non-wild kinds use 'none'. method_availability is computed by
+-- joining this to hunt_methods on requires_kind (+ optional requires_terrain).
+CREATE TABLE IF NOT EXISTS pokemon_game_encounter (
+    pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('wild','static','raid','egg')),
+    terrain TEXT NOT NULL DEFAULT 'none' CHECK (terrain IN ('grass','surf','fishing','other','none')),
+    PRIMARY KEY (pokemon_id, game_id, kind, terrain)
 );
 
 CREATE TABLE IF NOT EXISTS method_exceptions (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
     method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
-    generation INTEGER NOT NULL,
     include BOOLEAN NOT NULL, -- true to manually add, false to manually exclude
-    UNIQUE (pokemon_id, method_id, generation)
+    UNIQUE (pokemon_id, method_id)
 );
 
 -- We don't define method_availability as a true SQL view that evaluates JS strings here,
@@ -67,8 +92,8 @@ CREATE TABLE IF NOT EXISTS method_availability (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
     method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
-    generation INTEGER NOT NULL,
-    UNIQUE (pokemon_id, method_id, generation)
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
+    UNIQUE (pokemon_id, method_id, game_id)
 );
 
 CREATE TABLE IF NOT EXISTS user_hunts (

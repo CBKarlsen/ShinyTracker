@@ -18,7 +18,9 @@ type Pokemon struct {
 	ID        int             `json:"id"`
 	Name      string          `json:"name"`
 	SpriteURL string          `json:"sprite_url"`
-	Types     json.RawMessage `json:"types"`
+	Types       json.RawMessage `json:"types"`
+	IsLegendary bool            `json:"is_legendary"`
+	IsMythical  bool            `json:"is_mythical"`
 }
 
 type Game struct {

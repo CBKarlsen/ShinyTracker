@@ -5,6 +5,8 @@ import { TimerDisplay, type TimerStatus } from "../../components/ui/TimerDisplay
 import { OddsCurve } from "./OddsCurve";
 import { getShowdownGif } from "../../utils/pokemon";
 import { calculateOdds } from "../../utils/odds";
+import { HuntParametersEditor } from "../../components/ui/HuntParametersEditor";
+import { useAuth } from "../../context/AuthContext";
 import type { Hunt } from "../../types/models";
 
 function fmtNum(n: number) {
@@ -23,19 +25,60 @@ export function HeroHunt({
 	onIncrement,
 	onComplete,
 	onPhase,
+	onUpdate,
 }: {
 	hunt: Hunt;
 	onIncrement: (id: string, e: React.MouseEvent) => void;
 	onComplete: (id: string) => void;
 	onPhase: (hunt: Hunt) => void;
+	onUpdate?: (hunt: Hunt) => void;
 }) {
+	const { token } = useAuth();
+	const [showParams, setShowParams] = useState(false);
+	const [huntParams, setHuntParams] = useState<Record<string, any>>(
+		(hunt.hunt_parameters as Record<string, any>) || {}
+	);
+	const [savingParams, setSavingParams] = useState(false);
+
+	// Sync local state when prop updates
+	useEffect(() => {
+		setHuntParams((hunt.hunt_parameters as Record<string, any>) || {});
+	}, [hunt.hunt_parameters]);
+
+	const handleSaveParams = async () => {
+		setSavingParams(true);
+		try {
+			const res = await fetch(`http://localhost:8080/api/hunts/${hunt.id}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
+				body: JSON.stringify({
+					encounter_count: hunt.encounter_count,
+					status: hunt.status,
+					hunt_parameters: huntParams,
+				}),
+			});
+			if (res.ok) {
+				const updatedHunt = await res.json();
+				if (onUpdate) onUpdate(updatedHunt);
+				setShowParams(false);
+			}
+		} catch (err) {
+			console.error("Failed to update parameters", err);
+		} finally {
+			setSavingParams(false);
+		}
+	};
 	const { denominator: expected } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
 		hunt.has_shiny_charm || false,
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
-		hunt.charm_rolls || 0
+		hunt.charm_rolls || 0,
+		(hunt.hunt_parameters as Record<string, any>) || {}
 	);
 	const isOver = hunt.encounter_count > expected;
 	const ratio = expected ? Math.min(hunt.encounter_count / expected, 1) : 0;
@@ -50,7 +93,8 @@ export function HeroHunt({
 				hunt.has_shiny_charm || false,
 				hunt.base_odds,
 				hunt.base_rolls || 1,
-				hunt.charm_rolls || 0
+				hunt.charm_rolls || 0,
+				(hunt.hunt_parameters as Record<string, any>) || {}
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 		}
@@ -139,15 +183,41 @@ export function HeroHunt({
 								<button 
 									className="btn ghost" 
 									style={{ fontSize: 11, padding: '4px 8px' }}
-									onClick={() => setBumping(!bumping)}
+									onClick={() => setShowParams(!showParams)}
 								>
 									Edit Method Parameters
 								</button>
-								<div style={{ marginTop: 8, background: 'var(--bg-card)', padding: 12, borderRadius: 8, border: '1px solid var(--line-1)' }}>
-									<div style={{ fontSize: 11, color: "var(--ink-3)", fontFamily: "var(--font-mono)" }}>
-										(UI ready! API integration for updating hunt_parameters dynamically during the hunt will be connected next.)
+								{showParams && (
+									<div style={{ marginTop: 8, background: 'var(--bg-card)', padding: 12, borderRadius: 8, border: '1px solid var(--line-1)' }}>
+										<HuntParametersEditor 
+											formulaType={hunt.formula_type} 
+											huntParams={huntParams} 
+											setHuntParams={setHuntParams} 
+											inline={true} 
+										/>
+										<div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+											<button 
+												className="btn gold" 
+												style={{ fontSize: 11, padding: '4px 12px' }}
+												onClick={handleSaveParams}
+												disabled={savingParams}
+											>
+												{savingParams ? 'Saving...' : 'Save Parameters'}
+											</button>
+											<button 
+												className="btn ghost" 
+												style={{ fontSize: 11, padding: '4px 12px' }}
+												onClick={() => {
+													setHuntParams((hunt.hunt_parameters as Record<string, any>) || {});
+													setShowParams(false);
+												}}
+												disabled={savingParams}
+											>
+												Cancel
+											</button>
+										</div>
 									</div>
-								</div>
+								)}
 							</div>
 						)}
 
@@ -212,20 +282,6 @@ export function HeroHunt({
 
 			<div className="hero-right">
 				<div className="hero-sprite">
-					<div className="hero-sparks">
-						<span className="s">
-							<SparkSm size={12} color="var(--gold)" />
-						</span>
-						<span className="s">
-							<SparkSm size={10} color="var(--gold)" />
-						</span>
-						<span className="s">
-							<SparkSm size={8} color="var(--gold)" />
-						</span>
-						<span className="s">
-							<SparkSm size={10} color="var(--gold)" />
-						</span>
-					</div>
 					<img
 						src={gifUrl}
 						alt={hunt.pokemon_name}

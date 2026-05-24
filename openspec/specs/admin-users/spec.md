@@ -1,4 +1,9 @@
-## ADDED Requirements
+# admin-users Specification
+
+## Purpose
+Defines the admin user-management surface: listing users, toggling the admin flag, and the Users admin page.
+
+## Requirements
 
 ### Requirement: List all users
 The system SHALL expose `GET /api/admin/users` returning all registered users.

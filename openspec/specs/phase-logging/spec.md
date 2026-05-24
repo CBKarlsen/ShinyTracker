@@ -1,3 +1,8 @@
+# phase-logging Specification
+
+## Purpose
+Defines logging a phase during an active hunt, adding the phased Pokemon to the user's collection, and returning phase history in the hunts API.
+
 ## Requirements
 
 ### Requirement: User can log a phase during an active hunt

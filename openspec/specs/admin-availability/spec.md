@@ -1,4 +1,9 @@
-## ADDED Requirements
+# admin-availability Specification
+
+## Purpose
+Defines admin management of per-game Pokemon availability (get and set) and the Availability admin page.
+
+## Requirements
 
 ### Requirement: Get availability for a Pokémon
 The system SHALL expose `GET /api/admin/availability?pokemon_id=<id>` returning all games with a flag indicating whether the Pokémon is available in each.

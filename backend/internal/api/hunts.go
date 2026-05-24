@@ -180,8 +180,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	huntID := chi.URLParam(r, "id")
 
 	var req struct {
-		EncounterCount int    `json:"encounter_count"`
-		Status         string `json:"status"`
+		EncounterCount int             `json:"encounter_count"`
+		Status         string          `json:"status"`
+		HuntParameters json.RawMessage `json:"hunt_parameters"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -190,9 +191,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	var prevUpdatedAt time.Time
 	var currentTotalTime int
+	var huntParameters json.RawMessage
 	err := database.DB.QueryRow(context.Background(),
-		`SELECT updated_at, total_time_seconds FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime)
+		`SELECT updated_at, total_time_seconds, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &huntParameters)
 	if err != nil {
 		http.Error(w, "Hunt not found", http.StatusNotFound)
 		return
@@ -204,13 +206,17 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		newTotalTime += int(delta.Seconds())
 	}
 
+	if len(req.HuntParameters) > 0 {
+		huntParameters = req.HuntParameters
+	}
+
 	var hunt models.UserHunt
 	err = database.DB.QueryRow(context.Background(),
 		`UPDATE user_hunts
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3
-		 WHERE id = $4 AND user_id = $5
+		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, hunt_parameters = $4
+		 WHERE id = $5 AND user_id = $6
 		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		req.EncounterCount, req.Status, newTotalTime, huntID, userID).
+		req.EncounterCount, req.Status, newTotalTime, huntParameters, huntID, userID).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {

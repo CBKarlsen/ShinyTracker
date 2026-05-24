@@ -74,7 +74,7 @@ export default function AdminUsers() {
 									{u.username}
 									{u.id === userId && (
 										<span
-											className="reco-badge"
+											className="tag-badge"
 											style={{
 												marginLeft: 8,
 												background: "var(--blue-soft)",

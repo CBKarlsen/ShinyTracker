@@ -327,7 +327,8 @@ ul {
 	align-items: start;
 }
 
-.reco-badge {
+/* small uppercase mono pill used for inline tags (e.g. "you" in admin) */
+.tag-badge {
 	font-family: var(--font-mono);
 	font-size: 8.5px;
 	letter-spacing: 0.08em;
@@ -648,19 +649,7 @@ ul {
 	background: linear-gradient(180deg, #14141c 0%, #0c0c12 100%);
 	position: relative;
 }
-.hero::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background:
-		radial-gradient(600px 300px at 20% 0%, var(--gold-soft) 0%, transparent 70%),
-		radial-gradient(
-			500px 250px at 100% 100%,
-			var(--blue-soft) 0%,
-			transparent 70%
-		);
-	pointer-events: none;
-}
+
 .hero-left {
 	position: relative;
 	padding: 24px 24px 24px 28px;
@@ -734,14 +723,11 @@ ul {
 	font-variant-numeric: tabular-nums;
 }
 .hero-counter .num {
-	font-size: 92px;
+	font-size: 64px;
 	font-weight: 600;
-	letter-spacing: -0.05em;
+	letter-spacing: -0.04em;
 	line-height: 0.9;
-	background: linear-gradient(180deg, #ffffff 0%, #b6b5c0 100%);
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
+	color: var(--ink-1);
 }
 .hero-counter .lbl {
 	font-family: var(--font-mono);
@@ -1516,62 +1502,6 @@ ul {
 	color: var(--ink-3);
 }
 
-/* recommended hunt panel */
-.reco {
-	border-radius: 12px;
-	border: 1px solid var(--gold-line);
-	background: linear-gradient(
-		180deg,
-		rgba(245, 198, 97, 0.07) 0%,
-		rgba(245, 198, 97, 0.02) 100%
-	);
-	padding: 14px;
-	position: relative;
-	overflow: hidden;
-	margin-bottom: 16px;
-}
-.reco::before {
-	content: "";
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 1px;
-	background: linear-gradient(90deg, transparent, var(--gold), transparent);
-	opacity: 0.5;
-}
-.reco .row {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-}
-.reco .lbl {
-	font-family: var(--font-mono);
-	font-size: 9.5px;
-	letter-spacing: 0.14em;
-	text-transform: uppercase;
-	color: var(--gold);
-	margin-bottom: 8px;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-.reco img {
-	width: 44px;
-	height: 44px;
-	image-rendering: pixelated;
-}
-.reco .nm {
-	font-family: var(--font-display);
-	font-size: 14px;
-	font-weight: 600;
-}
-.reco .meta {
-	font-family: var(--font-mono);
-	font-size: 10.5px;
-	color: var(--ink-3);
-}
-
 /* method-game options grid */
 .opt-list {
 	display: flex;
@@ -2006,4 +1936,86 @@ ul {
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ── Empty State ── */
+.empty-state {
+	background: var(--bg-1);
+	border: 1px solid var(--line-1);
+	border-radius: var(--radius-lg);
+	padding: 60px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+.empty-state-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 64px;
+	height: 64px;
+	border-radius: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line-1);
+	margin-bottom: 20px;
+	color: var(--ink-3);
+	box-shadow: 0 4px 20px -8px rgba(0,0,0,0.4);
+}
+.empty-state-title {
+	font-family: var(--font-display);
+	font-size: 22px;
+	font-weight: 600;
+	margin-bottom: 8px;
+	color: var(--ink-1);
+}
+.empty-state-desc {
+	color: var(--ink-3);
+	max-width: 360px;
+	margin: 0 auto 24px;
+	font-size: 13.5px;
+	line-height: 1.5;
+}
+
+/* ── Error Banner ── */
+.error-banner {
+	background: var(--red-soft);
+	border: 1px solid var(--red);
+	border-radius: var(--radius-md);
+	margin-bottom: 22px;
+	padding: 12px 16px;
+	display: flex;
+	justify-content: center;
+	animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.error-banner-content {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+}
+.error-banner-message {
+	color: var(--red);
+	font-weight: 500;
+}
+.error-banner-dismiss {
+	color: var(--red);
+	opacity: 0.7;
+	text-decoration: underline;
+	transition: opacity 0.2s;
+}
+.error-banner-dismiss:hover {
+	opacity: 1;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
 
