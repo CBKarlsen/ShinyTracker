@@ -39,11 +39,15 @@ Fishing to `fishing`. Remaining gaps:
   (`cmd/seed`, `internal/...`, `cmd/sync_encounters`, `cmd/api`) build fine.
   Cleanup: move scratch files out of buildable packages or behind build tags.
 
-- **`internal/api/admin.go` references columns the schema no longer has.** Its
-  queries use `hm.generation`, `hunt_methods.pokemon_id`, `hunt_methods.game_id`,
-  and an `ON CONFLICT (pokemon_id, game_id, method_name)` constraint that does
-  not exist in the current rules-based schema. Admin encounter create/import
-  likely fail at runtime independent of recent changes.
+- **Admin hunt-methods is now read-only + global-edit (was schema-broken).**
+  The old admin "encounters per Pokémon" CRUD assumed the pre-migration
+  `hunt_methods(pokemon_id, game_id, ...)` shape. It has been reworked for the
+  rules-based model: the per-Pokémon list is a read-only view of derived
+  `method_availability`, and edit/delete act on the GLOBAL method by id. The
+  create endpoint and CSV import were removed (per-Pokémon method rows are no
+  longer meaningful — methods are global and availability is computed by
+  `cmd/seed`). Future work: a proper global Method Library editor (create
+  methods + `method_games` mappings) if admin method authoring is needed.
 
 - **`backend/update_json.go` is an orphaned generator.** It still uses the
   defunct `Generation` / `method_rules` / `method_exceptions` model and no longer

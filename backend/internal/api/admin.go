@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -14,6 +13,12 @@ import (
 )
 
 // ── Hunt Methods ─────────────────────────────────────────────────────────────
+//
+// In the rules-based model, hunt_methods are GLOBAL definitions and a Pokemon's
+// available methods are derived into method_availability (see cmd/seed). So this
+// admin surface is a read-only per-Pokemon view of derived availability, plus
+// edit/delete that act on the GLOBAL method (by id). Creating per-Pokemon rows
+// is no longer meaningful, so there is no create/import endpoint.
 
 func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 	pokemonIDStr := r.URL.Query().Get("pokemon_id")
@@ -32,7 +37,7 @@ func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.formula_type
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
-		JOIN games g ON g.generation = hm.generation
+		JOIN games g ON g.id = ma.game_id
 		WHERE ma.pokemon_id = $1
 		ORDER BY g.id ASC, hm.method_name ASC
 	`, pokemonID)
@@ -69,136 +74,6 @@ func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func AdminCreateHuntMethod(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		PokemonID      int    `json:"pokemon_id"`
-		GameID         int    `json:"game_id"`
-		MethodName     string `json:"method_name"`
-		BaseRolls      int    `json:"base_rolls"`
-		CharmRolls     int    `json:"charm_rolls"`
-		AvgTimeSeconds int    `json:"avg_time_seconds"`
-		FormulaType    string `json:"formula_type"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if req.FormulaType == "" {
-		req.FormulaType = "static"
-	}
-
-	var id int
-	err := database.DB.QueryRow(context.Background(), `
-		INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, formula_type)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id
-	`, req.PokemonID, req.GameID, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.FormulaType).Scan(&id)
-	if err != nil {
-		if isUniqueViolation(err) {
-			http.Error(w, "Hunt method with this pokemon/game/method already exists", http.StatusConflict)
-			return
-		}
-		http.Error(w, "Failed to create hunt method", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
-}
-
-func AdminImportHuntMethods(w http.ResponseWriter, r *http.Request) {
-	reader := csv.NewReader(r.Body)
-	reader.TrimLeadingSpace = true
-
-	// Read header row.
-	header, err := reader.Read()
-	if err != nil {
-		http.Error(w, "Failed to read CSV header", http.StatusBadRequest)
-		return
-	}
-	// Build column index map (case-insensitive).
-	colIdx := make(map[string]int)
-	for i, h := range header {
-		colIdx[strings.ToLower(strings.TrimSpace(h))] = i
-	}
-	// is_recommended is intentionally omitted: a legacy is_recommended column is
-	// accepted but ignored (see get/insert below).
-	required := []string{"pokemon_id", "game_id", "method_name", "base_rolls", "charm_rolls", "avg_time_seconds"}
-	for _, col := range required {
-		if _, ok := colIdx[col]; !ok {
-			http.Error(w, "Missing required column: "+col, http.StatusBadRequest)
-			return
-		}
-	}
-
-	type importResult struct {
-		RowNumber int    `json:"row_number"`
-		Status    string `json:"status"` // inserted | skipped | error
-		Message   string `json:"message,omitempty"`
-	}
-
-	var results []importResult
-	rowNum := 1
-
-	for {
-		record, err := reader.Read()
-		if err != nil {
-			break // EOF or unrecoverable parse error
-		}
-		rowNum++
-
-		get := func(col string) string {
-			i, ok := colIdx[col]
-			if !ok || i >= len(record) {
-				return ""
-			}
-			return strings.TrimSpace(record[i])
-		}
-
-		pokemonID, e1 := strconv.Atoi(get("pokemon_id"))
-		gameID, e2 := strconv.Atoi(get("game_id"))
-		baseRolls, e3 := strconv.Atoi(get("base_rolls"))
-		charmRolls, e4 := strconv.Atoi(get("charm_rolls"))
-		avgTime, e5 := strconv.Atoi(get("avg_time_seconds"))
-		methodName := get("method_name")
-
-		if e1 != nil || e2 != nil || e3 != nil || e4 != nil || e5 != nil || methodName == "" {
-			results = append(results, importResult{RowNumber: rowNum, Status: "error", Message: "invalid or missing field"})
-			continue
-		}
-
-		formulaType := get("formula_type")
-		if formulaType == "" {
-			formulaType = "static"
-		}
-
-		tag, err := database.DB.Exec(context.Background(), `
-			INSERT INTO hunt_methods (pokemon_id, game_id, method_name, base_rolls, charm_rolls, avg_time_seconds, formula_type)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-			ON CONFLICT (pokemon_id, game_id, method_name) DO NOTHING
-		`, pokemonID, gameID, methodName, baseRolls, charmRolls, avgTime, formulaType)
-
-		if err != nil {
-			results = append(results, importResult{RowNumber: rowNum, Status: "error", Message: err.Error()})
-			continue
-		}
-
-		if tag.RowsAffected() == 0 {
-			results = append(results, importResult{RowNumber: rowNum, Status: "skipped"})
-		} else {
-			results = append(results, importResult{RowNumber: rowNum, Status: "inserted"})
-		}
-	}
-
-	if len(results) == 0 {
-		http.Error(w, "CSV has no data rows", http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(results)
-}
-
 func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -207,12 +82,15 @@ func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Edits the GLOBAL method definition; the change applies to every Pokemon and
+	// game this method is available for.
 	var req struct {
-		MethodName     *string `json:"method_name"`
-		BaseRolls      *int    `json:"base_rolls"`
-		CharmRolls     *int    `json:"charm_rolls"`
-		AvgTimeSeconds *int    `json:"avg_time_seconds"`
-		FormulaType    *string `json:"formula_type"`
+		MethodName      *string `json:"method_name"`
+		BaseRolls       *int    `json:"base_rolls"`
+		CharmRolls      *int    `json:"charm_rolls"`
+		AvgTimeSeconds  *int    `json:"avg_time_seconds"`
+		FormulaType     *string `json:"formula_type"`
+		RequiresTerrain *string `json:"requires_terrain"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -221,13 +99,14 @@ func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
 
 	tag, err := database.DB.Exec(context.Background(), `
 		UPDATE hunt_methods SET
-			method_name     = COALESCE($2, method_name),
-			base_rolls      = COALESCE($3, base_rolls),
-			charm_rolls     = COALESCE($4, charm_rolls),
+			method_name      = COALESCE($2, method_name),
+			base_rolls       = COALESCE($3, base_rolls),
+			charm_rolls      = COALESCE($4, charm_rolls),
 			avg_time_seconds = COALESCE($5, avg_time_seconds),
-			formula_type    = COALESCE($6, formula_type)
+			formula_type     = COALESCE($6, formula_type),
+			requires_terrain = COALESCE(NULLIF($7, ''), requires_terrain)
 		WHERE id = $1
-	`, id, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.FormulaType)
+	`, id, req.MethodName, req.BaseRolls, req.CharmRolls, req.AvgTimeSeconds, req.FormulaType, req.RequiresTerrain)
 	if err != nil {
 		http.Error(w, "Failed to update hunt method", http.StatusInternalServerError)
 		return

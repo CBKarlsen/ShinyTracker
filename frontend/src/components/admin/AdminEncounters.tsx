@@ -6,10 +6,6 @@ interface Pokemon {
 	name: string;
 	sprite_url: string;
 }
-interface Game {
-	id: number;
-	title: string;
-}
 interface HuntMethodRow {
 	id: number;
 	pokemon_id: number;
@@ -20,11 +16,6 @@ interface HuntMethodRow {
 	charm_rolls: number;
 	avg_time_seconds: number;
 	formula_type: string;
-}
-interface ImportResult {
-	row_number: number;
-	status: "inserted" | "skipped" | "error";
-	message?: string;
 }
 
 const API = "http://localhost:8080";
@@ -42,32 +33,10 @@ export default function AdminEncounters() {
 	const [results, setResults] = useState<Pokemon[]>([]);
 	const [selected, setSelected] = useState<Pokemon | null>(null);
 	const [huntMethods, setHuntMethods] = useState<HuntMethodRow[]>([]);
-	const [games, setGames] = useState<Game[]>([]);
 	const [editId, setEditId] = useState<number | null>(null);
 	const [editData, setEditData] = useState<Partial<HuntMethodRow>>({});
-	const [adding, setAdding] = useState(false);
-	const [newRow, setNewRow] = useState({
-		game_id: "",
-		method_name: "",
-		base_rolls: "1",
-		charm_rolls: "0",
-		avg_time_seconds: "30",
-		formula_type: "static",
-	});
 	const [error, setError] = useState("");
-	const [csvText, setCsvText] = useState("");
-	const [importing, setImporting] = useState(false);
-	const [importResults, setImportResults] = useState<ImportResult[] | null>(
-		null,
-	);
 	const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-	useEffect(() => {
-		fetch(`${API}/api/admin/games`, { headers: authHeaders(token!) })
-			.then((r) => r.json())
-			.then(setGames)
-			.catch(() => {});
-	}, [token]);
 
 	useEffect(() => {
 		if (!query.trim()) {
@@ -87,7 +56,6 @@ export default function AdminEncounters() {
 		setSelected(pokemon);
 		setResults([]);
 		setQuery(pokemon.name);
-		setAdding(false);
 		setEditId(null);
 		fetch(`${API}/api/admin/hunt-methods?pokemon_id=${pokemon.id}`, {
 			headers: authHeaders(token!),
@@ -129,79 +97,6 @@ export default function AdminEncounters() {
 		setHuntMethods((prev) => prev.filter((e) => e.id !== id));
 	};
 
-	const addEncounter = async () => {
-		if (!selected || !newRow.game_id || !newRow.method_name) {
-			setError("Game and method name are required");
-			return;
-		}
-		const body = {
-			pokemon_id: selected.id,
-			game_id: Number(newRow.game_id),
-			method_name: newRow.method_name,
-			base_rolls: Number(newRow.base_rolls),
-			charm_rolls: Number(newRow.charm_rolls),
-			avg_time_seconds: Number(newRow.avg_time_seconds),
-			formula_type: newRow.formula_type,
-		};
-		const res = await fetch(`${API}/api/admin/hunt-methods`, {
-			method: "POST",
-			headers: authHeaders(token!),
-			body: JSON.stringify(body),
-		});
-		if (!res.ok) {
-			const t = await res.text();
-			setError(t);
-			return;
-		}
-		const { id } = await res.json();
-		const game = games.find((g) => g.id === body.game_id);
-		setHuntMethods((prev) => [
-			...prev,
-			{ ...body, id, game_title: game?.title ?? "" } as HuntMethodRow,
-		]);
-		setAdding(false);
-		setNewRow({
-			game_id: "",
-			method_name: "",
-			base_rolls: "1",
-			charm_rolls: "0",
-			avg_time_seconds: "30",
-			formula_type: "static",
-		});
-	};
-
-	const importCsv = async () => {
-		if (!csvText.trim()) return;
-		setImporting(true);
-		setImportResults(null);
-		try {
-			const res = await fetch(`${API}/api/admin/hunt-methods/import`, {
-				method: "POST",
-				headers: {
-					Authorization: `Bearer ${token!}`,
-					"Content-Type": "text/csv",
-				},
-				body: csvText,
-			});
-			if (!res.ok) {
-				const msg = await res.text();
-				setError(msg || "Import failed");
-			} else {
-				const data: ImportResult[] = await res.json();
-				setImportResults(data);
-			}
-		} catch {
-			setError("Import request failed");
-		}
-		setImporting(false);
-	};
-
-	const statusColor = (s: ImportResult["status"]) => {
-		if (s === "inserted") return "var(--emerald, #10b981)";
-		if (s === "skipped") return "var(--ink-3)";
-		return "var(--red, #ef4444)";
-	};
-
 	return (
 		<div>
 			{error && (
@@ -237,174 +132,6 @@ export default function AdminEncounters() {
 				)}
 			</div>
 
-			<div className="card flush" style={{ marginTop: 24 }}>
-				<div className="card-head">
-					<h3>CSV Bulk Import</h3>
-				</div>
-				<div style={{ padding: "12px 16px" }}>
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr 1fr",
-							gap: 16,
-							marginBottom: 14,
-						}}
-					>
-						<div>
-							<div className="t-label" style={{ marginBottom: 6 }}>
-								Column reference
-							</div>
-							<table
-								style={{
-									width: "100%",
-									fontSize: 12,
-									borderCollapse: "collapse",
-								}}
-							>
-								<tbody>
-									{[
-										["pokemon_id", "Pokémon's numeric ID (see search above)"],
-										["game_id", "Game ID — see table to the right"],
-										["method_name", 'Free text, e.g. "Wild encounter"'],
-										[
-											"base_rolls",
-											"Shiny rolls per encounter without Charm (usually 1)",
-										],
-										[
-											"charm_rolls",
-											"Extra rolls added by Shiny Charm (e.g. 2)",
-										],
-										["avg_time_seconds", "Seconds per encounter on average"],
-										[
-											"formula_type",
-											"Formula: static, radar_chain_gen4, catch_combo_lgpe, outbreak_defeats_sv, chain_fishing_gen6",
-										],
-									].map(([col, desc]) => (
-										<tr key={col}>
-											<td
-												style={{
-													fontFamily: "var(--font-mono)",
-													color: "var(--gold)",
-													paddingRight: 10,
-													whiteSpace: "nowrap",
-													verticalAlign: "top",
-													paddingBottom: 4,
-												}}
-											>
-												{col}
-											</td>
-											<td
-												style={{
-													color: "var(--ink-3)",
-													verticalAlign: "top",
-													paddingBottom: 4,
-												}}
-											>
-												{desc}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-						<div>
-							<div className="t-label" style={{ marginBottom: 6 }}>
-								Game IDs
-							</div>
-							<table
-								style={{
-									width: "100%",
-									fontSize: 12,
-									borderCollapse: "collapse",
-								}}
-							>
-								<tbody>
-									{games.map((g) => (
-										<tr key={g.id}>
-											<td
-												className="t-mono"
-												style={{
-													color: "var(--gold)",
-													paddingRight: 10,
-													paddingBottom: 3,
-												}}
-											>
-												{g.id}
-											</td>
-											<td style={{ color: "var(--ink-3)", paddingBottom: 3 }}>
-												{g.title}
-											</td>
-										</tr>
-									))}
-									{games.length === 0 && (
-										<tr>
-											<td colSpan={2} style={{ color: "var(--ink-3)" }}>
-												Loading…
-											</td>
-										</tr>
-									)}
-								</tbody>
-							</table>
-						</div>
-					</div>
-					<textarea
-						className="input"
-						rows={6}
-						placeholder={
-							"pokemon_id,game_id,method_name,base_rolls,charm_rolls,avg_time_seconds,formula_type\n1,1,Wild encounter,1,2,15,static"
-						}
-						value={csvText}
-						onChange={(e) => setCsvText(e.target.value)}
-						style={{
-							width: "100%",
-							fontFamily: "var(--font-mono)",
-							fontSize: 12,
-							resize: "vertical",
-							boxSizing: "border-box",
-						}}
-					/>
-					<button
-						className="btn primary"
-						style={{ marginTop: 8 }}
-						onClick={importCsv}
-						disabled={importing || !csvText.trim()}
-					>
-						{importing ? "Importing…" : "Import CSV"}
-					</button>
-					{importResults && (
-						<table className="method-table" style={{ marginTop: 16 }}>
-							<thead>
-								<tr>
-									<th>#</th>
-									<th>Status</th>
-									<th>Message</th>
-								</tr>
-							</thead>
-							<tbody>
-								{importResults.map((r) => (
-									<tr key={r.row_number}>
-										<td className="t-mono">{r.row_number}</td>
-										<td
-											style={{
-												color: statusColor(r.status),
-												fontWeight: 600,
-												fontFamily: "var(--font-mono)",
-												fontSize: 12,
-											}}
-										>
-											{r.status}
-										</td>
-										<td style={{ fontSize: 12, color: "var(--ink-3)" }}>
-											{r.message || "—"}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					)}
-				</div>
-			</div>
-
 			{selected && (
 				<div className="card flush" style={{ marginTop: 16 }}>
 					<div className="card-head">
@@ -420,94 +147,16 @@ export default function AdminEncounters() {
 						>
 							{huntMethods.length} method{huntMethods.length !== 1 ? "s" : ""}
 						</span>
-						<button
-							className="btn"
-							style={{ marginLeft: 8 }}
-							onClick={() => {
-								setAdding(true);
-								setError("");
-							}}
-						>
-							+ Add
-						</button>
 					</div>
 
-					{adding && (
-						<div className="admin-add-row">
-							<select
-								className="input"
-								value={newRow.game_id}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, game_id: e.target.value }))
-								}
-							>
-								<option value="">Game…</option>
-								{games.map((g) => (
-									<option key={g.id} value={g.id}>
-										{g.title}
-									</option>
-								))}
-							</select>
-							<input
-								className="input"
-								placeholder="Method name"
-								value={newRow.method_name}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, method_name: e.target.value }))
-								}
-							/>
-							<input
-								className="input"
-								type="number"
-								placeholder="Base rolls"
-								value={newRow.base_rolls}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, base_rolls: e.target.value }))
-								}
-								style={{ width: 90 }}
-							/>
-							<input
-								className="input"
-								type="number"
-								placeholder="Charm rolls"
-								value={newRow.charm_rolls}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, charm_rolls: e.target.value }))
-								}
-								style={{ width: 90 }}
-							/>
-							<input
-								className="input"
-								type="number"
-								placeholder="Avg time (s)"
-								value={newRow.avg_time_seconds}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, avg_time_seconds: e.target.value }))
-								}
-								style={{ width: 100 }}
-							/>
-							<select
-								className="input"
-								value={newRow.formula_type}
-								onChange={(e) =>
-									setNewRow((p) => ({ ...p, formula_type: e.target.value }))
-								}
-								style={{ width: 150 }}
-							>
-								<option value="static">Static Odds</option>
-								<option value="radar_chain_gen4">Gen 4 Poké Radar</option>
-								<option value="catch_combo_lgpe">LGPE Catch Combo</option>
-								<option value="outbreak_defeats_sv">SV Outbreak Defeats</option>
-								<option value="chain_fishing_gen6">Gen 6 Chain Fishing</option>
-							</select>
-							<button className="btn primary" onClick={addEncounter}>
-								Save
-							</button>
-							<button className="btn ghost" onClick={() => setAdding(false)}>
-								Cancel
-							</button>
-						</div>
-					)}
+					<div
+						className="t-label"
+						style={{ padding: "0 16px 10px", color: "var(--ink-3)" }}
+					>
+						Read-only view of this Pokémon's derived availability. Editing or
+						deleting a row changes the global method definition (applies to every
+						Pokémon and game).
+					</div>
 
 					<table className="method-table">
 						<thead>
@@ -526,25 +175,9 @@ export default function AdminEncounters() {
 								<tr key={enc.id}>
 									{editId === enc.id ? (
 										<>
-											<td>
-												<select
-													className="input"
-													style={{ padding: "4px 6px", fontSize: 12 }}
-													value={editData.game_id ?? enc.game_id}
-													onChange={(e) =>
-														setEditData((p) => ({
-															...p,
-															game_id: Number(e.target.value),
-														}))
-													}
-												>
-													{games.map((g) => (
-														<option key={g.id} value={g.id}>
-															{g.title}
-														</option>
-													))}
-												</select>
-											</td>
+											{/* Game is derived from availability, not stored on the
+											    global method, so it is not editable here. */}
+											<td>{enc.game_title}</td>
 											<td>
 												<input
 													className="input"
@@ -700,7 +333,7 @@ export default function AdminEncounters() {
 										className="empty"
 										style={{ padding: "20px 16px" }}
 									>
-										No hunt methods — click + Add to create one
+										No methods available for this Pokémon
 									</td>
 								</tr>
 							)}
