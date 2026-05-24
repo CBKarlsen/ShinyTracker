@@ -1,3 +1,6 @@
+//go:build ignore
+
+// Scratch debug script. Excluded from `go build ./...`; run with `go run`.
 package main
 
 import (

@@ -1,3 +1,6 @@
+//go:build ignore
+
+// One-off ad-hoc migration script. Excluded from `go build ./...`; run with `go run`.
 package main
 
 import (

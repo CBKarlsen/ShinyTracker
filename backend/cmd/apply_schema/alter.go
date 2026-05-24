@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Redundant variant of main.go (its is_legendary/is_mythical ALTERs are now in
+// schema.sql). Excluded from the build so cmd/apply_schema has a single main.
 package main
 
 import (

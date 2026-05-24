@@ -1,3 +1,7 @@
+//go:build ignore
+
+// Orphaned generator (uses the defunct generation/method_rules model).
+// Excluded from `go build ./...`; see FUTUREWORK.md.
 package main
 
 import (
