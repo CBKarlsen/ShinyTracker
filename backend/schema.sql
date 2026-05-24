@@ -75,12 +75,17 @@ CREATE TABLE IF NOT EXISTS pokemon_game_encounter (
     PRIMARY KEY (pokemon_id, game_id, kind, terrain)
 );
 
+-- Manual corrections applied on top of the derived method_availability.
+-- game_id scopes the exception to one game; NULL = every game the method is
+-- mapped to (via method_games). Seeded from seeds/method_exceptions.json, which
+-- is re-applied each run because this table is cascade-truncated with hunt_methods.
 CREATE TABLE IF NOT EXISTS method_exceptions (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
     method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE, -- NULL = all games this method is mapped to
     include BOOLEAN NOT NULL, -- true to manually add, false to manually exclude
-    UNIQUE (pokemon_id, method_id)
+    UNIQUE NULLS NOT DISTINCT (pokemon_id, method_id, game_id)
 );
 
 -- We don't define method_availability as a true SQL view that evaluates JS strings here,

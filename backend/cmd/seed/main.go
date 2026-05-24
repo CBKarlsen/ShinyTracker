@@ -72,6 +72,9 @@ func main() {
 	log.Println("Seeding hunt_methods...")
 	seedMethods(ctx)
 
+	log.Println("Seeding method exceptions...")
+	seedMethodExceptions(ctx)
+
 	log.Println("Ensuring wild encounter kinds are populated...")
 	ensureWildEncounters(ctx)
 
@@ -130,6 +133,60 @@ func seedMethods(ctx context.Context) {
 			}
 		}
 	}
+}
+
+// MethodExceptionSeed is one manual correction in seeds/method_exceptions.json.
+// Method is the hunt_methods.json "id" string (stable across re-seeds; note that
+// method_name is NOT unique, e.g. several "Random Encounter" rows exist). Game is
+// a game title, or null to apply to every game the method is mapped to.
+type MethodExceptionSeed struct {
+	PokemonID int     `json:"pokemon_id"`
+	Method    string  `json:"method"`
+	Game      *string `json:"game"`
+	Include   bool    `json:"include"`
+}
+
+// seedMethodExceptions repopulates method_exceptions from JSON. The table is
+// cascade-truncated with hunt_methods at the start of every seed, so corrections
+// must live in version control here rather than as DB-only edits. Must run after
+// seedMethods so methodIDMap is populated.
+func seedMethodExceptions(ctx context.Context) {
+	data, err := os.ReadFile("seeds/method_exceptions.json")
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Println("No method_exceptions.json found; skipping.")
+			return
+		}
+		log.Fatal("Failed to read method_exceptions.json: ", err)
+	}
+	var exceptions []MethodExceptionSeed
+	if err := json.Unmarshal(data, &exceptions); err != nil {
+		log.Fatal("method_exceptions.json parse error: ", err)
+	}
+
+	for _, e := range exceptions {
+		methodID, ok := methodIDMap[e.Method]
+		if !ok {
+			log.Fatalf("method_exceptions: unknown method id %q (must match an \"id\" in hunt_methods.json)", e.Method)
+		}
+		var gameID *int
+		if e.Game != nil {
+			var gid int
+			if err := database.DB.QueryRow(ctx, "SELECT id FROM games WHERE title = $1", *e.Game).Scan(&gid); err != nil {
+				log.Fatalf("method_exceptions: unknown game %q for method %q: %v", *e.Game, e.Method, err)
+			}
+			gameID = &gid
+		}
+		if _, err := database.DB.Exec(ctx,
+			`INSERT INTO method_exceptions (pokemon_id, method_id, game_id, include)
+			 VALUES ($1, $2, $3, $4)
+			 ON CONFLICT (pokemon_id, method_id, game_id) DO UPDATE SET include = EXCLUDED.include`,
+			e.PokemonID, methodID, gameID, e.Include,
+		); err != nil {
+			log.Fatalf("method_exceptions: failed to insert (pokemon %d, method %q): %v", e.PokemonID, e.Method, err)
+		}
+	}
+	log.Printf("Seeded %d method exceptions.", len(exceptions))
 }
 
 // ensureWildEncounters populates `wild` kinds from PokeAPI if none exist yet.
@@ -288,6 +345,34 @@ func computeAvailability(ctx context.Context) {
 		log.Fatal("Failed to compute method_availability: ", err)
 	}
 
+	// Apply manual includes: force a method onto a Pokemon for the game(s) the
+	// method is mapped to (game_id NULL = every game in method_games). Joining
+	// method_games means we never invent a method for a game it doesn't exist in.
+	if _, err := database.DB.Exec(ctx, `
+		INSERT INTO method_availability (pokemon_id, method_id, game_id)
+		SELECT me.pokemon_id, me.method_id, mg.game_id
+		FROM method_exceptions me
+		JOIN method_games mg ON mg.method_id = me.method_id
+			AND (me.game_id IS NULL OR me.game_id = mg.game_id)
+		WHERE me.include = true
+		ON CONFLICT DO NOTHING
+	`); err != nil {
+		log.Fatal("Failed to apply method_exceptions includes: ", err)
+	}
+
+	// Apply manual excludes last so they win over both the derivation and any
+	// include (game_id NULL = remove from every game).
+	if _, err := database.DB.Exec(ctx, `
+		DELETE FROM method_availability ma
+		USING method_exceptions me
+		WHERE me.include = false
+			AND ma.pokemon_id = me.pokemon_id
+			AND ma.method_id = me.method_id
+			AND (me.game_id IS NULL OR ma.game_id = me.game_id)
+	`); err != nil {
+		log.Fatal("Failed to apply method_exceptions excludes: ", err)
+	}
+
 	var count int
 	database.DB.QueryRow(ctx, "SELECT COUNT(*) FROM method_availability").Scan(&count)
 	fmt.Printf("Inserted %d availability records.\n", count)
@@ -319,6 +404,46 @@ func runInvariantChecks(ctx context.Context) {
 	`).Scan(&orphans)
 	if orphans > 0 {
 		log.Fatalf("Invariant violation: %d method_availability rows have no matching encounter kind", orphans)
+	}
+
+	// Warning (non-fatal): a Pokemon is huntable in a game it isn't legally
+	// available in. Contradictory by definition — usually a mislabeled encounter
+	// kind (e.g. a fossil/gift marked 'wild') or a hole in pokemon_availability.
+	var huntableNotAvailable int
+	database.DB.QueryRow(ctx, `
+		SELECT COUNT(DISTINCT (ma.pokemon_id, ma.game_id))
+		FROM method_availability ma
+		WHERE NOT EXISTS (
+			SELECT 1 FROM pokemon_availability pa
+			WHERE pa.pokemon_id = ma.pokemon_id AND pa.game_id = ma.game_id)
+	`).Scan(&huntableNotAvailable)
+	if huntableNotAvailable > 0 {
+		log.Printf("WARNING: %d (pokemon,game) pairs are huntable but not in pokemon_availability "+
+			"(run `go run ./cmd/audit_methods` for the list)", huntableNotAvailable)
+	}
+
+	// Warning (non-fatal): a game has wild encounter rows but no wild method
+	// mapped to it, so none of those encounters are huntable. Flags games whose
+	// method catalog is incomplete (e.g. Gen 1/2/5 have wild data but no
+	// random-encounter method defined in seeds/hunt_methods.json).
+	rows, err := database.DB.Query(ctx, `
+		SELECT g.title FROM games g
+		WHERE EXISTS (SELECT 1 FROM pokemon_game_encounter pge WHERE pge.game_id = g.id AND pge.kind = 'wild')
+		  AND NOT EXISTS (
+			SELECT 1 FROM method_games mg JOIN hunt_methods hm ON hm.id = mg.method_id
+			WHERE mg.game_id = g.id AND hm.requires_kind = 'wild')
+		ORDER BY g.generation`)
+	if err == nil {
+		var games []string
+		for rows.Next() {
+			var t string
+			rows.Scan(&t)
+			games = append(games, t)
+		}
+		rows.Close()
+		for _, g := range games {
+			log.Printf("WARNING: %q has wild encounters but no wild method mapped — those Pokemon have no hunt method", g)
+		}
 	}
 
 	log.Println("Invariant checks passed.")
