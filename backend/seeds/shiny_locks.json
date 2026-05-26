@@ -1,0 +1,145 @@
+{
+  "_comment": "Game titles in 'games' arrays MUST match the 'title' column in the games table exactly (e.g. 'X/Y', 'Sword/Shield', 'Scarlet/Violet'). These combined-version strings are taken from seeds/hunt_methods.json and cmd/seed_availability/main.go. If a title is unrecognised the seeder logs a warning and skips — reconcile against the live games table before relying on a complete seed. Only list a (pokemon_id, game) pair where the shiny is genuinely locked in THAT game; never list a game where the shiny is obtainable via soft-reset or normal hunting.",
+  "locks": [
+    {
+      "_note": "Xerneas — shiny-locked story encounter in X/Y",
+      "pokemon_id": 716,
+      "games": ["X/Y"]
+    },
+    {
+      "_note": "Yveltal — shiny-locked story encounter in X/Y",
+      "pokemon_id": 717,
+      "games": ["X/Y"]
+    },
+    {
+      "_note": "Zygarde — shiny-locked gift encounter (Route 18) in X/Y",
+      "pokemon_id": 718,
+      "games": ["X/Y"]
+    },
+    {
+      "_note": "Tapu Koko — shiny-locked in Sun/Moon and Ultra Sun/Ultra Moon (post-game static)",
+      "pokemon_id": 785,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Tapu Lele — shiny-locked in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 786,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Tapu Bulu — shiny-locked in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 787,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Tapu Fini — shiny-locked in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 788,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Cosmog — shiny-locked story gift in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 789,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Solgaleo — shiny-locked story encounter in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 791,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Lunala — shiny-locked story encounter in Sun/Moon and Ultra Sun/Ultra Moon",
+      "pokemon_id": 792,
+      "games": ["Sun/Moon", "Ultra Sun/Ultra Moon"]
+    },
+    {
+      "_note": "Necrozma — shiny-locked in Sun/Moon only; soft-resettable in Ultra Sun/Ultra Moon",
+      "pokemon_id": 800,
+      "games": ["Sun/Moon"]
+    },
+    {
+      "_note": "Zacian — shiny-locked story encounter in Sword/Shield",
+      "pokemon_id": 888,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Zamazenta — shiny-locked story encounter in Sword/Shield",
+      "pokemon_id": 889,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Eternatus — shiny-locked story encounter in Sword/Shield",
+      "pokemon_id": 890,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Kubfu — shiny-locked DLC gift from Mustard (Isle of Armor) in Sword/Shield",
+      "pokemon_id": 891,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Calyrex — shiny-locked story encounter (Crown Tundra DLC) in Sword/Shield",
+      "pokemon_id": 898,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Dialga — shiny-locked story encounter in Brilliant Diamond/Shining Pearl and Legends: Arceus; soft-resettable in Diamond/Pearl/Platinum",
+      "pokemon_id": 483,
+      "games": ["Brilliant Diamond/Shining Pearl", "Legends: Arceus"]
+    },
+    {
+      "_note": "Palkia — shiny-locked story encounter in Brilliant Diamond/Shining Pearl and Legends: Arceus; soft-resettable in Diamond/Pearl/Platinum",
+      "pokemon_id": 484,
+      "games": ["Brilliant Diamond/Shining Pearl", "Legends: Arceus"]
+    },
+    {
+      "_note": "Giratina — shiny-locked story encounter in Brilliant Diamond/Shining Pearl; soft-resettable in Diamond/Pearl/Platinum",
+      "pokemon_id": 487,
+      "games": ["Brilliant Diamond/Shining Pearl"]
+    },
+    {
+      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus",
+      "pokemon_id": 493,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus",
+      "pokemon_id": 905,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Koraidon — shiny-locked story encounter in Scarlet/Violet",
+      "pokemon_id": 1007,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Miraidon — shiny-locked story encounter in Scarlet/Violet",
+      "pokemon_id": 1008,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Ogerpon — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1017,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Okidogi — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1018,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Munkidori — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1019,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Fezandipiti — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1020,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Pecharunt — shiny-locked story encounter (Indigo Disk DLC epilogue) in Scarlet/Violet",
+      "pokemon_id": 1025,
+      "games": ["Scarlet/Violet"]
+    }
+  ]
+}
