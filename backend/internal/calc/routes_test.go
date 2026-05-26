@@ -57,3 +57,17 @@ func TestShouldIncludeEvolveRoute(t *testing.T) {
 		t.Fatal("ancestor odds 683 beats target best 4096 -> should include")
 	}
 }
+
+func TestComputeRouteGuardsZeroRolls(t *testing.T) {
+	// BaseRolls 0 and no charm -> totalRolls guarded to 1, no divide-by-zero.
+	r := computeRoute(MethodCandidate{BaseOdds: 4096, BaseRolls: 0, CharmRolls: 0, HasShinyCharm: false})
+	if r.Odds != 4096 {
+		t.Fatalf("zero-rolls odds = %d, want 4096", r.Odds)
+	}
+}
+
+func TestIsLockedEverywhereAvailableButNothingLocked(t *testing.T) {
+	if IsLockedEverywhere([]int{3}, nil) {
+		t.Fatal("available in {3} with no locks should NOT be locked everywhere")
+	}
+}

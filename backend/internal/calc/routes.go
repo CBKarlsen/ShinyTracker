@@ -27,7 +27,7 @@ type Route struct {
 	GameID     int         `json:"game_id"`
 	GameTitle  string      `json:"game_title"`
 	MethodName string      `json:"method_name"`
-	Odds       int         `json:"odds"` // denominator: 1 / Odds
+	Odds       int         `json:"odds"` // integer-floored denominator of the 1/Odds probability (matches the displayed "1 / N"); ETAHours keeps full precision
 	ETAHours   float64     `json:"eta_hours"`
 	EvolveFrom *EvolveFrom `json:"evolve_from,omitempty"`
 }
@@ -74,7 +74,8 @@ func RankDirectRoutes(cands []MethodCandidate) []Route {
 }
 
 // BestRoute returns the lowest-odds candidate as an evolve route for the given
-// ancestor, plus ok=false when the ancestor has no candidates.
+// ancestor, plus ok=false when the ancestor has no candidates. It ranks the
+// candidates internally via RankDirectRoutes, so callers may pass an unsorted slice.
 func BestRoute(cands []MethodCandidate, from EvolveFrom) (Route, bool) {
 	ranked := RankDirectRoutes(cands)
 	if len(ranked) == 0 {
