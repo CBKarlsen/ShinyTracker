@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -177,7 +178,11 @@ func PokemonRouteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, anc := range ancestors {
 			cands, err := fetchMethodCandidates(ctx, userID, anc.PokemonID)
-			if err != nil || len(cands) == 0 {
+			if err != nil {
+				log.Printf("warn: evolve candidates for #%d: %v", anc.PokemonID, err)
+				continue
+			}
+			if len(cands) == 0 {
 				continue
 			}
 			best, ok := calc.BestRoute(cands, anc)
@@ -210,10 +215,11 @@ func anyOwned(avail, owned []int) bool {
 func fetchAncestors(ctx context.Context, pokemonID int) ([]calc.EvolveFrom, error) {
 	rows, err := database.DB.Query(ctx, `
 		WITH RECURSIVE line AS (
-			SELECT id, evolves_from_id FROM pokemon WHERE id = $1
+			SELECT id, evolves_from_id, 1 AS depth FROM pokemon WHERE id = $1
 			UNION ALL
-			SELECT p.id, p.evolves_from_id
+			SELECT p.id, p.evolves_from_id, line.depth + 1
 			FROM pokemon p JOIN line ON p.id = line.evolves_from_id
+			WHERE line.depth < 10
 		)
 		SELECT p.id, p.name
 		FROM line JOIN pokemon p ON p.id = line.id
