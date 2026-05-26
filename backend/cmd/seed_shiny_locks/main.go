@@ -51,6 +51,9 @@ func main() {
 		}
 	}
 	rows.Close()
+	if err := rows.Err(); err != nil {
+		log.Fatal("fetch games (rows):", err)
+	}
 
 	inserted, skipped := 0, 0
 	for _, e := range lf.Locks {
