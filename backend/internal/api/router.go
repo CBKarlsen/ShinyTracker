@@ -46,6 +46,9 @@ func NewRouter() *chi.Mux {
 
 			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
+			r.Get("/dex/status", DexStatusHandler)
+			r.Get("/pokemon/{id}/route", PokemonRouteHandler)
+
 			r.Group(func(r chi.Router) {
 				r.Use(AdminMiddleware)
 				// hunt_methods are global, derived availability — read-only view
