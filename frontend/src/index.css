@@ -1238,7 +1238,7 @@ ul {
 	object-fit: contain;
 	image-rendering: pixelated;
 }
-.dex-cell.uncaught img {
+.dex-cell.missing img {
 	filter: brightness(0) opacity(0.18);
 }
 .dex-cell.caught {
