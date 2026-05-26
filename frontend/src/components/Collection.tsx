@@ -3,13 +3,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import type { HuntDetail } from "./HistoricHunts";
-import type { DexStatus, PokemonRoute } from "../types/models";
+import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
 import DexDrawer from "./DexDrawer";
-
-interface Pokemon {
-	id: number;
-	name: string;
-}
 
 const GEN_RANGES: [number, number, number][] = [
 	[1, 1, 151],
@@ -269,7 +264,7 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 								return next;
 							});
 						}}
-						onStartHunt={(route, poke) => { setDrawerId(null); onStartHunt?.(poke, route); }}
+						onStartHunt={(poke, route) => { setDrawerId(null); onStartHunt?.(poke, route); }}
 					/>
 				);
 			})()}

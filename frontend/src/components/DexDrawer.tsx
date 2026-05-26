@@ -2,19 +2,14 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
-import type { PokemonRouteResponse, PokemonRoute } from "../types/models";
-
-interface Pokemon {
-	id: number;
-	name: string;
-}
+import type { Pokemon, PokemonRouteResponse, PokemonRoute } from "../types/models";
 
 interface Props {
 	pokemon: Pokemon;
 	caught: boolean;
 	onClose: () => void;
 	onCaughtChange: (pokemonId: number, caught: boolean) => void;
-	onStartHunt: (route: PokemonRoute, pokemon: Pokemon) => void;
+	onStartHunt: (pokemon: Pokemon, route: PokemonRoute) => void;
 }
 
 const DexDrawer: React.FC<Props> = ({ pokemon, caught, onClose, onCaughtChange, onStartHunt }) => {
@@ -89,8 +84,8 @@ const DexDrawer: React.FC<Props> = ({ pokemon, caught, onClose, onCaughtChange, 
 							{data.status === "available" && direct.length === 0 && evolve.length === 0 && (
 								<div className="t-mono" style={{ marginBottom: 12 }}>Available in your games, but no hunt method recorded yet.</div>
 							)}
-							{direct.length > 0 && <RouteSection label="Routes in your games" routes={direct} onStart={(r) => onStartHunt(r, pokemon)} />}
-							{evolve.length > 0 && <RouteSection label="Hunt a pre-evolution" routes={evolve} onStart={(r) => onStartHunt(r, pokemon)} />}
+							{direct.length > 0 && <RouteSection label="Routes in your games" routes={direct} onStart={(r) => onStartHunt(pokemon, r)} />}
+							{evolve.length > 0 && <RouteSection label="Hunt a pre-evolution" routes={evolve} onStart={(r) => onStartHunt(pokemon, r)} />}
 							{data.status === "locked_everywhere" && <div className="t-mono">Shiny-locked in every game it appears in. Obtain it by trading or transferring from Pokémon HOME.</div>}
 							{data.status === "not_in_your_games" && <div className="t-mono">Not available in any game you own. Add a game to your library, or trade for it.</div>}
 						</>

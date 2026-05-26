@@ -10,12 +10,13 @@ interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
+	prefill?: { pokemon: Pokemon; gameId: number; methodName: string } | null;
 }
 import { IcClose, IcPlus } from "./ui/icons";
 import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
 import { MethodPreview } from "../features/new-hunt/MethodPreview";
 
-const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
+const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) => {
 	const { token, userId } = useAuth();
 	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
@@ -48,6 +49,25 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 			setHuntParams({});
 		}
 	}, [open]);
+
+	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
+	// The reset effect above only fires when !open, so it won't clobber this.
+	useEffect(() => {
+		if (open && prefill) {
+			setSelectedPokemon(prefill.pokemon);
+			setStep(2);
+		}
+	}, [open, prefill]);
+
+	// Once methods load, pre-select the matching method from the prefill.
+	useEffect(() => {
+		if (prefill && huntMethods.length > 0) {
+			const m = huntMethods.find(
+				(hm) => hm.game_id === prefill.gameId && hm.method_name === prefill.methodName,
+			);
+			if (m) setSelectedMethod(m);
+		}
+	}, [prefill, huntMethods]);
 
 	// Pokémon search
 	useEffect(() => {
