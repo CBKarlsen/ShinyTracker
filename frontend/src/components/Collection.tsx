@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import type { HuntDetail } from "./HistoricHunts";
+import type { DexStatus, PokemonRoute } from "../types/models";
+import DexDrawer from "./DexDrawer";
 
 interface Pokemon {
 	id: number;
@@ -22,21 +24,25 @@ const GEN_RANGES: [number, number, number][] = [
 ];
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 
-const Collection: React.FC = () => {
+const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void }> = ({ onStartHunt }) => {
 	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 	const [caughtIds, setCaughtIds] = useState<Set<number>>(new Set());
+	const [blocked, setBlocked] = useState<{ locked: Set<number>; notInGames: Set<number> }>({ locked: new Set(), notInGames: new Set() });
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState<"all" | "owned" | "missing">("all");
-	const [removeTarget, setRemoveTarget] = useState<number | null>(null);
+	const [drawerId, setDrawerId] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const [pokeRes, huntsRes] = await Promise.all([
+				const [pokeRes, huntsRes, statusRes] = await Promise.all([
 					fetch("http://localhost:8080/api/pokemon?limit=all"),
 					fetch("http://localhost:8080/api/hunts", {
+						headers: { Authorization: `Bearer ${token}` },
+					}),
+					fetch("http://localhost:8080/api/dex/status", {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);
@@ -49,11 +55,15 @@ const Collection: React.FC = () => {
 						if (h.status === "completed") caught.add(h.pokemon_id);
 					}
 					setCaughtIds(caught);
+					if (statusRes.ok) {
+						const s: DexStatus = await statusRes.json();
+						setBlocked({ locked: new Set(s.locked_everywhere), notInGames: new Set(s.not_in_your_games) });
+					}
 				} else {
 					showError("Failed to fetch Pokedex information.");
 				}
-			} catch (err: any) {
-				showError(err.message || "Failed to fetch Pokedex information.");
+			} catch (err: unknown) {
+				showError((err as Error).message || "Failed to fetch Pokedex information.");
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -61,51 +71,6 @@ const Collection: React.FC = () => {
 		};
 		fetchData();
 	}, [token]);
-
-	const handleToggle = async (pokemonId: number, isCaught: boolean) => {
-		if (isCaught) {
-			setRemoveTarget(pokemonId);
-			return;
-		}
-		const prev = new Set(caughtIds);
-		const next = new Set(caughtIds);
-		next.add(pokemonId);
-		setCaughtIds(next);
-		try {
-			const res = await fetch("http://localhost:8080/api/hunts/manual", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({ pokemon_id: pokemonId }),
-			});
-			if (!res.ok) throw new Error("Could not add manual catch.");
-		} catch (err: any) {
-			setCaughtIds(prev);
-			showError(err.message || "Failed to mark Pokémon as caught.");
-		}
-	};
-
-	const confirmRemove = async () => {
-		if (removeTarget === null) return;
-		const pid = removeTarget;
-		setRemoveTarget(null);
-		const prev = new Set(caughtIds);
-		const next = new Set(caughtIds);
-		next.delete(pid);
-		setCaughtIds(next);
-		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/manual/${pid}`, {
-				method: "DELETE",
-				headers: { Authorization: `Bearer ${token}` },
-			});
-			if (!res.ok) throw new Error("Could not remove manual catch.");
-		} catch (err: any) {
-			setCaughtIds(prev);
-			showError(err.message || "Failed to remove Pokémon from dex.");
-		}
-	};
 
 	if (loading) {
 		return (
@@ -143,7 +108,7 @@ const Collection: React.FC = () => {
 						{caughtCount} of {total} shinies ·{" "}
 						{((caughtCount / total) * 100).toFixed(1)}% complete
 						<span style={{ color: "var(--ink-4)", marginLeft: 8 }}>
-							(Click any Pokémon below to toggle caught status)
+							(Click any Pokémon to view details)
 						</span>
 					</div>
 				</div>
@@ -273,13 +238,9 @@ const Collection: React.FC = () => {
 						<div className="dex-grid">
 							{cellsInGen.map((p) => {
 								const caught = caughtIds.has(p.id);
+								const state = caught ? "caught" : blocked.locked.has(p.id) ? "locked" : blocked.notInGames.has(p.id) ? "notgames" : "missing";
 								return (
-									<div
-										key={p.id}
-										className={`dex-cell ${caught ? "caught" : "uncaught"}`}
-										onClick={() => handleToggle(p.id, caught)}
-										title={`${p.name} - ${caught ? "Click to remove" : "Click to mark as caught"}`}
-									>
+									<div key={p.id} className={`dex-cell ${state}`} onClick={() => setDrawerId(p.id)} title={p.name}>
 										<img
 											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${p.id}.png`}
 											alt={p.name}
@@ -293,45 +254,25 @@ const Collection: React.FC = () => {
 				);
 			})}
 
-			{/* Remove confirmation */}
-			{removeTarget !== null && (
-				<div className="scrim" onClick={() => setRemoveTarget(null)}>
-					<div
-						className="drawer"
-						onClick={(e) => e.stopPropagation()}
-						style={{ width: 380, padding: 28 }}
-					>
-						<div
-							style={{
-								fontFamily: "var(--font-display)",
-								fontSize: 18,
-								fontWeight: 600,
-								marginBottom: 12,
-							}}
-						>
-							Remove shiny?
-						</div>
-						<div
-							style={{ color: "var(--ink-3)", fontSize: 13, marginBottom: 24 }}
-						>
-							This will delete the completed hunt record for this Pokémon.
-						</div>
-						<div
-							style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
-						>
-							<button
-								className="btn ghost"
-								onClick={() => setRemoveTarget(null)}
-							>
-								Cancel
-							</button>
-							<button className="btn danger" onClick={confirmRemove}>
-								Remove
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
+			{drawerId !== null && (() => {
+				const p = pokemon.find((x) => x.id === drawerId);
+				if (!p) return null;
+				return (
+					<DexDrawer
+						pokemon={p}
+						caught={caughtIds.has(p.id)}
+						onClose={() => setDrawerId(null)}
+						onCaughtChange={(id, isCaught) => {
+							setCaughtIds((prev) => {
+								const next = new Set(prev);
+								if (isCaught) next.add(id); else next.delete(id);
+								return next;
+							});
+						}}
+						onStartHunt={(route, poke) => { setDrawerId(null); onStartHunt?.(poke, route); }}
+					/>
+				);
+			})()}
 		</div>
 	);
 };

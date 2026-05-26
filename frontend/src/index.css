@@ -1272,6 +1272,20 @@ ul {
 	box-shadow: 0 0 6px var(--gold);
 }
 
+.dex-cell.locked { background: repeating-linear-gradient(45deg,#2a1d1d,#2a1d1d 4px,#3a2424 4px,#3a2424 8px); opacity: .7; }
+.dex-cell.notgames { filter: grayscale(1); opacity: .45; }
+.dex-drawer-head { display:flex; gap:13px; align-items:center; padding:16px; border-bottom:1px solid var(--line-1); }
+.dex-drawer-name { font-family: var(--font-display); font-size:19px; font-weight:600; color:var(--ink-1); text-transform:capitalize; }
+.dex-drawer-dex { font-family: var(--font-mono); font-size:11px; color:var(--ink-3); }
+.dex-badge { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10.5px; padding:2px 9px; border-radius:99px; margin-top:5px; background:var(--bg-3); color:var(--ink-2); }
+.dex-route { display:flex; justify-content:space-between; align-items:flex-start; border:1px solid var(--line-1); border-radius:9px; padding:10px 12px; margin-bottom:7px; }
+.dex-route-name { font-size:13px; color:var(--ink-1); }
+.dex-route-game { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); margin-top:2px; }
+.dex-route-evo { font-family:var(--font-mono); font-size:10.5px; color:var(--gold); margin-top:6px; }
+.dex-route-odds { font-family:var(--font-mono); font-size:14px; color:var(--gold); font-weight:600; }
+.dex-route-eta { font-family:var(--font-mono); font-size:10px; color:var(--ink-3); }
+.dex-route-start { background:transparent; border:none; color:var(--ink-2); font-family:var(--font-mono); font-size:10px; cursor:pointer; margin-top:6px; padding:0; }
+
 /* ── Generation header ── */
 .gen-head {
 	display: flex;
