@@ -58,8 +58,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// Default selection — only when no prefill is active so it doesn't fight the prefill effect.
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
-		if (!prefill && routes.length > 0 && !selectedRoute) setSelectedRoute(routes[0]);
-	}, [routes, prefill]); // eslint-disable-line react-hooks/exhaustive-deps
+		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) setSelectedRoute(routes[0]);
+	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Once routes load, select the prefill route by key.
 	useEffect(() => {
@@ -313,7 +313,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 								/>
 							)}
 
-							{!loadingRoutes && userGameCount === 0 && (
+							{!loadingRoutes && userGameCount === 0 && routes.length === 0 && (
 								<div
 									className="empty"
 									style={{ textAlign: "center", padding: "20px 0" }}
@@ -341,6 +341,9 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 										style={{ marginBottom: 6, textTransform: "capitalize" }}
 									>
 										{selectedPokemon.name} isn't available in your games.
+									</div>
+									<div className="t-label" style={{ marginBottom: 14 }}>
+										Try adding a game that includes it, or it may be shiny-locked.
 									</div>
 									{onGoToGames && (
 										<button

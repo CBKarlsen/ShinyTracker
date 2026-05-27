@@ -52,8 +52,8 @@ function App() {
 				{route === "historic" && <HistoricHunts />}
 				{route === "dex" && (
 					<Collection
-						onStartHunt={(pokemon, route) => {
-							setHuntPrefill({ pokemon, route });
+						onStartHunt={(pokemon, pokemonRoute) => {
+							setHuntPrefill({ pokemon, route: pokemonRoute });
 							setNewHuntOpen(true);
 						}}
 					/>
