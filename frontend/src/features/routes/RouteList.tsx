@@ -12,24 +12,25 @@ interface Props {
 	routes: PokemonRoute[];
 	selectedKey?: string;
 	onRouteClick: (route: PokemonRoute) => void;
+	variant?: "launch" | "select";
 }
 
-const RouteList: React.FC<Props> = ({ routes, selectedKey, onRouteClick }) => {
+const RouteList: React.FC<Props> = ({ routes, selectedKey, onRouteClick, variant = "launch" }) => {
 	const direct = routes.filter((r) => r.kind === "direct");
 	const evolve = routes.filter((r) => r.kind === "evolve");
 	return (
 		<>
 			{direct.length > 0 && (
-				<Section label="Routes in your games" routes={direct} selectedKey={selectedKey} onRouteClick={onRouteClick} />
+				<Section label="Routes in your games" routes={direct} selectedKey={selectedKey} onRouteClick={onRouteClick} variant={variant} />
 			)}
 			{evolve.length > 0 && (
-				<Section label="Hunt a pre-evolution" routes={evolve} selectedKey={selectedKey} onRouteClick={onRouteClick} />
+				<Section label="Hunt a pre-evolution" routes={evolve} selectedKey={selectedKey} onRouteClick={onRouteClick} variant={variant} />
 			)}
 		</>
 	);
 };
 
-const Section: React.FC<Props & { label: string }> = ({ label, routes, selectedKey, onRouteClick }) => (
+const Section: React.FC<Props & { label: string }> = ({ label, routes, selectedKey, onRouteClick, variant }) => (
 	<div style={{ marginBottom: 14 }}>
 		<div className="t-label" style={{ marginBottom: 8 }}>{label}</div>
 		{routes.map((r) => {
@@ -50,6 +51,7 @@ const Section: React.FC<Props & { label: string }> = ({ label, routes, selectedK
 					<div style={{ textAlign: "right" }}>
 						<div className="dex-route-odds">1 / {r.odds.toLocaleString()}</div>
 						<div className="dex-route-eta">~{r.eta_hours.toFixed(1)} h</div>
+						{variant === "launch" && <div className="dex-route-start">▸ Start</div>}
 					</div>
 				</div>
 			);
