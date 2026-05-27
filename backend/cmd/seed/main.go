@@ -215,7 +215,11 @@ func deriveEggEncounters(ctx context.Context) {
 		SELECT pa.pokemon_id, pa.game_id, 'egg'
 		FROM pokemon_availability pa
 		JOIN pokemon p ON p.id = pa.pokemon_id
-		WHERE p.can_breed = true
+		-- Eggs only ever hatch the base form of an evolution line, so an egg
+		-- (Masuda) route belongs only to base-stage species. Evolved forms get
+		-- a "hunt a pre-evolution, then evolve" route instead (computed in the
+		-- /api/pokemon/{id}/route handler from evolves_from_id).
+		WHERE p.can_breed = true AND p.evolves_from_id IS NULL
 		ON CONFLICT DO NOTHING
 	`)
 	if err != nil {
