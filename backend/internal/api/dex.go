@@ -89,8 +89,8 @@ func queryIntColumn(ctx context.Context, sql string, args ...any) ([]int, error)
 // user's owned games, with the data needed to compute odds.
 func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([]calc.MethodCandidate, error) {
 	rows, err := database.DB.Query(ctx, `
-		SELECT g.id, g.title, hm.method_name, g.base_odds,
-		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm
+		SELECT hm.id, g.id, g.title, hm.method_name, g.base_odds,
+		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm, hm.formula_type
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
 		JOIN games g         ON g.id = ma.game_id
@@ -105,8 +105,8 @@ func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([
 	var cands []calc.MethodCandidate
 	for rows.Next() {
 		var c calc.MethodCandidate
-		if err := rows.Scan(&c.GameID, &c.GameTitle, &c.MethodName, &c.BaseOdds,
-			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm); err != nil {
+		if err := rows.Scan(&c.MethodID, &c.GameID, &c.GameTitle, &c.MethodName, &c.BaseOdds,
+			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType); err != nil {
 			return nil, err
 		}
 		cands = append(cands, c)
