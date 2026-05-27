@@ -1278,7 +1278,7 @@ ul {
 .dex-drawer-name { font-family: var(--font-display); font-size:19px; font-weight:600; color:var(--ink-1); text-transform:capitalize; }
 .dex-drawer-dex { font-family: var(--font-mono); font-size:11px; color:var(--ink-3); }
 .dex-badge { display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:10.5px; padding:2px 9px; border-radius:99px; margin-top:5px; background:var(--bg-3); color:var(--ink-2); }
-.dex-route { display:flex; justify-content:space-between; align-items:flex-start; border:1px solid var(--line-1); border-radius:9px; padding:10px 12px; margin-bottom:7px; }
+.dex-route { display:flex; justify-content:space-between; align-items:flex-start; border:1px solid var(--line-1); border-radius:9px; padding:10px 12px; margin-bottom:7px; cursor:pointer; }
 .dex-route.sel { border-color: var(--gold); background: var(--gold-soft); }
 .dex-route-name { font-size:13px; color:var(--ink-1); }
 .dex-route-game { font-family:var(--font-mono); font-size:10.5px; color:var(--ink-3); margin-top:2px; }

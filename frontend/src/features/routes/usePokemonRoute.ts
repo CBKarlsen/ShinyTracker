@@ -6,7 +6,7 @@ import type { PokemonRouteResponse } from "../../types/models";
 export function usePokemonRoute(pokemonId: number | null) {
 	const { token } = useAuth();
 	const [data, setData] = useState<PokemonRouteResponse | null>(null);
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(pokemonId != null);
 	const [error, setError] = useState(false);
 
 	useEffect(() => {

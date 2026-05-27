@@ -2,6 +2,8 @@ import type React from "react";
 import type { PokemonRoute } from "../../types/models";
 
 // Stable identity for a route, used for selection highlighting.
+// Assumes (kind, game_id, method_id) is unique per route — method_id is unique
+// per game, so do not weaken this to method_name.
 export function routeKey(r: PokemonRoute): string {
 	return `${r.kind}-${r.game_id}-${r.method_id}`;
 }
@@ -37,7 +39,6 @@ const Section: React.FC<Props & { label: string }> = ({ label, routes, selectedK
 					key={key}
 					className={`dex-route ${selectedKey === key ? "sel" : ""}`}
 					onClick={() => onRouteClick(r)}
-					style={{ cursor: "pointer" }}
 				>
 					<div>
 						<div className="dex-route-name">{r.method_name}</div>
