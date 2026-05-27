@@ -71,3 +71,32 @@ func TestIsLockedEverywhereAvailableButNothingLocked(t *testing.T) {
 		t.Fatal("available in {3} with no locks should NOT be locked everywhere")
 	}
 }
+
+func TestComputeRouteCarriesMethodIDAndFormula(t *testing.T) {
+	r := computeRoute(MethodCandidate{
+		MethodID: 42, FormulaType: "masuda",
+		BaseOdds: 4096, BaseRolls: 6, HasShinyCharm: false,
+	})
+	if r.MethodID != 42 {
+		t.Fatalf("MethodID = %d, want 42", r.MethodID)
+	}
+	if r.FormulaType != "masuda" {
+		t.Fatalf("FormulaType = %q, want masuda", r.FormulaType)
+	}
+}
+
+func TestBestRouteCarriesAncestorMethodFields(t *testing.T) {
+	best, ok := BestRoute(
+		[]MethodCandidate{{MethodID: 7, FormulaType: "wild", BaseOdds: 4096, BaseRolls: 1}},
+		EvolveFrom{PokemonID: 129, Name: "magikarp"},
+	)
+	if !ok {
+		t.Fatal("expected ok=true")
+	}
+	if best.MethodID != 7 || best.FormulaType != "wild" {
+		t.Fatalf("got MethodID=%d FormulaType=%q, want 7/wild", best.MethodID, best.FormulaType)
+	}
+	if best.Kind != "evolve" || best.EvolveFrom == nil {
+		t.Fatal("expected an evolve route with EvolveFrom set")
+	}
+}
