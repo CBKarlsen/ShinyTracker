@@ -12,7 +12,7 @@ import Sidebar from "./components/Sidebar";
 import Stats from "./components/Stats";
 import Topbar from "./components/Topbar";
 import { useAuth } from "./context/AuthContext";
-import type { Pokemon } from "./types/models";
+import type { Pokemon, PokemonRoute } from "./types/models";
 
 export type Route =
 	| "dash"
@@ -28,7 +28,7 @@ function App() {
 	const { token, logout } = useAuth();
 	const [route, setRoute] = useState<Route>("dash");
 	const [newHuntOpen, setNewHuntOpen] = useState(false);
-	const [huntPrefill, setHuntPrefill] = useState<{ pokemon: Pokemon; gameId: number; methodName: string } | null>(null);
+	const [huntPrefill, setHuntPrefill] = useState<{ pokemon: Pokemon; route: PokemonRoute } | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
 
 	if (!token) return <Login />;
@@ -52,11 +52,8 @@ function App() {
 				{route === "historic" && <HistoricHunts />}
 				{route === "dex" && (
 					<Collection
-						onStartHunt={(pokemon, pokemonRoute) => {
-							// For evolve routes, game_id/method_name belong to the ancestor's encounter.
-							// We prefill with the target Pokémon and the route's game_id/method_name as-is;
-							// the user can adjust the Pokémon in the modal if needed.
-							setHuntPrefill({ pokemon, gameId: pokemonRoute.game_id, methodName: pokemonRoute.method_name });
+						onStartHunt={(pokemon, route) => {
+							setHuntPrefill({ pokemon, route });
 							setNewHuntOpen(true);
 						}}
 					/>
