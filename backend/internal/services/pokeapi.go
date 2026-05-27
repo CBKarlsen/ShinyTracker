@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -157,6 +159,9 @@ func SyncPokemonData() error {
 	}
 	close(urls)
 
+	// parentPairs collects (childID, parentID) for the post-insert backfill pass.
+	parentPairs := make(chan [2]int, len(listResp.Results))
+
 	var wg sync.WaitGroup
 	// Limit concurrency to avoid hitting rate limits or db connection limits
 	numWorkers := 5
@@ -166,12 +171,25 @@ func SyncPokemonData() error {
 		go func() {
 			defer wg.Done()
 			for url := range urls {
-				processPokemon(url)
+				processPokemon(url, parentPairs)
 			}
 		}()
 	}
 
 	wg.Wait()
+	close(parentPairs)
+
+	// Second pass: backfill evolves_from_id now that all pokemon rows exist,
+	// so the FK reference to the parent always resolves.
+	for pair := range parentPairs {
+		childID, parentID := pair[0], pair[1]
+		if _, err := database.DB.Exec(context.Background(),
+			`UPDATE pokemon SET evolves_from_id = $2 WHERE id = $1`,
+			childID, parentID); err != nil {
+			log.Printf("warn: evolves_from for #%d -> #%d: %v", childID, parentID, err)
+		}
+	}
+
 	log.Println("PokeAPI sync completed!")
 	return nil
 }
@@ -179,9 +197,13 @@ func SyncPokemonData() error {
 type PokeAPISpeciesResponse struct {
 	IsLegendary bool `json:"is_legendary"`
 	IsMythical  bool `json:"is_mythical"`
+	EvolvesFromSpecies *struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"evolves_from_species"`
 }
 
-func processPokemon(url string) {
+func processPokemon(url string, parentPairs chan<- [2]int) {
 	time.Sleep(100 * time.Millisecond)
 
 	resp, err := http.Get(url)
@@ -204,6 +226,7 @@ func processPokemon(url string) {
 	typesJSON, _ := json.Marshal(types)
 
 	var isLegendary, isMythical bool
+	var evolvesFromID *int
 	if p.Species.URL != "" {
 		sResp, sErr := http.Get(p.Species.URL)
 		if sErr == nil {
@@ -212,13 +235,18 @@ func processPokemon(url string) {
 			if json.NewDecoder(sResp.Body).Decode(&species) == nil {
 				isLegendary = species.IsLegendary
 				isMythical = species.IsMythical
+				if species.EvolvesFromSpecies != nil {
+					if id := idFromSpeciesURL(species.EvolvesFromSpecies.URL); id > 0 {
+						evolvesFromID = &id
+					}
+				}
 			}
 		}
 	}
 
 	_, err = database.DB.Exec(context.Background(),
-		`INSERT INTO pokemon (id, name, sprite_url, types, is_legendary, is_mythical) 
-		 VALUES ($1, $2, $3, $4, $5, $6) 
+		`INSERT INTO pokemon (id, name, sprite_url, types, is_legendary, is_mythical)
+		 VALUES ($1, $2, $3, $4, $5, $6)
 		 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, sprite_url = EXCLUDED.sprite_url, types = EXCLUDED.types, is_legendary = EXCLUDED.is_legendary, is_mythical = EXCLUDED.is_mythical`,
 		p.ID, p.Name, p.Sprites.FrontDefault, typesJSON, isLegendary, isMythical)
 
@@ -226,6 +254,26 @@ func processPokemon(url string) {
 		log.Printf("Failed to insert pokemon %s: %v", p.Name, err)
 		return
 	}
+
+	// Queue the parent pointer for the post-insert backfill pass.
+	if evolvesFromID != nil {
+		parentPairs <- [2]int{p.ID, *evolvesFromID}
+	}
+}
+
+// idFromSpeciesURL extracts the trailing numeric id from a PokeAPI
+// pokemon-species URL like ".../pokemon-species/129/".
+func idFromSpeciesURL(u string) int {
+	u = strings.TrimRight(u, "/")
+	i := strings.LastIndex(u, "/")
+	if i < 0 || i+1 >= len(u) {
+		return 0
+	}
+	n, err := strconv.Atoi(u[i+1:])
+	if err != nil {
+		return 0
+	}
+	return n
 }
 
 // SyncEncounterKinds derives `wild` encounter-kind records for every Pokemon in

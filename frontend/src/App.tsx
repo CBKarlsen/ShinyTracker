@@ -12,6 +12,7 @@ import Sidebar from "./components/Sidebar";
 import Stats from "./components/Stats";
 import Topbar from "./components/Topbar";
 import { useAuth } from "./context/AuthContext";
+import type { Pokemon, PokemonRoute } from "./types/models";
 
 export type Route =
 	| "dash"
@@ -27,6 +28,7 @@ function App() {
 	const { token, logout } = useAuth();
 	const [route, setRoute] = useState<Route>("dash");
 	const [newHuntOpen, setNewHuntOpen] = useState(false);
+	const [huntPrefill, setHuntPrefill] = useState<{ pokemon: Pokemon; route: PokemonRoute } | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
 
 	if (!token) return <Login />;
@@ -48,7 +50,14 @@ function App() {
 					/>
 				</div>
 				{route === "historic" && <HistoricHunts />}
-				{route === "dex" && <Collection />}
+				{route === "dex" && (
+					<Collection
+						onStartHunt={(pokemon, pokemonRoute) => {
+							setHuntPrefill({ pokemon, route: pokemonRoute });
+							setNewHuntOpen(true);
+						}}
+					/>
+				)}
 				{route === "games" && <CollectionManager />}
 				{route === "stats" && <Stats />}
 				{route === "odds-calc" && <OddsCalculator />}
@@ -57,11 +66,13 @@ function App() {
 			</div>
 			<NewHuntModal
 				open={newHuntOpen}
-				onClose={() => setNewHuntOpen(false)}
+				onClose={() => { setNewHuntOpen(false); setHuntPrefill(null); }}
 				onGoToGames={() => {
 					setNewHuntOpen(false);
+					setHuntPrefill(null);
 					setRoute("games");
 				}}
+				prefill={huntPrefill}
 			/>
 		</div>
 	);

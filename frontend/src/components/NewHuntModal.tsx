@@ -2,38 +2,37 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
-import { calculateOdds } from "../utils/odds";
 import { getShowdownGif } from "../utils/pokemon";
-import type { Pokemon, HuntMethod } from "../types/models";
+import type { Pokemon, PokemonRoute } from "../types/models";
+import { IcClose, IcPlus } from "./ui/icons";
+import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
+import { MethodPreview } from "../features/new-hunt/MethodPreview";
+import { usePokemonRoute } from "../features/routes/usePokemonRoute";
+import RouteList, { routeKey } from "../features/routes/RouteList";
 
 interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
+	prefill?: { pokemon: Pokemon; route: PokemonRoute } | null;
 }
-import { IcClose, IcPlus } from "./ui/icons";
-import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
-import { MethodPreview } from "../features/new-hunt/MethodPreview";
 
-const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
+const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) => {
 	const { token, userId } = useAuth();
 	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<Pokemon[]>([]);
 	const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-	const [huntMethods, setHuntMethods] = useState<HuntMethod[]>([]);
-	const [selectedMethod, setSelectedMethod] = useState<HuntMethod | null>(null);
+	const [selectedRoute, setSelectedRoute] = useState<PokemonRoute | null>(null);
 	const [useCustomMethod, setUseCustomMethod] = useState(false);
 	const [customMethodName, setCustomMethodName] = useState("");
 	const [huntParams, setHuntParams] = useState<Record<string, any>>({});
 	const [userGameCount, setUserGameCount] = useState<number | null>(null);
-	const [userGames, setUserGames] = useState<
-		{ game_id: number; has_shiny_charm: boolean }[]
-	>([]);
 	const [loadingSearch, setLoadingSearch] = useState(false);
-	const [loadingEncounters, setLoadingEncounters] = useState(false);
 	const [starting, setStarting] = useState(false);
+
+	const { status, routes, loading: loadingRoutes } = usePokemonRoute(selectedPokemon?.id ?? null);
 
 	useEffect(() => {
 		if (!open) {
@@ -41,13 +40,33 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 			setSearch("");
 			setOptions([]);
 			setSelectedPokemon(null);
-			setHuntMethods([]);
-			setSelectedMethod(null);
+			setSelectedRoute(null);
 			setUseCustomMethod(false);
 			setCustomMethodName("");
 			setHuntParams({});
 		}
 	}, [open]);
+
+	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
+	useEffect(() => {
+		if (open && prefill) {
+			setSelectedPokemon(prefill.pokemon);
+			setStep(2);
+		}
+	}, [open, prefill]);
+
+	// Default selection — only when no prefill is active so it doesn't fight the prefill effect.
+	// selectedRoute intentionally omitted: sets only the initial default.
+	useEffect(() => {
+		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) setSelectedRoute(routes[0]);
+	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Once routes load, select the prefill route by key.
+	useEffect(() => {
+		if (prefill && routes.length > 0) {
+			setSelectedRoute(routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route);
+		}
+	}, [prefill, routes]);
 
 	// Pokémon search
 	useEffect(() => {
@@ -55,9 +74,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		const timer = setTimeout(async () => {
 			setLoadingSearch(true);
 			try {
-				const res = await fetch(
-					`http://localhost:8080/api/pokemon?q=${search}`,
-				);
+				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
 			} catch (err: any) {
 				showError(err.message || "Failed to search Pokemon.");
@@ -67,73 +84,18 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 		return () => clearTimeout(timer);
 	}, [search, open]);
 
-	// Hunt methods + user game count for selected Pokémon
+	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
 		if (!selectedPokemon || !token || !userId) return;
-		const fetchData = async () => {
-			setLoadingEncounters(true);
-			try {
-				const [methodsRes, gamesRes] = await Promise.all([
-					fetch(
-						`http://localhost:8080/api/hunt-methods?pokemon_id=${selectedPokemon.id}`,
-						{ headers: { Authorization: `Bearer ${token}` } },
-					),
-					fetch(`http://localhost:8080/api/user/${userId}/games`, {
-						headers: { Authorization: `Bearer ${token}` },
-					}),
-				]);
-				if (methodsRes.ok) {
-					const methods: HuntMethod[] = (await methodsRes.json()) || [];
-					setHuntMethods(methods);
-					// Default to the first (generation-ordered) method.
-					setSelectedMethod(methods[0] ?? null);
-				}
-				if (gamesRes.ok) {
-					const games = await gamesRes.json();
-					setUserGames(games || []);
-					setUserGameCount((games || []).length);
-				}
-			} catch (err: any) {
-				showError(err.message || "Failed to fetch method information.");
-			}
-			setLoadingEncounters(false);
-		};
-		fetchData();
+		fetch(`http://localhost:8080/api/user/${userId}/games`, {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+			.then((r) => (r.ok ? r.json() : Promise.reject()))
+			.then((games) => setUserGameCount((games || []).length))
+			.catch(() => setUserGameCount(null));
 	}, [selectedPokemon, token, userId]);
 
-	const getBaseOdds = (gameTitle: string) => {
-		const lower = gameTitle.toLowerCase();
-		if (
-			lower.includes("red/blue") ||
-			lower.includes("gold/silver") ||
-			lower.includes("ruby/sapphire") ||
-			lower.includes("firered") ||
-			lower.includes("diamond/pearl") ||
-			lower.includes("heartgold") ||
-			lower.includes("black/white") ||
-			lower.includes("black 2")
-		) {
-			return 8192;
-		}
-		return 4096;
-	};
-
-	const getOddsForMethod = (method: HuntMethod) => {
-		const userGame = userGames.find((ug) => ug.game_id === method.game_id);
-		const hasCharm = userGame?.has_shiny_charm ?? false;
-		const base = getBaseOdds(method.game_title);
-		const { denominator } = calculateOdds(
-			method.formula_type,
-			0, // starting encounters is 0
-			hasCharm,
-			base,
-			method.base_rolls,
-			method.charm_rolls,
-		);
-		return denominator;
-	};
-
-	const startHunt = async (method: HuntMethod) => {
+	const startHunt = async (route: PokemonRoute) => {
 		if (!selectedPokemon) return;
 		setStarting(true);
 		try {
@@ -144,10 +106,10 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 					Authorization: `Bearer ${token}`,
 				},
 				body: JSON.stringify({
-					hunt_method_id: method.id,
-					pokemon_id: selectedPokemon.id,
-					game_id: method.game_id,
-					method_name: method.method_name,
+					hunt_method_id: route.method_id,
+					pokemon_id: route.evolve_from ? route.evolve_from.pokemon_id : selectedPokemon.id,
+					game_id: route.game_id,
+					method_name: route.method_name,
 					hunt_parameters: huntParams,
 				}),
 			});
@@ -155,8 +117,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 				onClose();
 				window.location.reload();
 			} else {
-				const errText = await res.text();
-				showError(errText || "Failed to start hunt.");
+				showError((await res.text()) || "Failed to start hunt.");
 			}
 		} catch (err: any) {
 			showError(err.message || "Failed to start hunt.");
@@ -183,8 +144,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 				onClose();
 				window.location.reload();
 			} else {
-				const errText = await res.text();
-				showError(errText || "Failed to start custom hunt.");
+				showError((await res.text()) || "Failed to start custom hunt.");
 			}
 		} catch (err: any) {
 			showError(err.message || "Failed to start custom hunt.");
@@ -194,7 +154,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 
 	const handleStartSelected = () => {
 		if (useCustomMethod) startCustomHunt();
-		else if (selectedMethod) startHunt(selectedMethod);
+		else if (selectedRoute) startHunt(selectedRoute);
 	};
 
 	if (!open) return null;
@@ -338,93 +298,81 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 								</button>
 							</div>
 
-							{loadingEncounters && (
+							{loadingRoutes && (
 								<div className="empty" style={{ padding: 20 }}>
 									Loading methods…
 								</div>
 							)}
 
-							{!loadingEncounters && huntMethods.length > 0 && (
-								<>
-									<div className="t-label" style={{ margin: "4px 0 8px" }}>
-										All methods
-									</div>
-									<div className="opt-list">
-										{huntMethods.map((e) => (
-													<div
-														key={e.id}
-														className={`opt-row ${selectedMethod?.id === e.id && !useCustomMethod ? "sel" : ""}`}
-														onClick={() => {
-															setSelectedMethod(e);
-															setUseCustomMethod(false);
-														}}
-													>
-														<div className="game">{e.game_title}</div>
-														<div className="method">{e.method_name}</div>
-														<div className="num">~{e.avg_time_seconds}s</div>
-														<div
-															className="num"
-															style={{ color: "var(--gold)", fontWeight: 500 }}
-														>
-															1/{getOddsForMethod(e).toLocaleString()}
-														</div>
-													</div>
-												))}
-										</div>
-									</>
-								)}
+							{!loadingRoutes && routes.length > 0 && (
+								<RouteList
+									routes={routes}
+									variant="select"
+									selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
+									onRouteClick={(r) => { setSelectedRoute(r); setUseCustomMethod(false); }}
+								/>
+							)}
 
-							{!loadingEncounters &&
-								huntMethods.length === 0 &&
-								userGameCount === 0 && (
-									<div
-										className="empty"
-										style={{ textAlign: "center", padding: "20px 0" }}
-									>
-										<div style={{ marginBottom: 6 }}>
-											You haven't added any games yet.
-										</div>
-										<div className="t-label" style={{ marginBottom: 14 }}>
-											Add a game to your library to see available hunt methods.
-										</div>
-										{onGoToGames && (
-											<button className="btn gold" onClick={onGoToGames}>
-												Go to Game Library →
-											</button>
-										)}
+							{!loadingRoutes && userGameCount === 0 && routes.length === 0 && (
+								<div
+									className="empty"
+									style={{ textAlign: "center", padding: "20px 0" }}
+								>
+									<div style={{ marginBottom: 6 }}>
+										You haven't added any games yet.
 									</div>
-								)}
+									<div className="t-label" style={{ marginBottom: 14 }}>
+										Add a game to your library to see available hunt methods.
+									</div>
+									{onGoToGames && (
+										<button className="btn gold" onClick={onGoToGames}>
+											Go to Game Library →
+										</button>
+									)}
+								</div>
+							)}
 
-							{!loadingEncounters &&
-								huntMethods.length === 0 &&
-								userGameCount !== null &&
-								userGameCount > 0 && (
+							{!loadingRoutes && status === "not_in_your_games" && userGameCount !== null && userGameCount > 0 && (
+								<div
+									className="empty"
+									style={{ textAlign: "center", padding: "20px 0" }}
+								>
 									<div
-										className="empty"
-										style={{ textAlign: "center", padding: "20px 0" }}
+										style={{ marginBottom: 6, textTransform: "capitalize" }}
 									>
-										<div
-											style={{ marginBottom: 6, textTransform: "capitalize" }}
+										{selectedPokemon.name} isn't available in your games.
+									</div>
+									<div className="t-label" style={{ marginBottom: 14 }}>
+										Try adding a game that includes it, or it may be shiny-locked.
+									</div>
+									{onGoToGames && (
+										<button
+											className="btn ghost"
+											onClick={onGoToGames}
+											style={{ fontSize: 12 }}
 										>
-											{selectedPokemon.name} isn't available in your games.
-										</div>
-										<div className="t-label" style={{ marginBottom: 14 }}>
-											Try adding a game that includes it, or it may be
-											shiny-locked.
-										</div>
-										{onGoToGames && (
-											<button
-												className="btn ghost"
-												onClick={onGoToGames}
-												style={{ fontSize: 12 }}
-											>
-												Manage games →
-											</button>
-										)}
-									</div>
-								)}
+											Manage games →
+										</button>
+									)}
+								</div>
+							)}
 
-							{!loadingEncounters && (
+							{!loadingRoutes && status === "locked_everywhere" && (
+								<div
+									className="empty"
+									style={{ textAlign: "center", padding: "20px 0", textTransform: "capitalize" }}
+								>
+									{selectedPokemon.name} is shiny-locked in every game it appears in — obtain it by trading or transferring from Pokémon HOME.
+								</div>
+							)}
+
+							{!loadingRoutes && status === "available" && routes.length === 0 && (
+								<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
+									Available in your games, but no hunt method recorded yet.
+								</div>
+							)}
+
+							{!loadingRoutes && (
 								<>
 									<div className="t-label" style={{ margin: "12px 0 6px" }}>
 										Custom method
@@ -433,7 +381,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 										className={`opt-row ${useCustomMethod ? "sel" : ""}`}
 										onClick={() => {
 											setUseCustomMethod(true);
-											setSelectedMethod(null);
+											setSelectedRoute(null);
 										}}
 										style={{ alignItems: "center", gap: 8 }}
 									>
@@ -460,15 +408,19 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 							{/* Inline Preview Section */}
 							<MethodPreview
 								selectedPokemon={selectedPokemon}
-								selectedMethod={selectedMethod}
+								selectedRoute={selectedRoute}
 								useCustomMethod={useCustomMethod}
 								customMethodName={customMethodName}
 								gifUrl={gifUrl}
 								huntParams={huntParams}
 								setHuntParams={setHuntParams}
-								getBaseOdds={getBaseOdds}
-								getOddsForMethod={getOddsForMethod}
 							/>
+
+							{selectedRoute?.evolve_from && !useCustomMethod && (
+								<div className="t-label" style={{ marginTop: 10 }}>
+									You'll hunt {selectedRoute.evolve_from.name}, then evolve into {selectedPokemon.name}.
+								</div>
+							)}
 
 							<div
 								style={{
@@ -487,14 +439,14 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames }) => {
 										starting ||
 										(useCustomMethod
 											? !customMethodName.trim()
-											: !selectedMethod)
+											: !selectedRoute)
 									}
 									onClick={handleStartSelected}
 									style={
 										(
 											useCustomMethod
 												? !customMethodName.trim()
-												: !selectedMethod
+												: !selectedRoute
 										)
 											? { opacity: 0.4, pointerEvents: "none" }
 											: {}

@@ -9,6 +9,7 @@ export interface HuntDetail {
 	encounter_count: number;
 	phase_count: number;
 	status: string;
+	acquisition_type: string;
 	hunt_parameters: unknown;
 	created_at: string;
 	updated_at: string;
@@ -52,7 +53,16 @@ const HistoricHunts: React.FC = () => {
 				});
 				if (res.ok) {
 					const data = (await res.json()) || [];
-					setHunts(data.filter((h: HuntDetail) => h.status === "completed"));
+					// Manual overrides (collection-only "mark as caught") are not real
+					// hunts — exclude them from the hunt history. They still count
+					// toward the Collection living-dex (which keys on any completed hunt).
+					setHunts(
+						data.filter(
+							(h: HuntDetail) =>
+								h.status === "completed" &&
+								h.acquisition_type !== "MANUAL_OVERRIDE",
+						),
+					);
 				}
 			} catch (err) {
 				console.error(err);

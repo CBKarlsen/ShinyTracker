@@ -65,3 +65,25 @@ export interface Game {
 	generation?: number;
 	base_odds?: number;
 }
+
+export interface DexStatus {
+	not_in_your_games: number[];
+	locked_everywhere: number[];
+}
+
+export interface PokemonRoute {
+	kind: "direct" | "evolve";
+	game_id: number;
+	game_title: string;
+	method_name: string;
+	method_id: number;
+	formula_type: string;
+	odds: number;
+	eta_hours: number;
+	evolve_from?: { pokemon_id: number; name: string };
+}
+
+export interface PokemonRouteResponse {
+	status: "available" | "not_in_your_games" | "locked_everywhere";
+	routes: PokemonRoute[];
+}

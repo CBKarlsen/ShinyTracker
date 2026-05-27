@@ -18,6 +18,11 @@ CREATE TABLE IF NOT EXISTS pokemon (
     is_mythical BOOLEAN NOT NULL DEFAULT FALSE
 );
 
+-- evolves_from_id: single-parent pre-evolution pointer (PokeAPI evolves_from_species).
+-- Walking this upward yields a Pokemon's full pre-evolution line. Used for
+-- "hunt a pre-evolution, then evolve" route suggestions.
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS evolves_from_id INTEGER REFERENCES pokemon(id);
+
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
@@ -60,6 +65,16 @@ CREATE TABLE IF NOT EXISTS pokemon_availability (
     PRIMARY KEY (pokemon_id, game_id)
 );
 
+-- shiny_locks: per-game shiny locks (Pokemon that cannot be encountered shiny
+-- in a given game — box legendaries, gift starters, Meltan/Melmetal, etc.).
+-- "Locked everywhere" is DERIVED (locked in every game it is available in),
+-- not stored. Seeded from seeds/shiny_locks.json (idempotent).
+CREATE TABLE IF NOT EXISTS shiny_locks (
+    pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
+    game_id    INTEGER REFERENCES games(id)   ON DELETE CASCADE,
+    PRIMARY KEY (pokemon_id, game_id)
+);
+
 -- pokemon_game_encounter: the encounter kind(s) a Pokemon has in a game.
 -- wild/egg are auto-derived (PokeAPI encounters / breedable egg groups);
 -- static/raid are curated via seeds/legendary_encounters.json.
@@ -75,12 +90,17 @@ CREATE TABLE IF NOT EXISTS pokemon_game_encounter (
     PRIMARY KEY (pokemon_id, game_id, kind, terrain)
 );
 
+-- Manual corrections applied on top of the derived method_availability.
+-- game_id scopes the exception to one game; NULL = every game the method is
+-- mapped to (via method_games). Seeded from seeds/method_exceptions.json, which
+-- is re-applied each run because this table is cascade-truncated with hunt_methods.
 CREATE TABLE IF NOT EXISTS method_exceptions (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
     method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
+    game_id INTEGER REFERENCES games(id) ON DELETE CASCADE, -- NULL = all games this method is mapped to
     include BOOLEAN NOT NULL, -- true to manually add, false to manually exclude
-    UNIQUE (pokemon_id, method_id)
+    UNIQUE NULLS NOT DISTINCT (pokemon_id, method_id, game_id)
 );
 
 -- We don't define method_availability as a true SQL view that evaluates JS strings here,
