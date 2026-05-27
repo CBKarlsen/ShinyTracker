@@ -76,6 +76,8 @@ export interface PokemonRoute {
 	game_id: number;
 	game_title: string;
 	method_name: string;
+	method_id: number;
+	formula_type: string;
 	odds: number;
 	eta_hours: number;
 	evolve_from?: { pokemon_id: number; name: string };
