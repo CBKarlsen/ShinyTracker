@@ -120,8 +120,14 @@ Pulled from `CRITIQUE.md` §2–3; none block use.
       nonexistent `hunt_methods.game_id` (+ omitted `formula_type`), so EVERY phase log
       returned 500 even though the phase committed — the true cause of "B5 no feedback". Fixed
       in `hunts.go` (join `h.game_id`, add `formula_type`). Now returns 200; toast fires.
-- [ ] "Recently hunted" quick-pick in New Hunt search. — *Batch 2*
-- [ ] Confirm-on-remove for owned games (B8); register error copy (B6). — *Batch 2*
+- [x] ✅ **"Recently hunted" quick-pick** in New Hunt search — chips (deduped, most-recent
+      first) above the search; click to re-pick a Pokémon. Only shown when search is empty.
+- [x] ✅ **Confirm-on-remove for owned games (B8)** — swapped native `window.confirm` for the
+      themed `ConfirmDialog` (danger styling, Enter/Esc).
+- [x] ✅ **Register error copy (B6)** — Login now surfaces the server's actual message
+      ("Username or email already exists") instead of a hardcoded generic string.
+
+**P3 polish: all items complete.** ✅
 
 ## Data correctness (parallel track — see TASKS.md "Next up")
 

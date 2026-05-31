@@ -36,6 +36,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 
 	const { status, routes, loading: loadingRoutes } = usePokemonRoute(selectedPokemon?.id ?? null);
 
+	const [recentPokemon, setRecentPokemon] = useState<Pokemon[]>([]);
+
 	useEffect(() => {
 		if (!open) {
 			setStep(1);
@@ -46,8 +48,40 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 			setUseCustomMethod(false);
 			setCustomMethodName("");
 			setHuntParams({});
+			setRecentPokemon([]); // clear so stale chips don't flash on re-open
+			return;
 		}
-	}, [open]);
+		// Fetch recent hunts lazily when the modal opens.
+		if (!token) return;
+		const controller = new AbortController();
+		fetch(`${API_BASE}/api/hunts`, {
+			headers: { Authorization: `Bearer ${token}` },
+			signal: controller.signal,
+		})
+			.then((r) => (r.ok ? r.json() : Promise.reject()))
+			.then((hunts: Array<{ pokemon_id: number; pokemon_name: string; updated_at?: string; created_at?: string }>) => {
+				const seen = new Set<number>();
+				const recent: Pokemon[] = [];
+				// Sort by most-recent first (updated_at preferred, fallback created_at).
+				const sorted = [...hunts].sort((a, b) => {
+					const ta = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+					const tb = new Date(b.updated_at ?? b.created_at ?? 0).getTime();
+					return tb - ta;
+				});
+				for (const h of sorted) {
+					if (seen.has(h.pokemon_id)) continue;
+					seen.add(h.pokemon_id);
+					// /api/hunts has no sprite_url on the row; PokemonSearchStep falls back.
+					recent.push({ id: h.pokemon_id, name: h.pokemon_name, sprite_url: "" });
+					if (recent.length >= 6) break;
+				}
+				setRecentPokemon(recent);
+			})
+			.catch(() => {
+				if (!controller.signal.aborted) setRecentPokemon([]);
+			});
+		return () => controller.abort();
+	}, [open, token]);
 
 	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
 	useEffect(() => {
@@ -206,6 +240,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 							setSearch={setSearch}
 							loadingSearch={loadingSearch}
 							options={options}
+							recentPokemon={recentPokemon}
 							onSelect={(p) => {
 								setSelectedPokemon(p);
 								setStep(2);

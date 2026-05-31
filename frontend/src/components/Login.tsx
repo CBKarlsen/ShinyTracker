@@ -35,7 +35,11 @@ const Login: React.FC = () => {
 				body: JSON.stringify(body),
 			});
 
-			if (!res.ok) throw new Error("Authentication failed");
+			if (!res.ok) {
+				const serverMsg = (await res.text()).trim();
+				setError(serverMsg || "Something went wrong. Please try again.");
+				return;
+			}
 
 			if (mode === "register") {
 				setMode("login");
@@ -46,7 +50,7 @@ const Login: React.FC = () => {
 			const data = await res.json();
 			login(data.token, data.user.id, data.user.username);
 		} catch {
-			setError("Invalid credentials or email already taken.");
+			setError("Something went wrong. Please try again.");
 		}
 	};
 
