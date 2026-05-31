@@ -87,6 +87,9 @@ func main() {
 	log.Println("Seeding overworld wild species (Gen 8/9 curated)...")
 	seedOverworldSpecies(ctx)
 
+	log.Println("Seeding fishing wild species (curated terrain=fishing)...")
+	seedFishingSpecies(ctx)
+
 	log.Println("Reconciling pokemon_availability with encounters...")
 	reconcileAvailability(ctx)
 
@@ -356,6 +359,42 @@ func seedOverworldSpecies(ctx context.Context) {
 		inserted += int(tag.RowsAffected())
 	}
 	log.Printf("Inserted %d overworld wild encounter rows.", inserted)
+}
+
+// seedFishingSpecies inserts curated wild encounter rows with terrain='fishing' for
+// games where PokeAPI lacks fishing-terrain data (e.g. ORAS). Source maps a game title
+// to the National-Dex IDs catchable via rods there. Legendaries/mythicals are guarded
+// out. This is the terrain='fishing' sibling of seedOverworldSpecies.
+func seedFishingSpecies(ctx context.Context) {
+	data, err := os.ReadFile("seeds/fishing_species.json")
+	if err != nil {
+		log.Fatal("Failed to read fishing_species.json: ", err)
+	}
+	var byGame map[string][]int
+	if err := json.Unmarshal(data, &byGame); err != nil {
+		log.Fatal("JSON parse error in fishing_species.json: ", err)
+	}
+	gameIDs := loadGameIDs(ctx)
+	inserted := 0
+	for title, ids := range byGame {
+		gameID, ok := gameIDs[title]
+		if !ok {
+			log.Printf("WARNING: fishing_species.json: unknown game title %q — skipping", title)
+			continue
+		}
+		tag, err := database.DB.Exec(ctx, `
+			INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+			SELECT p.id, $1, 'wild', 'fishing'
+			FROM pokemon p
+			WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+			ON CONFLICT DO NOTHING
+		`, gameID, ids)
+		if err != nil {
+			log.Fatalf("fishing_species: failed to insert fishing rows for %s: %v", title, err)
+		}
+		inserted += int(tag.RowsAffected())
+	}
+	log.Printf("Inserted %d fishing wild encounter rows.", inserted)
 }
 
 // expandGameRef turns a game title or @alias into a list of game titles.
