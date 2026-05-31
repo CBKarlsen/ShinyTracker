@@ -51,8 +51,10 @@ The curated lock dataset (`backend/seeds/shiny_locks.json`, 28 entries) is a ~50
   - ✅ **Slice A — Gen 8/9 overworld spawns** — COMPLETE across SV/SwSh/LA. Reuses `kind=wild` + game-keyed `seeds/overworld_species.json` + `seedOverworldSpecies` step, no DDL.
     - ✅ **Scarlet/Violet** — 650 regional-dex species (legendaries + Walking Wake/Iron Leaves excluded) seeded as `wild`; Random Encounter / Sandwich Hunting / Mass Outbreak now attach (650 each). 3 area outbreaks collapsed into one. SV "available but no method" 412→43. (spec/plan `docs/superpowers/*/2026-05-31-sv-overworld-eligibility*`).
     - ✅ **Sword/Shield + Legends: Arceus** — Galar tri-dex (568) + Hisui (225) species seeded as `wild`; KO Method / Run Away attach in SwSh (562 each), Mass Outbreak in LA (224). Section-A gaps SwSh 133→20, LA 213→2. (spec/plan `docs/superpowers/*/2026-05-31-swsh-la-overworld-eligibility*`).
-  - ⏳ **Slice B** — Poké Radar over-broad (curate `method_exceptions` excludes to ~50-60 grass-patch species).
-  - ⏳ **Slice C** — ORAS fishing terrain gap (Chain Fishing / DexNav-fishing have 0 fishing rows).
+  - ❌ **Slice B — Poké Radar over-broad: DROPPED.** shiny-hunt-expert confirmed Radar draws from the full route grass table, so attaching it to all grass species is correct; an exclude list would wrongly remove chainable swarm/Trophy-Garden species. No change warranted.
+  - ✅ **Slice C — ORAS fishing** — `seeds/fishing_species.json` (20-species rod roster) + `seedFishingSpecies` step seed `terrain='fishing'` wild rows; Chain Fishing 0→20 and DexNav 108→127 in ORAS; Section-A gap 36→30. (spec/plan `docs/superpowers/*/2026-05-31-oras-fishing-eligibility*`).
+
+  **Eligibility pass status: A (SV/SwSh/LA) ✅, B dropped, C ✅, D ✅. Remaining deferred items only: the 9 DA Ultra Beasts; home-game static coverage for the 24 DA legends; per-species wild-curation refinement of the dex-membership proxies via `method_exceptions`.**
   - ⏳ Also deferred: the 9 DA Ultra Beasts; home-game static coverage for the 24 DA legends.
 - **Masuda labeling** — Masuda still shows broadly for base forms (correct), but consider clearer labels for the evolve-from flow. Method-engine concern.
 - **Forms / regional variants** — not representable (see #3). Larger data-model change.
