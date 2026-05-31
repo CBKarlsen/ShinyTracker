@@ -32,7 +32,7 @@ function App() {
 	const [newHuntOpen, setNewHuntOpen] = useState(false);
 	const [huntPrefill, setHuntPrefill] = useState<{
 		pokemon: Pokemon;
-		route: PokemonRoute;
+		route?: PokemonRoute;
 	} | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
 	const [moreOpen, setMoreOpen] = useState(false);

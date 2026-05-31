@@ -16,7 +16,7 @@ interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
-	prefill?: { pokemon: Pokemon; route: PokemonRoute } | null;
+	prefill?: { pokemon: Pokemon; route?: PokemonRoute } | null;
 }
 
 const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) => {
@@ -91,23 +91,26 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		}
 	}, [open, prefill]);
 
-	// Default selection — only when no prefill is active so it doesn't fight the prefill effect.
+	// Default selection — only when no prefill is active (or prefill has no route) so it doesn't fight the prefill effect.
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
-		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) {
+		const prefillHasRoute = !!prefill?.route;
+		if (!prefillHasRoute && !useCustomMethod && routes.length > 0 && !selectedRoute) {
 			setSelectedRoute(routes[0]);
 			setHuntParams(defaultParamsFor(routes[0].formula_type));
 		}
-	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [routes, prefill, useCustomMethod, selectedRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	// Once routes load, select the prefill route by key.
+	// Once routes load, select the prefill route by key (only when a route was provided).
 	useEffect(() => {
-		if (prefill && routes.length > 0) {
-			const r = routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route;
+		if (prefill?.route && routes.length > 0) {
+			const r =
+				routes.find((r) => routeKey(r) === routeKey(prefill.route!)) ??
+				prefill.route!;
 			setSelectedRoute(r);
 			setHuntParams(defaultParamsFor(r.formula_type));
 		}
-	}, [prefill, routes]);
+	}, [prefill, routes]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Pokémon search
 	useEffect(() => {
