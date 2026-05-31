@@ -20,8 +20,12 @@ func paramInt(params map[string]any, key string, fallback int) int {
 	return fallback
 }
 
-// EffectiveOdds returns the integer "1 / N" denominator for a method, mirroring
-// calculateOdds() in frontend/src/utils/odds.ts. Unknown formulas behave as "static".
+// EffectiveOdds returns the integer "1 / N" denominator for a method. It mostly
+// mirrors calculateOdds() in frontend/src/utils/odds.ts, with two known
+// divergences: outbreak_defeats_sv also adds a sparkling_power term (TS doesn't
+// yet — tracked follow-up), and catch_combo_lgpe/chain_fishing_gen6 read their
+// count from the "count" param instead of the live encounter arg. Unknown
+// formulas behave as "static".
 func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, hasCharm bool) int {
 	if params == nil {
 		params = map[string]any{}
@@ -162,6 +166,8 @@ func DefaultParams(formulaType string) map[string]any {
 		return map[string]any{"chain_length": 31}
 	case "radar_chain_gen4":
 		return map[string]any{"chain_length": 40}
+	// search_level 200 is a typical mid/late-game value, not the theoretical
+	// cap (which would push DexNav near 1/1 and dominate ranking unrealistically).
 	case "dexnav_gen6":
 		return map[string]any{"search_level": 200, "chain_length": 100}
 	case "catch_combo_lgpe":
