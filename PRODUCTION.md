@@ -30,19 +30,24 @@ Legend for effort: **S** < 1h · **M** a few hours · **L** a day+
 
 ## P1 — Security must-fix before it's on the public internet
 
-- [ ] **Require `JWT_SECRET`; remove the dev default.** `backend/internal/api/auth.go:21`
-      falls back to `"super_secret_default_key"`. In prod that = anyone can forge a token for
-      any account. Fail-fast (`log.Fatal`) if the env var is empty when not in dev.
-      *Effort: S.*
-- [ ] **Lock down CORS.** `backend/internal/api/router.go:15` allows
-      `{"http://localhost:5173", "*"}`. The `"*"` must go in prod — restrict to your deployed
-      frontend origin (drive it from an env var). *Effort: S.*
-- [ ] **Decide DB posture.** You're pointed at the **shared dev Supabase** instance. For
-      personal-prod use that's probably fine, but: confirm row-level isolation by `user_id`,
-      take a backup before go-live, and rotate the DB password if it's ever been shared.
-      *Effort: S–M.*
-- [ ] **Force HTTPS** end to end (host-provided certs handle this; just verify the API base
-      uses `https://`, not `http://`). *Effort: S.*
+**Resolved by migrating to Supabase Auth** (GitHub + Google OAuth) — see `AUTH-SETUP.md`.
+Verified end-to-end: Google login → backend verifies the Supabase ES256 token (aud/iss/exp,
+alg pinned) → profile upserted (`Casper Karlsen`, is_admin=false).
+
+- [x] ✅ **Custom JWT secret risk — GONE.** The hand-rolled JWT+bcrypt auth (and the
+      `super_secret_default_key` dev default) is deleted. Tokens are now Supabase-signed and
+      backend-verified against the project JWKS; `SUPABASE_URL` is required (fail-loud).
+- [x] ✅ **CORS locked down.** Wildcard `"*"` removed; `CORS_ALLOWED_ORIGINS` env var
+      (default `localhost:5173`) — set it to the Railway frontend URL in prod.
+- [x] ✅ **`/api/sync` protected** — moved behind `AdminMiddleware` (was unauthenticated).
+- [x] ✅ **DB posture (partial).** Test data wiped from the shared dev Supabase; `users`
+      table dropped. **Still open for deploy:** decide prod vs dev Supabase instance + rotate
+      the DB password before go-live.
+- [ ] **Force HTTPS** — Railway provides certs automatically; just verify the prod
+      `VITE_API_URL` / Supabase URLs are `https://`. *Deploy-time, Effort: S.*
+
+> Optional: to use the admin panel, set yourself admin once —
+> `UPDATE profiles SET is_admin = true WHERE id = '<your-uuid>';`
 
 ## P2 — Hunt-reliability bugs (these bite you mid-session)
 
