@@ -4,6 +4,7 @@ import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
+import { SparkSm } from "./ui/icons";
 
 interface Game {
 	id: number;
@@ -35,12 +36,6 @@ const GEN_NAMES: Record<number, string> = {
 };
 
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
-
-const SparkSm = ({ size = 11 }: { size?: number }) => (
-	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden>
-		<path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill="currentColor" />
-	</svg>
-);
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");

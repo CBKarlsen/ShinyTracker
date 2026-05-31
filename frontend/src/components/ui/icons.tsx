@@ -1,7 +1,12 @@
-export const SparkSm = ({ size = 10, color }: { size?: number; color?: string }) => (
-	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden="true">
-		<path d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z" fill={color || "currentColor"} />
-	</svg>
+export const SparkSm = ({ size = 10, color: _color }: { size?: number; color?: string }) => (
+	<img
+		src="/shiny-charm.png"
+		alt=""
+		width={size}
+		height={size}
+		aria-hidden="true"
+		style={{ display: "inline-block", objectFit: "contain", verticalAlign: "middle" }}
+	/>
 );
 
 export const IcPlay = () => (

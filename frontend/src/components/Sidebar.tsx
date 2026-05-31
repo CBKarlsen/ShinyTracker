@@ -1,14 +1,6 @@
 import type { Route } from "../App";
 import { useAuth } from "../context/AuthContext";
-
-const SparkSm = ({ size = 10, color }: { size?: number; color?: string }) => (
-	<svg viewBox="0 0 12 12" width={size} height={size} aria-hidden>
-		<path
-			d="M6 0 L7 5 L12 6 L7 7 L6 12 L5 7 L0 6 L5 5 Z"
-			fill={color || "currentColor"}
-		/>
-	</svg>
-);
+import { SparkSm } from "./ui/icons";
 
 const Ic = {
 	dash: (
@@ -165,7 +157,6 @@ export default function Sidebar({
 				</div>
 				<div>
 					<div className="name">ShinyTracker</div>
-					<div className="sub">Pro</div>
 				</div>
 			</div>
 
