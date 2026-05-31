@@ -151,7 +151,6 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		gameID = &req.GameID
 		huntMethodID = &req.HuntMethodID
 		customMethodName = nil
-		huntParameters = json.RawMessage(`{}`)
 	} else {
 		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
