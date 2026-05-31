@@ -43,8 +43,8 @@ The curated lock dataset (`backend/seeds/shiny_locks.json`, 28 entries) is a ~50
 
 ## 🐞 Follow-ups / known issues
 
-- **TS/Go odds drift on outbreak+sandwich** — Go `EffectiveOdds` adds a `sparkling_power` term to `outbreak_defeats_sv` so the 1/512 stack is representable; `frontend/src/utils/odds.ts` does not yet. Sync the TS engine + surface the sparkling field in the outbreak editor so dashboard live-odds matches the Go route ranking for stacked outbreak hunts.
-- **`GetOddsHandler` not method-aware** — `GET /odds` (`backend/internal/api/handlers.go`) still computes `base_odds/rolls` (only special-casing dynamax), so for modern methods it now disagrees with the route drawer's `EffectiveOdds`-based number. Route it through `calc.EffectiveOdds` for server-side consistency.
+- ✅ **TS/Go odds drift on outbreak+sandwich — FIXED.** `utils/odds.ts` `outbreak_defeats_sv` now adds the `sparkling_power` term and the outbreak editor has a Sparkling Power field; `HuntRow` threads `hunt_parameters`. Dashboard live-odds match the route drawer's 1/512. (spec/plan `docs/superpowers/*/2026-05-31-outbreak-sandwich-odds-consistency*`).
+- **`GetOddsHandler` (`GET /odds`) is UNUSED by the frontend** — every odds display computes client-side via `utils/odds.ts`; nothing fetches `/odds`. Left as-is (dead but harmless; only special-cases dynamax). Route through `calc.EffectiveOdds` or delete if it's ever revived.
 - **Radar chain-0 quirk** — `radar_chain_gen4` returns 1/65536 at chain 0 (TS formula `65536 − 1635.925·chain`), mirrored in Go for parity. Revisit whether the base should track the game's 1/8192.
 - **Method eligibility data** — web-source which species are huntable via each method per game and seed into `method_availability` / `method_exceptions`. Decomposed into slices:
   - ✅ **Slice D (Dynamax Adventures)** — all 38 DA legendary bosses seeded as SwSh raids in `legendary_encounters.json` (spec/plan `docs/superpowers/*/2026-05-31-dynamax-adventures-eligibility*`). Live in DB.
