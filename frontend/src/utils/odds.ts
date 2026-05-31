@@ -55,6 +55,12 @@ export function calculateOdds(
 		} else if (defeats >= 30) {
 			extraRolls = 1;
 		}
+		// Sandwich Sparkling Power stacks additively with outbreak defeats (matches
+		// Go EffectiveOdds): outbreak 60 + Sparkling Lv3 + charm = 8 rolls -> 1/512.
+		const power = typeof huntParams.sparkling_power === "number" ? huntParams.sparkling_power : 0;
+		if (power >= 1 && power <= 3) {
+			extraRolls += power;
+		}
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
 		denominator = Math.floor(baseOdds / rolls);
 	} else if (type === "sos_chain_gen7") {
