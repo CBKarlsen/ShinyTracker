@@ -2744,3 +2744,8 @@ ul {
 		opacity: 1; /* no hover on touch — always show the action */
 	}
 }
+.searchbox .searchbox-placeholder {
+	flex: 1;
+	text-align: left;
+	color: var(--ink-3);
+}

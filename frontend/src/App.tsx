@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Admin from "./components/admin/Admin";
 import Collection from "./components/Collection";
 import CollectionManager from "./components/CollectionManager";
@@ -12,6 +12,7 @@ import MoreSheet from "./components/nav/MoreSheet";
 import OddsCalculator from "./components/OddsCalculator";
 import Sidebar from "./components/Sidebar";
 import Stats from "./components/Stats";
+import CommandSearch from "./components/search/CommandSearch";
 import Topbar from "./components/Topbar";
 import { useAuth } from "./context/AuthContext";
 import type { Pokemon, PokemonRoute } from "./types/models";
@@ -36,6 +37,19 @@ function App() {
 	} | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
 	const [moreOpen, setMoreOpen] = useState(false);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [focusPokemonId, setFocusPokemonId] = useState<number | null>(null);
+
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				setSearchOpen((o) => !o);
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, []);
 
 	// Wait for the Supabase session to resolve before rendering — avoids
 	// flashing the login screen for an already-authenticated user.
@@ -55,6 +69,7 @@ function App() {
 					route={route}
 					onNew={() => setNewHuntOpen(true)}
 					onMoreOpen={() => setMoreOpen(true)}
+					onOpenSearch={() => setSearchOpen(true)}
 				/>
 				<div style={{ display: route === "dash" ? "contents" : "none" }}>
 					<Dashboard
@@ -65,6 +80,8 @@ function App() {
 				{route === "historic" && <HistoricHunts />}
 				{route === "dex" && (
 					<Collection
+						focusPokemonId={focusPokemonId}
+						onFocusHandled={() => setFocusPokemonId(null)}
 						onStartHunt={(pokemon, pokemonRoute) => {
 							setHuntPrefill({ pokemon, route: pokemonRoute });
 							setNewHuntOpen(true);
@@ -106,6 +123,21 @@ function App() {
 					setRoute("games");
 				}}
 				prefill={huntPrefill}
+			/>
+
+			<CommandSearch
+				open={searchOpen}
+				onClose={() => setSearchOpen(false)}
+				onStartHunt={(p) => {
+					setHuntPrefill({ pokemon: p });
+					setNewHuntOpen(true);
+					setSearchOpen(false);
+				}}
+				onViewInDex={(p) => {
+					setRoute("dex");
+					setFocusPokemonId(p.id);
+					setSearchOpen(false);
+				}}
 			/>
 		</div>
 	);
