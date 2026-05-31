@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
 import DexDrawer from "./DexDrawer";
+import HuntNextPanel from "./HuntNextPanel";
 import type { HuntDetail } from "./HistoricHunts";
 
 const GEN_RANGES: [number, number, number][] = [
@@ -111,6 +112,10 @@ const Collection: React.FC<{
 
 	return (
 		<div className="page">
+			<HuntNextPanel
+				onStart={(poke, route) => onStartHunt?.(poke, route)}
+				onOpen={(id) => setDrawerId(id)}
+			/>
 			<div className="page-head">
 				<div>
 					<div className="sub">Workspace · Collection</div>
