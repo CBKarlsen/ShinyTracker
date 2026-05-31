@@ -36,6 +36,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 	const [loading, setLoading] = useState(true);
 	const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
 	const committedRef = useRef<Record<string, number>>({});
+	const localCountsRef = useRef<Record<string, number>>({});
 	const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 	const [pinnedId, setPinnedId] = useState<string | null>(null);
 	const [phaseHunt, setPhaseHunt] = useState<Hunt | null>(null);
@@ -57,6 +58,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 				for (const h of active) initial[h.id] = h.encounter_count;
 				setLocalCounts(initial);
 				committedRef.current = { ...initial };
+				localCountsRef.current = { ...initial };
 				onHuntCountChange(active.length);
 			}
 		} catch (err) {
@@ -102,6 +104,52 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 		return () => clearInterval(id);
 	}, [localCounts, hunts, token, handleSessionExpired]);
 
+	// Keep localCountsRef in sync so the debounce timer always reads the latest count.
+	useEffect(() => { localCountsRef.current = localCounts; }, [localCounts]);
+
+	const increment = useCallback((id: string) => {
+		setLocalCounts((prev) => {
+			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
+			localCountsRef.current = next;
+			return next;
+		});
+		if (timers.current[id]) clearTimeout(timers.current[id]);
+		timers.current[id] = setTimeout(async () => {
+			const count = localCountsRef.current[id] ?? 0;
+			try {
+				const res = await authedFetch(
+					`${API_BASE}/api/hunts/${id}`,
+					token,
+					{
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ encounter_count: count, status: "active" }),
+					},
+					handleSessionExpired,
+				);
+				if (res.ok) {
+					committedRef.current[id] = count;
+					setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, encounter_count: count } : h)));
+				} else {
+					setLocalCounts((prev) => {
+						const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
+						localCountsRef.current = reverted;
+						return reverted;
+					});
+					setErrorMsg("Sync failed — clicks weren't saved.");
+				}
+			} catch (err) {
+				if (err instanceof SessionExpiredError) return;
+				setLocalCounts((prev) => {
+					const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
+					localCountsRef.current = reverted;
+					return reverted;
+				});
+				setErrorMsg("Sync failed — clicks weren't saved.");
+			}
+		}, 1500);
+	}, [token, handleSessionExpired]);
+
 	// SPACE key → increment primary hunt
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -113,40 +161,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 		};
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [hunts, pinnedId]);
-
-	const increment = (id: string) => {
-		const newCount = (localCounts[id] ?? 0) + 1;
-		setLocalCounts((prev) => ({ ...prev, [id]: newCount }));
-		if (timers.current[id]) clearTimeout(timers.current[id]);
-		timers.current[id] = setTimeout(async () => {
-			try {
-				const hunt = hunts.find((h) => h.id === id);
-				if (!hunt) return;
-				const res = await authedFetch(
-					`${API_BASE}/api/hunts/${id}`,
-					token,
-					{
-						method: "PATCH",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ encounter_count: newCount, status: hunt.status }),
-					},
-					handleSessionExpired,
-				);
-				if (res.ok) {
-					committedRef.current[id] = newCount;
-					setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, encounter_count: newCount } : h)));
-				} else {
-					setLocalCounts((prev) => ({ ...prev, [id]: committedRef.current[id] ?? 0 }));
-					setErrorMsg("Sync failed — clicks weren't saved.");
-				}
-			} catch (err) {
-				if (err instanceof SessionExpiredError) return;
-				setLocalCounts((prev) => ({ ...prev, [id]: committedRef.current[id] ?? 0 }));
-				setErrorMsg("Sync failed — clicks weren't saved.");
-			}
-		}, 1500);
-	};
+	}, [hunts, pinnedId, increment]);
 
 	const handleIncrement = (id: string) => {
 		increment(id);
@@ -183,9 +198,13 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 	};
 
 	const handlePhaseSuccess = (updated: Hunt) => {
+		// Cancel any pending increment flush so a stale timer can't PATCH the
+		// pre-phase count over the freshly-reset phase (mirrors handleComplete).
+		if (timers.current[updated.id]) { clearTimeout(timers.current[updated.id]); delete timers.current[updated.id]; }
 		setHunts((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
 		setLocalCounts((prev) => ({ ...prev, [updated.id]: 0 }));
 		committedRef.current[updated.id] = 0;
+		localCountsRef.current[updated.id] = 0;
 		setPhaseHunt(null);
 	};
 

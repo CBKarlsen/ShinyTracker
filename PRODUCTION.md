@@ -89,20 +89,24 @@ already fixed. Verified statuses below.
 - [ ] ⚠️ Minor (open): top-bar "Total Hunted 0m" vs hunt-card "total · 1m" disagree while
       hunting; "session expired" toast doesn't carry onto the login screen. Both cosmetic.
 
-### ⚠️ Open product decision — odds semantics (surfaced by the dynamic-odds fix)
-The dashboard now shows **current-state** odds (a brand-new SV outbreak hunt at 0 defeats is
-genuinely 1/4,096, improving as you grind). But the **New Hunt route picker** shows
-**best-achievable** odds (1/682) — it ranks routes using the Go backend's
-`DefaultParams = {defeated_count:60, sparkling_power:3}`. So the picker says "Mass Outbreak
-1/682" while the freshly-started card says 1/4,096 until you set your real defeats. Both are
-"correct" but the gap can confuse. Decide how to reconcile: (a) make the picker reflect the
-params you'll start with / label its odds as "best achievable", or (b) default new outbreak
-hunts to a chosen baseline. Not a blocker — flagged for a UX call.
+### ✅ Resolved — odds semantics (surfaced by the dynamic-odds fix)
+The dashboard shows **current-state** odds (a new SV outbreak hunt at 0 defeats is genuinely
+1/4,096, improving as you grind), while the **New Hunt route picker** shows **best-achievable**
+odds (1/682, from Go `DefaultParams = {defeated_count:60, sparkling_power:3}`). Decision:
+label the picker odds **"best case"** so it reads as potential vs the card's current state.
+Done — `RouteList.tsx` shows a "best case" qualifier under each route's odds.
 
 ## P3 — Polish (defer until you've actually hunted a few times)
 
 Pulled from `CRITIQUE.md` §2–3; none block use.
 
+- [x] ✅ **SPACE counter stale-closure bug — FIXED & verified.** SPACE only incremented +1
+      per ~1.5s debounce cycle, and pressing SPACE after mouse clicks overwrote the count
+      (lost progress). Root cause: `Dashboard.tsx` `increment` read `localCounts` from a
+      render closure + the keydown listener captured a stale `increment`. Fix: ref-mirrored
+      counts + functional state updates; timer reads the latest count at flush.
+      Verified: 5 rapid SPACE = +5; mouse-to-12 then SPACE = 13 (no drop); persists on reload.
+      (Code review also caught a related `handlePhaseSuccess` timer-cancel gap — fixed.)
 - [ ] Encounter pace (enc/hr) on the active hunt card — top power-user metric.
 - [ ] Inline `1/N` odds on New Hunt method rows (avoid the calculator round-trip).
 - [ ] Collapse New Hunt step 3 into step 2.
