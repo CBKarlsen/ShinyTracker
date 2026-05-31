@@ -1913,14 +1913,431 @@ ul {
 		display: none;
 	}
 }
+/* ── Touch targets — coarse pointer (touch screens) only ── */
+@media (pointer: coarse) {
+	/* Timer control buttons */
+	.timer-btn {
+		width: 44px;
+		height: 44px;
+	}
+	/* Game card charm toggle */
+	.game-card .charm-toggle {
+		width: 44px;
+		height: 44px;
+	}
+	/* Drawer close button */
+	.drawer-head .close {
+		padding: 10px;
+	}
+	/* Sidebar footer logout (hidden on mobile but safe to keep) */
+	.sidebar-foot .logout {
+		padding: 12px;
+	}
+}
+
+/* ── Bottom nav (mobile only) ── */
+.bottom-nav {
+	display: none; /* hidden on desktop */
+}
+
+/* ── More sheet (mobile only) ── */
+.more-sheet-scrim {
+	display: none; /* shown only when open via JS, but hidden on desktop regardless */
+}
+
 @media (max-width: 760px) {
+	/* Single-column layout — sidebar handled via display:none */
 	.app {
 		grid-template-columns: 1fr;
 	}
 	.sidebar {
-		position: fixed;
-		left: -240px;
+		display: none;
 	}
+
+	/* Topbar — reduce horizontal padding, show hamburger */
+	.topbar {
+		padding: 10px 14px;
+		gap: 8px;
+	}
+	.topbar-menu-btn {
+		display: inline-grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		border-radius: 8px;
+		color: var(--ink-2);
+		background: transparent;
+		border: 1px solid var(--line-1);
+		flex-shrink: 0;
+		transition:
+			background 0.12s ease-out,
+			border-color 0.12s ease-out,
+			color 0.12s ease-out;
+	}
+	.topbar-menu-btn:hover {
+		background: var(--bg-2);
+		color: var(--ink-1);
+		border-color: var(--line-2);
+	}
+	/* Hide the "Workspace /" prefix on mobile — show only the page name */
+	.topbar-workspace-crumb {
+		display: none;
+	}
+	/* Make the searchbox fluid or shrink gracefully */
+	.searchbox {
+		flex: 1;
+		min-width: 0;
+		width: auto;
+	}
+
+	/* Page padding — narrower on mobile */
+	.page {
+		padding: 16px 14px calc(64px + env(safe-area-inset-bottom, 0px) + 16px);
+	}
+
+	/* Add bottom padding so fixed bar never covers content on any page */
+	.control-panel-layout,
+	.panel-card.hero {
+		margin-bottom: 0;
+	}
+
+	/* Stats grid → single column */
+	.stats-grid {
+		grid-template-columns: 1fr;
+	}
+
+	/* Split layouts → single column */
+	.split-2 {
+		grid-template-columns: 1fr;
+	}
+	.split-3 {
+		grid-template-columns: 1fr;
+	}
+
+	/* Odds calculator — single column */
+	.calc-layout {
+		grid-template-columns: 1fr;
+	}
+
+	/* Control panel layout — single column */
+	.control-panel-layout {
+		grid-template-columns: 1fr;
+	}
+
+	/* Stat row — 2 across max on mobile */
+	.stat-row {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	/* Hunt rows — col-bar and col-time already hidden at ≤1080px;
+	   on mobile collapse to sprite + content side-by-side, then
+	   encounter count and action buttons in a row below */
+	.hunt-row {
+		grid-template-columns: 44px minmax(0, 1fr) auto;
+		gap: 8px 10px;
+		padding: 10px 12px;
+	}
+	/* sprite stays col 1 rows 1-2 */
+	.hunt-row > .sprite-wrap {
+		grid-row: 1 / 3;
+	}
+	/* name+meta block: col 2 row 1 */
+	.hunt-row > :nth-child(2) {
+		grid-column: 2 / 4;
+	}
+	/* col-num (encounters): col 2 row 2 */
+	.hunt-row > .col-num:not(.col-time) {
+		grid-row: 2;
+		grid-column: 2;
+	}
+	/* actions div: col 3 row 2 */
+	.hunt-row > :last-child {
+		grid-row: 2;
+		grid-column: 3;
+	}
+	.hunt-row .col-bar,
+	.hunt-row .col-time {
+		display: none;
+	}
+
+	/* Historic timeline rows — compact 2-row stacked layout */
+	/* Desktop grid: [date][sprite][name+meta][shiny-tag][count][time]  (6 col) */
+	/* Mobile grid:  [sprite][name+meta][date]  row1        */
+	/*                       [name+meta][count] row2 (sprite spans both) */
+	.tl-row {
+		/* 3 columns: sprite | content | right-info */
+		grid-template-columns: 40px minmax(0, 1fr) auto;
+		grid-template-rows: auto auto;
+		grid-template-areas:
+			"sprite content date"
+			"sprite content count";
+		gap: 2px 10px;
+		padding: 10px 12px;
+	}
+	/* col 1: sprite spans both rows */
+	.tl-row > .sprite-wrap {
+		grid-area: sprite;
+		width: 40px;
+		height: 40px;
+	}
+	/* col 1: date area (first child = .date) */
+	.tl-row > .date {
+		grid-area: date;
+		text-align: right;
+		font-size: 10px;
+	}
+	/* col 2: name+meta block (3rd child) */
+	.tl-row > :nth-child(3) {
+		grid-area: content;
+	}
+	/* col 3 row 1: shiny indicator — hide on mobile, not enough room */
+	.tl-row > :nth-child(4) {
+		display: none;
+	}
+	/* 5th child: encounter count */
+	.tl-row > :nth-child(5) {
+		grid-area: count;
+		text-align: right;
+		font-size: 11px;
+	}
+	/* 6th child (time) — hide on mobile */
+	.tl-row > :nth-child(6) {
+		display: none;
+	}
+	.tl-row .nm {
+		font-size: 13px;
+	}
+
+	/* Hero card — full-width on mobile */
+	.hero {
+		grid-template-columns: 1fr;
+	}
+	.hero-left {
+		border-right: 0;
+		border-bottom: 1px solid var(--line-1);
+	}
+	.hero-title .pname {
+		font-size: 28px;
+	}
+	.hero-counter .num {
+		font-size: 48px;
+	}
+
+	/* Login card — fluid on very small screens */
+	.login-card {
+		width: 100%;
+		max-width: 380px;
+	}
+
+	/* ── Bottom nav bar ── */
+	.bottom-nav {
+		display: flex;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		z-index: 40;
+		background: rgba(11, 11, 16, 0.88);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		border-top: 1px solid var(--line-1);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		/* Distribute 5 tabs evenly */
+		align-items: stretch;
+	}
+	.bottom-nav-tab {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		min-height: 58px;
+		padding: 6px 4px;
+		border-radius: 0;
+		color: var(--ink-3);
+		background: transparent;
+		border: none;
+		transition:
+			color 0.12s ease-out,
+			background 0.12s ease-out;
+	}
+	.bottom-nav-tab.active {
+		color: var(--blue);
+		background: var(--blue-soft);
+	}
+	.bottom-nav-tab:active {
+		background: var(--bg-2);
+	}
+	.bottom-nav-icon-wrap {
+		position: relative;
+		display: inline-flex;
+	}
+	.bottom-nav-icon-wrap .ic {
+		width: 20px;
+		height: 20px;
+	}
+	.bottom-nav-badge {
+		position: absolute;
+		top: -4px;
+		right: -6px;
+		min-width: 14px;
+		height: 14px;
+		background: var(--gold);
+		color: #25200b;
+		border-radius: 7px;
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 700;
+		display: grid;
+		place-items: center;
+		padding: 0 3px;
+		line-height: 1;
+	}
+	.bottom-nav-label {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		line-height: 1;
+	}
+
+	/* ── More sheet ── */
+	.more-sheet-scrim {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		background: rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+		animation: fadeIn 0.18s ease-out;
+	}
+	.more-sheet {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--bg-1);
+		border-top: 1px solid var(--line-2);
+		border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+		padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 16px);
+		animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.more-sheet-handle {
+		width: 36px;
+		height: 4px;
+		background: var(--line-3);
+		border-radius: 99px;
+		margin: 12px auto 8px;
+	}
+	.more-sheet-section {
+		font-family: var(--font-mono);
+		font-size: 9.5px;
+		color: var(--ink-4);
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		padding: 10px 18px 4px;
+	}
+	.more-sheet nav {
+		display: flex;
+		flex-direction: column;
+	}
+	.more-sheet-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		width: 100%;
+		min-height: 48px;
+		padding: 10px 18px;
+		border-radius: 0;
+		color: var(--ink-2);
+		font-size: 14px;
+		font-weight: 500;
+		text-align: left;
+		border: none;
+		background: transparent;
+		transition:
+			background 0.12s ease-out,
+			color 0.12s ease-out;
+	}
+	.more-sheet-row .ic {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+	.more-sheet-row.active {
+		color: var(--blue);
+		background: var(--blue-soft);
+	}
+	.more-sheet-row:active {
+		background: var(--bg-2);
+	}
+	.more-sheet-account {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 18px;
+		min-height: 56px;
+	}
+	.more-sheet-account-meta {
+		flex: 1;
+		min-width: 0;
+	}
+	.more-sheet-account-meta .nm {
+		font-size: 13px;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.more-sheet-account-meta .stat {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--ink-3);
+		letter-spacing: 0.04em;
+	}
+	.more-sheet-logout {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 44px;
+		padding: 8px 12px;
+		border-radius: 8px;
+		border: 1px solid var(--line-2);
+		background: transparent;
+		color: var(--ink-3);
+		font-size: 12px;
+		font-weight: 500;
+		white-space: nowrap;
+		transition:
+			background 0.12s ease-out,
+			color 0.12s ease-out,
+			border-color 0.12s ease-out;
+	}
+	.more-sheet-logout:hover,
+	.more-sheet-logout:active {
+		color: var(--ink-1);
+		background: var(--bg-2);
+		border-color: var(--line-3);
+	}
+}
+
+/* Mobile sheet animations — defined at top level (nested @keyframes
+   inside @media are not honored by Firefox). */
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+@keyframes slideUp {
+	from { transform: translateY(100%); }
+	to { transform: translateY(0); }
+}
+
+/* ── Topbar hamburger hidden on desktop ── */
+.topbar-menu-btn {
+	display: none;
 }
 
 /* ── Control Panel Layout & Revamped Dashboard ── */

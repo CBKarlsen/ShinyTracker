@@ -1,4 +1,5 @@
 import type { Route } from "../App";
+import { Ic } from "./nav/navItems";
 
 const routeLabels: Record<Route, string> = {
 	dash: "Dashboard",
@@ -14,14 +15,25 @@ const routeLabels: Record<Route, string> = {
 interface Props {
 	route: Route;
 	onNew: () => void;
+	onMoreOpen: () => void;
 }
 
-export default function Topbar({ route, onNew }: Props) {
+export default function Topbar({ route, onNew, onMoreOpen }: Props) {
 	return (
 		<div className="topbar">
+			{/* Hamburger — visible only on mobile (≤760px) */}
+			<button
+				type="button"
+				className="topbar-menu-btn"
+				onClick={onMoreOpen}
+				aria-label="Open more options"
+			>
+				{Ic.menu}
+			</button>
+
 			<div className="crumb">
-				<span>Workspace</span>
-				<span className="sep">/</span>
+				<span className="topbar-workspace-crumb">Workspace</span>
+				<span className="sep topbar-workspace-crumb">/</span>
 				<span className="here">{routeLabels[route]}</span>
 			</div>
 			<div className="spacer" />
@@ -40,7 +52,7 @@ export default function Topbar({ route, onNew }: Props) {
 				<input placeholder="Search hunts, Pokémon…" readOnly />
 				<kbd>⌘K</kbd>
 			</div>
-			<button className="btn gold" onClick={onNew}>
+			<button type="button" className="btn gold" onClick={onNew}>
 				<svg
 					viewBox="0 0 16 16"
 					width="14"

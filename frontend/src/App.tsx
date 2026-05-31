@@ -7,6 +7,8 @@ import HistoricHunts from "./components/HistoricHunts";
 import Login from "./components/Login";
 import MethodLibrary from "./components/MethodLibrary";
 import NewHuntModal from "./components/NewHuntModal";
+import BottomNav from "./components/nav/BottomNav";
+import MoreSheet from "./components/nav/MoreSheet";
 import OddsCalculator from "./components/OddsCalculator";
 import Sidebar from "./components/Sidebar";
 import Stats from "./components/Stats";
@@ -28,8 +30,12 @@ function App() {
 	const { token, loading, logout } = useAuth();
 	const [route, setRoute] = useState<Route>("dash");
 	const [newHuntOpen, setNewHuntOpen] = useState(false);
-	const [huntPrefill, setHuntPrefill] = useState<{ pokemon: Pokemon; route: PokemonRoute } | null>(null);
+	const [huntPrefill, setHuntPrefill] = useState<{
+		pokemon: Pokemon;
+		route: PokemonRoute;
+	} | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
+	const [moreOpen, setMoreOpen] = useState(false);
 
 	// Wait for the Supabase session to resolve before rendering — avoids
 	// flashing the login screen for an already-authenticated user.
@@ -45,7 +51,11 @@ function App() {
 				activeHuntCount={activeHuntCount}
 			/>
 			<div className="main" id="main-scroll">
-				<Topbar route={route} onNew={() => setNewHuntOpen(true)} />
+				<Topbar
+					route={route}
+					onNew={() => setNewHuntOpen(true)}
+					onMoreOpen={() => setMoreOpen(true)}
+				/>
 				<div style={{ display: route === "dash" ? "contents" : "none" }}>
 					<Dashboard
 						onNewHunt={() => setNewHuntOpen(true)}
@@ -67,9 +77,29 @@ function App() {
 				{route === "method-library" && <MethodLibrary />}
 				{route === "admin" && <Admin />}
 			</div>
+
+			{/* Mobile bottom navigation bar */}
+			<BottomNav
+				route={route}
+				setRoute={setRoute}
+				activeHuntCount={activeHuntCount}
+			/>
+
+			{/* Mobile "More" sheet — Tools, Admin, Account */}
+			<MoreSheet
+				open={moreOpen}
+				onClose={() => setMoreOpen(false)}
+				route={route}
+				setRoute={setRoute}
+				onLogout={logout}
+			/>
+
 			<NewHuntModal
 				open={newHuntOpen}
-				onClose={() => { setNewHuntOpen(false); setHuntPrefill(null); }}
+				onClose={() => {
+					setNewHuntOpen(false);
+					setHuntPrefill(null);
+				}}
 				onGoToGames={() => {
 					setNewHuntOpen(false);
 					setHuntPrefill(null);
