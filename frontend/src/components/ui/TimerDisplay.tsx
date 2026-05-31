@@ -8,12 +8,14 @@ export function TimerDisplay({
 	status,
 	onToggle,
 	onReset,
+	pacePerHour,
 }: {
 	sessionSec: number;
 	totalSec: number;
 	status: TimerStatus;
 	onToggle: () => void;
 	onReset: () => void;
+	pacePerHour?: number | null;
 }) {
 	const m = Math.floor(sessionSec / 60);
 	const s = sessionSec % 60;
@@ -57,6 +59,11 @@ export function TimerDisplay({
 			<div className="timer-meta" style={{ marginTop: 2 }}>
 				<span>total · {fmtHM(totalSec)}</span>
 			</div>
+			{pacePerHour != null && (
+				<div className="timer-meta" style={{ marginTop: 2 }}>
+					<span>pace · {pacePerHour === -1 ? "—" : `≈ ${pacePerHour.toLocaleString("en-US")} /h`}</span>
+				</div>
+			)}
 		</div>
 	);
 }

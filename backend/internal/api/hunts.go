@@ -296,18 +296,20 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 	if err := database.DB.QueryRow(context.Background(),
 		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name, e.method_name, h.custom_method_name, g.title,
-		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm
+		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
+		        COALESCE(e.formula_type, 'static') AS formula_type
 		 FROM user_hunts h
 		 JOIN pokemon p ON h.pokemon_id = p.id
 		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
-		 LEFT JOIN games g ON e.game_id = g.id
+		 LEFT JOIN games g ON h.game_id = g.id
 		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.id = $1 AND h.user_id = $2`,
 		huntID, userID).Scan(
 		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
 		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
-		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm,
+		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
 	); err != nil {
+		fmt.Println("LogPhase load err:", err)
 		http.Error(w, "Failed to load updated hunt", http.StatusInternalServerError)
 		return
 	}

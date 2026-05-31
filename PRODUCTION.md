@@ -107,13 +107,21 @@ Pulled from `CRITIQUE.md` §2–3; none block use.
       counts + functional state updates; timer reads the latest count at flush.
       Verified: 5 rapid SPACE = +5; mouse-to-12 then SPACE = 13 (no drop); persists on reload.
       (Code review also caught a related `handlePhaseSuccess` timer-cancel gap — fixed.)
-- [ ] Encounter pace (enc/hr) on the active hunt card — top power-user metric.
-- [ ] Inline `1/N` odds on New Hunt method rows (avoid the calculator round-trip).
-- [ ] Collapse New Hunt step 3 into step 2.
-- [ ] Milestone markers (1×/2×/3× odds) on the encounter card.
-- [ ] Optional "ding" / sound on Found It.
-- [ ] "Recently hunted" quick-pick in New Hunt search.
-- [ ] Confirm-on-remove for owned games (B8); Log-phase feedback (B5); register error copy (B6).
+- [x] ✅ **Encounter pace (enc/hr)** on the active hunt card — `≈ N /h` from encounter_count
+      over total time (incl. live session). The critique's top power-user metric.
+- [x] ✅ **Inline `1/N` odds on New Hunt method rows** — already present (verified in QA).
+- [x] ✅ **Collapse New Hunt step 3 into step 2** — already done (verified in QA).
+- [x] ✅ **Milestone markers (1×/2×/3× odds)** on the encounter curve — `1× · expected`, `2×`,
+      `3×` vertical markers (subtle), only drawn in-range.
+- [x] ✅ **Found-it sound** — Web Audio chime on completion + speaker mute toggle persisted in
+      localStorage (`st_sound_enabled`, default on). `utils/sound.ts`.
+- [x] ✅ **Log-phase feedback (B5)** — success toast "Phase logged — counter reset". **This
+      uncovered a real backend bug:** `LogPhaseHandler`'s response SELECT joined `games` on a
+      nonexistent `hunt_methods.game_id` (+ omitted `formula_type`), so EVERY phase log
+      returned 500 even though the phase committed — the true cause of "B5 no feedback". Fixed
+      in `hunts.go` (join `h.game_id`, add `formula_type`). Now returns 200; toast fires.
+- [ ] "Recently hunted" quick-pick in New Hunt search. — *Batch 2*
+- [ ] Confirm-on-remove for owned games (B8); register error copy (B6). — *Batch 2*
 
 ## Data correctness (parallel track — see TASKS.md "Next up")
 

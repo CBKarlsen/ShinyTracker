@@ -12,6 +12,7 @@ import { useNotification } from "../../context/NotificationContext";
 import type { Hunt } from "../../types/models";
 import { API_BASE } from "../../config";
 import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
+import { playFoundItChime, isSoundEnabled, setSoundEnabled } from "../../utils/sound";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -45,6 +46,7 @@ export function HeroHunt({
 	);
 	const [savingParams, setSavingParams] = useState(false);
 	const [confirmComplete, setConfirmComplete] = useState(false);
+	const [soundOn, setSoundOn] = useState<boolean>(isSoundEnabled);
 
 	// Sync local state when prop updates
 	useEffect(() => {
@@ -174,6 +176,13 @@ export function HeroHunt({
 
 	const totalSeconds = hunt.total_time_seconds + sessionSec;
 
+	// Pace: enc/hr over total time INCLUDING the live session, so it stays accurate
+	// while hunting (not frozen until the next server commit). -1 = sentinel for "—".
+	const pacePerHour: number | null = (() => {
+		if (totalSeconds < 60) return -1;
+		return Math.round(hunt.encounter_count / (totalSeconds / 3600));
+	})();
+
 	const handlePlus = (e: React.MouseEvent) => {
 		setLastPing(Date.now());
 		setBumping(true);
@@ -292,6 +301,7 @@ export function HeroHunt({
 						sessionSec={sessionSec}
 						totalSec={totalSeconds}
 						status={timerStatus}
+						pacePerHour={pacePerHour}
 						onToggle={() => {
 							setManualPaused((p) => {
 								const next = !p;
@@ -352,6 +362,30 @@ export function HeroHunt({
 					<button className="btn gold" onClick={() => setConfirmComplete(true)}>
 						<SparkSm size={9} /> Found it!
 					</button>
+					<button
+						className="btn"
+						title={soundOn ? "Mute found-it chime" : "Unmute found-it chime"}
+						onClick={() => {
+							const next = !soundOn;
+							setSoundOn(next);
+							setSoundEnabled(next);
+						}}
+						style={{ padding: "0 8px", minWidth: 32, color: soundOn ? "var(--ink-2)" : "var(--ink-4)" }}
+					>
+						{soundOn ? (
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+								<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+								<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+								<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+							</svg>
+						) : (
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+								<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+								<line x1="23" y1="9" x2="17" y2="15" />
+								<line x1="17" y1="9" x2="23" y2="15" />
+							</svg>
+						)}
+					</button>
 				</div>
 			</div>
 
@@ -383,6 +417,7 @@ export function HeroHunt({
 				onConfirm={() => {
 					setConfirmComplete(false);
 					clearSessionStorage();
+					playFoundItChime();
 					onComplete(hunt.id);
 				}}
 				onCancel={() => setConfirmComplete(false)}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { IcClose } from "../../components/ui/icons";
 import type { Hunt, PokemonOption } from "../../types/models";
 import { API_BASE } from "../../config";
+import { useNotification } from "../../context/NotificationContext";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -13,6 +14,7 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	onClose: () => void;
 	onSuccess: (updated: Hunt) => void;
 }) {
+	const { showSuccess, showError } = useNotification();
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<PokemonOption[]>([]);
 	const [submitting, setSubmitting] = useState(false);
@@ -37,9 +39,15 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 			});
 			if (res.ok) {
 				const updated: Hunt = await res.json();
+				showSuccess("Phase logged — counter reset");
 				onSuccess(updated);
+				onClose();
+				return; // component unmounts — don't touch state below
 			}
-		} catch { /* ignore */ }
+			showError("Failed to log phase. Please try again.");
+		} catch {
+			showError("Failed to log phase. Please try again.");
+		}
 		setSubmitting(false);
 	};
 

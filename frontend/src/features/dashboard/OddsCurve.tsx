@@ -21,7 +21,8 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 	);
 
 	const expected = currentDenominator;
-	const max = Math.max(expected * 3, hunt.encounter_count * 1.4, 100);
+	// 3.2× headroom (not 3×) so the 3× milestone marker + its label stay inside the viewbox.
+	const max = Math.max(expected * 3.2, hunt.encounter_count * 1.4, 100);
 	const W = 600;
 	const H = 60;
 	const N = 60;
@@ -65,6 +66,10 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 	const youY = H - youP * H;
 	const expX = (expected / max) * W;
 
+	// Milestone x-positions for 2× and 3× — only render if within visible range.
+	const exp2X = expected * 2 <= max ? (expected * 2 / max) * W : null;
+	const exp3X = expected * 3 <= max ? (expected * 3 / max) * W : null;
+
 	return (
 		<div className="odds-curve">
 			<div className="odds-curve-head">
@@ -84,11 +89,26 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 				</defs>
 				<path d={fillD} fill="url(#curveFill)" />
 				<path d={pathD} fill="none" stroke="var(--gold)" strokeWidth="1.5" />
+				{/* 2× milestone */}
+				{exp2X != null && (
+					<>
+						<line x1={exp2X} y1="0" x2={exp2X} y2={H} stroke="var(--ink-4)" strokeWidth="1" strokeDasharray="2 4" strokeOpacity="0.6" />
+						<text x={exp2X + 3} y="11" fill="var(--ink-4)" fontSize="9" fontFamily="JetBrains Mono">2×</text>
+					</>
+				)}
+				{/* 3× milestone */}
+				{exp3X != null && (
+					<>
+						<line x1={exp3X} y1="0" x2={exp3X} y2={H} stroke="var(--ink-4)" strokeWidth="1" strokeDasharray="2 4" strokeOpacity="0.6" />
+						<text x={exp3X + 3} y="11" fill="var(--ink-4)" fontSize="9" fontFamily="JetBrains Mono">3×</text>
+					</>
+				)}
+				{/* 1× expected line */}
 				<line x1={expX} y1="0" x2={expX} y2={H} stroke="var(--ink-4)" strokeWidth="1" strokeDasharray="2 3" />
 				<line x1={youX} y1="0" x2={youX} y2={H} stroke="var(--ink-1)" strokeWidth="1" />
 				<circle cx={youX} cy={youY} r="3" fill="var(--ink-1)" />
 				<text x={expX + 4} y="11" fill="var(--ink-3)" fontSize="9" fontFamily="JetBrains Mono">
-					expected · {expected.toLocaleString()}
+					1× · expected
 				</text>
 				<text x={youX + 4} y={Math.max(youY - 6, 14)} fill="var(--ink-1)" fontSize="9" fontFamily="JetBrains Mono">
 					you · {hunt.encounter_count.toLocaleString()}
