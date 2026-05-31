@@ -20,7 +20,11 @@ const GEN_RANGES: [number, number, number][] = [
 ];
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 
-const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void }> = ({ onStartHunt }) => {
+const Collection: React.FC<{
+	onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void;
+	focusPokemonId?: number | null;
+	onFocusHandled?: () => void;
+}> = ({ onStartHunt, focusPokemonId, onFocusHandled }) => {
 	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
@@ -29,6 +33,16 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState<"all" | "owned" | "missing">("all");
 	const [drawerId, setDrawerId] = useState<number | null>(null);
+
+	// When asked to focus a specific Pokémon (e.g. from command search),
+	// open its drawer, then tell the parent it was handled so it can reset
+	// (lets the same Pokémon be focused again later).
+	useEffect(() => {
+		if (focusPokemonId != null) {
+			setDrawerId(focusPokemonId);
+			onFocusHandled?.();
+		}
+	}, [focusPokemonId, onFocusHandled]);
 
 	useEffect(() => {
 		const fetchData = async () => {
