@@ -76,35 +76,9 @@
     "requires_kind": "wild"
   },
   {
-    "id": "outbreak_paldea_sv",
-    "games": [
-      "Scarlet/Violet"
-    ],
-    "method_name": "Paldea Mass Outbreak",
-    "avg_time_seconds": 15,
-    "base_rolls": 1,
-    "charm_rolls": 2,
-    "formula_type": "outbreak_defeats_sv",
-    "requires_kind": "wild"
-  },
-  {
-    "id": "outbreak_kitakami_sv",
-    "games": [
-      "Scarlet/Violet"
-    ],
-    "method_name": "Kitakami Mass Outbreak",
-    "avg_time_seconds": 15,
-    "base_rolls": 1,
-    "charm_rolls": 2,
-    "formula_type": "outbreak_defeats_sv",
-    "requires_kind": "wild"
-  },
-  {
-    "id": "outbreak_terarium_sv",
-    "games": [
-      "Scarlet/Violet"
-    ],
-    "method_name": "Terarium Mass Outbreak",
+    "id": "outbreak_sv",
+    "games": ["Scarlet/Violet"],
+    "method_name": "Mass Outbreak",
     "avg_time_seconds": 15,
     "base_rolls": 1,
     "charm_rolls": 2,

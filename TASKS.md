@@ -47,8 +47,10 @@ The curated lock dataset (`backend/seeds/shiny_locks.json`, 28 entries) is a ~50
 - **`GetOddsHandler` not method-aware** — `GET /odds` (`backend/internal/api/handlers.go`) still computes `base_odds/rolls` (only special-casing dynamax), so for modern methods it now disagrees with the route drawer's `EffectiveOdds`-based number. Route it through `calc.EffectiveOdds` for server-side consistency.
 - **Radar chain-0 quirk** — `radar_chain_gen4` returns 1/65536 at chain 0 (TS formula `65536 − 1635.925·chain`), mirrored in Go for parity. Revisit whether the base should track the game's 1/8192.
 - **Method eligibility data** — web-source which species are huntable via each method per game and seed into `method_availability` / `method_exceptions`. Decomposed into slices:
-  - ✅ **Slice D (Dynamax Adventures)** — all 38 DA legendary bosses seeded as SwSh raids in `legendary_encounters.json` (spec/plan `docs/superpowers/*/2026-05-31-dynamax-adventures-eligibility*`). Pending DB re-seed to take effect.
-  - ⏳ **Slice A** — Gen 8/9 overworld spawns (SV outbreak/sandwich, SwSh, LA); biggest, needs a curated per-area source + likely a new encounter `kind`.
+  - ✅ **Slice D (Dynamax Adventures)** — all 38 DA legendary bosses seeded as SwSh raids in `legendary_encounters.json` (spec/plan `docs/superpowers/*/2026-05-31-dynamax-adventures-eligibility*`). Live in DB.
+  - ✅ **Slice A — Gen 8/9 overworld spawns** — COMPLETE across SV/SwSh/LA. Reuses `kind=wild` + game-keyed `seeds/overworld_species.json` + `seedOverworldSpecies` step, no DDL.
+    - ✅ **Scarlet/Violet** — 650 regional-dex species (legendaries + Walking Wake/Iron Leaves excluded) seeded as `wild`; Random Encounter / Sandwich Hunting / Mass Outbreak now attach (650 each). 3 area outbreaks collapsed into one. SV "available but no method" 412→43. (spec/plan `docs/superpowers/*/2026-05-31-sv-overworld-eligibility*`).
+    - ✅ **Sword/Shield + Legends: Arceus** — Galar tri-dex (568) + Hisui (225) species seeded as `wild`; KO Method / Run Away attach in SwSh (562 each), Mass Outbreak in LA (224). Section-A gaps SwSh 133→20, LA 213→2. (spec/plan `docs/superpowers/*/2026-05-31-swsh-la-overworld-eligibility*`).
   - ⏳ **Slice B** — Poké Radar over-broad (curate `method_exceptions` excludes to ~50-60 grass-patch species).
   - ⏳ **Slice C** — ORAS fishing terrain gap (Chain Fishing / DexNav-fishing have 0 fishing rows).
   - ⏳ Also deferred: the 9 DA Ultra Beasts; home-game static coverage for the 24 DA legends.

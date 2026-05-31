@@ -74,3 +74,23 @@ pokemon_availability  pokemon_id, game_id  -- legal availability per game
 - **Masuda Method** encounters are injected synthetically for games where a Pokemon is available but has no wild encounter row.
 - The frontend does **optimistic updates** for encounter counts and rolls back on API error.
 - `acquisition_type` and `hunt_parameters` (JSONB) are the extension points for non-standard acquisitions.
+
+## Agent Orchestration
+
+Act as the orchestrator. Before doing substantial work yourself, check whether a specialized subagent in `.claude/agents/` fits, and delegate to it. Subagents run in isolated context, so delegating keeps this session's context clean.
+
+Routing rules:
+
+| Work | Delegate to |
+|------|-------------|
+| Changes under `backend/` — handlers, routes, pgx SQL, `internal/*`, `cmd/*` seed/migrate tools | `backend-specialist` |
+| Changes under `frontend/src/` — React/TS components, styling, the API client | `frontend-specialist` |
+| Reviewing a diff/branch before commit or PR (correctness, security, idiom) | `code-reviewer` |
+| Encounter / method / availability data health, seeding gaps, pre/post re-seed validation | `data-seed-auditor` |
+| Brainstorming new features, hunting-mechanics questions, judging if an idea reflects real shiny hunting | `shiny-hunt-expert` |
+
+How to orchestrate:
+- **Delegate** the matching work; for a feature spanning layers, dispatch `backend-specialist` and `frontend-specialist` **in parallel** (separate worktrees) and integrate their results.
+- After an implementation subagent finishes a change, run `code-reviewer` on the diff before considering it done.
+- **Handle directly** (don't delegate): one-line answers, reading a single known file, trivial edits, and the orchestration/integration itself.
+- Always tell the user which subagent you're dispatching and why. Relay the subagent's conclusion — its output isn't shown to the user directly.
