@@ -84,6 +84,12 @@ func main() {
 	log.Println("Seeding curated static/raid encounter kinds...")
 	seedCuratedEncounters(ctx)
 
+	log.Println("Seeding overworld wild species (Gen 8/9 curated)...")
+	seedOverworldSpecies(ctx)
+
+	log.Println("Reconciling pokemon_availability with encounters...")
+	reconcileAvailability(ctx)
+
 	log.Println("Computing method_availability...")
 	computeAvailability(ctx)
 
@@ -189,6 +195,29 @@ func seedMethodExceptions(ctx context.Context) {
 	log.Printf("Seeded %d method exceptions.", len(exceptions))
 }
 
+// reconcileAvailability makes pokemon_availability a superset of the encounter
+// table: a Pokemon with a wild/static/raid encounter in a game is by definition
+// obtainable there, so it must be listed as available. This closes
+// "huntable but not legally available" gaps where the CSV-sourced availability
+// table was missing legitimately-catchable Pokemon (Great Marsh, honey trees,
+// Hidden Grottoes, Pokewalker, fossil revivals, curated statics). Wild rows come
+// from PokeAPI (the actual games), and legendary wild rows are already purged, so
+// there are no false positives. egg is omitted because egg rows are themselves
+// derived from pokemon_availability and so are already a subset of it.
+func reconcileAvailability(ctx context.Context) {
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_availability (pokemon_id, game_id)
+		SELECT DISTINCT pge.pokemon_id, pge.game_id
+		FROM pokemon_game_encounter pge
+		WHERE pge.kind IN ('wild','static','raid')
+		ON CONFLICT DO NOTHING
+	`)
+	if err != nil {
+		log.Fatal("Failed to reconcile pokemon_availability: ", err)
+	}
+	log.Printf("Reconciled pokemon_availability with encounters (+%d rows).", tag.RowsAffected())
+}
+
 // ensureWildEncounters populates `wild` kinds from PokeAPI if none exist yet.
 // Otherwise it leaves them in place — refresh explicitly via cmd/sync_encounters.
 func ensureWildEncounters(ctx context.Context) {
@@ -290,6 +319,43 @@ func seedCuratedEncounters(ctx context.Context) {
 		}
 	}
 	log.Printf("Inserted %d curated static/raid encounter rows.", inserted)
+}
+
+// seedOverworldSpecies inserts curated wild encounter rows for games where PokeAPI
+// provides no wild data (Gen 8/9). The source (seeds/overworld_species.json) maps a
+// game title to the National-Dex IDs that are wild/overworld-encounterable there,
+// taken from regional-dex membership. Legendaries/mythicals are guarded out — in
+// these games they are static/shiny-locked, not wild spawns.
+func seedOverworldSpecies(ctx context.Context) {
+	data, err := os.ReadFile("seeds/overworld_species.json")
+	if err != nil {
+		log.Fatal("Failed to read overworld_species.json: ", err)
+	}
+	var byGame map[string][]int
+	if err := json.Unmarshal(data, &byGame); err != nil {
+		log.Fatal("JSON parse error in overworld_species.json: ", err)
+	}
+	gameIDs := loadGameIDs(ctx)
+	inserted := 0
+	for title, ids := range byGame {
+		gameID, ok := gameIDs[title]
+		if !ok {
+			log.Printf("WARNING: overworld_species.json: unknown game title %q — skipping", title)
+			continue
+		}
+		tag, err := database.DB.Exec(ctx, `
+			INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+			SELECT p.id, $1, 'wild', 'none'
+			FROM pokemon p
+			WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+			ON CONFLICT DO NOTHING
+		`, gameID, ids)
+		if err != nil {
+			log.Fatalf("overworld_species: failed to insert wild rows for %s: %v", title, err)
+		}
+		inserted += int(tag.RowsAffected())
+	}
+	log.Printf("Inserted %d overworld wild encounter rows.", inserted)
 }
 
 // expandGameRef turns a game title or @alias into a list of game titles.
