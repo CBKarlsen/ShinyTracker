@@ -69,7 +69,8 @@ export function HuntRow({
 		hunt.has_shiny_charm || false,
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
-		hunt.charm_rolls || 0
+		hunt.charm_rolls || 0,
+		(hunt.hunt_parameters as Record<string, any>) || {}
 	);
 	const isOver = hunt.encounter_count > expected;
 	
@@ -83,7 +84,8 @@ export function HuntRow({
 				hunt.has_shiny_charm || false,
 				hunt.base_odds,
 				hunt.base_rolls || 1,
-				hunt.charm_rolls || 0
+				hunt.charm_rolls || 0,
+				(hunt.hunt_parameters as Record<string, any>) || {}
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 		}
