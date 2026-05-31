@@ -100,3 +100,19 @@ func TestBestRouteCarriesAncestorMethodFields(t *testing.T) {
 		t.Fatal("expected an evolve route with EvolveFrom set")
 	}
 }
+
+func TestRankUsesEffectiveOddsForModernMethods(t *testing.T) {
+	// Both have the charm: static wild is 1/1365, the outbreak (default best
+	// params + charm) is 1/512, so the method-aware engine must rank it first.
+	cands := []MethodCandidate{
+		{GameID: 1, MethodName: "Random Encounter", FormulaType: "static", BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2, HasShinyCharm: true},
+		{GameID: 1, MethodName: "Paldea Mass Outbreak", FormulaType: "outbreak_defeats_sv", BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2, HasShinyCharm: true},
+	}
+	routes := RankDirectRoutes(cands)
+	if routes[0].MethodName != "Paldea Mass Outbreak" {
+		t.Fatalf("best route = %q, want the outbreak (better effective odds)", routes[0].MethodName)
+	}
+	if routes[0].Odds != 512 {
+		t.Fatalf("outbreak odds = %d, want 512 (default best params + charm)", routes[0].Odds)
+	}
+}
