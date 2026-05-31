@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 
 interface Game {
 	id: number;
@@ -34,7 +35,7 @@ export default function MethodLibrary() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		fetch("http://localhost:8080/api/games")
+		fetch(`${API_BASE}/api/games`)
 			.then((r) => r.json())
 			.then(setGames)
 			.catch(() => {});
@@ -43,8 +44,8 @@ export default function MethodLibrary() {
 	useEffect(() => {
 		setLoading(true);
 		const url = gameId
-			? `http://localhost:8080/api/methods?game_id=${gameId}`
-			: "http://localhost:8080/api/methods";
+			? `${API_BASE}/api/methods?game_id=${gameId}`
+			: `${API_BASE}/api/methods`;
 		fetch(url)
 			.then((r) => r.json())
 			.then((data: MethodRow[]) => setMethods(data ?? []))

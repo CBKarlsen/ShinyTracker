@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 
 export interface HuntDetail {
@@ -48,7 +49,7 @@ const HistoricHunts: React.FC = () => {
 	useEffect(() => {
 		const fetchHunts = async () => {
 			try {
-				const res = await fetch("http://localhost:8080/api/hunts", {
+				const res = await fetch(`${API_BASE}/api/hunts`, {
 					headers: { Authorization: `Bearer ${token}` },
 				});
 				if (res.ok) {

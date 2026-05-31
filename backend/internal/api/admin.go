@@ -349,7 +349,7 @@ func AdminSetAvailability(w http.ResponseWriter, r *http.Request) {
 
 func AdminGetUsers(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(context.Background(),
-		"SELECT id, username, email, is_admin, created_at FROM users ORDER BY created_at ASC")
+		"SELECT id, username, is_admin, created_at FROM profiles ORDER BY created_at ASC")
 	if err != nil {
 		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
 		return
@@ -359,14 +359,13 @@ func AdminGetUsers(w http.ResponseWriter, r *http.Request) {
 	type userRow struct {
 		ID        string    `json:"id"`
 		Username  string    `json:"username"`
-		Email     string    `json:"email"`
 		IsAdmin   bool      `json:"is_admin"`
 		CreatedAt time.Time `json:"created_at"`
 	}
 	var result []userRow
 	for rows.Next() {
 		var u userRow
-		if err := rows.Scan(&u.ID, &u.Username, &u.Email, &u.IsAdmin, &u.CreatedAt); err == nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.IsAdmin, &u.CreatedAt); err == nil {
 			result = append(result, u)
 		}
 	}
@@ -395,7 +394,7 @@ func AdminPatchUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tag, err := database.DB.Exec(context.Background(),
-		"UPDATE users SET is_admin = $2 WHERE id = $1", targetID, req.IsAdmin)
+		"UPDATE profiles SET is_admin = $2 WHERE id = $1", targetID, req.IsAdmin)
 	if err != nil {
 		http.Error(w, "Failed to update user", http.StatusInternalServerError)
 		return

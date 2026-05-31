@@ -11,3 +11,12 @@
 .claude/scheduled_tasks.lock
 
 .superpowers/
+
+# Playwright MCP QA artifacts (screenshots, snapshots, console logs)
+.playwright-mcp/
+/b2-sync-failed-toast.png
+/b4-timer-reset.png
+/route-picker-best-case-label.png
+/p3-hunt-card.png
+/p3-odds-curve.png
+/p3-recently-hunted.png

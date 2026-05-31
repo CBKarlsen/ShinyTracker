@@ -1,0 +1,19 @@
+# Rendered by the nginx image's envsubst entrypoint (only $PORT is substituted;
+# $uri is left intact because it is not an environment variable).
+server {
+    listen       ${PORT};
+    server_name  _;
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    # SPA: fall back to index.html so deep links / refreshes resolve.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache hashed static assets aggressively.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}

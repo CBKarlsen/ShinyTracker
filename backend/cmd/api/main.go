@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/casper/shinytracker/internal/api"
 	"github.com/casper/shinytracker/internal/database"
@@ -21,7 +22,10 @@ func main() {
 
 	r := api.NewRouter()
 
-	port := "8080"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	log.Printf("Server starting on port %s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("Server error: %v", err)

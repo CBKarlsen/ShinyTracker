@@ -6,6 +6,7 @@ interface Props {
 	loadingSearch: boolean;
 	options: Pokemon[];
 	onSelect: (p: Pokemon) => void;
+	recentPokemon?: Pokemon[];
 }
 
 export function PokemonSearchStep({
@@ -14,7 +15,10 @@ export function PokemonSearchStep({
 	loadingSearch,
 	options,
 	onSelect,
+	recentPokemon = [],
 }: Props) {
+	const showRecent = search.length === 0 && recentPokemon.length > 0;
+
 	return (
 		<div>
 			<div className="field">
@@ -27,16 +31,73 @@ export function PokemonSearchStep({
 					autoFocus
 				/>
 			</div>
+
+			{showRecent && (
+				<div style={{ marginBottom: 12 }}>
+					<div className="t-label" style={{ marginBottom: 8 }}>
+						Recently hunted
+					</div>
+					<div
+						style={{
+							display: "flex",
+							flexWrap: "wrap",
+							gap: 6,
+						}}
+					>
+						{recentPokemon.map((p) => (
+							<button
+								key={p.id}
+								type="button"
+								onClick={() => onSelect(p)}
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: 5,
+									padding: "3px 8px 3px 4px",
+									background: "var(--bg-2)",
+									border: "1px solid var(--line-1)",
+									borderRadius: 99,
+									cursor: "pointer",
+									fontSize: 12,
+									color: "var(--ink-2)",
+									fontFamily: "var(--font-body)",
+									transition: "border-color .15s, color .15s",
+								}}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.borderColor = "var(--gold)";
+									e.currentTarget.style.color = "var(--ink-1)";
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.borderColor = "var(--line-1)";
+									e.currentTarget.style.color = "var(--ink-2)";
+								}}
+							>
+								<img
+									src={
+										p.sprite_url ||
+										`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`
+									}
+									alt={p.name}
+									style={{ width: 22, height: 22, imageRendering: "pixelated" }}
+								/>
+								<span style={{ textTransform: "capitalize" }}>{p.name}</span>
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+
 			<div className="poke-search-results">
 				{loadingSearch && (
 					<div className="empty" style={{ padding: 16 }}>
 						Searching…
 					</div>
 				)}
-				{!loadingSearch && options.length === 0 && (
-					<div className="empty">
-						{search.length > 0 ? "No matches" : "Type to search"}
-					</div>
+				{!loadingSearch && options.length === 0 && search.length > 0 && (
+					<div className="empty">No matches</div>
+				)}
+				{!loadingSearch && options.length === 0 && search.length === 0 && !showRecent && (
+					<div className="empty">Type to search</div>
 				)}
 				{options.map((p) => (
 					<div key={p.id} className="row" onClick={() => onSelect(p)}>

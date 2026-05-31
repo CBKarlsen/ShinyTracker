@@ -50,6 +50,7 @@ const Section: React.FC<Props & { label: string }> = ({ label, routes, selectedK
 					</div>
 					<div style={{ textAlign: "right" }}>
 						<div className="dex-route-odds">1 / {r.odds.toLocaleString()}</div>
+						<div className="dex-route-eta" style={{ opacity: 0.65 }}>best case</div>
 						<div className="dex-route-eta">~{r.eta_hours.toFixed(1)} h</div>
 						{variant === "launch" && <div className="dex-route-start">▸ Start</div>}
 					</div>

@@ -1,6 +1,6 @@
 import type React from "react";
 import { SparkSm, IcPin } from "../../components/ui/icons";
-import { calculateOdds } from "../../utils/odds";
+import { calculateOdds, defaultParamsFor } from "../../utils/odds";
 import type { Hunt } from "../../types/models";
 
 function fmtNum(n: number) {
@@ -63,6 +63,11 @@ export function HuntRow({
 	onPhase: (hunt: Hunt) => void;
 	onPin: (id: string) => void;
 }) {
+	const storedParams = (hunt.hunt_parameters as Record<string, any>) || {};
+	const resolvedHuntParams = Object.keys(storedParams).length > 0
+		? storedParams
+		: defaultParamsFor(hunt.formula_type);
+
 	const { denominator: expected } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
@@ -70,10 +75,10 @@ export function HuntRow({
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
 		hunt.charm_rolls || 0,
-		(hunt.hunt_parameters as Record<string, any>) || {}
+		resolvedHuntParams
 	);
 	const isOver = hunt.encounter_count > expected;
-	
+
 	let cumP: number | null = null;
 	if (hunt.base_odds != null) {
 		let currentNotShiny = 1;
@@ -85,7 +90,7 @@ export function HuntRow({
 				hunt.base_odds,
 				hunt.base_rolls || 1,
 				hunt.charm_rolls || 0,
-				(hunt.hunt_parameters as Record<string, any>) || {}
+				resolvedHuntParams
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 		}

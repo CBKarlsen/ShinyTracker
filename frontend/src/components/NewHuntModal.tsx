@@ -2,7 +2,9 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { API_BASE } from "../config";
 import { getShowdownGif } from "../utils/pokemon";
+import { defaultParamsFor } from "../utils/odds";
 import type { Pokemon, PokemonRoute } from "../types/models";
 import { IcClose, IcPlus } from "./ui/icons";
 import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
@@ -34,6 +36,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 
 	const { status, routes, loading: loadingRoutes } = usePokemonRoute(selectedPokemon?.id ?? null);
 
+	const [recentPokemon, setRecentPokemon] = useState<Pokemon[]>([]);
+
 	useEffect(() => {
 		if (!open) {
 			setStep(1);
@@ -44,8 +48,40 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 			setUseCustomMethod(false);
 			setCustomMethodName("");
 			setHuntParams({});
+			setRecentPokemon([]); // clear so stale chips don't flash on re-open
+			return;
 		}
-	}, [open]);
+		// Fetch recent hunts lazily when the modal opens.
+		if (!token) return;
+		const controller = new AbortController();
+		fetch(`${API_BASE}/api/hunts`, {
+			headers: { Authorization: `Bearer ${token}` },
+			signal: controller.signal,
+		})
+			.then((r) => (r.ok ? r.json() : Promise.reject()))
+			.then((hunts: Array<{ pokemon_id: number; pokemon_name: string; updated_at?: string; created_at?: string }>) => {
+				const seen = new Set<number>();
+				const recent: Pokemon[] = [];
+				// Sort by most-recent first (updated_at preferred, fallback created_at).
+				const sorted = [...hunts].sort((a, b) => {
+					const ta = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+					const tb = new Date(b.updated_at ?? b.created_at ?? 0).getTime();
+					return tb - ta;
+				});
+				for (const h of sorted) {
+					if (seen.has(h.pokemon_id)) continue;
+					seen.add(h.pokemon_id);
+					// /api/hunts has no sprite_url on the row; PokemonSearchStep falls back.
+					recent.push({ id: h.pokemon_id, name: h.pokemon_name, sprite_url: "" });
+					if (recent.length >= 6) break;
+				}
+				setRecentPokemon(recent);
+			})
+			.catch(() => {
+				if (!controller.signal.aborted) setRecentPokemon([]);
+			});
+		return () => controller.abort();
+	}, [open, token]);
 
 	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
 	useEffect(() => {
@@ -58,13 +94,18 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// Default selection — only when no prefill is active so it doesn't fight the prefill effect.
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
-		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) setSelectedRoute(routes[0]);
+		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) {
+			setSelectedRoute(routes[0]);
+			setHuntParams(defaultParamsFor(routes[0].formula_type));
+		}
 	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Once routes load, select the prefill route by key.
 	useEffect(() => {
 		if (prefill && routes.length > 0) {
-			setSelectedRoute(routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route);
+			const r = routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route;
+			setSelectedRoute(r);
+			setHuntParams(defaultParamsFor(r.formula_type));
 		}
 	}, [prefill, routes]);
 
@@ -74,7 +115,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		const timer = setTimeout(async () => {
 			setLoadingSearch(true);
 			try {
-				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
+				const res = await fetch(`${API_BASE}/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
 			} catch (err: any) {
 				showError(err.message || "Failed to search Pokemon.");
@@ -87,7 +128,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
 		if (!selectedPokemon || !token || !userId) return;
-		fetch(`http://localhost:8080/api/user/${userId}/games`, {
+		fetch(`${API_BASE}/api/user/${userId}/games`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -99,7 +140,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		if (!selectedPokemon) return;
 		setStarting(true);
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts", {
+			const res = await fetch(`${API_BASE}/api/hunts`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -129,7 +170,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		if (!selectedPokemon || !customMethodName.trim()) return;
 		setStarting(true);
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts", {
+			const res = await fetch(`${API_BASE}/api/hunts`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -199,6 +240,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 							setSearch={setSearch}
 							loadingSearch={loadingSearch}
 							options={options}
+							recentPokemon={recentPokemon}
 							onSelect={(p) => {
 								setSelectedPokemon(p);
 								setStep(2);
@@ -309,7 +351,11 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 									routes={routes}
 									variant="select"
 									selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
-									onRouteClick={(r) => { setSelectedRoute(r); setUseCustomMethod(false); }}
+									onRouteClick={(r) => {
+										setSelectedRoute(r);
+										setUseCustomMethod(false);
+										setHuntParams(defaultParamsFor(r.formula_type));
+									}}
 								/>
 							)}
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/casper/shinytracker/internal/calc"
 	"github.com/casper/shinytracker/internal/database"
@@ -13,75 +14,6 @@ import (
 	"github.com/casper/shinytracker/internal/services"
 	"github.com/go-chi/chi/v5"
 )
-
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	var req RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	hashedPassword, err := HashPassword(req.Password)
-	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
-		return
-	}
-
-	var user models.User
-	err = database.DB.QueryRow(context.Background(),
-		"INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at",
-		req.Username, req.Email, hashedPassword).Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt)
-
-	if err != nil {
-		http.Error(w, "Username or email already exists", http.StatusConflict)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
-}
-
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	var user models.User
-	var storedHash string
-	err := database.DB.QueryRow(context.Background(),
-		"SELECT id, username, email, password_hash, created_at FROM users WHERE email = $1",
-		req.Email).Scan(&user.ID, &user.Username, &user.Email, &storedHash, &user.CreatedAt)
-
-	if err != nil || !CheckPasswordHash(req.Password, storedHash) {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		return
-	}
-
-	token, err := GenerateJWT(user.ID)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"token": token,
-		"user":  user,
-	})
-}
 
 func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "id")
@@ -170,18 +102,63 @@ func RemoveUserGameHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
 }
 
+// MeHandler is the bootstrap endpoint called by the frontend on login.
+// It upserts a profiles row for the current Supabase user (deriving a display
+// name from the token claims), then returns { id, username, is_admin }.
 func MeHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
-	var user models.User
+
+	// Derive the best display name from the token claims.
+	username := usernameFromClaims(claimsFromContext(r.Context()))
+
+	// Upsert: create the profile on first login; on subsequent calls only update
+	// the username (is_admin is never overwritten by this path).
+	var profile struct {
+		ID       string `json:"id"`
+		Username string `json:"username"`
+		IsAdmin  bool   `json:"is_admin"`
+	}
 	err := database.DB.QueryRow(context.Background(),
-		"SELECT id, username, email, is_admin, created_at FROM users WHERE id = $1", userID).
-		Scan(&user.ID, &user.Username, &user.Email, &user.IsAdmin, &user.CreatedAt)
+		`INSERT INTO profiles (id, username)
+		 VALUES ($1, $2)
+		 ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username
+		 RETURNING id, username, is_admin`,
+		userID, username).Scan(&profile.ID, &profile.Username, &profile.IsAdmin)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "Failed to upsert profile", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(profile)
+}
+
+// usernameFromClaims derives the best display name from a Supabase JWT's
+// MapClaims. Priority: user_metadata.user_name → user_metadata.name →
+// user_metadata.full_name → email local-part → "user".
+func usernameFromClaims(claims map[string]interface{}) string {
+	if claims == nil {
+		return "user"
+	}
+
+	// user_metadata is a sub-map embedded in the JWT by the OAuth provider.
+	if meta, ok := claims["user_metadata"].(map[string]interface{}); ok {
+		for _, key := range []string{"user_name", "name", "full_name"} {
+			if v, ok := meta[key].(string); ok && v != "" {
+				return v
+			}
+		}
+	}
+
+	// Fall back to the email local-part.
+	if email, ok := claims["email"].(string); ok && email != "" {
+		if at := strings.Index(email, "@"); at > 0 {
+			return email[:at]
+		}
+		return email
+	}
+
+	return "user"
 }
 
 func SyncHandler(w http.ResponseWriter, r *http.Request) {

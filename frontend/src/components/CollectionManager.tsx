@@ -1,7 +1,9 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { ConfirmDialog } from "./ui/ConfirmDialog";
 
 interface Game {
 	id: number;
@@ -50,13 +52,14 @@ const CollectionManager: React.FC = () => {
 	const [games, setGames] = useState<Game[]>([]);
 	const [userGames, setUserGames] = useState<UserGame[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [pendingRemoveGameId, setPendingRemoveGameId] = useState<number | null>(null);
 
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
 				const [gamesRes, userGamesRes] = await Promise.all([
-					fetch("http://localhost:8080/api/games"),
-					fetch(`http://localhost:8080/api/user/${userId}/games`, {
+					fetch(`${API_BASE}/api/games`),
+					fetch(`${API_BASE}/api/user/${userId}/games`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);
@@ -76,51 +79,53 @@ const CollectionManager: React.FC = () => {
 		fetchData();
 	}, [token, userId]);
 
-	const handleOwnershipToggle = async (gameId: number, isOwned: boolean) => {
-		if (isOwned) {
-			const confirm = window.confirm(
-				"Are you sure you want to remove this game from your library? Any active hunts using this game will lose their method data.",
+	const doRemoveGame = async (gameId: number) => {
+		setPendingRemoveGameId(null);
+		setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
+		try {
+			const res = await fetch(
+				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+				{
+					method: "DELETE",
+					headers: { Authorization: `Bearer ${token}` },
+				},
 			);
-			if (!confirm) return;
-			setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
-			try {
-				const res = await fetch(
-					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
-					{
-						method: "DELETE",
-						headers: { Authorization: `Bearer ${token}` },
-					},
-				);
-				if (!res.ok) throw new Error("Could not remove game ownership.");
-			} catch (err: any) {
-				setUserGames((prev) => [
-					...prev,
-					{ game_id: gameId, has_shiny_charm: false },
-				]);
-				showError(err.message || "Failed to remove game.");
-			}
-		} else {
+			if (!res.ok) throw new Error("Could not remove game ownership.");
+		} catch (err: any) {
 			setUserGames((prev) => [
 				...prev,
 				{ game_id: gameId, has_shiny_charm: false },
 			]);
-			try {
-				const res = await fetch(
-					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${token}`,
-						},
-						body: JSON.stringify({ has_shiny_charm: false }),
+			showError(err.message || "Failed to remove game.");
+		}
+	};
+
+	const handleOwnershipToggle = async (gameId: number, isOwned: boolean) => {
+		if (isOwned) {
+			setPendingRemoveGameId(gameId);
+			return;
+		}
+		// Add path (not destructive — no confirmation needed).
+		setUserGames((prev) => [
+			...prev,
+			{ game_id: gameId, has_shiny_charm: false },
+		]);
+		try {
+			const res = await fetch(
+				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						Authorization: `Bearer ${token}`,
 					},
-				);
-				if (!res.ok) throw new Error("Could not add game ownership.");
-			} catch (err: any) {
-				setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
-				showError(err.message || "Failed to add game.");
-			}
+					body: JSON.stringify({ has_shiny_charm: false }),
+				},
+			);
+			if (!res.ok) throw new Error("Could not add game ownership.");
+		} catch (err: any) {
+			setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
+			showError(err.message || "Failed to add game.");
 		}
 	};
 
@@ -138,7 +143,7 @@ const CollectionManager: React.FC = () => {
 		);
 		try {
 			const res = await fetch(
-				`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+				`${API_BASE}/api/user/${userId}/games/${gameId}`,
 				{
 					method: "POST",
 					headers: {
@@ -298,6 +303,19 @@ const CollectionManager: React.FC = () => {
 					</div>
 				);
 			})}
+
+			<ConfirmDialog
+				open={pendingRemoveGameId !== null}
+				title="Remove game?"
+				message="Are you sure you want to remove this game from your library? Any active hunts using this game will lose their method data."
+				confirmLabel="Remove"
+				cancelLabel="Cancel"
+				danger
+				onConfirm={() => {
+					if (pendingRemoveGameId !== null) doRemoveGame(pendingRemoveGameId);
+				}}
+				onCancel={() => setPendingRemoveGameId(null)}
+			/>
 		</div>
 	);
 };

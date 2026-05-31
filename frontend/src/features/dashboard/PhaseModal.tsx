@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { IcClose } from "../../components/ui/icons";
 import type { Hunt, PokemonOption } from "../../types/models";
+import { API_BASE } from "../../config";
+import { useNotification } from "../../context/NotificationContext";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -12,6 +14,7 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	onClose: () => void;
 	onSuccess: (updated: Hunt) => void;
 }) {
+	const { showSuccess, showError } = useNotification();
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<PokemonOption[]>([]);
 	const [submitting, setSubmitting] = useState(false);
@@ -19,7 +22,7 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	useEffect(() => {
 		const timer = setTimeout(async () => {
 			try {
-				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
+				const res = await fetch(`${API_BASE}/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
 			} catch { /* ignore */ }
 		}, 300);
@@ -29,16 +32,22 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	const handleSelect = async (pokemon: PokemonOption) => {
 		setSubmitting(true);
 		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/${hunt.id}/phases`, {
+			const res = await fetch(`${API_BASE}/api/hunts/${hunt.id}/phases`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
 				body: JSON.stringify({ pokemon_id: pokemon.id }),
 			});
 			if (res.ok) {
 				const updated: Hunt = await res.json();
+				showSuccess("Phase logged — counter reset");
 				onSuccess(updated);
+				onClose();
+				return; // component unmounts — don't touch state below
 			}
-		} catch { /* ignore */ }
+			showError("Failed to log phase. Please try again.");
+		} catch {
+			showError("Failed to log phase. Please try again.");
+		}
 		setSubmitting(false);
 	};
 
