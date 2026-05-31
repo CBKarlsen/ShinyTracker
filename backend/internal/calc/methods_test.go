@@ -47,3 +47,19 @@ func TestEffectiveOddsCountDriven(t *testing.T) {
 		t.Errorf("chain_fishing chain20 = %d, want 99", got)
 	}
 }
+
+func TestDefaultParamsDriveBestOdds(t *testing.T) {
+	base := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2}
+	// With default best params + charm, outbreak should reach the 1/512 stack.
+	if got := EffectiveOdds("outbreak_defeats_sv", DefaultParams("outbreak_defeats_sv"), base, true); got != 512 {
+		t.Errorf("outbreak default+charm = %d, want 512", got)
+	}
+	// Radar default should be the chain-40 plateau, 99.
+	if got := EffectiveOdds("radar_chain_gen4", DefaultParams("radar_chain_gen4"), base, false); got != 99 {
+		t.Errorf("radar default = %d, want 99", got)
+	}
+	// Static has no params.
+	if dp := DefaultParams("static"); len(dp) != 0 {
+		t.Errorf("static default params = %v, want empty", dp)
+	}
+}

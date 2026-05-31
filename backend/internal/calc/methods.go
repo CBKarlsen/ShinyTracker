@@ -149,3 +149,26 @@ func sparklingRolls(power int) int {
 	}
 	return 0
 }
+
+// DefaultParams returns each method's achievable-best parameters, used for
+// route ranking (where no per-hunt params exist yet). avg_time keeps ETA honest.
+func DefaultParams(formulaType string) map[string]any {
+	switch formulaType {
+	case "outbreak_defeats_sv":
+		return map[string]any{"defeated_count": 60, "sparkling_power": 3}
+	case "sandwich_power_sv":
+		return map[string]any{"sparkling_power": 3}
+	case "sos_chain_gen7":
+		return map[string]any{"chain_length": 31}
+	case "radar_chain_gen4":
+		return map[string]any{"chain_length": 40}
+	case "dexnav_gen6":
+		return map[string]any{"search_level": 200, "chain_length": 100}
+	case "catch_combo_lgpe":
+		return map[string]any{"count": 31}
+	case "chain_fishing_gen6":
+		return map[string]any{"count": 20}
+	default: // static, dynamax_adventures_gen8 (no params)
+		return map[string]any{}
+	}
+}
