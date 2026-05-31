@@ -87,3 +87,16 @@ export interface PokemonRouteResponse {
 	status: "available" | "not_in_your_games" | "locked_everywhere";
 	routes: PokemonRoute[];
 }
+
+export interface HuntSuggestion {
+	pokemon_id: number;
+	name: string;
+	sprite_url: string;
+	huntable_game_count: number;
+	route: PokemonRoute;
+}
+
+export interface HuntSuggestionsResponse {
+	total_huntable: number;
+	suggestions: HuntSuggestion[];
+}
