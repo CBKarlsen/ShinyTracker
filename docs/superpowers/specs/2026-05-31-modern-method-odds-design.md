@@ -1,163 +1,181 @@
-# Modern Method Odds — Design
+# Modern Method Odds — Design (v2)
 
 **Date:** 2026-05-31
 **Branch:** `worktree-dex-completion-engine` (based on `hunt-method-corrections`)
 **Backlog item:** TASKS.md #4 — Modern method odds
 **Status:** approved design, pending implementation plan
 
+> **v2 note:** the original v1 of this spec assumed the feature was greenfield.
+> Reading the code showed a working **TypeScript odds engine already exists**
+> (`frontend/src/utils/odds.ts`) and the dashboard already does live params +
+> odds. This v2 corrects scope to match reality: **backend-only this pass** —
+> port the existing TS engine to Go so route ranking is method-aware, and fix
+> the create-path param-persistence bug.
+
 ## Problem
 
-The odds engine is naive: shiny probability is `base_odds / total_rolls`, where
-`total_rolls = base_rolls + (charm ? charm_rolls : 0)`. It never varies with any
-per-hunt parameter. So the modern chaining/boosting methods — which is how a
-living-dex completionist actually fills most of the current-gen dex — all show the
-same flat full-odds number regardless of chain length, KO count, or sandwich level.
+Shiny odds are computed **client-side** by `calculateOdds()` in
+`frontend/src/utils/odds.ts`, which already branches on `formula_type` and reads
+`hunt_parameters`. The Go side does **not**: `internal/calc` computes a flat
+`base_odds / total_rolls` and ignores `formula_type` entirely. Two concrete
+consequences:
 
-This feature makes the engine **formula- and parameter-aware**, covering all five
-modern methods, while keeping the existing `static` behaviour unchanged.
+1. **Route ranking is wrong.** `GET /api/pokemon/{id}/route` (the dex blocked-state
+   drawer and best-route list) ranks every method as flat full-odds, so an SV Mass
+   Outbreak ranks identically to a random encounter. The "best route" is therefore
+   not actually the best.
+2. **Params don't persist on creation.** `CreateHuntHandler`
+   (`internal/api/hunts.go:154`) hard-sets `hunt_parameters = '{}'` for curated
+   hunts, discarding whatever the New Hunt modal's params editor sent. (Editing an
+   existing hunt via `UpdateHuntHandler` already persists params correctly.)
+
+This feature makes the **Go engine method-aware by porting the TS formulas**, wires
+it into route ranking, and fixes the create-path persistence bug. The TS engine and
+the frontend params editor are otherwise left as-is.
 
 ## Decisions (locked during brainstorming)
 
-- **Coverage:** all five methods, across **two formula kinds** (additive-rolls +
-  direct-probability).
-- **Parameter lifecycle:** the user declares a hunt's **steady-state config at
-  creation** (e.g. "Sandwich Lv3 + Outbreak 60+", "SOS chain 31+"); it is
-  **editable later** on the active hunt. One odds/ETA figure per hunt — no live
-  per-encounter chain counter in this pass.
-- **ETA realism:** each method carries a **realistic `avg_time`** so chaining
-  methods don't unfairly dominate route ranking (per-method realism factor).
-- **Architecture:** a **code registry** in `internal/calc` is the single source of
-  truth; the backend **serves each method's parameter schema** and the frontend
-  renders a **generic, data-driven form**. No Go↔TS duplication.
-- **No new DDL:** `hunt_methods.formula_type` and `user_hunts.hunt_parameters`
-  (JSONB) already exist.
+- **Backend-only this pass.** Port the formula logic to Go and integrate it into
+  route ranking + fix param persistence. The existing frontend
+  `HuntParametersEditor` and `utils/odds.ts` are **not** refactored now.
+- **Go mirrors `utils/odds.ts` exactly.** The shipped TS numbers are the contract,
+  so client (dashboard live odds) and server (route ranking) agree. We do **not**
+  substitute the expert's idealized numbers, even where they differ.
+- **Outbreak + sandwich stack.** Per the chosen modeling, `outbreak_defeats_sv` is
+  extended to also read `sparkling_power` (additive rolls) so the headline
+  outbreak+sandwich stack is representable in one hunt. Because this is backend-only,
+  the **Go** formula gains the `sparkling_power` term now; syncing the same term into
+  `utils/odds.ts` (and surfacing the field in the outbreak editor) is a tracked
+  frontend follow-up.
+- **Coverage:** all **8** dynamic `formula_type`s already present in the seed (see
+  table), not the 5 from v1.
+- **Parameter lifecycle:** steady-state config; one odds/ETA per hunt. Editing
+  already works via `UpdateHuntHandler`.
+- **ETA realism:** route ranking uses each method's **default "best realistic"
+  params** (registry constant) so the ranked odds reflect the method's achievable
+  potential; per-method `avg_time` (already in the seed) keeps ETA honest.
+- **No new DDL.** `hunt_methods.formula_type` and `user_hunts.hunt_parameters`
+  already exist and are already seeded.
 
 ## Architecture
 
-A **formula registry** keyed by the `formula_type` string on `hunt_methods`. Each
-entry bundles:
+Add a method-aware odds function to `internal/calc` that mirrors
+`calculateOdds()` in `utils/odds.ts`:
 
-1. a **parameter schema** — an array of `{key,label,type,min,max,options,help,default}`,
-2. a **compute function** — `(params, base OddsConfig, hasCharm) → (denominator int, prob float64)`,
-3. a **realistic `avg_time`** default.
+```
+calc.EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, hasCharm bool)
+    -> (denominator int)
+```
 
-Two formula *kinds* sit behind a common interface:
+It branches on `formulaType` exactly as the TS does, reading the same param keys
+(`chain_length`, `defeated_count`, `sparkling_power`, `search_level`). `computeRoute`
+in `routes.go` calls it (passing each formula's **default best params**) instead of
+the inline `base_odds / total_rolls`. The `static` path is unchanged, so existing
+behaviour and the existing `routes_test.go` assertions still hold.
 
-- **Kind 1 — additive-rolls:** `R = 1 + bonus(params) + (charm ? charmRolls : 0)`,
-  then `P = 1 − (1 − 1/baseOdds)^R`. Reuses the existing rolls model.
-- **Kind 2 — direct-probability:** `P = g(params)` computed directly; charm handled
-  per-method.
+A small companion `calc.DefaultParams(formulaType) map[string]any` supplies the
+ranking defaults (the achievable-best config per method).
 
-## The registry (verified math)
+## The registry — canonical formulas (mirror of `utils/odds.ts`)
 
-Math sourced from the `shiny-hunt-expert` agent (Bulbapedia / Smogon / community
-consensus; see Sources). `baseOdds = 4096` for Gen 6+ methods, `8192` for
-Gen 4 HGSS/Pt Radar.
+`baseOdds` is the game's denominator (`4096` modern). Param keys match the TS engine
+and the existing `HuntParametersEditor`. **These are the shipped TS numbers, which
+are the contract** — note several differ from textbook/expert values.
 
-| `formula_type` | Kind | Params (schema) | Compute | `avg_time` |
-|---|---|---|---|---|
-| `static` (default) | 1 | none | `R = base_rolls + charm` (unchanged) | existing |
-| `sv_outbreak_sandwich` | 1 | `outbreakKo` int (30→+1, 60→+2); `sparklingLevel` 0–3 (→ +level) | `R = 1 + obRolls + sparkRolls + charm(+2)`; max R8 ≈ **1/512** | 20 s |
-| `swsh_brilliant` | 1 | `koCount` int (50/100/200/300/500 → +1…+5) | `R = 1 + briRolls + charm(+2)`; max R8 ≈ 1/512 | 40 s |
-| `gen7_sos` | 1 | `chainLength` int (11/21/31 → +1/+2/+3, cap +3) | `R = 1 + sosRolls + charm(+2)`; max R6 ≈ 1/683 | 25 s |
-| `radar_chain` | 2 | `chainLength` int 0–40 | `P = ⌈65535 / (8200 − 200·chain)⌉ / 65536`; chain 0 ≈ 1/8192, chain 40 ≈ **1/200**; **charm ignored** | 120 s (≈30 s/patch ÷ ~5% chain-40 hold rate) |
-| `oras_dexnav` | 2 | `searchLevel` int; `dexnavChain` int (0/50/100) | composite: search-level direct term + small PID fallback; charm feeds iteration count `n` | 45 s |
+| `formula_type` | Param(s) | Rolls / denominator (exactly as TS) | Ranking default |
+|---|---|---|---|
+| `static` | none | `rolls = base_rolls + (charm?charm_rolls:0)`; `den = ⌊base/rolls⌋` | — |
+| `outbreak_defeats_sv` | `defeated_count`; **+`sparkling_power` (new)** | extra = (defeats≥60→2, ≥30→1) **+ (power 1/2/3→1/2/3)**; `rolls = base_rolls+extra+charm`; `den=⌊base/rolls⌋` | defeats 60, power 3 |
+| `sandwich_power_sv` | `sparkling_power` 0–3 | extra = power(1/2/3→1/2/3); `den=⌊base/rolls⌋` | power 3 |
+| `sos_chain_gen7` | `chain_length` (mod 255) | extra = (≥31→12, ≥21→8, ≥11→4); `den=⌊base/rolls⌋` | chain 31 |
+| `radar_chain_gen4` | `chain_length` 0–40 | `den = max(99, round(65536 − 1635.925·chain))`; `rolls=1`; **charm ignored** | chain 40 |
+| `dexnav_gen6` | `search_level`, `chain_length` | composite (search-level term `t/10000` + standard rolls term); `den = round(1/totalProb)`; see TS lines 73–94 | search 200, chain 100 |
+| `catch_combo_lgpe` | `chain_length`* | extra = (≥31→11, ≥21→7, ≥11→3); `den=⌊base/rolls⌋` | combo 31 |
+| `chain_fishing_gen6` | `chain_length`* | extra = `min(chain,20)·2`; `den=⌊base/rolls⌋` | chain 20 |
+| `dynamax_adventures_gen8` | none | `den = charm ? 100 : 300`; `rolls=1` | — |
 
-Breakpoint detail:
-
-- **SV outbreak rolls:** 0–29 → +0, 30–59 → +1, 60+ → +2. **Sparkling Power:**
-  Lv1/2/3 → +1/+2/+3. The famous **1/512** = base(1) + outbreak60(+2) +
-  sandwichLv3(+3) + charm(+2) = R8.
-- **SwSh Brilliant:** KO 0–49 → +0, 50–99 → +1, 100–199 → +2, 200–299 → +3,
-  300–499 → +4, 500+ → +5. (Per-species "caught or battled" count.)
-- **SOS:** 0–10 → +0, 11–20 → +1, 21–30 → +2, 31+ → +3 (cap).
-- **Radar** breaks the rolls model entirely — direct per-patch probability, no
-  charm effect, no stacking. Note the ~5% chain-40 *hold* rate is what the
-  inflated `avg_time` (~120 s) accounts for, not the headline odds — this keeps
-  Radar's optimistic 1/200 from unfairly winning route ranking.
-- **DexNav** breaks the rolls model — a search-level-driven direct term plus a PID
-  fallback; charm feeds the iteration count multiplicatively. If the full
-  composite proves fiddly, a `searchLevel → approxOdds` lookup table is an
-  acceptable implementation of the same `formula_type`.
+\* `catch_combo_lgpe` and `chain_fishing_gen6` currently read the live `encounters`
+count in TS, not a named param. For **ranking** we feed the default via the same
+chain param; the Go port must accept an explicit count so ranking is deterministic
+(documented in the plan).
 
 ## Backend changes
 
-- **Fix the gate (`internal/api/hunts.go:154`):** remove the
-  `huntParameters = json.RawMessage('{}')` override for curated hunts. Instead,
-  **validate** the incoming `hunt_parameters` against the method's schema — clamp
-  to range / snap to breakpoints, reject clearly out-of-range input as `400`.
-  This bug currently wipes any params on curated hunts and gates the whole feature.
-- **Engine:** add `calc.EffectiveOdds(formulaType string, params, base OddsConfig, hasCharm bool) (denominator int, prob float64)`.
-  `routes.go::computeRoute` calls it instead of the inline `base_odds / total_rolls`.
-  `CalculateEstimatedTimeHours` is rephrased in terms of `prob` and `avg_time`.
-- **Route ranking (pre-hunt):** the dex/route drawer ranks routes before a hunt
-  exists, so it uses each method's **default "best realistic" params** from the
-  registry to show achievable odds. Realism stays honest via `avg_time`.
-- **Schema endpoint:** the method list and `GET /api/pokemon/{id}/route` responses
-  gain a `params_schema` so the frontend form is data-driven. (`formula_type` is
-  already returned.)
+- **Port the engine:** new `calc.EffectiveOdds` + `calc.DefaultParams` in a new file
+  `internal/calc/methods.go`, mirroring `utils/odds.ts` branch-for-branch. Table tests
+  assert parity with the TS numbers.
+- **Wire ranking:** `routes.go::computeRoute` calls `EffectiveOdds(c.FormulaType,
+  DefaultParams(c.FormulaType), …)` for the `Odds`/`ETAHours` it returns. Static path
+  unchanged. `MethodCandidate.FormulaType` already exists and is already populated by
+  `dex.go::fetchMethodCandidates`.
+- **Fix persistence (`hunts.go:154`):** delete the
+  `huntParameters = json.RawMessage('{}')` override in the curated branch so the
+  decoded `req.HuntParameters` (already handled at lines 125–129) is the value
+  inserted. Add a minimal guard: if the body's params aren't a JSON object, fall back
+  to `{}` (never 500).
+- **Stacking term:** the Go `outbreak_defeats_sv` branch adds the `sparkling_power`
+  extra rolls (TS does not yet — tracked follow-up).
 
 ## Frontend changes
 
-- **`<MethodParamsForm schema value onChange>`** — one generic component rendering
-  number inputs / selects / steppers from `params_schema`, with breakpoint hints
-  ("next boost at 60").
-- **NewHuntModal** — when the chosen method has a non-empty schema, show the form
-  plus a **live odds/ETA preview** that recomputes as params change.
-- **Active hunt (Dashboard)** — an editable params section; on change → `PATCH`
-  `hunt_parameters` → odds display updates (steady-state, editable-later model).
-- **RouteList** already renders `odds` / `eta_hours`; it just reflects the new
-  numbers.
+**None this pass.** `utils/odds.ts`, `HuntParametersEditor`, `MethodPreview`,
+`HeroHunt`, and `OddsCurve` already render params and live odds client-side. Once
+`hunts.go:154` is fixed, curated-hunt params persist and the existing editor stops
+being cosmetic on reload.
 
 ## Seeding
 
-Upsert the five methods as `hunt_methods` rows with the correct `formula_type`,
-realistic `avg_time`, and `method_games` mappings to the right titles
-(SV→SV, SwSh→SwSh, SOS→Gen 7 SM/USUM, Radar→Gen 4 HGSS/Pt + Gen 6 XY,
-DexNav→ORAS). Idempotent `ON CONFLICT` upsert. Respect the seed-order rule:
-`cmd/seed` runs **last** (it rebuilds the method tables).
+**No seed changes required** — all 8 `formula_type`s and their `avg_time`/games are
+already in `seeds/hunt_methods.json`. (If the audit later shows a method tagged
+`static` that should be dynamic, that's a data fix, out of scope here.)
 
 ## Error handling & edge cases
 
-- Unknown `formula_type` → fall back to `static` (never 500).
-- Missing / invalid params → registry defaults, or clamp to range.
-- Direct-probability `P` clamped to ≤ 1; displayed denominator floored to ≥ 1
-  (matches the current `1 / N` display contract).
-- A method with an empty schema behaves exactly as today (`static`).
+- Unknown `formula_type` → `static` fallback (matches TS `type || "static"`; never 500).
+- Missing/invalid params → the Go branches clamp/default exactly as TS
+  (`Math.max(0, …)`, `Math.min(…, cap)`).
+- Denominator floored to ≥ 1 for display; `radar`/`dexnav`/`dynamax` set `rolls = 1`
+  and compute the denominator directly, as TS does.
 
 ## Testing
 
-Table-driven tests in `internal/calc` (the package already has `routes_test.go`):
+Table-driven tests in `internal/calc/methods_test.go` (the package already runs under
+`go test ./internal/calc/`), asserting **parity with `utils/odds.ts`** at sample
+points:
 
-- `sv_outbreak_sandwich`: R8 stack → ~512; Sandwich Lv3 alone → ~1024;
-  outbreak 60 alone → ~1366.
-- `swsh_brilliant`: KO 500 + charm → ~512.
-- `gen7_sos`: chain 31 + charm → ~683; chain 0 → full odds.
-- `radar_chain`: chain 0 → ~8192; chain 40 → ~200; charm makes no difference.
-- `oras_dexnav`: low vs high search level produce increasing odds.
-- Handler test: `hunt_parameters` now round-trips on a **curated** hunt
-  (regression guard for the hunts.go:154 fix).
+- `static`: base 4096, rolls 1, charm 2 → 4096 (no charm) / 1365 (charm). (Existing.)
+- `outbreak_defeats_sv`: defeats 60 + power 3 + charm(2) + base(1) → ⌊4096/8⌋ = 512.
+- `sandwich_power_sv`: power 3, no charm → ⌊4096/4⌋ = 1024.
+- `sos_chain_gen7`: chain 31, no charm → ⌊4096/13⌋ = 315.
+- `radar_chain_gen4`: chain 40 → 99; chain 0 → 65536 (a latent quirk in the TS
+  formula — mirrored for parity, flagged as a follow-up); charm makes no difference.
+- `catch_combo_lgpe`: combo 31, no charm → ⌊4096/12⌋ = 341.
+- `chain_fishing_gen6`: chain 20, no charm → ⌊4096/41⌋ = 99.
+- `dynamax_adventures_gen8`: 300 (no charm) / 100 (charm).
+- `dexnav_gen6`: search 200/chain 100 produces a denominator well below 4096.
+- Ranking test: a candidate slice mixing `static` and `outbreak_defeats_sv` ranks the
+  outbreak ahead via `EffectiveOdds`.
+- Handler regression: `hunt_parameters` round-trips on a **curated** hunt create
+  (guards the `hunts.go:154` fix).
 
-## Out of scope / explicit next step
+(Exact expected integers are pinned in the plan after computing each against the TS
+formula; any that differ from the above are corrected there.)
 
-- **Method eligibility data (the next task):** *which* Pokémon are huntable via
-  each method, per game, must be researched and seeded **after** this engine
-  lands — e.g. SOS-only species, Radar-incompatible species, which species can
-  appear in SV/SwSh outbreaks, ORAS DexNav availability. This is a **web-sourced
-  data-population pass** (Bulbapedia/Serebii per-method species lists) feeding
-  `method_availability` / `method_exceptions`, and is tracked separately from this
-  odds-engine work.
-- **Live per-encounter chain counter** on the dashboard (we chose steady-state
-  config instead).
-- **Forms/regional variants** as method targets (the 1025-species cap, see #3).
+## Out of scope / explicit next steps
+
+- **Method eligibility data (the next task):** *which* Pokémon are huntable via each
+  method, per game — a **web-sourced data-population pass** (Bulbapedia/Serebii)
+  feeding `method_availability` / `method_exceptions`. Tracked separately.
+- **TS engine sync:** add the `sparkling_power` term to `outbreak_defeats_sv` in
+  `utils/odds.ts` and surface the field in the outbreak editor, so client live-odds
+  matches the Go ranking for stacked outbreak hunts.
+- **A-vs-B form refactor:** optionally replace the bespoke `HuntParametersEditor` with
+  a served-schema generic form later. Not now.
+- **Live per-encounter chain counter**, **forms/regional variants** — unchanged from
+  the dex-completion backlog.
 
 ## Sources
 
-- VGC — SV mass outbreaks & shiny odds
-- ScreenRant — SV shiny rates by method
-- GameFAQs — SV sandwich + outbreak stacking
-- RotomLabs — SwSh shiny rates
-- Bulbapedia — Brilliant Pokémon (KO rolls)
-- Player.One — SOS chaining rates
-- Bulbapedia — Poké Radar
-- mrnbayoh — ORAS DexNav shiny probability analysis
+The Go port's contract is `frontend/src/utils/odds.ts`. Domain background (where it
+agrees) from the `shiny-hunt-expert`: Bulbapedia (Brilliant Pokémon, Poké Radar),
+Smogon/community SOS & sandwich-stacking references, mrnbayoh ORAS DexNav analysis.
