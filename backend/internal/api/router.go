@@ -68,6 +68,7 @@ func NewRouter() *chi.Mux {
 			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
 			r.Get("/dex/status", DexStatusHandler)
+			r.Get("/dex/suggestions", DexSuggestionsHandler)
 			r.Get("/pokemon/{id}/route", PokemonRouteHandler)
 
 			r.Group(func(r chi.Router) {
