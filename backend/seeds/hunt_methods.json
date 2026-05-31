@@ -154,8 +154,8 @@
     ],
     "method_name": "Friend Safari",
     "avg_time_seconds": 20,
-    "base_rolls": 1,
-    "charm_rolls": 0,
+    "base_rolls": 5,
+    "charm_rolls": 2,
     "formula_type": "static",
     "requires_kind": "wild"
   },
