@@ -1,4 +1,5 @@
 import type { Route } from "../App";
+import { Ic } from "./nav/navItems";
 
 const routeLabels: Record<Route, string> = {
 	dash: "Dashboard",
@@ -14,18 +15,35 @@ const routeLabels: Record<Route, string> = {
 interface Props {
 	route: Route;
 	onNew: () => void;
+	onMoreOpen: () => void;
+	onOpenSearch: () => void;
 }
 
-export default function Topbar({ route, onNew }: Props) {
+export default function Topbar({
+	route,
+	onNew,
+	onMoreOpen,
+	onOpenSearch,
+}: Props) {
 	return (
 		<div className="topbar">
+			{/* Hamburger — visible only on mobile (≤760px) */}
+			<button
+				type="button"
+				className="topbar-menu-btn"
+				onClick={onMoreOpen}
+				aria-label="Open more options"
+			>
+				{Ic.menu}
+			</button>
+
 			<div className="crumb">
-				<span>Workspace</span>
-				<span className="sep">/</span>
+				<span className="topbar-workspace-crumb">Workspace</span>
+				<span className="sep topbar-workspace-crumb">/</span>
 				<span className="here">{routeLabels[route]}</span>
 			</div>
 			<div className="spacer" />
-			<div className="searchbox">
+			<button type="button" className="searchbox" onClick={onOpenSearch}>
 				<svg
 					viewBox="0 0 16 16"
 					width="14"
@@ -33,14 +51,15 @@ export default function Topbar({ route, onNew }: Props) {
 					fill="none"
 					stroke="currentColor"
 					strokeWidth="1.5"
+					aria-hidden="true"
 				>
 					<circle cx="7" cy="7" r="4.5" />
 					<path d="M11 11l3 3" />
 				</svg>
-				<input placeholder="Search hunts, Pokémon…" readOnly />
+				<span className="searchbox-placeholder">Search Pokémon…</span>
 				<kbd>⌘K</kbd>
-			</div>
-			<button className="btn gold" onClick={onNew}>
+			</button>
+			<button type="button" className="btn gold" onClick={onNew}>
 				<svg
 					viewBox="0 0 16 16"
 					width="14"

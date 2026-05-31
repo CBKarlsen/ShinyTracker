@@ -1,12 +1,12 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
-import { API_BASE } from "../config";
-import type { HuntDetail } from "./HistoricHunts";
 import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
 import DexDrawer from "./DexDrawer";
 import HuntNextPanel from "./HuntNextPanel";
+import type { HuntDetail } from "./HistoricHunts";
 
 const GEN_RANGES: [number, number, number][] = [
 	[1, 1, 151],
@@ -21,15 +21,33 @@ const GEN_RANGES: [number, number, number][] = [
 ];
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 
-const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void }> = ({ onStartHunt }) => {
+const Collection: React.FC<{
+	onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void;
+	focusPokemonId?: number | null;
+	onFocusHandled?: () => void;
+}> = ({ onStartHunt, focusPokemonId, onFocusHandled }) => {
 	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 	const [caughtIds, setCaughtIds] = useState<Set<number>>(new Set());
-	const [blocked, setBlocked] = useState<{ locked: Set<number>; notInGames: Set<number> }>({ locked: new Set(), notInGames: new Set() });
+	const [blocked, setBlocked] = useState<{
+		locked: Set<number>;
+		notInGames: Set<number>;
+	}>({ locked: new Set(), notInGames: new Set() });
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState<"all" | "owned" | "missing">("all");
 	const [drawerId, setDrawerId] = useState<number | null>(null);
+
+	// When asked to focus a specific Pokémon (e.g. from command search),
+	// open its drawer, then tell the parent it was handled so it can reset
+	// (lets the same Pokémon be focused again later).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: onFocusHandled is an inline arrow that changes every parent render; omitting it is intentional
+	useEffect(() => {
+		if (focusPokemonId != null) {
+			setDrawerId(focusPokemonId);
+			onFocusHandled?.();
+		}
+	}, [focusPokemonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -54,13 +72,18 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 					setCaughtIds(caught);
 					if (statusRes.ok) {
 						const s: DexStatus = await statusRes.json();
-						setBlocked({ locked: new Set(s.locked_everywhere), notInGames: new Set(s.not_in_your_games) });
+						setBlocked({
+							locked: new Set(s.locked_everywhere),
+							notInGames: new Set(s.not_in_your_games),
+						});
 					}
 				} else {
 					showError("Failed to fetch Pokedex information.");
 				}
 			} catch (err: unknown) {
-				showError((err as Error).message || "Failed to fetch Pokedex information.");
+				showError(
+					(err as Error).message || "Failed to fetch Pokedex information.",
+				);
 				console.error(err);
 			} finally {
 				setLoading(false);
@@ -239,9 +262,20 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 						<div className="dex-grid">
 							{cellsInGen.map((p) => {
 								const caught = caughtIds.has(p.id);
-								const state = caught ? "caught" : blocked.locked.has(p.id) ? "locked" : blocked.notInGames.has(p.id) ? "notgames" : "missing";
+								const state = caught
+									? "caught"
+									: blocked.locked.has(p.id)
+										? "locked"
+										: blocked.notInGames.has(p.id)
+											? "notgames"
+											: "missing";
 								return (
-									<div key={p.id} className={`dex-cell ${state}`} onClick={() => setDrawerId(p.id)} title={p.name}>
+									<div
+										key={p.id}
+										className={`dex-cell ${state}`}
+										onClick={() => setDrawerId(p.id)}
+										title={p.name}
+									>
 										<img
 											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${p.id}.png`}
 											alt={p.name}
@@ -255,25 +289,30 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 				);
 			})}
 
-			{drawerId !== null && (() => {
-				const p = pokemon.find((x) => x.id === drawerId);
-				if (!p) return null;
-				return (
-					<DexDrawer
-						pokemon={p}
-						caught={caughtIds.has(p.id)}
-						onClose={() => setDrawerId(null)}
-						onCaughtChange={(id, isCaught) => {
-							setCaughtIds((prev) => {
-								const next = new Set(prev);
-								if (isCaught) next.add(id); else next.delete(id);
-								return next;
-							});
-						}}
-						onStartHunt={(poke, route) => { setDrawerId(null); onStartHunt?.(poke, route); }}
-					/>
-				);
-			})()}
+			{drawerId !== null &&
+				(() => {
+					const p = pokemon.find((x) => x.id === drawerId);
+					if (!p) return null;
+					return (
+						<DexDrawer
+							pokemon={p}
+							caught={caughtIds.has(p.id)}
+							onClose={() => setDrawerId(null)}
+							onCaughtChange={(id, isCaught) => {
+								setCaughtIds((prev) => {
+									const next = new Set(prev);
+									if (isCaught) next.add(id);
+									else next.delete(id);
+									return next;
+								});
+							}}
+							onStartHunt={(poke, route) => {
+								setDrawerId(null);
+								onStartHunt?.(poke, route);
+							}}
+						/>
+					);
+				})()}
 		</div>
 	);
 };
