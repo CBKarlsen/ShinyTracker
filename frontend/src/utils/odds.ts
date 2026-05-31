@@ -57,9 +57,10 @@ export function calculateOdds(
 	if (type === "radar_chain_gen4") {
 		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
 		const chain = Math.max(0, Math.min(paramChain, 40));
-		// Capped at 40. formula: 1 / round(65536 - 1640 * chain)
-		// Yields 1/99 at chain 40. We use 1635.925 as the step to land exactly on 99.
-		denominator = Math.max(99, Math.round(65536 - 1635.925 * chain));
+		// Bulbapedia: numerator = ceil(65535 / (8200 - 200*chain)); rate = numerator / 65536.
+		// chain 0 -> 1/8192 (base Gen 4 odds); chain 40 (cap) -> 1/200.
+		const numerator = Math.ceil(65535 / (8200 - 200 * chain));
+		denominator = Math.round(65536 / numerator);
 		// Shiny Charm doesn't apply to Gen 4 Pokeradar
 		rolls = 1;
 	} else if (type === "catch_combo_lgpe") {
