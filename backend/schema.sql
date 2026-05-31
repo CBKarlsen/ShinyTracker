@@ -116,6 +116,19 @@ CREATE TABLE IF NOT EXISTS method_availability (
     UNIQUE (pokemon_id, method_id, game_id)
 );
 
+-- profiles: Supabase Auth user metadata, keyed by the Supabase user UUID.
+-- id mirrors auth.users.id (the JWT sub claim from Supabase access tokens).
+-- No hard FK to auth.users is declared here so this DDL can be applied with
+-- the app's existing tooling without cross-schema permission issues.
+-- Populated during the Supabase Auth swap step; the existing users table is
+-- NOT touched here.
+CREATE TABLE IF NOT EXISTS profiles (
+    id          uuid        PRIMARY KEY,            -- = auth.users.id / JWT sub
+    username    text,
+    is_admin    boolean     NOT NULL DEFAULT false,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS user_hunts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
