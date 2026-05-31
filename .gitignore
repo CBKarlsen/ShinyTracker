@@ -20,3 +20,6 @@
 /p3-hunt-card.png
 /p3-odds-curve.png
 /p3-recently-hunted.png
+
+# Root QA/test harness deps (Playwright) — never commit
+node_modules/
