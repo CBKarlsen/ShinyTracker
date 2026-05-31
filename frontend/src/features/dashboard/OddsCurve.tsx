@@ -1,10 +1,15 @@
-import { calculateOdds } from "../../utils/odds";
+import { calculateOdds, defaultParamsFor } from "../../utils/odds";
 import type { Hunt } from "../../types/models";
 
-
+function resolvedParams(hunt: Hunt): Record<string, any> {
+	const stored = (hunt.hunt_parameters as Record<string, any>) || {};
+	if (Object.keys(stored).length > 0) return stored;
+	return defaultParamsFor(hunt.formula_type);
+}
 
 export function OddsCurve({ hunt }: { hunt: Hunt }) {
 	const odds = hunt.base_odds || 4096;
+	const params = resolvedParams(hunt);
 	const { denominator: currentDenominator } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
@@ -12,7 +17,7 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 		odds,
 		hunt.base_rolls || 1,
 		hunt.charm_rolls || 0,
-		(hunt.hunt_parameters as Record<string, any>) || {}
+		params
 	);
 
 	const expected = currentDenominator;
@@ -37,7 +42,7 @@ export function OddsCurve({ hunt }: { hunt: Hunt }) {
 				odds,
 				hunt.base_rolls || 1,
 				hunt.charm_rolls || 0,
-				(hunt.hunt_parameters as Record<string, any>) || {}
+				params
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 			if (!foundYouP && e === hunt.encounter_count) {

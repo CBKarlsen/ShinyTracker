@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE } from "../../config";
 
 interface UserRow {
 	id: string;
@@ -9,7 +10,7 @@ interface UserRow {
 	created_at: string;
 }
 
-const API = "http://localhost:8080";
+const API = API_BASE;
 function authHeaders(token: string) {
 	return {
 		Authorization: `Bearer ${token}`,

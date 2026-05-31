@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import type { PokemonRouteResponse } from "../../types/models";
+import { API_BASE } from "../../config";
 
 // Fetches GET /api/pokemon/{id}/route. Pass null to fetch nothing.
 export function usePokemonRoute(pokemonId: number | null) {
@@ -17,7 +18,7 @@ export function usePokemonRoute(pokemonId: number | null) {
 		let active = true;
 		setLoading(true);
 		setError(false);
-		fetch(`http://localhost:8080/api/pokemon/${pokemonId}/route`, {
+		fetch(`${API_BASE}/api/pokemon/${pokemonId}/route`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 			.then((r) => (r.ok ? r.json() : Promise.reject()))

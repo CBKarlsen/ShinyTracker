@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE } from "../../config";
 
 interface Pokemon {
 	id: number;
@@ -18,7 +19,7 @@ interface HuntMethodRow {
 	formula_type: string;
 }
 
-const API = "http://localhost:8080";
+const API = API_BASE;
 
 function authHeaders(token: string) {
 	return {

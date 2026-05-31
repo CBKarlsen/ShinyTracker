@@ -2,7 +2,9 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { API_BASE } from "../config";
 import { getShowdownGif } from "../utils/pokemon";
+import { defaultParamsFor } from "../utils/odds";
 import type { Pokemon, PokemonRoute } from "../types/models";
 import { IcClose, IcPlus } from "./ui/icons";
 import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
@@ -58,13 +60,18 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// Default selection — only when no prefill is active so it doesn't fight the prefill effect.
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
-		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) setSelectedRoute(routes[0]);
+		if (!prefill && !useCustomMethod && routes.length > 0 && !selectedRoute) {
+			setSelectedRoute(routes[0]);
+			setHuntParams(defaultParamsFor(routes[0].formula_type));
+		}
 	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Once routes load, select the prefill route by key.
 	useEffect(() => {
 		if (prefill && routes.length > 0) {
-			setSelectedRoute(routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route);
+			const r = routes.find((r) => routeKey(r) === routeKey(prefill.route)) ?? prefill.route;
+			setSelectedRoute(r);
+			setHuntParams(defaultParamsFor(r.formula_type));
 		}
 	}, [prefill, routes]);
 
@@ -74,7 +81,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		const timer = setTimeout(async () => {
 			setLoadingSearch(true);
 			try {
-				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
+				const res = await fetch(`${API_BASE}/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
 			} catch (err: any) {
 				showError(err.message || "Failed to search Pokemon.");
@@ -87,7 +94,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
 		if (!selectedPokemon || !token || !userId) return;
-		fetch(`http://localhost:8080/api/user/${userId}/games`, {
+		fetch(`${API_BASE}/api/user/${userId}/games`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -99,7 +106,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		if (!selectedPokemon) return;
 		setStarting(true);
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts", {
+			const res = await fetch(`${API_BASE}/api/hunts`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -129,7 +136,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 		if (!selectedPokemon || !customMethodName.trim()) return;
 		setStarting(true);
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts", {
+			const res = await fetch(`${API_BASE}/api/hunts`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -309,7 +316,11 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 									routes={routes}
 									variant="select"
 									selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
-									onRouteClick={(r) => { setSelectedRoute(r); setUseCustomMethod(false); }}
+									onRouteClick={(r) => {
+										setSelectedRoute(r);
+										setUseCustomMethod(false);
+										setHuntParams(defaultParamsFor(r.formula_type));
+									}}
 								/>
 							)}
 

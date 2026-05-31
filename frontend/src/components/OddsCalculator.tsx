@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { calcCumulativeOdds, calculateOdds } from "../utils/odds";
+import { API_BASE } from "../config";
 
 interface Game {
 	id: number;
@@ -55,7 +56,7 @@ export default function OddsCalculator() {
 	const [odds, setOdds] = useState<OddsResult | null>(null);
 
 	useEffect(() => {
-		fetch("http://localhost:8080/api/games")
+		fetch(`${API_BASE}/api/games`)
 			.then((r) => r.json())
 			.then(setGames)
 			.catch(() => {});
@@ -68,7 +69,7 @@ export default function OddsCalculator() {
 			setOdds(null);
 			return;
 		}
-		fetch(`http://localhost:8080/api/methods?game_id=${gameId}`)
+		fetch(`${API_BASE}/api/methods?game_id=${gameId}`)
 			.then((r) => r.json())
 			.then((data: MethodItem[]) => setMethods(data ?? []))
 			.catch(() => {});

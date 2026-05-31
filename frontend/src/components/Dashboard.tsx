@@ -1,14 +1,16 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
-import { SparkSm, IcPlus } from "./ui/icons";
-import { Stat } from "./ui/Stat";
 import { HeroHunt } from "../features/dashboard/HeroHunt";
 import { HuntRow } from "../features/dashboard/HuntRow";
 import { PhaseModal } from "../features/dashboard/PhaseModal";
 import type { Hunt } from "../types/models";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import { EmptyState } from "./ui/EmptyState";
 import { ErrorBanner } from "./ui/ErrorBanner";
+import { IcPlus, SparkSm } from "./ui/icons";
+import { Stat } from "./ui/Stat";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -29,7 +31,7 @@ interface Props {
 }
 
 const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const [hunts, setHunts] = useState<Hunt[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
@@ -39,11 +41,14 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 	const [phaseHunt, setPhaseHunt] = useState<Hunt | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		setErrorMsg("Your session expired — please sign in again.");
+	}, [logout]);
+
 	const fetchHunts = async () => {
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts", {
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const res = await authedFetch(`${API_BASE}/api/hunts`, token, {}, handleSessionExpired);
 			if (res.ok) {
 				const data: Hunt[] = (await res.json()) || [];
 				const active = data.filter((h) => h.status === "active");
@@ -55,6 +60,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 				onHuntCountChange(active.length);
 			}
 		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			console.error(err);
 		} finally {
 			setLoading(false);
@@ -75,18 +81,26 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 				active.map(([huntId, count]) => {
 					const hunt = hunts.find((h) => h.id === huntId);
 					if (!hunt) return Promise.resolve();
-					return fetch(`http://localhost:8080/api/hunts/${huntId}`, {
-						method: "PATCH",
-						headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-						body: JSON.stringify({ encounter_count: count, status: hunt.status }),
-					}).then((res) => {
+					return authedFetch(
+						`${API_BASE}/api/hunts/${huntId}`,
+						token,
+						{
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ encounter_count: count, status: hunt.status }),
+						},
+						handleSessionExpired,
+					).then((res) => {
 						if (res.ok) committedRef.current[huntId] = count;
+					}).catch((err) => {
+						if (err instanceof SessionExpiredError) return;
+						console.error(err);
 					});
 				}),
 			);
 		}, 60_000);
 		return () => clearInterval(id);
-	}, [localCounts, hunts, token]);
+	}, [localCounts, hunts, token, handleSessionExpired]);
 
 	// SPACE key → increment primary hunt
 	useEffect(() => {
@@ -109,11 +123,16 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 			try {
 				const hunt = hunts.find((h) => h.id === id);
 				if (!hunt) return;
-				const res = await fetch(`http://localhost:8080/api/hunts/${id}`, {
-					method: "PATCH",
-					headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-					body: JSON.stringify({ encounter_count: newCount, status: hunt.status }),
-				});
+				const res = await authedFetch(
+					`${API_BASE}/api/hunts/${id}`,
+					token,
+					{
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ encounter_count: newCount, status: hunt.status }),
+					},
+					handleSessionExpired,
+				);
 				if (res.ok) {
 					committedRef.current[id] = newCount;
 					setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, encounter_count: newCount } : h)));
@@ -121,7 +140,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 					setLocalCounts((prev) => ({ ...prev, [id]: committedRef.current[id] ?? 0 }));
 					setErrorMsg("Sync failed — clicks weren't saved.");
 				}
-			} catch {
+			} catch (err) {
+				if (err instanceof SessionExpiredError) return;
 				setLocalCounts((prev) => ({ ...prev, [id]: committedRef.current[id] ?? 0 }));
 				setErrorMsg("Sync failed — clicks weren't saved.");
 			}
@@ -136,17 +156,23 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 		if (timers.current[id]) { clearTimeout(timers.current[id]); delete timers.current[id]; }
 		const currentCount = localCounts[id] ?? 0;
 		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/${id}`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-				body: JSON.stringify({ encounter_count: currentCount, status: "completed" }),
-			});
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/${id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ encounter_count: currentCount, status: "completed" }),
+				},
+				handleSessionExpired,
+			);
 			if (res.ok) {
 				setHunts((prev) => prev.filter((h) => h.id !== id));
 				onHuntCountChange(hunts.length - 1);
 				if (pinnedId === id) setPinnedId(null);
 			}
 		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			console.error(err);
 		}
 	};

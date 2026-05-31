@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE } from "../../config";
 
 interface Pokemon {
 	id: number;
@@ -12,7 +13,7 @@ interface AvailRow {
 	available: boolean;
 }
 
-const API = "http://localhost:8080";
+const API = API_BASE;
 function authHeaders(token: string) {
 	return {
 		Authorization: `Bearer ${token}`,

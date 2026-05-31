@@ -1,13 +1,17 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SparkSm, IcPlus } from "../../components/ui/icons";
 import { TimerDisplay, type TimerStatus } from "../../components/ui/TimerDisplay";
 import { OddsCurve } from "./OddsCurve";
 import { getShowdownGif } from "../../utils/pokemon";
-import { calculateOdds } from "../../utils/odds";
+import { calculateOdds, defaultParamsFor } from "../../utils/odds";
 import { HuntParametersEditor } from "../../components/ui/HuntParametersEditor";
+import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
 import { useAuth } from "../../context/AuthContext";
+import { useNotification } from "../../context/NotificationContext";
 import type { Hunt } from "../../types/models";
+import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -33,44 +37,61 @@ export function HeroHunt({
 	onPhase: (hunt: Hunt) => void;
 	onUpdate?: (hunt: Hunt) => void;
 }) {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
+	const { showError } = useNotification();
 	const [showParams, setShowParams] = useState(false);
 	const [huntParams, setHuntParams] = useState<Record<string, any>>(
 		(hunt.hunt_parameters as Record<string, any>) || {}
 	);
 	const [savingParams, setSavingParams] = useState(false);
+	const [confirmComplete, setConfirmComplete] = useState(false);
 
 	// Sync local state when prop updates
 	useEffect(() => {
 		setHuntParams((hunt.hunt_parameters as Record<string, any>) || {});
 	}, [hunt.hunt_parameters]);
 
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
+
 	const handleSaveParams = async () => {
 		setSavingParams(true);
 		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/${hunt.id}`, {
-				method: "PATCH",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/${hunt.id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						encounter_count: hunt.encounter_count,
+						status: hunt.status,
+						hunt_parameters: huntParams,
+					}),
 				},
-				body: JSON.stringify({
-					encounter_count: hunt.encounter_count,
-					status: hunt.status,
-					hunt_parameters: huntParams,
-				}),
-			});
+				handleSessionExpired,
+			);
 			if (res.ok) {
 				const updatedHunt = await res.json();
 				if (onUpdate) onUpdate(updatedHunt);
 				setShowParams(false);
 			}
 		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			console.error("Failed to update parameters", err);
 		} finally {
 			setSavingParams(false);
 		}
 	};
+	// Resolve params: prefer stored values, fall back to formula defaults so
+	// hunts created before fix-1 (empty hunt_parameters) still show correct odds.
+	const storedParams = (hunt.hunt_parameters as Record<string, any>) || {};
+	const resolvedHuntParams = Object.keys(storedParams).length > 0
+		? storedParams
+		: defaultParamsFor(hunt.formula_type);
+
 	const { denominator: expected } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
@@ -78,11 +99,11 @@ export function HeroHunt({
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
 		hunt.charm_rolls || 0,
-		(hunt.hunt_parameters as Record<string, any>) || {}
+		resolvedHuntParams
 	);
 	const isOver = hunt.encounter_count > expected;
 	const ratio = expected ? Math.min(hunt.encounter_count / expected, 1) : 0;
-	
+
 	let cumP: number | null = null;
 	if (hunt.base_odds != null) {
 		let currentNotShiny = 1;
@@ -94,7 +115,7 @@ export function HeroHunt({
 				hunt.base_odds,
 				hunt.base_rolls || 1,
 				hunt.charm_rolls || 0,
-				(hunt.hunt_parameters as Record<string, any>) || {}
+				resolvedHuntParams
 			);
 			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
 		}
@@ -104,9 +125,31 @@ export function HeroHunt({
 	const btnRef = useRef<HTMLButtonElement>(null);
 	const [bumping, setBumping] = useState(false);
 
-	// Smart timer
-	const [sessionSec, setSessionSec] = useState(0);
-	const [manualPaused, setManualPaused] = useState(false);
+	// Smart timer — session start is persisted to localStorage so a reload
+	// restores elapsed session time rather than resetting to 0.
+	const sessionKey = `session_start_${hunt.id}`;
+	const pausedKey = `session_paused_${hunt.id}`;
+
+	const [manualPaused, setManualPaused] = useState<boolean>(() => {
+		return localStorage.getItem(pausedKey) === "1";
+	});
+
+	const [sessionSec, setSessionSec] = useState<number>(() => {
+		const stored = localStorage.getItem(sessionKey);
+		if (!stored) return 0;
+		const startTs = parseInt(stored, 10);
+		if (Number.isNaN(startTs)) return 0;
+		return Math.floor((Date.now() - startTs) / 1000);
+	});
+
+	// Stamp session start on first mount if not already set and not paused.
+	useEffect(() => {
+		if (!localStorage.getItem(sessionKey) && !manualPaused) {
+			localStorage.setItem(sessionKey, String(Date.now() - sessionSec * 1000));
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
 	const [lastPing, setLastPing] = useState(Date.now());
 	const idleMs = Math.max(45, Math.min(180, (hunt.avg_time_seconds || 8) * 6)) * 1000;
 
@@ -114,10 +157,17 @@ export function HeroHunt({
 		const id = setInterval(() => {
 			if (manualPaused) return;
 			if (Date.now() - lastPing > idleMs) return;
-			setSessionSec((s) => s + 1);
+			setSessionSec((s) => {
+				const next = s + 1;
+				// Keep the stored start timestamp in sync with elapsed seconds so
+				// on the next reload the restored value is always consistent.
+				const startTs = Date.now() - next * 1000;
+				localStorage.setItem(sessionKey, String(startTs));
+				return next;
+			});
 		}, 1000);
 		return () => clearInterval(id);
-	}, [manualPaused, lastPing, idleMs]);
+	}, [manualPaused, lastPing, idleMs, sessionKey]);
 
 	const timerStatus: TimerStatus =
 		manualPaused ? "paused" : Date.now() - lastPing > idleMs ? "idle" : "live";
@@ -139,6 +189,11 @@ export function HeroHunt({
 			setTimeout(() => r.remove(), 600);
 		}
 		onIncrement(hunt.id, e);
+	};
+
+	const clearSessionStorage = () => {
+		localStorage.removeItem(sessionKey);
+		localStorage.removeItem(pausedKey);
 	};
 
 	const gifUrl = getShowdownGif(hunt.pokemon_name);
@@ -237,8 +292,28 @@ export function HeroHunt({
 						sessionSec={sessionSec}
 						totalSec={totalSeconds}
 						status={timerStatus}
-						onToggle={() => setManualPaused((p) => !p)}
-						onReset={() => setSessionSec(0)}
+						onToggle={() => {
+							setManualPaused((p) => {
+								const next = !p;
+								if (next) {
+									// Pausing: remember paused state, remove start stamp
+									localStorage.setItem(pausedKey, "1");
+									localStorage.removeItem(sessionKey);
+								} else {
+									// Resuming: stamp a new start from current elapsed
+									localStorage.removeItem(pausedKey);
+									localStorage.setItem(sessionKey, String(Date.now() - sessionSec * 1000));
+								}
+								return next;
+							});
+						}}
+						onReset={() => {
+							setSessionSec(0);
+							localStorage.removeItem(sessionKey);
+							if (!manualPaused) {
+								localStorage.setItem(sessionKey, String(Date.now()));
+							}
+						}}
 					/>
 				</div>
 
@@ -274,7 +349,7 @@ export function HeroHunt({
 					<button className="btn" onClick={() => onPhase(hunt)}>
 						<SparkSm size={9} color="var(--violet)" /> Log phase
 					</button>
-					<button className="btn gold" onClick={() => onComplete(hunt.id)}>
+					<button className="btn gold" onClick={() => setConfirmComplete(true)}>
 						<SparkSm size={9} /> Found it!
 					</button>
 				</div>
@@ -299,6 +374,19 @@ export function HeroHunt({
 					<OddsCurve hunt={hunt} />
 				) : null}
 			</div>
+
+			<ConfirmDialog
+				open={confirmComplete}
+				title="Mark as found?"
+				message={`Mark ${hunt.pokemon_name} as found? This will complete the hunt.`}
+				confirmLabel="Yes, found it!"
+				onConfirm={() => {
+					setConfirmComplete(false);
+					clearSessionStorage();
+					onComplete(hunt.id);
+				}}
+				onCancel={() => setConfirmComplete(false)}
+			/>
 		</div>
 	);
 }

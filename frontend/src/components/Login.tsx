@@ -1,5 +1,6 @@
 import type React from "react";
 import { useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 
 const SparkSm = ({ size = 18, color }: { size?: number; color?: string }) => (
@@ -28,7 +29,7 @@ const Login: React.FC = () => {
 			mode === "login" ? { email, password } : { username, email, password };
 
 		try {
-			const res = await fetch(`http://localhost:8080${endpoint}`, {
+			const res = await fetch(`${API_BASE}${endpoint}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(body),

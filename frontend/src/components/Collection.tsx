@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { API_BASE } from "../config";
 import type { HuntDetail } from "./HistoricHunts";
 import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
 import DexDrawer from "./DexDrawer";
@@ -33,11 +34,11 @@ const Collection: React.FC<{ onStartHunt?: (pokemon: Pokemon, route: PokemonRout
 		const fetchData = async () => {
 			try {
 				const [pokeRes, huntsRes, statusRes] = await Promise.all([
-					fetch("http://localhost:8080/api/pokemon?limit=all"),
-					fetch("http://localhost:8080/api/hunts", {
+					fetch(`${API_BASE}/api/pokemon?limit=all`),
+					fetch(`${API_BASE}/api/hunts`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
-					fetch("http://localhost:8080/api/dex/status", {
+					fetch(`${API_BASE}/api/dex/status`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);

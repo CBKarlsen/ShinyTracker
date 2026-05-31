@@ -1,6 +1,7 @@
 import type React from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { API_BASE } from "../config";
 import type { Pokemon, PokemonRoute } from "../types/models";
 import { usePokemonRoute } from "../features/routes/usePokemonRoute";
 import RouteList from "../features/routes/RouteList";
@@ -21,7 +22,7 @@ const DexDrawer: React.FC<Props> = ({ pokemon, caught, onClose, onCaughtChange, 
 	const markCaught = async () => {
 		onCaughtChange(pokemon.id, true);
 		try {
-			const res = await fetch("http://localhost:8080/api/hunts/manual", {
+			const res = await fetch(`${API_BASE}/api/hunts/manual`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
 				body: JSON.stringify({ pokemon_id: pokemon.id }),
@@ -36,7 +37,7 @@ const DexDrawer: React.FC<Props> = ({ pokemon, caught, onClose, onCaughtChange, 
 	const removeCaught = async () => {
 		onCaughtChange(pokemon.id, false);
 		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/manual/${pokemon.id}`, {
+			const res = await fetch(`${API_BASE}/api/hunts/manual/${pokemon.id}`, {
 				method: "DELETE",
 				headers: { Authorization: `Bearer ${token}` },
 			});

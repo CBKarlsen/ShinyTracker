@@ -1,5 +1,6 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
+import { API_BASE } from "../config";
 
 interface AuthContextType {
 	token: string | null;
@@ -32,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			setUsername(null);
 			return;
 		}
-		fetch("http://localhost:8080/api/me", {
+		fetch(`${API_BASE}/api/me`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 			.then((r) => {

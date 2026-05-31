@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 
@@ -55,8 +56,8 @@ const CollectionManager: React.FC = () => {
 		const fetchData = async () => {
 			try {
 				const [gamesRes, userGamesRes] = await Promise.all([
-					fetch("http://localhost:8080/api/games"),
-					fetch(`http://localhost:8080/api/user/${userId}/games`, {
+					fetch(`${API_BASE}/api/games`),
+					fetch(`${API_BASE}/api/user/${userId}/games`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);
@@ -85,7 +86,7 @@ const CollectionManager: React.FC = () => {
 			setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
 			try {
 				const res = await fetch(
-					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+					`${API_BASE}/api/user/${userId}/games/${gameId}`,
 					{
 						method: "DELETE",
 						headers: { Authorization: `Bearer ${token}` },
@@ -106,7 +107,7 @@ const CollectionManager: React.FC = () => {
 			]);
 			try {
 				const res = await fetch(
-					`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+					`${API_BASE}/api/user/${userId}/games/${gameId}`,
 					{
 						method: "POST",
 						headers: {
@@ -138,7 +139,7 @@ const CollectionManager: React.FC = () => {
 		);
 		try {
 			const res = await fetch(
-				`http://localhost:8080/api/user/${userId}/games/${gameId}`,
+				`${API_BASE}/api/user/${userId}/games/${gameId}`,
 				{
 					method: "POST",
 					headers: {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { IcClose } from "../../components/ui/icons";
 import type { Hunt, PokemonOption } from "../../types/models";
+import { API_BASE } from "../../config";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -19,7 +20,7 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	useEffect(() => {
 		const timer = setTimeout(async () => {
 			try {
-				const res = await fetch(`http://localhost:8080/api/pokemon?q=${search}`);
+				const res = await fetch(`${API_BASE}/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
 			} catch { /* ignore */ }
 		}, 300);
@@ -29,7 +30,7 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 	const handleSelect = async (pokemon: PokemonOption) => {
 		setSubmitting(true);
 		try {
-			const res = await fetch(`http://localhost:8080/api/hunts/${hunt.id}/phases`, {
+			const res = await fetch(`${API_BASE}/api/hunts/${hunt.id}/phases`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
 				body: JSON.stringify({ pokemon_id: pokemon.id }),

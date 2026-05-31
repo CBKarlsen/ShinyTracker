@@ -4,6 +4,34 @@ export interface OddsResult {
 }
 
 /**
+ * Returns the canonical default hunt_parameters for a given formula_type.
+ * Used both in NewHuntModal (so we POST non-empty params from the start)
+ * and as a fallback in dashboard components for hunts stored with empty params.
+ *
+ * Rule: only seed defaults for params whose value is NOT derived from the
+ * encounter counter. Methods like radar_chain_gen4, sos_chain_gen7, dexnav_gen6,
+ * catch_combo_lgpe, and chain_fishing_gen6 all fall back to `encounters` when
+ * chain_length is absent — seeding a numeric 0 would disable that fallback and
+ * pin those hunts at base odds forever. Return {} for them so calculateOdds
+ * keeps using the live encounter count.
+ */
+export function defaultParamsFor(formulaType: string | null | undefined): Record<string, any> {
+	switch (formulaType) {
+		case "outbreak_defeats_sv":
+			// defeated_count and sparkling_power are user-set, not derived from encounters.
+			return { defeated_count: 0, sparkling_power: 0 };
+		case "sandwich_power_sv":
+			// sparkling_power is user-set.
+			return { sparkling_power: 0 };
+		default:
+			// radar_chain_gen4, sos_chain_gen7, dexnav_gen6, catch_combo_lgpe,
+			// chain_fishing_gen6, static, dynamax_adventures_gen8, etc. all either
+			// use encounters directly or need no seeded defaults.
+			return {};
+	}
+}
+
+/**
  * Calculates rolls and final denominator for a given encounter formula.
  */
 export function calculateOdds(
