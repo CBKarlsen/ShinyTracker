@@ -76,6 +76,25 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 							60+
 						</label>
 					</div>
+					<div className="t-label" style={{ marginBottom: 6, marginTop: 10 }}>
+						Sparkling Power (Sandwich)
+					</div>
+					<select
+						className="input"
+						style={{ padding: "4px 8px", width: "100%" }}
+						value={huntParams.sparkling_power || 0}
+						onChange={(e) =>
+							setHuntParams({
+								...huntParams,
+								sparkling_power: parseInt(e.target.value) || 0,
+							})
+						}
+					>
+						<option value={0}>0</option>
+						<option value={1}>1</option>
+						<option value={2}>2</option>
+						<option value={3}>3</option>
+					</select>
 				</>
 			)}
 			{formulaType === "radar_chain_gen4" && (
