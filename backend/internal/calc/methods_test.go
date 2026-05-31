@@ -26,6 +26,8 @@ func TestEffectiveOddsParity(t *testing.T) {
 		{"dynamax charm", "dynamax_adventures_gen8", nil, true, 100},
 		{"dexnav sl200 ch100", "dexnav_gen6", map[string]any{"search_level": 200, "chain_length": 100}, false, 12},
 		{"unknown falls back to static", "no_such_formula", nil, false, 4096},
+		{"float64 params tolerated", "outbreak_defeats_sv", map[string]any{"defeated_count": float64(60), "sparkling_power": float64(3)}, true, 512},
+		{"empty formula is static", "", nil, false, 4096},
 	}
 	for _, c := range cases {
 		got := EffectiveOdds(c.formula, c.params, base, c.charm)

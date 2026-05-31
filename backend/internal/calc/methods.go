@@ -43,7 +43,8 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 
 	switch t {
 	case "radar_chain_gen4":
-		chain := clampInt(paramInt(params, "chain_length", 0), 0, 40)
+		// 65536 = Gen 4 RNG range; 1635.925 step lands exactly on 1/99 at the chain-40 cap.
+		chain := max(0, min(paramInt(params, "chain_length", 0), 40))
 		den := int(math.Round(65536 - 1635.925*float64(chain)))
 		if den < 99 {
 			den = 99
@@ -51,7 +52,8 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return den
 
 	case "catch_combo_lgpe":
-		combo := maxInt(0, paramInt(params, "count", 0))
+		// NOTE: TS reads the live encounter counter here; the Go engine takes the count via the "count" param (route ranking supplies it through DefaultParams).
+		combo := max(0, paramInt(params, "count", 0))
 		extra := 0
 		switch {
 		case combo >= 31:
@@ -64,7 +66,7 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
 	case "outbreak_defeats_sv":
-		defeats := maxInt(0, paramInt(params, "defeated_count", 0))
+		defeats := max(0, paramInt(params, "defeated_count", 0))
 		extra := 0
 		switch {
 		case defeats >= 60:
@@ -77,7 +79,7 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
 	case "sos_chain_gen7":
-		chain := maxInt(0, paramInt(params, "chain_length", 0)) % 255
+		chain := max(0, paramInt(params, "chain_length", 0)) % 255
 		extra := 0
 		switch {
 		case chain >= 31:
@@ -90,14 +92,15 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
 	case "dexnav_gen6":
-		searchLevel := maxInt(0, paramInt(params, "search_level", 0))
-		chain := maxInt(0, paramInt(params, "chain_length", 0))
+		searchLevel := max(0, paramInt(params, "search_level", 0))
+		chain := max(0, paramInt(params, "chain_length", 0))
+		// Piecewise search-level -> points: 6/level up to 100, 2/level for 101-200, 1/level beyond; /10000 = probability.
 		tt := 0.0
 		if searchLevel > 0 {
-			tt += float64(minInt(searchLevel, 100)) * 6
+			tt += float64(min(searchLevel, 100)) * 6
 		}
 		if searchLevel > 100 {
-			tt += float64(minInt(searchLevel-100, 100)) * 2
+			tt += float64(min(searchLevel-100, 100)) * 2
 		}
 		if searchLevel > 200 {
 			tt += float64(searchLevel-200) * 1
@@ -131,7 +134,8 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return 300
 
 	case "chain_fishing_gen6":
-		chain := clampInt(paramInt(params, "count", 0), 0, 20)
+		// NOTE: TS reads the live encounter counter here; the Go engine takes the count via the "count" param (route ranking supplies it through DefaultParams).
+		chain := max(0, min(paramInt(params, "count", 0), 20))
 		return floorDiv(base.BaseRolls + chain*2 + charmRolls)
 
 	default: // "static" and any unknown formula
@@ -140,27 +144,8 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 }
 
 func sparklingRolls(power int) int {
-	switch power {
-	case 1:
-		return 1
-	case 2:
-		return 2
-	case 3:
-		return 3
+	if power >= 1 && power <= 3 {
+		return power
 	}
 	return 0
-}
-
-func clampInt(v, lo, hi int) int { return maxInt(lo, minInt(v, hi)) }
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
