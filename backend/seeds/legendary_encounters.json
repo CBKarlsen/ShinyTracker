@@ -96,5 +96,173 @@
     "default_kind": "static",
     "default_games": ["X/Y"],
     "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 243,
+    "name": "Raikou",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 244,
+    "name": "Entei",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 245,
+    "name": "Suicune",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 380,
+    "name": "Latias",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 381,
+    "name": "Latios",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 480,
+    "name": "Uxie",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 481,
+    "name": "Mesprit",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 482,
+    "name": "Azelf",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 483,
+    "name": "Dialga",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 484,
+    "name": "Palkia",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 485,
+    "name": "Heatran",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 488,
+    "name": "Cresselia",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 641,
+    "name": "Tornadus",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 642,
+    "name": "Thundurus",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 645,
+    "name": "Landorus",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 646,
+    "name": "Kyurem",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 718,
+    "name": "Zygarde",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 785,
+    "name": "Tapu Koko",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 786,
+    "name": "Tapu Lele",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 787,
+    "name": "Tapu Bulu",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 788,
+    "name": "Tapu Fini",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 791,
+    "name": "Solgaleo",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 792,
+    "name": "Lunala",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 800,
+    "name": "Necrozma",
+    "default_kind": "raid",
+    "default_games": [],
+    "overrides": { "@swsh-dynamax": "raid" }
   }
 ]
