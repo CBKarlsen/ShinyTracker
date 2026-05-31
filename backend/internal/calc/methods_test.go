@@ -19,9 +19,10 @@ func TestEffectiveOddsParity(t *testing.T) {
 		{"sandwich pw3 no charm", "sandwich_power_sv", map[string]any{"sparkling_power": 3}, false, 1024},
 		{"sos chain31 no charm", "sos_chain_gen7", map[string]any{"chain_length": 31}, false, 315},
 		{"sos chain10 no charm", "sos_chain_gen7", map[string]any{"chain_length": 10}, false, 4096},
-		{"radar chain40", "radar_chain_gen4", map[string]any{"chain_length": 40}, false, 99},
-		{"radar chain40 charm ignored", "radar_chain_gen4", map[string]any{"chain_length": 40}, true, 99},
-		{"radar chain0", "radar_chain_gen4", map[string]any{"chain_length": 0}, false, 65536},
+		{"radar chain40", "radar_chain_gen4", map[string]any{"chain_length": 40}, false, 200},
+		{"radar chain40 charm ignored", "radar_chain_gen4", map[string]any{"chain_length": 40}, true, 200},
+		{"radar chain1", "radar_chain_gen4", map[string]any{"chain_length": 1}, false, 7282},
+		{"radar chain0", "radar_chain_gen4", map[string]any{"chain_length": 0}, false, 8192},
 		{"dynamax no charm", "dynamax_adventures_gen8", nil, false, 300},
 		{"dynamax charm", "dynamax_adventures_gen8", nil, true, 100},
 		{"dexnav sl200 ch100", "dexnav_gen6", map[string]any{"search_level": 200, "chain_length": 100}, false, 12},
@@ -54,9 +55,9 @@ func TestDefaultParamsDriveBestOdds(t *testing.T) {
 	if got := EffectiveOdds("outbreak_defeats_sv", DefaultParams("outbreak_defeats_sv"), base, true); got != 512 {
 		t.Errorf("outbreak default+charm = %d, want 512", got)
 	}
-	// Radar default should be the chain-40 plateau, 99.
-	if got := EffectiveOdds("radar_chain_gen4", DefaultParams("radar_chain_gen4"), base, false); got != 99 {
-		t.Errorf("radar default = %d, want 99", got)
+	// Radar default should be the chain-40 plateau, 200.
+	if got := EffectiveOdds("radar_chain_gen4", DefaultParams("radar_chain_gen4"), base, false); got != 200 {
+		t.Errorf("radar default = %d, want 200", got)
 	}
 	// Static has no params.
 	if dp := DefaultParams("static"); len(dp) != 0 {
