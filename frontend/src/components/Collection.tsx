@@ -40,12 +40,13 @@ const Collection: React.FC<{
 	// When asked to focus a specific Pokémon (e.g. from command search),
 	// open its drawer, then tell the parent it was handled so it can reset
 	// (lets the same Pokémon be focused again later).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: onFocusHandled is an inline arrow that changes every parent render; omitting it is intentional
 	useEffect(() => {
 		if (focusPokemonId != null) {
 			setDrawerId(focusPokemonId);
 			onFocusHandled?.();
 		}
-	}, [focusPokemonId, onFocusHandled]);
+	}, [focusPokemonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	useEffect(() => {
 		const fetchData = async () => {

@@ -18,6 +18,7 @@ export function usePokemonSearch(query: string): {
 	const [loading, setLoading] = useState(false);
 	const seqRef = useRef(0);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: logout identity churns on AuthProvider re-renders; omitting it is intentional
 	useEffect(() => {
 		const q = query.trim();
 		if (!q) {
@@ -44,7 +45,7 @@ export function usePokemonSearch(query: string): {
 			}
 		}, 200);
 		return () => clearTimeout(timer);
-	}, [query, token, logout]);
+	}, [query, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	return { results, loading };
 }

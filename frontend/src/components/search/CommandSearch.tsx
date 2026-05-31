@@ -109,28 +109,29 @@ export default function CommandSearch({
 					{!query.trim() && (
 						<div className="cmd-state">Type to search any Pokémon</div>
 					)}
-					{results.map((p, i) => (
-						<div
-							key={p.id}
-							className={`cmd-row${i === highlight ? " active" : ""}`}
-							onMouseEnter={() => setHighlight(i)}
-							onClick={() => onStartHunt(p)}
-						>
-							<img src={p.sprite_url} alt="" width={28} height={28} />
-							<span className="cmd-nm">{p.name}</span>
-							<span className="cmd-id">#{String(p.id).padStart(4, "0")}</span>
-							<button
-								type="button"
-								className="cmd-dex-btn"
-								onClick={(e) => {
-									e.stopPropagation();
-									onViewInDex(p);
-								}}
+					{!loading &&
+						results.map((p, i) => (
+							<div
+								key={p.id}
+								className={`cmd-row${i === highlight ? " active" : ""}`}
+								onMouseEnter={() => setHighlight(i)}
+								onClick={() => onStartHunt(p)}
 							>
-								View in Dex
-							</button>
-						</div>
-					))}
+								<img src={p.sprite_url} alt="" width={28} height={28} />
+								<span className="cmd-nm">{p.name}</span>
+								<span className="cmd-id">#{String(p.id).padStart(4, "0")}</span>
+								<button
+									type="button"
+									className="cmd-dex-btn"
+									onClick={(e) => {
+										e.stopPropagation();
+										onViewInDex(p);
+									}}
+								>
+									View in Dex
+								</button>
+							</div>
+						))}
 				</div>
 
 				<div className="cmd-foot">

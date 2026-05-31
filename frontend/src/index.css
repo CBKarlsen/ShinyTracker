@@ -2718,11 +2718,13 @@ ul {
 	border-radius: 6px;
 	padding: 4px 8px;
 	opacity: 0;
+	pointer-events: none;
 	transition: opacity 0.12s ease-out;
 }
 .cmd-row.active .cmd-dex-btn,
 .cmd-dex-btn:focus-visible {
 	opacity: 1;
+	pointer-events: auto;
 }
 .cmd-foot {
 	display: flex;
@@ -2742,6 +2744,7 @@ ul {
 	}
 	.cmd-dex-btn {
 		opacity: 1; /* no hover on touch — always show the action */
+		pointer-events: auto;
 	}
 }
 .searchbox .searchbox-placeholder {

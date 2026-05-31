@@ -99,7 +99,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 			setSelectedRoute(routes[0]);
 			setHuntParams(defaultParamsFor(routes[0].formula_type));
 		}
-	}, [routes, prefill, useCustomMethod, selectedRoute]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Once routes load, select the prefill route by key (only when a route was provided).
 	useEffect(() => {
