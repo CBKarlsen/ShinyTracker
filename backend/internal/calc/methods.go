@@ -47,13 +47,11 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 
 	switch t {
 	case "radar_chain_gen4":
-		// 65536 = Gen 4 RNG range; 1635.925 step lands exactly on 1/99 at the chain-40 cap.
+		// Bulbapedia: numerator = ceil(65535 / (8200 - 200*chain)); rate = numerator / 65536.
+		// chain 0 -> 1/8192 (base Gen 4 odds); chain 40 (cap) -> 1/200. No Shiny Charm in Gen 4.
 		chain := max(0, min(paramInt(params, "chain_length", 0), 40))
-		den := int(math.Round(65536 - 1635.925*float64(chain)))
-		if den < 99 {
-			den = 99
-		}
-		return den
+		numerator := int(math.Ceil(65535.0 / float64(8200-200*chain)))
+		return int(math.Round(65536.0 / float64(numerator)))
 
 	case "catch_combo_lgpe":
 		// NOTE: TS reads the live encounter counter here; the Go engine takes the count via the "count" param (route ranking supplies it through DefaultParams).
