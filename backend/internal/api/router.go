@@ -1,10 +1,34 @@
 package api
 
 import (
+	"os"
+	"strings"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
+
+// corsAllowedOrigins reads CORS_ALLOWED_ORIGINS (comma-separated) from env.
+// Falls back to http://localhost:5173 for local dev when the var is unset.
+// AllowCredentials: true is only safe with explicit origins, never with "*".
+func corsAllowedOrigins() []string {
+	raw := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if raw == "" {
+		return []string{"http://localhost:5173"}
+	}
+	parts := strings.Split(raw, ",")
+	origins := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if o := strings.TrimSpace(p); o != "" {
+			origins = append(origins, o)
+		}
+	}
+	if len(origins) == 0 {
+		return []string{"http://localhost:5173"}
+	}
+	return origins
+}
 
 func NewRouter() *chi.Mux {
 	r := chi.NewRouter()
@@ -12,7 +36,7 @@ func NewRouter() *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "*"},
+		AllowedOrigins:   corsAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -21,9 +45,6 @@ func NewRouter() *chi.Mux {
 	}))
 
 	r.Route("/api", func(r chi.Router) {
-		r.Post("/auth/register", RegisterHandler)
-		r.Post("/auth/login", LoginHandler)
-		r.Post("/sync", SyncHandler)
 		r.Get("/games", GetGamesHandler)
 		r.Get("/pokemon", GetPokemonHandler)
 		r.Get("/methods", GetMethodsHandler)
@@ -53,6 +74,10 @@ func NewRouter() *chi.Mux {
 				r.Use(AdminMiddleware)
 				// hunt_methods are global, derived availability — read-only view
 				// plus edit/delete of the global method by id. No create/import.
+				// SyncHandler triggers a PokeAPI re-seed in a goroutine;
+				// admin-only to prevent unauthenticated abuse.
+				r.Post("/sync", SyncHandler)
+
 				r.Get("/admin/hunt-methods", AdminGetHuntMethods)
 				r.Put("/admin/hunt-methods/{id}", AdminUpdateHuntMethod)
 				r.Delete("/admin/hunt-methods/{id}", AdminDeleteHuntMethod)

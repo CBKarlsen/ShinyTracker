@@ -1,15 +1,15 @@
 package api
 
-// supabase_auth.go — additive Supabase JWT verifier (ES256 / JWKS).
+// supabase_auth.go — Supabase JWT verifier (ES256 / JWKS).
 //
-// NOT wired into any middleware yet. The existing AuthMiddleware / ValidateJWT
-// (auth.go) remain the sole gatekeepers until the atomic swap step.
+// Wired into AuthMiddleware as of the Supabase Auth swap step.
 //
-// Usage (future swap step):
+// Usage:
 //
-//	userID, err := ValidateSupabaseJWT(tokenString)
+//	userID, claims, err := ValidateSupabaseJWTWithClaims(tokenString)
+//	userID, err         := ValidateSupabaseJWT(tokenString)  // thin wrapper
 //
-// Configuration (env vars, both optional — defaults match the known project):
+// Configuration (env vars — SUPABASE_URL is required at startup):
 //
 //	SUPABASE_URL  e.g. https://fysopyztqmyjyfgrdusx.supabase.co
 //	              JWKS endpoint  → <SUPABASE_URL>/auth/v1/.well-known/jwks.json
@@ -29,9 +29,6 @@ import (
 )
 
 const (
-	// defaultSupabaseURL is the known project URL; overridable via SUPABASE_URL.
-	defaultSupabaseURL = "https://fysopyztqmyjyfgrdusx.supabase.co"
-
 	// supabaseAudience is the expected aud claim in Supabase access tokens.
 	supabaseAudience = "authenticated"
 
@@ -51,18 +48,21 @@ var supabaseKeyfuncState struct {
 }
 
 // supabaseURLFromEnv returns the Supabase project URL, trimming any trailing
-// slash so downstream concatenation is predictable.
-func supabaseURLFromEnv() string {
+// slash so downstream concatenation is predictable. Returns an error if
+// SUPABASE_URL is unset — the server must not start without it.
+func supabaseURLFromEnv() (string, error) {
 	u := os.Getenv("SUPABASE_URL")
 	if u == "" {
-		u = defaultSupabaseURL
+		return "", errors.New("SUPABASE_URL env var is required but not set")
 	}
-	return strings.TrimRight(u, "/")
+	return strings.TrimRight(u, "/"), nil
 }
 
 // getSupabaseKeyfunc returns the cached JWKS keyfunc, initialising it lazily
-// on first call. A failed initialisation returns an error rather than
-// panicking — the server continues running and the next call will retry.
+// on first call. If the initial JWKS fetch fails (network down, bad URL, empty
+// keyset) the error is returned and the keyfunc is NOT cached — the next
+// request will retry initialisation. This prevents the server from silently
+// accepting tokens against a zero-key verifier.
 func getSupabaseKeyfunc() (keyfunc.Keyfunc, error) {
 	// Fast path: already initialised.
 	supabaseKeyfuncState.mu.RLock()
@@ -82,17 +82,27 @@ func getSupabaseKeyfunc() (keyfunc.Keyfunc, error) {
 		return supabaseKeyfuncState.kf, nil
 	}
 
-	projectURL := supabaseURLFromEnv()
+	projectURL, err := supabaseURLFromEnv()
+	if err != nil {
+		return nil, err
+	}
 	jwksURL := projectURL + "/auth/v1/.well-known/jwks.json"
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// keyfunc.NewDefaultCtx fetches the JWKS immediately and starts a
-	// background goroutine that refreshes the keyset on the given interval.
-	// An unknown kid causes an immediate re-fetch (UnknownKIDShouldRefresh).
-	kf, err := keyfunc.NewDefaultCtx(ctx, []string{jwksURL})
+	// NoErrorReturnFirstHTTPReq=false makes the initial JWKS fetch a hard
+	// requirement: if the remote endpoint is unreachable or returns an
+	// error, NewDefaultOverrideCtx returns a non-nil error rather than
+	// succeeding with an empty keyset. This ensures we never serve auth
+	// from a verifier that holds zero keys.
+	falseVar := false
+	kf, err := keyfunc.NewDefaultOverrideCtx(ctx, []string{jwksURL}, keyfunc.Override{
+		NoErrorReturnFirstHTTPReq: &falseVar,
+		RefreshInterval:           jwksCacheTTL,
+	})
 	if err != nil {
 		cancel()
+		// Do NOT cache — next request will retry init.
 		return nil, fmt.Errorf("supabase JWKS init (%s): %w", jwksURL, err)
 	}
 
@@ -101,31 +111,28 @@ func getSupabaseKeyfunc() (keyfunc.Keyfunc, error) {
 	return kf, nil
 }
 
-// ValidateSupabaseJWT verifies a Supabase-issued ES256 JWT.
+// ValidateSupabaseJWTWithClaims verifies a Supabase-issued ES256 JWT and
+// returns the sub claim (user UUID) together with the full MapClaims so the
+// caller can inspect email / user_metadata without re-parsing the token.
 //
-// It fetches (and caches) the JWKS from the Supabase project's well-known
-// endpoint, then validates:
-//
+// Validates:
 //   - ES256 signing method (rejects anything else)
 //   - exp (token not expired)
 //   - aud == "authenticated"
 //   - iss == "<SUPABASE_URL>/auth/v1"
-//
-// On success it returns the sub claim (Supabase user UUID). On any failure it
-// returns a non-nil error with enough context to diagnose the problem.
-//
-// NOT called by any middleware yet — wiring happens in the swap step.
-func ValidateSupabaseJWT(tokenString string) (userID string, err error) {
+func ValidateSupabaseJWTWithClaims(tokenString string) (userID string, claims jwt.MapClaims, err error) {
 	kf, err := getSupabaseKeyfunc()
 	if err != nil {
-		return "", fmt.Errorf("supabase jwt: keyfunc unavailable: %w", err)
+		return "", nil, fmt.Errorf("supabase jwt: keyfunc unavailable: %w", err)
 	}
 
-	projectURL := supabaseURLFromEnv()
+	projectURL, err := supabaseURLFromEnv()
+	if err != nil {
+		return "", nil, fmt.Errorf("supabase jwt: %w", err)
+	}
 	expectedIssuer := projectURL + "/auth/v1"
 
-	// Parse with the keyfunc-provided Keyfunc, and enforce ES256 + standard
-	// claim validators provided by golang-jwt/jwt/v5.
+	// Parse with the JWKS-backed keyfunc and enforce ES256 + standard claim validators.
 	token, err := jwt.Parse(
 		tokenString,
 		kf.Keyfunc,
@@ -135,24 +142,30 @@ func ValidateSupabaseJWT(tokenString string) (userID string, err error) {
 		jwt.WithExpirationRequired(),
 	)
 	if err != nil {
-		return "", fmt.Errorf("supabase jwt: parse/validate failed: %w", err)
+		return "", nil, fmt.Errorf("supabase jwt: parse/validate failed: %w", err)
 	}
+	// golang-jwt v5 guarantees token.Valid == true when err is nil; no
+	// redundant !token.Valid check needed.
 
-	if !token.Valid {
-		return "", errors.New("supabase jwt: token invalid")
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
+	mc, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", errors.New("supabase jwt: unexpected claims type")
+		return "", nil, errors.New("supabase jwt: unexpected claims type")
 	}
 
-	sub, err := claims.GetSubject()
+	sub, err := mc.GetSubject()
 	if err != nil || sub == "" {
-		return "", fmt.Errorf("supabase jwt: missing sub claim: %w", err)
+		return "", nil, fmt.Errorf("supabase jwt: missing sub claim: %w", err)
 	}
 
-	return sub, nil
+	return sub, mc, nil
+}
+
+// ValidateSupabaseJWT is a thin wrapper around ValidateSupabaseJWTWithClaims
+// that discards the claims and returns only the sub (user UUID). Kept for
+// call-sites that do not need the full claims map.
+func ValidateSupabaseJWT(tokenString string) (userID string, err error) {
+	id, _, err := ValidateSupabaseJWTWithClaims(tokenString)
+	return id, err
 }
 
 // closeSupabaseKeyfunc tears down the background JWKS refresh goroutine.

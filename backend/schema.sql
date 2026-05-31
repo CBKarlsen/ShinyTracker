@@ -1,12 +1,6 @@
 -- Execute this script in your Supabase SQL Editor
-
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+-- Note: the former `users` table (custom-auth era) was dropped by
+-- migrations/009_drop_users_fks.sql. Identity is now Supabase Auth only.
 
 CREATE TABLE IF NOT EXISTS pokemon (
     id INTEGER PRIMARY KEY, -- PokeAPI ID
@@ -30,8 +24,10 @@ CREATE TABLE IF NOT EXISTS games (
     base_odds INTEGER NOT NULL DEFAULT 4096
 );
 
+-- user_games: user_id is a plain UUID (Supabase Auth sub); no FK to a local
+-- users table since that table was dropped in migration 009.
 CREATE TABLE IF NOT EXISTS user_games (
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID,
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
     has_shiny_charm BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (user_id, game_id)
@@ -129,9 +125,11 @@ CREATE TABLE IF NOT EXISTS profiles (
     created_at  timestamptz NOT NULL DEFAULT now()
 );
 
+-- user_hunts: user_id is a plain UUID (Supabase Auth sub); no FK to a local
+-- users table since that table was dropped in migration 009.
 CREATE TABLE IF NOT EXISTS user_hunts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID,
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
     hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,

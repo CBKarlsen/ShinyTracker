@@ -25,12 +25,15 @@ export type Route =
 	| "admin";
 
 function App() {
-	const { token, logout } = useAuth();
+	const { token, loading, logout } = useAuth();
 	const [route, setRoute] = useState<Route>("dash");
 	const [newHuntOpen, setNewHuntOpen] = useState(false);
 	const [huntPrefill, setHuntPrefill] = useState<{ pokemon: Pokemon; route: PokemonRoute } | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
 
+	// Wait for the Supabase session to resolve before rendering — avoids
+	// flashing the login screen for an already-authenticated user.
+	if (loading) return null;
 	if (!token) return <Login />;
 
 	return (

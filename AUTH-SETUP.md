@@ -4,6 +4,13 @@ Moving from the hand-rolled JWT+bcrypt auth to **Supabase Auth** with GitHub & G
 OAuth. This offloads the auth security surface (password reset, rate-limiting, refresh
 tokens, token signing) to a managed service you already run.
 
+## No custom domain needed (anywhere)
+You do **not** need to own a website domain for any of this. The OAuth callback uses
+Supabase's own domain (`...supabase.co/auth/v1/callback`), dev runs on `http://localhost`
+(allowed by GitHub/Google/Supabase), and production uses Railway's free `*.up.railway.app`
+HTTPS URL. A custom domain is an optional vanity upgrade for later — it changes nothing
+about auth or deploy.
+
 ## What I already determined (no action needed)
 - **Project URL:** `https://fysopyztqmyjyfgrdusx.supabase.co`
 - **OAuth callback URL** (used in every provider below):
