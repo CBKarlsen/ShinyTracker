@@ -46,7 +46,12 @@ The curated lock dataset (`backend/seeds/shiny_locks.json`, 28 entries) is a ~50
 - **TS/Go odds drift on outbreak+sandwich** — Go `EffectiveOdds` adds a `sparkling_power` term to `outbreak_defeats_sv` so the 1/512 stack is representable; `frontend/src/utils/odds.ts` does not yet. Sync the TS engine + surface the sparkling field in the outbreak editor so dashboard live-odds matches the Go route ranking for stacked outbreak hunts.
 - **`GetOddsHandler` not method-aware** — `GET /odds` (`backend/internal/api/handlers.go`) still computes `base_odds/rolls` (only special-casing dynamax), so for modern methods it now disagrees with the route drawer's `EffectiveOdds`-based number. Route it through `calc.EffectiveOdds` for server-side consistency.
 - **Radar chain-0 quirk** — `radar_chain_gen4` returns 1/65536 at chain 0 (TS formula `65536 − 1635.925·chain`), mirrored in Go for parity. Revisit whether the base should track the game's 1/8192.
-- **Method eligibility data (NEXT after this)** — web-source which species are huntable via each method per game (SOS-only species, Radar-incompatible species, which species appear in SV/SwSh outbreaks, ORAS DexNav availability) and seed into `method_availability` / `method_exceptions`.
+- **Method eligibility data** — web-source which species are huntable via each method per game and seed into `method_availability` / `method_exceptions`. Decomposed into slices:
+  - ✅ **Slice D (Dynamax Adventures)** — all 38 DA legendary bosses seeded as SwSh raids in `legendary_encounters.json` (spec/plan `docs/superpowers/*/2026-05-31-dynamax-adventures-eligibility*`). Pending DB re-seed to take effect.
+  - ⏳ **Slice A** — Gen 8/9 overworld spawns (SV outbreak/sandwich, SwSh, LA); biggest, needs a curated per-area source + likely a new encounter `kind`.
+  - ⏳ **Slice B** — Poké Radar over-broad (curate `method_exceptions` excludes to ~50-60 grass-patch species).
+  - ⏳ **Slice C** — ORAS fishing terrain gap (Chain Fishing / DexNav-fishing have 0 fishing rows).
+  - ⏳ Also deferred: the 9 DA Ultra Beasts; home-game static coverage for the 24 DA legends.
 - **Masuda labeling** — Masuda still shows broadly for base forms (correct), but consider clearer labels for the evolve-from flow. Method-engine concern.
 - **Forms / regional variants** — not representable (see #3). Larger data-model change.
 
