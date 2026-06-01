@@ -149,6 +149,34 @@
     "requires_kind": "egg"
   },
   {
+    "id": "masuda_method_bw",
+    "games": [
+      "Black/White"
+    ],
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "egg"
+  },
+  {
+    "id": "masuda_method_gen56",
+    "games": [
+      "Black 2/White 2",
+      "X/Y",
+      "Omega Ruby/Alpha Sapphire",
+      "Sun/Moon",
+      "Ultra Sun/Ultra Moon"
+    ],
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 45,
+    "base_rolls": 6,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "egg"
+  },
+  {
     "id": "friend_safari_xy",
     "games": [
       "X/Y"

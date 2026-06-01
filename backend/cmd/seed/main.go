@@ -78,9 +78,6 @@ func main() {
 	log.Println("Ensuring wild encounter kinds are populated...")
 	ensureWildEncounters(ctx)
 
-	log.Println("Deriving egg encounter kinds...")
-	deriveEggEncounters(ctx)
-
 	log.Println("Seeding curated static/raid encounter kinds...")
 	seedCuratedEncounters(ctx)
 
@@ -92,6 +89,14 @@ func main() {
 
 	log.Println("Reconciling pokemon_availability with encounters...")
 	reconcileAvailability(ctx)
+
+	// Egg derivation runs AFTER reconcileAvailability so that pokemon_availability
+	// is fully populated for all games (including Gen 5/6/7 rows inserted by
+	// cmd/seed_availability_legacy) before we fan out egg rows from it.
+	// Running it before reconcile on a fresh DB would silently produce zero egg
+	// rows for any game whose availability comes solely from that seeder.
+	log.Println("Deriving egg encounter kinds...")
+	deriveEggEncounters(ctx)
 
 	log.Println("Computing method_availability...")
 	computeAvailability(ctx)
@@ -238,15 +243,20 @@ func ensureWildEncounters(ctx context.Context) {
 	}
 }
 
-// deriveEggEncounters records an `egg` kind for every breedable Pokemon in each
-// game it is available in. Masuda methods are mapped only to Switch-era games,
-// which is exactly the coverage of pokemon_availability, so this gating is safe.
+// deriveEggEncounters records an `egg` kind for every breedable base-stage
+// Pokemon in each game that supports breeding. It must run AFTER
+// reconcileAvailability (and after cmd/seed_availability_legacy for Gen 5/6/7)
+// so that pokemon_availability is fully populated before we fan out egg rows.
+// The supports_breeding guard keeps LGPE (no Day-Care) and Legends: Arceus
+// (no breeding at all) from gaining egg rows.
 func deriveEggEncounters(ctx context.Context) {
 	tag, err := database.DB.Exec(ctx, `
 		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind)
 		SELECT pa.pokemon_id, pa.game_id, 'egg'
 		FROM pokemon_availability pa
 		JOIN pokemon p ON p.id = pa.pokemon_id
+		-- Restrict to games where breeding is possible (excludes LGPE and PLA).
+		JOIN games g ON g.id = pa.game_id AND g.supports_breeding = true
 		-- Eggs only ever hatch the base form of an evolution line, so an egg
 		-- (Masuda) route belongs only to base-stage species. Evolved forms get
 		-- a "hunt a pre-evolution, then evolve" route instead (computed in the
