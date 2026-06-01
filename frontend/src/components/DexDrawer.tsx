@@ -32,7 +32,7 @@ const DexDrawer: React.FC<Props> = ({
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const [hasFade, setHasFade] = useState(false);
-	const [starting, setStarting] = useState(false);
+	const startingRef = useRef(false);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: routes/status changes alter content height; re-run is intentional
 	useEffect(() => {
@@ -94,23 +94,18 @@ const DexDrawer: React.FC<Props> = ({
 			return;
 		}
 		// Everything else starts immediately — no modal, no reload.
-		if (starting) return;
-		setStarting(true);
+		// Ref guard (synchronous) prevents a rapid double-tap from creating two hunts.
+		if (startingRef.current) return;
+		startingRef.current = true;
 		try {
-			const res = await startRouteHunt(
-				route,
-				pokemon,
-				defaultParamsFor(route.formula_type),
-				token,
-			);
-			if (!res.ok)
-				throw new Error((await res.text()) || "Failed to start hunt.");
+			const res = await startRouteHunt(route, pokemon, defaultParamsFor(route.formula_type), token);
+			if (!res.ok) throw new Error((await res.text()) || "Failed to start hunt.");
 			showSuccess(`Started hunt · ${route.method_name}`);
 			onHuntStarted?.();
 			onClose();
 		} catch (err) {
+			startingRef.current = false;
 			showError((err as Error).message || "Failed to start hunt.");
-			setStarting(false);
 		}
 	};
 
