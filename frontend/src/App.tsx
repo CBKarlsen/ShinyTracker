@@ -102,6 +102,7 @@ function App() {
 							setHuntPrefill({ pokemon, route: pokemonRoute });
 							setNewHuntOpen(true);
 						}}
+						onHuntStarted={handleHuntStarted}
 					/>
 				)}
 				{route === "games" && <CollectionManager />}

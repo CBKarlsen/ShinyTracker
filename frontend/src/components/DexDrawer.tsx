@@ -4,7 +4,9 @@ import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import RouteList from "../features/routes/RouteList";
+import { startRouteHunt } from "../features/routes/startHunt";
 import { usePokemonRoute } from "../features/routes/usePokemonRoute";
+import { defaultParamsFor, routeNeedsParams } from "../utils/odds";
 import type { Pokemon, PokemonRoute } from "../types/models";
 
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
 	onClose: () => void;
 	onCaughtChange: (pokemonId: number, caught: boolean) => void;
 	onStartHunt: (pokemon: Pokemon, route: PokemonRoute) => void;
+	onHuntStarted?: () => void;
 }
 
 const DexDrawer: React.FC<Props> = ({
@@ -21,13 +24,15 @@ const DexDrawer: React.FC<Props> = ({
 	onClose,
 	onCaughtChange,
 	onStartHunt,
+	onHuntStarted,
 }) => {
 	const { token } = useAuth();
-	const { showError } = useNotification();
+	const { showError, showSuccess } = useNotification();
 	const { status, routes, loading, error } = usePokemonRoute(pokemon.id);
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const [hasFade, setHasFade] = useState(false);
+	const [starting, setStarting] = useState(false);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: routes/status changes alter content height; re-run is intentional
 	useEffect(() => {
@@ -82,6 +87,33 @@ const DexDrawer: React.FC<Props> = ({
 		}
 	};
 
+	const handleRouteClick = async (route: PokemonRoute) => {
+		// Parameter routes (chain/power) need the modal's setup step.
+		if (routeNeedsParams(route.formula_type)) {
+			onStartHunt(pokemon, route);
+			return;
+		}
+		// Everything else starts immediately — no modal, no reload.
+		if (starting) return;
+		setStarting(true);
+		try {
+			const res = await startRouteHunt(
+				route,
+				pokemon,
+				defaultParamsFor(route.formula_type),
+				token,
+			);
+			if (!res.ok)
+				throw new Error((await res.text()) || "Failed to start hunt.");
+			showSuccess(`Started hunt · ${route.method_name}`);
+			onHuntStarted?.();
+			onClose();
+		} catch (err) {
+			showError((err as Error).message || "Failed to start hunt.");
+			setStarting(false);
+		}
+	};
+
 	return (
 		<div className="scrim" onClick={onClose}>
 			<div
@@ -131,10 +163,7 @@ const DexDrawer: React.FC<Props> = ({
 							</div>
 						)}
 					{!loading && !error && routes.length > 0 && (
-						<RouteList
-							routes={routes}
-							onRouteClick={(route) => onStartHunt(pokemon, route)}
-						/>
+						<RouteList routes={routes} onRouteClick={handleRouteClick} />
 					)}
 					{!loading && !error && status === "locked_everywhere" && (
 						<div className="t-mono">
