@@ -1479,6 +1479,13 @@ ul {
 	font-size: 10px;
 	color: var(--ink-3);
 }
+.dex-route-charm {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	letter-spacing: 0.04em;
+	color: var(--gold);
+	margin-top: 1px;
+}
 .dex-route-start {
 	background: transparent;
 	border: none;
