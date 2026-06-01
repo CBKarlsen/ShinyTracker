@@ -315,6 +315,18 @@
     "requires_kind": "static"
   },
   {
+    "id": "soft_reset_lgpe",
+    "games": [
+      "Let's Go Pikachu/Eevee"
+    ],
+    "method_name": "Soft Reset",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "static"
+  },
+  {
     "id": "run_away",
     "games": [
       "Sword/Shield"

@@ -2,24 +2,19 @@
   "_comment": "Game titles in 'games' arrays MUST match the 'title' column in the games table exactly (e.g. 'X/Y', 'Sword/Shield', 'Scarlet/Violet'). These combined-version strings are taken from seeds/hunt_methods.json and cmd/seed_availability/main.go. If a title is unrecognised the seeder logs a warning and skips — reconcile against the live games table before relying on a complete seed. Only list a (pokemon_id, game) pair where the shiny is genuinely locked in THAT game; never list a game where the shiny is obtainable via soft-reset or normal hunting.",
   "locks": [
     {
-      "_note": "Articuno — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Articuno — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 144,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
+      "games": ["X/Y"]
     },
     {
-      "_note": "Zapdos — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Zapdos — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 145,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
+      "games": ["X/Y"]
     },
     {
-      "_note": "Moltres — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Moltres — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 146,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
-    },
-    {
-      "_note": "Mewtwo — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG/XY",
-      "pokemon_id": 150,
-      "games": ["Let's Go Pikachu/Eevee"]
+      "games": ["X/Y"]
     },
     {
       "_note": "Xerneas — shiny-locked story encounter in X/Y",
