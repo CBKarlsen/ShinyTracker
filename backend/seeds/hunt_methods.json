@@ -186,7 +186,33 @@
     "base_rolls": 5,
     "charm_rolls": 2,
     "formula_type": "static",
+    "requires_kind": "wild",
+    "requires_terrain": "friend_safari"
+  },
+  {
+    "id": "random_encounter_xy",
+    "games": [
+      "X/Y"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
     "requires_kind": "wild"
+  },
+  {
+    "id": "poke_radar_xy",
+    "games": [
+      "X/Y"
+    ],
+    "method_name": "Poké Radar",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "radar_chain_gen4",
+    "requires_kind": "wild",
+    "requires_terrain": "grass"
   },
   {
     "id": "catch_combo_lgpe",
@@ -267,8 +293,7 @@
   {
     "id": "run_away",
     "games": [
-      "Sword/Shield",
-      "Brilliant Diamond/Shining Pearl"
+      "Sword/Shield"
     ],
     "method_name": "Run Away",
     "avg_time_seconds": 30,
@@ -276,5 +301,30 @@
     "charm_rolls": 2,
     "formula_type": "static",
     "requires_kind": "wild"
+  },
+  {
+    "id": "random_encounter_bdsp",
+    "games": [
+      "Brilliant Diamond/Shining Pearl"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "poke_radar_bdsp",
+    "games": [
+      "Brilliant Diamond/Shining Pearl"
+    ],
+    "method_name": "Poké Radar",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "radar_chain_gen4",
+    "requires_kind": "wild",
+    "requires_terrain": "grass"
   }
 ]

@@ -182,19 +182,19 @@
       "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift); mythical",
+      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only, never obtainable via soft reset)",
       "pokemon_id": 491,
-      "games": ["Legends: Arceus"]
+      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
     },
     {
-      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift); mythical",
+      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only)",
       "pokemon_id": 492,
-      "games": ["Legends: Arceus"]
+      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
     },
     {
-      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus",
+      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus and in BDSP (event-distribution only)",
       "pokemon_id": 493,
-      "games": ["Legends: Arceus"]
+      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
     },
     {
       "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus",

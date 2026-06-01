@@ -87,6 +87,12 @@ func main() {
 	log.Println("Seeding fishing wild species (curated terrain=fishing)...")
 	seedFishingSpecies(ctx)
 
+	log.Println("Seeding Friend Safari species (X/Y, terrain=friend_safari)...")
+	seedFriendSafariSpecies(ctx)
+
+	log.Println("Seeding BDSP wild encounters (DPPt proxy + Grand Underground)...")
+	seedBDSPWildEncounters(ctx)
+
 	log.Println("Reconciling pokemon_availability with encounters...")
 	reconcileAvailability(ctx)
 
@@ -407,6 +413,112 @@ func seedFishingSpecies(ctx context.Context) {
 	log.Printf("Inserted %d fishing wild encounter rows.", inserted)
 }
 
+// seedFriendSafariSpecies inserts wild encounter rows with terrain='friend_safari'
+// for X/Y (game_id resolved by title "X/Y"). seeds/friend_safari_species.json
+// is the verified Friend Safari Pokémon pool (185 entries as of last audit).
+// These rows feed the friend_safari_xy method (requires_terrain='friend_safari')
+// during computeAvailability, scoping Friend Safari to exactly the right species.
+// Legendaries and mythicals are not in the FS pool and are guarded out anyway.
+//
+// RUNBOOK: the pokemon_game_encounter.terrain CHECK constraint must already
+// include 'friend_safari' on the live DB (via the ALTER TABLE in schema.sql)
+// before running cmd/seed. If the method tables were truncated and this seeder
+// runs against a DB whose CHECK doesn't yet know about 'friend_safari', the
+// INSERT will fail with a check-violation error. Apply the schema ALTER first.
+func seedFriendSafariSpecies(ctx context.Context) {
+	data, err := os.ReadFile("seeds/friend_safari_species.json")
+	if err != nil {
+		log.Fatal("Failed to read friend_safari_species.json: ", err)
+	}
+	var ids []int
+	if err := json.Unmarshal(data, &ids); err != nil {
+		log.Fatal("JSON parse error in friend_safari_species.json: ", err)
+	}
+	gameIDs := loadGameIDs(ctx)
+	gameID, ok := gameIDs["X/Y"]
+	if !ok {
+		log.Fatal("seedFriendSafariSpecies: game title 'X/Y' not found in games table")
+	}
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT p.id, $1, 'wild', 'friend_safari'
+		FROM pokemon p
+		WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+		ON CONFLICT DO NOTHING
+	`, gameID, ids)
+	if err != nil {
+		log.Fatal("seedFriendSafariSpecies: failed to insert rows: ", err)
+	}
+	log.Printf("Inserted %d Friend Safari encounter rows (X/Y).", tag.RowsAffected())
+}
+
+// seedBDSPWildEncounters populates wild encounter rows for Brilliant
+// Diamond/Shining Pearl (game_id resolved by title). Two sources:
+//
+//  1. DPPt proxy: copies all kind='wild' rows from Diamond/Pearl/Platinum,
+//     excluding Pokémon that are Great-Marsh/DPPt-only and absent from BDSP
+//     routes: Ekans(23)/Arbok(24) — Great Marsh / not on BDSP routes;
+//     Tangela(114)/Tropius(357) Great-Marsh-only.
+//
+//  2. Grand Underground: reads seeds/bdsp_underground_species.json and
+//     inserts each as (pokemon_id, BDSP, 'wild', 'other') so they receive
+//     the random_encounter_bdsp method but NOT poke_radar_bdsp (which
+//     requires terrain='grass').
+//
+// Both steps use ON CONFLICT DO NOTHING for idempotency.
+func seedBDSPWildEncounters(ctx context.Context) {
+	gameIDs := loadGameIDs(ctx)
+
+	bdspID, ok := gameIDs["Brilliant Diamond/Shining Pearl"]
+	if !ok {
+		log.Fatal("seedBDSPWildEncounters: game 'Brilliant Diamond/Shining Pearl' not found in games table")
+	}
+	dpptID, ok := gameIDs["Diamond/Pearl/Platinum"]
+	if !ok {
+		log.Fatal("seedBDSPWildEncounters: game 'Diamond/Pearl/Platinum' not found in games table")
+	}
+
+	// Part 1: DPPt proxy. Excludes Great-Marsh species absent from BDSP routes:
+	// Ekans(23)/Arbok(24) — Great Marsh only, not on BDSP routes (Ekans is
+	// Grand-Underground-only in BDSP and is handled via bdsp_underground_species.json);
+	// Tangela(114)/Tropius(357) — Great-Marsh-only in DPPt.
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT pokemon_id, $1, kind, terrain
+		FROM pokemon_game_encounter
+		WHERE game_id = $2
+		  AND kind = 'wild'
+		  AND pokemon_id NOT IN (23, 24, 114, 357)
+		ON CONFLICT DO NOTHING
+	`, bdspID, dpptID)
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: DPPt proxy insert failed: ", err)
+	}
+	log.Printf("  BDSP DPPt proxy: +%d wild rows", tag.RowsAffected())
+
+	// Part 2: Grand Underground species (terrain='other' — random encounter
+	// but not Poké Radar, which requires terrain='grass').
+	data, err := os.ReadFile("seeds/bdsp_underground_species.json")
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: failed to read bdsp_underground_species.json: ", err)
+	}
+	var undergroundIDs []int
+	if err := json.Unmarshal(data, &undergroundIDs); err != nil {
+		log.Fatal("seedBDSPWildEncounters: JSON parse error in bdsp_underground_species.json: ", err)
+	}
+	tag, err = database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT p.id, $1, 'wild', 'other'
+		FROM pokemon p
+		WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+		ON CONFLICT DO NOTHING
+	`, bdspID, undergroundIDs)
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: Grand Underground insert failed: ", err)
+	}
+	log.Printf("  BDSP Grand Underground: +%d wild rows (terrain=other)", tag.RowsAffected())
+}
+
 // expandGameRef turns a game title or @alias into a list of game titles.
 func expandGameRef(ref string, groups map[string][]string, e LegendaryEncounter) []string {
 	if strings.HasPrefix(ref, "@") {
@@ -450,13 +562,22 @@ func loadGameIDs(ctx context.Context) map[string]int {
 
 // computeAvailability rebuilds method_availability as the join of encounter kinds
 // to methods (on the kind a method consumes) and to method_games (on the game).
+//
+// Terrain-matching rule:
+//   - hm.requires_terrain = pge.terrain  → explicit match (e.g. friend_safari,
+//     grass Poké Radar, fishing Chain Fishing).
+//   - hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'  → generic
+//     method (e.g. Random Encounter) matches any terrain except the dedicated
+//     friend_safari terrain, preventing spurious Random Encounter rows for
+//     Friend-Safari-only species.
 func computeAvailability(ctx context.Context) {
 	_, err := database.DB.Exec(ctx, `
 		INSERT INTO method_availability (pokemon_id, method_id, game_id)
 		SELECT DISTINCT pge.pokemon_id, hm.id, pge.game_id
 		FROM pokemon_game_encounter pge
 		JOIN hunt_methods hm ON hm.requires_kind = pge.kind
-			AND (hm.requires_terrain IS NULL OR hm.requires_terrain = pge.terrain)
+			AND (hm.requires_terrain = pge.terrain
+				OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
 		JOIN method_games mg ON mg.method_id = hm.id AND mg.game_id = pge.game_id
 		ON CONFLICT DO NOTHING
 	`)
@@ -509,6 +630,9 @@ func runInvariantChecks(ctx context.Context) {
 	}
 
 	// 6.1: every availability row is backed by a matching encounter-kind record.
+	// Uses the same terrain-matching rule as computeAvailability: explicit
+	// requires_terrain must equal pge.terrain; NULL requires_terrain matches any
+	// terrain except 'friend_safari' (which is reserved for its dedicated method).
 	var orphans int
 	database.DB.QueryRow(ctx, `
 		SELECT COUNT(*)
@@ -518,7 +642,8 @@ func runInvariantChecks(ctx context.Context) {
 			ON pge.pokemon_id = ma.pokemon_id
 			AND pge.game_id = ma.game_id
 			AND pge.kind = hm.requires_kind
-			AND (hm.requires_terrain IS NULL OR pge.terrain = hm.requires_terrain)
+			AND (hm.requires_terrain = pge.terrain
+				OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
 		WHERE pge.pokemon_id IS NULL
 	`).Scan(&orphans)
 	if orphans > 0 {

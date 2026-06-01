@@ -5,6 +5,11 @@
 // cmd/seed_availability, so without this seeder no egg (Masuda) rows are
 // derived for them by cmd/seed.
 //
+// BDSP (Brilliant Diamond/Shining Pearl) is also handled here via a fixed
+// national-dex range (IDs 1–493) rather than a PokeAPI fetch, because
+// PokeAPI's BDSP pokedex only covers the 151-entry Sinnoh dex while BDSP
+// gives access to the full national dex post-game.
+//
 // Obtainability proxy: regional-dex membership is used as the proxy for
 // "legally obtainable in this game." This is accurate for the vast majority
 // of species; version-exclusives and pure-trade species that appear in the
@@ -127,7 +132,44 @@ func main() {
 		totalSkipped += skipped
 	}
 
+	// BDSP: the full national dex (IDs 1–493) is available post-game.
+	// PokeAPI's BDSP pokedex only has 151 Sinnoh entries, so we use a
+	// fixed range instead of a PokeAPI fetch.
+	ins, skp := seedBDSPAvailability(ctx, gameIDs)
+	totalInserted += ins
+	totalSkipped += skp
+
 	fmt.Printf("\nDone — inserted: %d  skipped (already existed): %d\n", totalInserted, totalSkipped)
+}
+
+// seedBDSPAvailability upserts pokemon_availability for every Gen 1–4 species
+// (IDs 1–493) into game "Brilliant Diamond/Shining Pearl". Uses a single
+// set-based INSERT ... SELECT for efficiency. ON CONFLICT DO NOTHING makes
+// re-runs safe.
+func seedBDSPAvailability(ctx context.Context, gameIDs map[string]int) (inserted, skipped int) {
+	const bdspTitle = "Brilliant Diamond/Shining Pearl"
+	const firstID = 1
+	const lastID = 493
+
+	gameID, ok := gameIDs[bdspTitle]
+	if !ok {
+		log.Fatalf("Game %q not found in games table — run cmd/seed or SeedGames first", bdspTitle)
+	}
+
+	tag, err := database.DB.Exec(ctx,
+		`INSERT INTO pokemon_availability (pokemon_id, game_id)
+		 SELECT id, $1 FROM pokemon WHERE id BETWEEN $2 AND $3
+		 ON CONFLICT DO NOTHING`,
+		gameID, firstID, lastID,
+	)
+	if err != nil {
+		log.Fatalf("WARN  seedBDSPAvailability: %v", err)
+	}
+	inserted = int(tag.RowsAffected())
+	skipped = (lastID - firstID + 1) - inserted
+	log.Printf("%-30s total species=%d  inserted=%d  skipped=%d",
+		bdspTitle, lastID-firstID+1, inserted, skipped)
+	return inserted, skipped
 }
 
 // fetchPokedexSpeciesIDs retrieves all pokemon-species IDs listed in a PokeAPI
