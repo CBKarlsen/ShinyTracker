@@ -2733,6 +2733,7 @@ ul {
 }
 .hunt-next-empty {
 	opacity: 0.7;
+}
 /* ── Command search (⌘K) ── */
 .cmd-scrim {
 	position: fixed;
