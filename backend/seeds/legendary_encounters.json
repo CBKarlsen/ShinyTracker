@@ -86,8 +86,9 @@
   {
     "pokemon_id": 487,
     "name": "Giratina",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Diamond/Pearl/Platinum", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -219,10 +220,12 @@
   {
     "pokemon_id": 483,
     "name": "Dialga",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "raid",
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "HeartGold/SoulSilver": "static",
       "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
       "Omega Ruby/Alpha Sapphire": "static",
@@ -232,10 +235,12 @@
   {
     "pokemon_id": 484,
     "name": "Palkia",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "raid",
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "HeartGold/SoulSilver": "static",
       "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
       "Omega Ruby/Alpha Sapphire": "static",

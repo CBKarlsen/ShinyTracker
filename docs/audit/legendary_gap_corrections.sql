@@ -536,4 +536,70 @@ JOIN games g ON g.title = v.gtitle
 ON CONFLICT DO NOTHING;
 -- Expect: up to 4 rows inserted (0 on re-run or if already present).
 
+-- ============================================================================
+-- J  Sinjoh Ruins — HeartGold/SoulSilver (game title = 'HeartGold/SoulSilver')
+--    Pokémon: 483 Dialga, 484 Palkia, 487 Giratina.
+--
+--    Background: with an event Arceus in the party, the player is taken to the
+--    Sinjoh Ruins where they can soft-reset the creation cutscene to hunt one of
+--    these three. None are shiny-locked in Gen 4.
+--    Source: https://bulbapedia.bulbagarden.net/wiki/Sinjoh_Ruins
+--
+--    Durable fix: backend/seeds/legendary_encounters.json has been updated to
+--    include "HeartGold/SoulSilver": "static" in the overrides for 483, 484, 487.
+--    reconcileAvailability (step 5 of cmd/seed) derives pokemon_availability from
+--    encounter rows, so no separate availability source is needed — including for
+--    484 Palkia which was previously absent from pokemon_availability for HGSS.
+--
+--    J1 inserts the missing pokemon_availability row for Palkia(484) in HGSS
+--    (Dialga/Giratina were already present).
+--    J2 inserts the static encounter rows for all three in HGSS.
+--    J3 derives Soft Reset method_availability for all three in HGSS.
+--
+--    Safe to re-run: ON CONFLICT DO NOTHING / NOT EXISTS on all inserts.
+-- ============================================================================
+
+-- J1. Ensure Palkia(484) is marked available in HGSS
+--     (Dialga(483) and Giratina(487) were already present; ON CONFLICT is a no-op
+--     for those if this section is re-run after a full re-seed).
+INSERT INTO pokemon_availability (pokemon_id, game_id)
+SELECT v.pid, g.id
+FROM (VALUES (483),(484),(487)) AS v(pid)
+CROSS JOIN games g
+WHERE g.title = 'HeartGold/SoulSilver'
+ON CONFLICT DO NOTHING;
+-- Expect: 1 row inserted for 484 on first run; 0 for 483/487 (already exist);
+--         0 rows on subsequent runs.
+
+-- J2. Static encounter rows for HGSS Sinjoh Ruins.
+INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+SELECT v.pid, g.id, 'static', 'none'
+FROM (VALUES (483),(484),(487)) AS v(pid)
+CROSS JOIN games g
+WHERE g.title = 'HeartGold/SoulSilver'
+ON CONFLICT DO NOTHING;
+-- Expect: up to 3 rows inserted (0 on re-run or after a re-seed).
+
+-- J3. Soft Reset method_availability for Dialga, Palkia, Giratina in HGSS.
+--     Shiny-lock guard included for safety; none of these are locked in Gen 4.
+INSERT INTO method_availability (pokemon_id, method_id, game_id)
+SELECT v.pid, hm.id, g.id
+FROM (VALUES (483),(484),(487)) AS v(pid)
+CROSS JOIN hunt_methods hm
+CROSS JOIN games g
+WHERE hm.method_name = 'Soft Reset'
+  AND g.title = 'HeartGold/SoulSilver'
+  AND NOT EXISTS (
+    SELECT 1 FROM method_availability ma
+    WHERE ma.pokemon_id = v.pid
+      AND ma.method_id = hm.id
+      AND ma.game_id = g.id)
+  AND NOT EXISTS (
+    SELECT 1 FROM shiny_locks sl
+    WHERE sl.pokemon_id = v.pid AND sl.game_id = g.id)
+  AND EXISTS (
+    SELECT 1 FROM method_games mg
+    WHERE mg.method_id = hm.id AND mg.game_id = g.id);
+-- Expect: up to 3 rows inserted. 0 on re-run.
+
 COMMIT;
