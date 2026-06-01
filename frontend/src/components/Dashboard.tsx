@@ -28,9 +28,10 @@ function fmtHM(s: number) {
 interface Props {
 	onNewHunt: () => void;
 	onHuntCountChange: (n: number) => void;
+	refreshKey?: number;
 }
 
-const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
+const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }) => {
 	const { token, logout } = useAuth();
 	const [hunts, setHunts] = useState<Hunt[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -69,9 +70,10 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange }) => {
 		}
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: fetchHunts is defined inline and recreated each render; the refetch is driven intentionally by token + refreshKey
 	useEffect(() => {
 		fetchHunts();
-	}, [token]);
+	}, [token, refreshKey]);
 
 	// Heartbeat: flush current encounter counts every 60s so total_time_seconds
 	// stays accurate and counts survive a refresh even between +1 clicks.

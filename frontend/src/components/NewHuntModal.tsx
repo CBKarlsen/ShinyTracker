@@ -16,10 +16,11 @@ interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
+	onHuntStarted?: () => void;
 	prefill?: { pokemon: Pokemon; route?: PokemonRoute } | null;
 }
 
-const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) => {
+const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStarted, prefill }) => {
 	const { token, userId } = useAuth();
 	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
@@ -158,8 +159,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 				}),
 			});
 			if (res.ok) {
+				onHuntStarted?.();
 				onClose();
-				window.location.reload();
 			} else {
 				showError((await res.text()) || "Failed to start hunt.");
 			}
@@ -185,8 +186,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 				}),
 			});
 			if (res.ok) {
+				onHuntStarted?.();
 				onClose();
-				window.location.reload();
 			} else {
 				showError((await res.text()) || "Failed to start custom hunt.");
 			}
