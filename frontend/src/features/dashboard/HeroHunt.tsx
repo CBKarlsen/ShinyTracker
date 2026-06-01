@@ -1,18 +1,26 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SparkSm, IcPlus } from "../../components/ui/icons";
-import { TimerDisplay, type TimerStatus } from "../../components/ui/TimerDisplay";
-import { OddsCurve } from "./OddsCurve";
-import { getShowdownGif } from "../../utils/pokemon";
-import { calculateOdds, defaultParamsFor } from "../../utils/odds";
-import { HuntParametersEditor } from "../../components/ui/HuntParametersEditor";
 import { ConfirmDialog } from "../../components/ui/ConfirmDialog";
+import { HuntParametersEditor } from "../../components/ui/HuntParametersEditor";
+import { IcPlus, SparkSm } from "../../components/ui/icons";
+import {
+	TimerDisplay,
+	type TimerStatus,
+} from "../../components/ui/TimerDisplay";
+import { API_BASE } from "../../config";
 import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type { Hunt } from "../../types/models";
-import { API_BASE } from "../../config";
 import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
-import { playFoundItChime, isSoundEnabled, setSoundEnabled } from "../../utils/sound";
+import { shinyCharmAvailable } from "../../utils/games";
+import { calculateOdds, defaultParamsFor } from "../../utils/odds";
+import { getShowdownGif } from "../../utils/pokemon";
+import {
+	isSoundEnabled,
+	playFoundItChime,
+	setSoundEnabled,
+} from "../../utils/sound";
+import { OddsCurve } from "./OddsCurve";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -21,7 +29,7 @@ function fmtNum(n: number) {
 function getLuckLabel(pct: number): string {
 	if (pct < 0.33) return "running lucky";
 	if (pct < 0.67) return "about average";
-	if (pct < 0.90) return "pushing your luck";
+	if (pct < 0.9) return "pushing your luck";
 	return "overdue";
 }
 
@@ -42,7 +50,7 @@ export function HeroHunt({
 	const { showError } = useNotification();
 	const [showParams, setShowParams] = useState(false);
 	const [huntParams, setHuntParams] = useState<Record<string, any>>(
-		(hunt.hunt_parameters as Record<string, any>) || {}
+		(hunt.hunt_parameters as Record<string, any>) || {},
 	);
 	const [savingParams, setSavingParams] = useState(false);
 	const [confirmComplete, setConfirmComplete] = useState(false);
@@ -90,18 +98,24 @@ export function HeroHunt({
 	// Resolve params: prefer stored values, fall back to formula defaults so
 	// hunts created before fix-1 (empty hunt_parameters) still show correct odds.
 	const storedParams = (hunt.hunt_parameters as Record<string, any>) || {};
-	const resolvedHuntParams = Object.keys(storedParams).length > 0
-		? storedParams
-		: defaultParamsFor(hunt.formula_type);
+	const resolvedHuntParams =
+		Object.keys(storedParams).length > 0
+			? storedParams
+			: defaultParamsFor(hunt.formula_type);
+
+	// Gate charm: a stale `true` from the DB must not inflate odds for games
+	// where the Shiny Charm doesn't exist.
+	const effectiveCharm =
+		(hunt.has_shiny_charm || false) && shinyCharmAvailable(hunt.game_id);
 
 	const { denominator: expected } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
-		hunt.has_shiny_charm || false,
+		effectiveCharm,
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
 		hunt.charm_rolls || 0,
-		resolvedHuntParams
+		resolvedHuntParams,
 	);
 	const isOver = hunt.encounter_count > expected;
 	const ratio = expected ? Math.min(hunt.encounter_count / expected, 1) : 0;
@@ -113,13 +127,13 @@ export function HeroHunt({
 			const { denominator } = calculateOdds(
 				hunt.formula_type,
 				e,
-				hunt.has_shiny_charm || false,
+				effectiveCharm,
 				hunt.base_odds,
 				hunt.base_rolls || 1,
 				hunt.charm_rolls || 0,
-				resolvedHuntParams
+				resolvedHuntParams,
 			);
-			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
+			currentNotShiny *= 1 - 1 / Math.max(1, denominator);
 		}
 		cumP = 1 - currentNotShiny;
 	}
@@ -149,11 +163,12 @@ export function HeroHunt({
 		if (!localStorage.getItem(sessionKey) && !manualPaused) {
 			localStorage.setItem(sessionKey, String(Date.now() - sessionSec * 1000));
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const [lastPing, setLastPing] = useState(Date.now());
-	const idleMs = Math.max(45, Math.min(180, (hunt.avg_time_seconds || 8) * 6)) * 1000;
+	const idleMs =
+		Math.max(45, Math.min(180, (hunt.avg_time_seconds || 8) * 6)) * 1000;
 
 	useEffect(() => {
 		const id = setInterval(() => {
@@ -171,8 +186,11 @@ export function HeroHunt({
 		return () => clearInterval(id);
 	}, [manualPaused, lastPing, idleMs, sessionKey]);
 
-	const timerStatus: TimerStatus =
-		manualPaused ? "paused" : Date.now() - lastPing > idleMs ? "idle" : "live";
+	const timerStatus: TimerStatus = manualPaused
+		? "paused"
+		: Date.now() - lastPing > idleMs
+			? "idle"
+			: "live";
 
 	const totalSeconds = hunt.total_time_seconds + sessionSec;
 
@@ -211,21 +229,33 @@ export function HeroHunt({
 	return (
 		<div className="hero">
 			<div className="hero-left">
-				<div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						alignItems: "center",
+						flexWrap: "wrap",
+					}}
+				>
 					<div className="hero-tag">
 						<SparkSm size={9} /> Active Hunt · Pinned
 					</div>
-					{hunt.has_shiny_charm && (
+					{effectiveCharm && (
 						<div
 							className="hero-tag"
-							style={{ color: "var(--gold)", borderColor: "var(--gold-line)", background: "transparent" }}
+							style={{
+								color: "var(--gold)",
+								borderColor: "var(--gold-line)",
+								background: "transparent",
+							}}
 						>
 							Charm
 						</div>
 					)}
 					{hunt.phase_count > 0 && (
 						<span className="phase-pill">
-							<SparkSm size={8} color="var(--violet)" /> Phase {hunt.phase_count + 1}
+							<SparkSm size={8} color="var(--violet)" /> Phase{" "}
+							{hunt.phase_count + 1}
 						</span>
 					)}
 					{isOver && <span className="over-pill">Over odds</span>}
@@ -242,37 +272,48 @@ export function HeroHunt({
 							</span>
 						</div>
 
-						{(hunt.formula_type === 'outbreak_defeats_sv' || hunt.formula_type === 'radar_chain_gen4') && (
+						{(hunt.formula_type === "outbreak_defeats_sv" ||
+							hunt.formula_type === "radar_chain_gen4") && (
 							<div style={{ marginTop: 12 }}>
-								<button 
-									className="btn ghost" 
-									style={{ fontSize: 11, padding: '4px 8px' }}
+								<button
+									className="btn ghost"
+									style={{ fontSize: 11, padding: "4px 8px" }}
 									onClick={() => setShowParams(!showParams)}
 								>
 									Edit Method Parameters
 								</button>
 								{showParams && (
-									<div style={{ marginTop: 8, background: 'var(--bg-card)', padding: 12, borderRadius: 8, border: '1px solid var(--line-1)' }}>
-										<HuntParametersEditor 
-											formulaType={hunt.formula_type} 
-											huntParams={huntParams} 
-											setHuntParams={setHuntParams} 
-											inline={true} 
+									<div
+										style={{
+											marginTop: 8,
+											background: "var(--bg-card)",
+											padding: 12,
+											borderRadius: 8,
+											border: "1px solid var(--line-1)",
+										}}
+									>
+										<HuntParametersEditor
+											formulaType={hunt.formula_type}
+											huntParams={huntParams}
+											setHuntParams={setHuntParams}
+											inline={true}
 										/>
-										<div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-											<button 
-												className="btn gold" 
-												style={{ fontSize: 11, padding: '4px 12px' }}
+										<div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+											<button
+												className="btn gold"
+												style={{ fontSize: 11, padding: "4px 12px" }}
 												onClick={handleSaveParams}
 												disabled={savingParams}
 											>
-												{savingParams ? 'Saving...' : 'Save Parameters'}
+												{savingParams ? "Saving..." : "Save Parameters"}
 											</button>
-											<button 
-												className="btn ghost" 
-												style={{ fontSize: 11, padding: '4px 12px' }}
+											<button
+												className="btn ghost"
+												style={{ fontSize: 11, padding: "4px 12px" }}
 												onClick={() => {
-													setHuntParams((hunt.hunt_parameters as Record<string, any>) || {});
+													setHuntParams(
+														(hunt.hunt_parameters as Record<string, any>) || {},
+													);
 													setShowParams(false);
 												}}
 												disabled={savingParams}
@@ -312,7 +353,10 @@ export function HeroHunt({
 								} else {
 									// Resuming: stamp a new start from current elapsed
 									localStorage.removeItem(pausedKey);
-									localStorage.setItem(sessionKey, String(Date.now() - sessionSec * 1000));
+									localStorage.setItem(
+										sessionKey,
+										String(Date.now() - sessionSec * 1000),
+									);
 								}
 								return next;
 							});
@@ -333,17 +377,25 @@ export function HeroHunt({
 					</div>
 					<div className="hero-progress-meta">
 						<span>
-							{cumP != null ? (
-								hunt.encounter_count > 0 ? getLuckLabel(cumP) : "—"
-							) : "no odds data"}
+							{cumP != null
+								? hunt.encounter_count > 0
+									? getLuckLabel(cumP)
+									: "—"
+								: "no odds data"}
 						</span>
 						{isOver ? (
 							<span className="over">
 								+{fmtNum(hunt.encounter_count - (expected ?? 0))} over ·{" "}
-								{(((hunt.encounter_count - (expected ?? 0)) / (expected ?? 1)) * 100).toFixed(0)}%
+								{(
+									((hunt.encounter_count - (expected ?? 0)) / (expected ?? 1)) *
+									100
+								).toFixed(0)}
+								%
 							</span>
 						) : expected != null ? (
-							<span>~{fmtNum(expected - hunt.encounter_count)} to expected</span>
+							<span>
+								~{fmtNum(expected - hunt.encounter_count)} to expected
+							</span>
 						) : null}
 					</div>
 				</div>
@@ -370,16 +422,40 @@ export function HeroHunt({
 							setSoundOn(next);
 							setSoundEnabled(next);
 						}}
-						style={{ padding: "0 8px", minWidth: 32, color: soundOn ? "var(--ink-2)" : "var(--ink-4)" }}
+						style={{
+							padding: "0 8px",
+							minWidth: 32,
+							color: soundOn ? "var(--ink-2)" : "var(--ink-4)",
+						}}
 					>
 						{soundOn ? (
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
 								<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
 								<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
 								<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
 							</svg>
 						) : (
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
 								<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
 								<line x1="23" y1="9" x2="17" y2="15" />
 								<line x1="17" y1="9" x2="23" y2="15" />
@@ -401,7 +477,14 @@ export function HeroHunt({
 					/>
 				</div>
 				{hunt.custom_method_name ? (
-					<div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginTop: 8 }}>
+					<div
+						style={{
+							fontFamily: "var(--font-mono)",
+							fontSize: 11,
+							color: "var(--ink-3)",
+							marginTop: 8,
+						}}
+					>
 						Custom method — no odds data
 					</div>
 				) : hunt.base_odds != null ? (

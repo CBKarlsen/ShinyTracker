@@ -1,4 +1,5 @@
 import type { Hunt } from "../../types/models";
+import { shinyCharmAvailable } from "../../utils/games";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -35,7 +36,9 @@ function gameShort(title: string | null): string {
 
 function getEffectiveRolls(hunt: Hunt): number | null {
 	if (hunt.base_rolls == null) return null;
-	return hunt.base_rolls + (hunt.has_shiny_charm && hunt.charm_rolls != null ? hunt.charm_rolls : 0);
+	// Gate charm: only count charm rolls when the charm actually exists in this game.
+	const charmActive = (hunt.has_shiny_charm ?? false) && shinyCharmAvailable(hunt.game_id);
+	return hunt.base_rolls + (charmActive && hunt.charm_rolls != null ? hunt.charm_rolls : 0);
 }
 
 function getLuckLabel(pct: number): string {
@@ -125,7 +128,7 @@ export function HuntList({
 									<div style={{ fontSize: 13, color: "var(--ink-1)" }}>
 										{h.custom_method_name ? h.custom_method_name : h.method_name}
 									</div>
-									{h.has_shiny_charm && (
+									{h.has_shiny_charm && shinyCharmAvailable(h.game_id) && (
 										<div style={{ fontSize: 11, color: "var(--gold)", marginTop: 2 }}>
 											+ Charm
 										</div>

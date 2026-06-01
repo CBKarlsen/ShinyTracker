@@ -109,6 +109,10 @@ func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([
 			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType); err != nil {
 			return nil, err
 		}
+		// Defense in depth: suppress stale charm flags for games that never had
+		// the Shiny Charm (pre-B2W2). ToggleUserGameHandler already blocks writes,
+		// but existing rows may pre-date the guard.
+		c.HasShinyCharm = c.HasShinyCharm && calc.ShinyCharmAvailable(c.GameID)
 		cands = append(cands, c)
 	}
 	return cands, rows.Err()
@@ -289,6 +293,8 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to read suggestions", http.StatusInternalServerError)
 			return
 		}
+		// Defense in depth: suppress stale charm flags for charm-unavailable games.
+		c.HasShinyCharm = c.HasShinyCharm && calc.ShinyCharmAvailable(c.GameID)
 		g := groups[pid]
 		if g == nil {
 			g = &group{name: name, sprite: sprite, games: map[int]bool{}}

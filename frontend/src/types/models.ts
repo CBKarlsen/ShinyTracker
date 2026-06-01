@@ -10,6 +10,7 @@ export interface HuntPhase {
 
 export interface Hunt {
 	id: string;
+	game_id: number | null;
 	hunt_method_id: number | null;
 	encounter_count: number;
 	phase_count: number;
