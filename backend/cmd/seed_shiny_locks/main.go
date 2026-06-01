@@ -55,7 +55,15 @@ func main() {
 		log.Fatal("fetch games (rows):", err)
 	}
 
-	inserted, skipped := 0, 0
+	// Validate all game titles before touching the DB so we can fail fast
+	// without opening a transaction.
+	skipped := 0
+	type resolved struct {
+		pokemonID int
+		gameID    int
+		title     string
+	}
+	var inserts []resolved
 	for _, e := range lf.Locks {
 		for _, title := range e.Games {
 			gid, ok := gameID[title]
@@ -64,20 +72,37 @@ func main() {
 				skipped++
 				continue
 			}
-			ct, err := database.DB.Exec(context.Background(),
-				`INSERT INTO shiny_locks (pokemon_id, game_id) VALUES ($1, $2)
-				 ON CONFLICT DO NOTHING`,
-				e.PokemonID, gid)
-			if err != nil {
-				log.Printf("warn: insert lock #%d/%s: %v", e.PokemonID, title, err)
-				continue
-			}
-			if ct.RowsAffected() > 0 {
-				inserted++
-			} else {
-				skipped++
-			}
+			inserts = append(inserts, resolved{pokemonID: e.PokemonID, gameID: gid, title: title})
 		}
 	}
-	log.Printf("shiny_locks seeded: %d inserted, %d skipped", inserted, skipped)
+
+	// Single transaction: TRUNCATE then re-insert the full resolved set.
+	// A failure at any point rolls back so the table is never left empty.
+	ctx := context.Background()
+	tx, err := database.DB.Begin(ctx)
+	if err != nil {
+		log.Fatal("begin transaction:", err)
+	}
+
+	if _, err := tx.Exec(ctx, "TRUNCATE shiny_locks"); err != nil {
+		_ = tx.Rollback(ctx)
+		log.Fatal("truncate shiny_locks:", err)
+	}
+
+	inserted := 0
+	for _, r := range inserts {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO shiny_locks (pokemon_id, game_id) VALUES ($1, $2)`,
+			r.pokemonID, r.gameID,
+		); err != nil {
+			_ = tx.Rollback(ctx)
+			log.Fatalf("insert lock #%d/%s: %v — rolled back", r.pokemonID, r.title, err)
+		}
+		inserted++
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Fatal("commit shiny_locks:", err)
+	}
+	log.Printf("shiny_locks seeded: %d inserted, %d skipped (unknown game)", inserted, skipped)
 }

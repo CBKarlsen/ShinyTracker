@@ -53,6 +53,7 @@
     "id": "random_encounter_fullodds_nocharm",
     "games": [
       "Gold/Silver/Crystal",
+      "Ruby/Sapphire/Emerald",
       "FireRed/LeafGreen",
       "Black/White"
     ],
@@ -239,8 +240,7 @@
     "id": "run_away",
     "games": [
       "Sword/Shield",
-      "Brilliant Diamond/Shining Pearl",
-      "Ruby/Sapphire/Emerald"
+      "Brilliant Diamond/Shining Pearl"
     ],
     "method_name": "Run Away",
     "avg_time_seconds": 30,

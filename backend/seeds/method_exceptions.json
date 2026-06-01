@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "_note": "Xerneas (#716) is shiny-locked in X/Y (story encounter). It has a static encounter row so the seed would generate a Soft Reset method_availability row — exclude it so it is never presented as huntable.",
+    "pokemon_id": 716,
+    "method": "soft_reset_static",
+    "game": "X/Y",
+    "include": false
+  },
+  {
+    "_note": "Yveltal (#717) is shiny-locked in X/Y (story encounter). Same reasoning as Xerneas above.",
+    "pokemon_id": 717,
+    "method": "soft_reset_static",
+    "game": "X/Y",
+    "include": false
+  },
+  {
+    "_note": "Kyogre (#382) is shiny-locked in Omega Ruby/Alpha Sapphire (Delta Episode story encounter). Soft Reset must not appear as a hunt method for ORAS even though a static encounter row exists.",
+    "pokemon_id": 382,
+    "method": "soft_reset_static",
+    "game": "Omega Ruby/Alpha Sapphire",
+    "include": false
+  },
+  {
+    "_note": "Groudon (#383) is shiny-locked in Omega Ruby/Alpha Sapphire (Delta Episode story encounter). Same reasoning as Kyogre above.",
+    "pokemon_id": 383,
+    "method": "soft_reset_static",
+    "game": "Omega Ruby/Alpha Sapphire",
+    "include": false
+  },
+  {
+    "_note": "Rayquaza (#384) is shiny-locked in Omega Ruby/Alpha Sapphire (Delta Episode encounter). Same reasoning as Kyogre above.",
+    "pokemon_id": 384,
+    "method": "soft_reset_static",
+    "game": "Omega Ruby/Alpha Sapphire",
+    "include": false
+  }
+]

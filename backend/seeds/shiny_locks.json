@@ -2,6 +2,26 @@
   "_comment": "Game titles in 'games' arrays MUST match the 'title' column in the games table exactly (e.g. 'X/Y', 'Sword/Shield', 'Scarlet/Violet'). These combined-version strings are taken from seeds/hunt_methods.json and cmd/seed_availability/main.go. If a title is unrecognised the seeder logs a warning and skips — reconcile against the live games table before relying on a complete seed. Only list a (pokemon_id, game) pair where the shiny is genuinely locked in THAT game; never list a game where the shiny is obtainable via soft-reset or normal hunting.",
   "locks": [
     {
+      "_note": "Articuno — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "pokemon_id": 144,
+      "games": ["Let's Go Pikachu/Eevee"]
+    },
+    {
+      "_note": "Zapdos — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "pokemon_id": 145,
+      "games": ["Let's Go Pikachu/Eevee"]
+    },
+    {
+      "_note": "Moltres — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "pokemon_id": 146,
+      "games": ["Let's Go Pikachu/Eevee"]
+    },
+    {
+      "_note": "Mewtwo — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG/XY",
+      "pokemon_id": 150,
+      "games": ["Let's Go Pikachu/Eevee"]
+    },
+    {
       "_note": "Xerneas — shiny-locked story encounter in X/Y",
       "pokemon_id": 716,
       "games": ["X/Y"]
@@ -15,6 +35,26 @@
       "_note": "Zygarde — shiny-locked gift encounter (Route 18) in X/Y",
       "pokemon_id": 718,
       "games": ["X/Y"]
+    },
+    {
+      "_note": "Kyogre — shiny-locked Delta Episode story encounter in Omega Ruby/Alpha Sapphire; soft-resettable in RSE/HGSS",
+      "pokemon_id": 382,
+      "games": ["Omega Ruby/Alpha Sapphire"]
+    },
+    {
+      "_note": "Groudon — shiny-locked Delta Episode story encounter in Omega Ruby/Alpha Sapphire; soft-resettable in RSE/HGSS",
+      "pokemon_id": 383,
+      "games": ["Omega Ruby/Alpha Sapphire"]
+    },
+    {
+      "_note": "Rayquaza — shiny-locked Delta Episode story encounter in Omega Ruby/Alpha Sapphire; soft-resettable in RSE/HGSS",
+      "pokemon_id": 384,
+      "games": ["Omega Ruby/Alpha Sapphire"]
+    },
+    {
+      "_note": "Deoxys — shiny-locked story event in Omega Ruby/Alpha Sapphire (Birth Island Delta Episode)",
+      "pokemon_id": 386,
+      "games": ["Omega Ruby/Alpha Sapphire"]
     },
     {
       "_note": "Tapu Koko — shiny-locked in Sun/Moon and Ultra Sun/Ultra Moon (post-game static)",
@@ -82,19 +122,64 @@
       "games": ["Sword/Shield"]
     },
     {
-      "_note": "Dialga — shiny-locked story encounter in Brilliant Diamond/Shining Pearl and Legends: Arceus; soft-resettable in Diamond/Pearl/Platinum",
+      "_note": "Dialga — shiny-locked story encounter in Legends: Arceus only; soft-resettable in DPPt and Brilliant Diamond/Shining Pearl (Spear Pillar)",
       "pokemon_id": 483,
-      "games": ["Brilliant Diamond/Shining Pearl", "Legends: Arceus"]
+      "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Palkia — shiny-locked story encounter in Brilliant Diamond/Shining Pearl and Legends: Arceus; soft-resettable in Diamond/Pearl/Platinum",
+      "_note": "Palkia — shiny-locked story encounter in Legends: Arceus only; soft-resettable in DPPt and Brilliant Diamond/Shining Pearl (Spear Pillar)",
       "pokemon_id": 484,
-      "games": ["Brilliant Diamond/Shining Pearl", "Legends: Arceus"]
+      "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Giratina — shiny-locked story encounter in Brilliant Diamond/Shining Pearl; soft-resettable in Diamond/Pearl/Platinum",
+      "_note": "Uxie — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS/BDSP",
+      "pokemon_id": 480,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Mesprit — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS/BDSP",
+      "pokemon_id": 481,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Azelf — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS/BDSP",
+      "pokemon_id": 482,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Heatran — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS/BDSP",
+      "pokemon_id": 485,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Regigigas — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS",
+      "pokemon_id": 486,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Giratina — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS/BDSP (Turnback Cave)",
       "pokemon_id": 487,
-      "games": ["Brilliant Diamond/Shining Pearl"]
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Cresselia — shiny-locked in Legends: Arceus; soft-resettable in DPPt/HGSS",
+      "pokemon_id": 488,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Manaphy — shiny-locked in Legends: Arceus (event gift); mythical",
+      "pokemon_id": 490,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift); mythical",
+      "pokemon_id": 491,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift); mythical",
+      "pokemon_id": 492,
+      "games": ["Legends: Arceus"]
     },
     {
       "_note": "Arceus — shiny-locked story encounter in Legends: Arceus",
@@ -117,23 +202,33 @@
       "games": ["Scarlet/Violet"]
     },
     {
+      "_note": "Okidogi — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1014,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Munkidori — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1015,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Fezandipiti — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "pokemon_id": 1016,
+      "games": ["Scarlet/Violet"]
+    },
+    {
       "_note": "Ogerpon — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
       "pokemon_id": 1017,
       "games": ["Scarlet/Violet"]
     },
     {
-      "_note": "Okidogi — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
-      "pokemon_id": 1018,
-      "games": ["Scarlet/Violet"]
-    },
-    {
-      "_note": "Munkidori — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
-      "pokemon_id": 1019,
-      "games": ["Scarlet/Violet"]
-    },
-    {
-      "_note": "Fezandipiti — shiny-locked story encounter (Teal Mask DLC) in Scarlet/Violet",
+      "_note": "Gouging Fire — lock status uncertain (Indigo Disk Paradox legendary); left locked pending verification",
       "pokemon_id": 1020,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Terapagos — shiny-locked story encounter (Indigo Disk DLC) in Scarlet/Violet",
+      "pokemon_id": 1024,
       "games": ["Scarlet/Violet"]
     },
     {

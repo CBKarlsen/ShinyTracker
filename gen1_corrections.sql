@@ -1,0 +1,91 @@
+-- gen1_corrections.sql
+-- Generation 1 — Red/Blue/Yellow (game_id=1).
+-- Generated 2026-05-31 from a stable Gen 1 snapshot. DO NOT auto-run: owner review required (see gen1_report.md).
+--
+-- RESULT OF AUDIT: zero method MISLABELS were found at the schema level (the 4 rows correctly
+-- reflect the seeding rule: static encounter → Soft Reset). However, ALL 4 ROWS ARE CONCEPTUALLY
+-- INVALID because shiny Pokémon do not exist in Generation 1. The shiny mechanic was introduced
+-- in Generation II (Gold/Silver).
+-- Source: https://bulbapedia.bulbagarden.net/wiki/Shiny_Pok%C3%A9mon
+--
+-- There are therefore NO corrective UPDATE statements and NO coverage-gap INSERTs.
+-- The only item is a NEEDS-REVIEW bulk DELETE, provided below as a commented block.
+--
+-- KEYING NOTE: keyed on the natural triple (pokemon_id, method_id, game_id), NOT the surrogate
+-- method_availability.id (which renumbers on every reseed and is unreliable).
+--
+-- Affected rows (all 4, all Soft Reset / method_id=178):
+--   pokemon_id 144 (articuno), 145 (zapdos), 146 (moltres), 150 (mewtwo)
+
+-- ============================================================================
+-- (A) METHOD CORRECTIONS (UPDATEs): NONE.
+--     The 4 rows are internally consistent with the seed rules.
+--     The entire game_id=1 hunt-method concept is invalid — see NEEDS-REVIEW below.
+-- ============================================================================
+
+
+-- ============================================================================
+-- (B) COVERAGE GAPS (INSERTs): NONE.
+--     No valid hunt method exists for Gen 1. Adding rows would compound the error.
+-- ============================================================================
+
+
+-- ============================================================================
+-- ⚠ NEEDS REVIEW — BULK DELETE of all game_id=1 method_availability rows
+--
+-- REASON: Shiny Pokémon do not exist in Generation 1. Soft-resetting Articuno,
+-- Zapdos, Moltres, or Mewtwo in Red/Blue/Yellow cannot yield a shiny — the
+-- mechanic was introduced in Gen II (Gold/Silver). These 4 rows are seeding
+-- artefacts produced by the "static encounter → Soft Reset" rule firing without
+-- a generation > 1 guard.
+--
+-- PRODUCT DECISION REQUIRED before running:
+--   Option A (RECOMMENDED): Delete all 4 rows. RBY has no huntable methods.
+--     If Living Dex tracking for Gen 1 Pokémon obtained via trade/transfer is
+--     needed, use user_hunts.acquisition_type (TRADED / MANUAL_OVERRIDE) instead.
+--   Option B: Delete the 4 rows but keep game_id=1 in the game selector as a
+--     transfer-origin marker (no hunt methods, acquisition_type only). The DELETE
+--     below is the same in both cases — the distinction is UI/product, not SQL.
+--
+-- SCOPE: Only 4 rows exist for game_id=1 (all Soft Reset for the 3 legendary
+-- birds + Mewtwo). This is NOT a large bulk delete — it is safe to inspect the
+-- rows individually before running (SELECT below for verification).
+--
+-- DURABLE FIX — also add a generation > 1 guard to the seed pipeline so these
+-- rows are not regenerated on the next reseed. Example guard on the
+-- method-seeding query:
+--   JOIN games g ON g.id = pge.game_id WHERE g.generation > 1
+-- Without this, the DELETE will be undone by the next seed run.
+--
+-- VERIFICATION SELECT (run this first to confirm the 4 rows):
+-- SELECT ma.id, ma.pokemon_id, p.name, ma.method_id, hm.method_name, ma.game_id
+-- FROM method_availability ma
+-- JOIN pokemon p ON p.id = ma.pokemon_id
+-- JOIN hunt_methods hm ON hm.id = ma.method_id
+-- WHERE ma.game_id = 1
+-- ORDER BY ma.pokemon_id;
+-- Expected: 4 rows — articuno(144), zapdos(145), moltres(146), mewtwo(150), all Soft Reset.
+--
+-- OPTIONAL: also remove the static pokemon_game_encounter rows for these 4 in game_id=1
+-- to prevent the seed pipeline from recreating method_availability rows on the next run
+-- (in addition to the pipeline guard above):
+-- DELETE FROM pokemon_game_encounter
+-- WHERE game_id = 1 AND kind = 'static'
+-- AND pokemon_id IN (144, 145, 146, 150);
+--
+-- OPTIONAL: unmap Soft Reset from method_games for game_id=1 to prevent any
+-- method-routing to Gen 1 in future seed runs:
+-- DELETE FROM method_games WHERE method_id = 178 AND game_id = 1;
+--
+-- THE EXECUTABLE DELETE (owner must uncomment and run after reviewing):
+--
+-- BEGIN;
+--
+-- DELETE FROM method_availability
+-- WHERE game_id = 1
+--   AND method_id = 178
+--   AND pokemon_id IN (144, 145, 146, 150);
+-- -- Expect: exactly 4 rows deleted.
+--
+-- COMMIT;
+-- ============================================================================
