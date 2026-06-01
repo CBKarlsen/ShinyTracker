@@ -592,8 +592,9 @@
   {
     "pokemon_id": 493,
     "name": "Arceus",
+    "_note": "Azure Flute (Hall of Origin) was never officially distributed in D/P/Pt, so Arceus is not legitimately huntable there. Only BDSP (Hall of Origin via Legends: Arceus save data) is a real soft-reset hunt.",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Brilliant Diamond/Shining Pearl"],
     "overrides": {}
   }
 ]

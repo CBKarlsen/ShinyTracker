@@ -462,10 +462,9 @@ FROM (VALUES
     -- Heatran, Regigigas → ORAS
     (485, 'Omega Ruby/Alpha Sapphire'),
     (486, 'Omega Ruby/Alpha Sapphire'),
-    -- Darkrai, Shaymin, Arceus → DPPt
+    -- Darkrai, Shaymin → DPPt (Arceus DPPt excluded: Azure Flute never officially distributed)
     (491, 'Diamond/Pearl/Platinum'),
     (492, 'Diamond/Pearl/Platinum'),
-    (493, 'Diamond/Pearl/Platinum'),
     -- Forces of Nature → BW
     (641, 'Black/White'),
     (642, 'Black/White'),
@@ -473,7 +472,7 @@ FROM (VALUES
 ) AS v(pid, gtitle)
 JOIN games g ON g.title = v.gtitle
 ON CONFLICT DO NOTHING;
--- Expect: up to 23 rows inserted (0 on re-run).
+-- Expect: up to 22 rows inserted (0 on re-run). [Arceus DPPt removed: Azure Flute unreleased]
 
 -- I2. Soft Reset method_availability for the static additions above.
 --     Shiny-lock guard prevents rows for 151-BDSP, 385-BDSP, 494-BW, 905-SV.
@@ -499,7 +498,6 @@ FROM (VALUES
     (486, 'Omega Ruby/Alpha Sapphire'),
     (491, 'Diamond/Pearl/Platinum'),
     (492, 'Diamond/Pearl/Platinum'),
-    (493, 'Diamond/Pearl/Platinum'),
     (641, 'Black/White'),
     (642, 'Black/White'),
     (645, 'Black/White')
@@ -518,7 +516,7 @@ WHERE hm.method_name = 'Soft Reset'
   AND EXISTS (
     SELECT 1 FROM method_games mg
     WHERE mg.method_id = hm.id AND mg.game_id = g.id);
--- Expect: up to 23 rows inserted. The lock guard keeps 151-BDSP, 385-BDSP,
+-- Expect: up to 22 rows inserted. The lock guard keeps 151-BDSP, 385-BDSP,
 -- 494-BW, and 905-SV method-less as required. 0 rows on re-run.
 
 -- I3. Under-lock additions: insert missing shiny_locks rows.
