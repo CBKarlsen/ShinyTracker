@@ -3,70 +3,92 @@
     "pokemon_id": 144,
     "name": "Articuno",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
+    "default_games": ["FireRed/LeafGreen", "Diamond/Pearl/Platinum", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 145,
     "name": "Zapdos",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
+    "default_games": ["FireRed/LeafGreen", "Diamond/Pearl/Platinum", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 146,
     "name": "Moltres",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
+    "default_games": ["FireRed/LeafGreen", "Diamond/Pearl/Platinum", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 150,
     "name": "Mewtwo",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
+    "default_games": ["FireRed/LeafGreen", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "X/Y", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 151,
+    "name": "Mew",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald"],
+    "overrides": {}
   },
   {
     "pokemon_id": 249,
     "name": "Lugia",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Gold/Silver/Crystal", "Ruby/Sapphire/Emerald", "FireRed/LeafGreen", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 250,
     "name": "Ho-Oh",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Gold/Silver/Crystal", "Ruby/Sapphire/Emerald", "FireRed/LeafGreen", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 251,
+    "name": "Celebi",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
   },
   {
     "pokemon_id": 382,
     "name": "Kyogre",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 383,
     "name": "Groudon",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 384,
     "name": "Rayquaza",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
+  },
+  {
+    "pokemon_id": 386,
+    "name": "Deoxys",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "FireRed/LeafGreen"],
+    "overrides": {}
   },
   {
     "pokemon_id": 487,
     "name": "Giratina",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Diamond/Pearl/Platinum", "HeartGold/SoulSilver", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -101,56 +123,56 @@
     "pokemon_id": 243,
     "name": "Raikou",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "FireRed/LeafGreen", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 244,
     "name": "Entei",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "FireRed/LeafGreen", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 245,
     "name": "Suicune",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "FireRed/LeafGreen", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 380,
     "name": "Latias",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Black 2/White 2", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 381,
     "name": "Latios",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Black 2/White 2", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 377,
     "name": "Regirock",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 378,
     "name": "Regice",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 379,
     "name": "Registeel",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
@@ -160,8 +182,9 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
-      "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
+      "Black 2/White 2": "static",
+      "Brilliant Diamond/Shining Pearl": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -173,8 +196,9 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
-      "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
+      "Black 2/White 2": "static",
+      "Brilliant Diamond/Shining Pearl": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -186,8 +210,9 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
-      "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
+      "Black 2/White 2": "static",
+      "Brilliant Diamond/Shining Pearl": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -195,10 +220,12 @@
   {
     "pokemon_id": 483,
     "name": "Dialga",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "raid",
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "HeartGold/SoulSilver": "static",
       "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
       "Omega Ruby/Alpha Sapphire": "static",
@@ -208,10 +235,12 @@
   {
     "pokemon_id": 484,
     "name": "Palkia",
+    "_note": "Sinjoh Ruins (HGSS): soft-resettable before the Arceus creation cutscene, event Arceus required.",
     "default_kind": "raid",
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "HeartGold/SoulSilver": "static",
       "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
       "Omega Ruby/Alpha Sapphire": "static",
@@ -225,8 +254,10 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
-      "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
+      "Black 2/White 2": "static",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
   },
@@ -234,7 +265,7 @@
     "pokemon_id": 486,
     "name": "Regigigas",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Diamond/Pearl/Platinum", "Black 2/White 2", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
@@ -244,8 +275,9 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
-      "Brilliant Diamond/Shining Pearl": "static",
       "Diamond/Pearl/Platinum": "static",
+      "Black 2/White 2": "static",
+      "Brilliant Diamond/Shining Pearl": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -257,6 +289,7 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "Black/White": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -268,6 +301,7 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "Black/White": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -279,6 +313,7 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "Black/White": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -290,6 +325,8 @@
     "default_games": [],
     "overrides": {
       "@swsh-dynamax": "raid",
+      "Black/White": "static",
+      "Black 2/White 2": "static",
       "Omega Ruby/Alpha Sapphire": "static",
       "Ultra Sun/Ultra Moon": "static"
     }
@@ -507,24 +544,62 @@
   },
 
   {
+    "pokemon_id": 894,
+    "name": "Regieleki",
+    "default_kind": "static",
+    "default_games": ["Sword/Shield"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 895,
+    "name": "Regidrago",
+    "default_kind": "static",
+    "default_games": ["Sword/Shield"],
+    "overrides": {}
+  },
+
+  {
     "pokemon_id": 638,
     "name": "Cobalion",
     "default_kind": "static",
-    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 639,
     "name": "Terrakion",
     "default_kind": "static",
-    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 640,
     "name": "Virizion",
     "default_kind": "static",
-    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Sword/Shield", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+
+  {
+    "pokemon_id": 491,
+    "name": "Darkrai",
+    "default_kind": "static",
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 492,
+    "name": "Shaymin",
+    "default_kind": "static",
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 493,
+    "name": "Arceus",
+    "_note": "Azure Flute (Hall of Origin) was never officially distributed in D/P/Pt, so Arceus is not legitimately huntable there. Only BDSP (Hall of Origin via Legends: Arceus save data) is a real soft-reset hunt.",
+    "default_kind": "static",
+    "default_games": ["Brilliant Diamond/Shining Pearl"],
     "overrides": {}
   }
 ]

@@ -2,24 +2,19 @@
   "_comment": "Game titles in 'games' arrays MUST match the 'title' column in the games table exactly (e.g. 'X/Y', 'Sword/Shield', 'Scarlet/Violet'). These combined-version strings are taken from seeds/hunt_methods.json and cmd/seed_availability/main.go. If a title is unrecognised the seeder logs a warning and skips — reconcile against the live games table before relying on a complete seed. Only list a (pokemon_id, game) pair where the shiny is genuinely locked in THAT game; never list a game where the shiny is obtainable via soft-reset or normal hunting.",
   "locks": [
     {
-      "_note": "Articuno — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Articuno — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 144,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
+      "games": ["X/Y"]
     },
     {
-      "_note": "Zapdos — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Zapdos — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 145,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
+      "games": ["X/Y"]
     },
     {
-      "_note": "Moltres — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
+      "_note": "Moltres — shiny-locked as the X/Y roaming bird only; soft-resettable in RBY/FRLG and Let's Go Pikachu/Eevee (NOT locked there per Bulbapedia)",
       "pokemon_id": 146,
-      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
-    },
-    {
-      "_note": "Mewtwo — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG/XY",
-      "pokemon_id": 150,
-      "games": ["Let's Go Pikachu/Eevee"]
+      "games": ["X/Y"]
     },
     {
       "_note": "Xerneas — shiny-locked story encounter in X/Y",
@@ -182,24 +177,39 @@
       "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only, never obtainable via soft reset)",
+      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift) only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Member Card event item at Newmoon Island, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
       "pokemon_id": 491,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
-    },
-    {
-      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only)",
-      "pokemon_id": 492,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
-    },
-    {
-      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus and in BDSP (event-distribution only)",
-      "pokemon_id": 493,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
-    },
-    {
-      "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus",
-      "pokemon_id": 905,
       "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift) only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Oak's Letter event item at Flower Paradise, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
+      "pokemon_id": 492,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Azure Flute event item at Hall of Origin, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
+      "pokemon_id": 493,
+      "games": ["Legends: Arceus"]
+    },
+    {
+      "_note": "Mew — shiny-locked gift (Mystery Gift via Poke Ball Plus) in Brilliant Diamond/Shining Pearl; soft-resettable in Ruby/Sapphire/Emerald (Faraway Island event)",
+      "pokemon_id": 151,
+      "games": ["Brilliant Diamond/Shining Pearl"]
+    },
+    {
+      "_note": "Jirachi — shiny-locked gift (Mystery Gift) in Brilliant Diamond/Shining Pearl; not obtainable via SR in any main-series game",
+      "pokemon_id": 385,
+      "games": ["Brilliant Diamond/Shining Pearl"]
+    },
+    {
+      "_note": "Victini — shiny-locked Liberty Garden static encounter in Black/White (hardcoded non-shiny by game engine, Bulbapedia-verified)",
+      "pokemon_id": 494,
+      "games": ["Black/White"]
+    },
+    {
+      "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus; also locked in Scarlet/Violet (Indigo Disk Snacksworth gift, not a soft-resettable static)",
+      "pokemon_id": 905,
+      "games": ["Legends: Arceus", "Scarlet/Violet"]
     },
     {
       "_note": "Koraidon — shiny-locked story encounter in Scarlet/Violet",
