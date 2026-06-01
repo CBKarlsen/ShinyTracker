@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { shinyCharmAvailable } from "../utils/games";
 import { calcCumulativeOdds, calculateOdds } from "../utils/odds";
 import { API_BASE } from "../config";
 
@@ -79,6 +80,10 @@ export default function OddsCalculator() {
 
 	const selectedMethod = methods.find((m) => m.id === huntMethodId);
 
+	// Gate the Shiny Charm: only apply it for games where it actually exists.
+	const charmAllowed = shinyCharmAvailable(gameId === "" ? null : gameId);
+	const effectiveCharm = shinyCharm && charmAllowed;
+
 	useEffect(() => {
 		if (!selectedMethod) return;
 
@@ -95,11 +100,11 @@ export default function OddsCalculator() {
 			const baseOdds = getBaseOdds(selectedMethod.game_title || "");
 			const rolls =
 				selectedMethod.base_rolls +
-				(shinyCharm ? selectedMethod.charm_rolls : 0);
+				(effectiveCharm ? selectedMethod.charm_rolls : 0);
 			defaultEncounters = Math.floor(baseOdds / Math.max(1, rolls));
 		}
 		setEncounters(defaultEncounters);
-	}, [selectedMethod, shinyCharm]);
+	}, [selectedMethod, effectiveCharm]);
 
 	useEffect(() => {
 		if (!selectedMethod) {
@@ -111,7 +116,7 @@ export default function OddsCalculator() {
 		const { rolls, denominator } = calculateOdds(
 			selectedMethod.formula_type,
 			encounters,
-			shinyCharm,
+			effectiveCharm,
 			baseOdds,
 			selectedMethod.base_rolls,
 			selectedMethod.charm_rolls,
@@ -127,7 +132,7 @@ export default function OddsCalculator() {
 			baseOdds,
 			rolls,
 			selectedMethod.formula_type,
-			shinyCharm,
+			effectiveCharm,
 			selectedMethod.base_rolls,
 			selectedMethod.charm_rolls,
 		);
@@ -140,7 +145,7 @@ export default function OddsCalculator() {
 			eta_hours: Math.round(etaHours * 10) / 10,
 			cumulative_percentage: cumPercentage,
 		});
-	}, [selectedMethod, shinyCharm, encounters]);
+	}, [selectedMethod, effectiveCharm, encounters]);
 
 	return (
 		<div className="page">
@@ -220,21 +225,24 @@ export default function OddsCalculator() {
 					</div>
 
 					<label
+						title={!charmAllowed ? "Shiny Charm doesn't exist in this game" : undefined}
 						style={{
 							display: "flex",
 							alignItems: "center",
 							gap: 10,
-							cursor: "pointer",
+							cursor: charmAllowed ? "pointer" : "not-allowed",
+							opacity: charmAllowed ? 1 : 0.4,
 						}}
 					>
 						<input
 							type="checkbox"
 							checked={shinyCharm}
+							disabled={!charmAllowed}
 							onChange={(e) => setShinyCharm(e.target.checked)}
-							style={{ accentColor: "var(--gold)", width: 15, height: 15 }}
+							style={{ accentColor: "var(--gold)", width: 15, height: 15, cursor: charmAllowed ? "pointer" : "not-allowed" }}
 						/>
 						<span style={{ fontSize: 13 }}>Shiny Charm</span>
-						{shinyCharm && selectedMethod && selectedMethod.charm_rolls > 0 && (
+						{effectiveCharm && selectedMethod && selectedMethod.charm_rolls > 0 && (
 							<span className="charm-pill">
 								+{selectedMethod.charm_rolls} rolls
 							</span>

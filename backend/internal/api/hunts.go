@@ -44,7 +44,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
 	rows, err := database.DB.Query(context.Background(),
-		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
+		`SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name as pokemon_name, e.method_name, h.custom_method_name, g.title as game_title,
 		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
 		        COALESCE(e.formula_type, 'static') AS formula_type
@@ -67,7 +67,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var h models.UserHuntDetail
 		if err := rows.Scan(
-			&h.ID, &h.UserID, &h.PokemonID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
+			&h.ID, &h.UserID, &h.PokemonID, &h.GameID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
 			&h.PokemonName, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
 			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType,
 		); err != nil {
@@ -294,7 +294,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 	// Load full hunt detail with phases for response.
 	var hunt models.UserHuntDetail
 	if err := database.DB.QueryRow(context.Background(),
-		`SELECT h.id, h.user_id, h.pokemon_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
+		`SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name, e.method_name, h.custom_method_name, g.title,
 		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
 		        COALESCE(e.formula_type, 'static') AS formula_type
@@ -305,7 +305,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
 		 WHERE h.id = $1 AND h.user_id = $2`,
 		huntID, userID).Scan(
-		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
+		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
 		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
 		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
 	); err != nil {

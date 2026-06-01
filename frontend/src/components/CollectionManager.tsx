@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { shinyCharmAvailable } from "../utils/games";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { SparkSm } from "./ui/icons";
 
@@ -16,12 +17,6 @@ interface UserGame {
 	game_id: number;
 	has_shiny_charm: boolean;
 }
-
-const supportsShinyCharm = (game: Game): boolean => {
-	if (game.generation >= 6) return true;
-	if (game.generation === 5 && game.title.includes("Black 2")) return true;
-	return false;
-};
 
 const GEN_NAMES: Record<number, string> = {
 	1: "Generation I",
@@ -47,7 +42,9 @@ const CollectionManager: React.FC = () => {
 	const [games, setGames] = useState<Game[]>([]);
 	const [userGames, setUserGames] = useState<UserGame[]>([]);
 	const [loading, setLoading] = useState(true);
-	const [pendingRemoveGameId, setPendingRemoveGameId] = useState<number | null>(null);
+	const [pendingRemoveGameId, setPendingRemoveGameId] = useState<number | null>(
+		null,
+	);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -221,14 +218,9 @@ const CollectionManager: React.FC = () => {
 				<div className="stat-tile">
 					<div className="t-label">Charm-Eligible</div>
 					<div className="v">
-						{
-							userGames.filter((ug) => {
-								const g = games.find((g) => g.id === ug.game_id);
-								return g && supportsShinyCharm(g);
-							}).length
-						}
+						{userGames.filter((ug) => shinyCharmAvailable(ug.game_id)).length}
 						<span className="unit">
-							/ {games.filter(supportsShinyCharm).length}
+							/ {games.filter((g) => shinyCharmAvailable(g.id)).length}
 						</span>
 					</div>
 				</div>
@@ -267,7 +259,7 @@ const CollectionManager: React.FC = () => {
 								const ug = userGames.find((u) => u.game_id === g.id);
 								const isOwned = !!ug;
 								const hasCharm = ug?.has_shiny_charm ?? false;
-								const charmSupported = supportsShinyCharm(g);
+								const charmSupported = shinyCharmAvailable(g.id);
 
 								return (
 									<div
@@ -280,7 +272,7 @@ const CollectionManager: React.FC = () => {
 											Gen {ROMAN[g.generation]} ·{" "}
 											{isOwned ? "Owned" : "Click to add"}
 										</div>
-										{charmSupported && (
+										{charmSupported ? (
 											<button
 												className={`charm-toggle ${hasCharm ? "active" : ""} ${!isOwned ? "disabled" : ""}`}
 												onClick={(e) => handleCharmToggle(e, g.id, hasCharm)}
@@ -290,7 +282,17 @@ const CollectionManager: React.FC = () => {
 											>
 												<SparkSm size={11} />
 											</button>
-										)}
+										) : isOwned ? (
+											<button
+												className="charm-toggle disabled"
+												onClick={(e) => e.stopPropagation()}
+												title="Shiny Charm doesn't exist in this game"
+												disabled
+												style={{ opacity: 0.3, cursor: "not-allowed" }}
+											>
+												<SparkSm size={11} />
+											</button>
+										) : null}
 									</div>
 								);
 							})}

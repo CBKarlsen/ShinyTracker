@@ -87,6 +87,19 @@
     "requires_kind": "wild"
   },
   {
+    "id": "random_encounter_gen7",
+    "games": [
+      "Sun/Moon",
+      "Ultra Sun/Ultra Moon"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
     "id": "sos_chaining_gen7",
     "games": [
       "Sun/Moon",
@@ -97,6 +110,18 @@
     "base_rolls": 1,
     "charm_rolls": 2,
     "formula_type": "sos_chain_gen7",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "random_encounter_oras",
+    "games": [
+      "Omega Ruby/Alpha Sapphire"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
     "requires_kind": "wild"
   },
   {
@@ -267,7 +292,6 @@
   {
     "id": "soft_reset_static",
     "games": [
-      "Red/Blue/Yellow",
       "Gold/Silver/Crystal",
       "Ruby/Sapphire/Emerald",
       "FireRed/LeafGreen",

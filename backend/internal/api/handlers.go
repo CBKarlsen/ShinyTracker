@@ -48,11 +48,17 @@ func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
 
 func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
 	userID := chi.URLParam(r, "id")
-	gameID := chi.URLParam(r, "gameId")
+	gameIDStr := chi.URLParam(r, "gameId")
 	authUserID := r.Header.Get("X-User-ID")
 
 	if userID != authUserID {
 		http.Error(w, "Unauthorized access", http.StatusForbidden)
+		return
+	}
+
+	gameID, err := strconv.Atoi(gameIDStr)
+	if err != nil {
+		http.Error(w, "gameId must be an integer", http.StatusBadRequest)
 		return
 	}
 
@@ -64,7 +70,15 @@ func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := database.DB.Exec(context.Background(),
+	// Guard: the Shiny Charm was not introduced until Black 2/White 2 (Gen 5 sequel).
+	// Reject attempts to set it for pre-B2W2 games so stale charm flags can never
+	// inflate odds. Unsetting (false) is always allowed.
+	if req.HasShinyCharm && !calc.ShinyCharmAvailable(gameID) {
+		http.Error(w, "Shiny Charm is not available in this game", http.StatusBadRequest)
+		return
+	}
+
+	_, err = database.DB.Exec(context.Background(),
 		`INSERT INTO user_games (user_id, game_id, has_shiny_charm) 
 		 VALUES ($1, $2, $3) 
 		 ON CONFLICT (user_id, game_id) 
@@ -306,55 +320,51 @@ func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "hunt_method_id must be an integer", http.StatusBadRequest)
 		return
 	}
-	shinyCharm := r.URL.Query().Get("shiny_charm") == "true"
+	shinyCharmParam := r.URL.Query().Get("shiny_charm") == "true"
 
-	var baseRolls, charmRolls, avgTimeSeconds, baseOdds int
+	var baseRolls, charmRolls, avgTimeSeconds, baseOdds, gameID int
 	var formulaType string
 	err = database.DB.QueryRow(context.Background(), `
-		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, e.formula_type
+		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, e.formula_type, g.id
 		FROM hunt_methods e
 		JOIN method_games mg ON e.id = mg.method_id
 		JOIN games g ON mg.game_id = g.id
 		WHERE e.id = $1
 		LIMIT 1
-	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds, &formulaType)
+	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds, &formulaType, &gameID)
 	if err != nil {
 		http.Error(w, "Hunt method not found", http.StatusNotFound)
 		return
 	}
 
-	totalRolls := baseRolls
-	if shinyCharm {
-		totalRolls += charmRolls
-	}
-	if totalRolls <= 0 {
-		totalRolls = 1
-	}
+	// Guard: ignore a caller-supplied shiny_charm=true when the charm doesn't
+	// exist for this game, even if a stale DB flag somehow survived.
+	hasCharm := shinyCharmParam && calc.ShinyCharmAvailable(gameID)
 
-	expectedEncounters := baseOdds / totalRolls
-	if formulaType == "dynamax_adventures_gen8" {
-		if shinyCharm {
-			expectedEncounters = 100
-		} else {
-			expectedEncounters = 300
-		}
-		totalRolls = 1
-		baseOdds = expectedEncounters
-	}
-
-	etaHours := calc.CalculateEstimatedTimeHours(calc.OddsConfig{
+	base := calc.OddsConfig{
 		BaseOdds:       baseOdds,
-		BaseRolls:      totalRolls, // pass totalRolls as BaseRolls to bypass internal calc logic
-		CharmRolls:     0,
-		HasShinyCharm:  false,
+		BaseRolls:      baseRolls,
+		CharmRolls:     charmRolls,
 		AvgTimeSeconds: avgTimeSeconds,
-	})
+	}
+	// Use EffectiveOdds (mirrors route ranking) with best-case default params.
+	// This ensures formula-aware methods (chaining, SOS, DexNav, etc.) agree
+	// with the denominator shown in the route drawer / hunt-next panel.
+	expectedEncounters := calc.EffectiveOdds(formulaType, calc.DefaultParams(formulaType), base, hasCharm)
+	if expectedEncounters < 1 {
+		expectedEncounters = 1
+	}
+
+	// ETA mirrors routes.go: expected_encounters * avg_time_seconds / 3600.
+	etaHours := float64(expectedEncounters) * float64(avgTimeSeconds) / 3600.0
+	// Round to one decimal place (same rounding as the old handler).
+	etaHours = float64(int(etaHours*10+0.5)) / 10
 
 	resp := OddsResponse{
 		Fraction:           fmt.Sprintf("1/%d", expectedEncounters),
-		Percentage:         fmt.Sprintf("%.4f%%", float64(totalRolls)/float64(baseOdds)*100),
+		Percentage:         fmt.Sprintf("%.4f%%", float64(1)/float64(expectedEncounters)*100),
 		ExpectedEncounters: expectedEncounters,
-		ETAHours:           float64(int(etaHours*10+0.5)) / 10,
+		ETAHours:           etaHours,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)

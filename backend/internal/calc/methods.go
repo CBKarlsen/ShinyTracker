@@ -109,7 +109,11 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		}
 		probDexNav := 0.0
 		if searchLevel > 0 {
-			probDexNav = tt / 10000
+			// Bulbapedia: dexnav_level = (tiered search-level points) / 100, and the
+			// per-check forced-shiny probability is dexnav_level / 10000. The earlier
+			// code dropped the /100, making this 100x too high (8% vs the real 0.08%
+			// at search level 200) — which produced the bogus 1/12 best case.
+			probDexNav = (tt / 100) / 10000
 		}
 		extra := 0
 		if chain > 0 && chain%100 == 0 {

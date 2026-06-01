@@ -24,14 +24,14 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 | Gen | Game(s) | Methods | Shiny-locks | Status |
 |---|---|---|---|---|
-| 1 | RBY | Soft Reset (4 rows) | n/a | ❌ Shinies don't exist in Gen 1 — these 4 rows are bogus; RBY should be non-huntable. |
-| 2 | GSC | Random, Soft Reset | ✅ (none needed) | ◑ ~10 gift/static species still mislabeled Random instead of Soft Reset (Eevee, starters, Snorlax, Lapras…); legendary beasts missing. |
-| 3 | RSE / FRLG | Random, Soft Reset | ✅ | ◑ "Run Away" mislabel fixed. Residual: some gift/fossil statics still Random; a few legendary coverage gaps (Regis/Lati@s/beasts). |
+| 1 | RBY | — | n/a | ✅ **Removed** — RBY dropped from the tracker (no shiny mechanic before Gen 2). Out of seed; `generation >= 2` guard prevents reintroduction. |
+| 2 | GSC | Random, Soft Reset | ✅ | ✅ 10 gift/static mislabels fixed (Eevee/starters/Snorlax/Lapras/etc. → Soft Reset); legendary beasts added. Minor: a few lower-confidence gifts (Shuckle/Igglybuff/Porygon) left as NEEDS REVIEW. |
+| 3 | RSE / FRLG | Random, Soft Reset | ✅ | ◑ "Run Away" fixed; Lati@s + beasts added (RSE/FRLG). Residual: RSE/FRLG starter/fossil gifts (Treecko/fossils/Kanto starters) still Random — were NEEDS-REVIEW in audit, not yet confirmed. |
 | 4 | DPPt / HGSS | Poké Radar, Random, Soft Reset | ✅ | ✅ Clean (pilot). DPPt legendary statics now covered. |
 | 5 | BW / B2W2 | Masuda, Random, Soft Reset | ✅ | ◑ Masuda complete. Residual: not all Unova static legendaries have Soft Reset; SR charm-roll bleed (odds). |
 | 6 | XY | Chain Fishing, Friend Safari, Masuda, Poké Radar, Random | ✅ | ✅ Friend Safari fixed; full method set. |
-| 6 | ORAS | Chain Fishing, DexNav, Masuda | ✅ | ◑ **No Random Encounter, no Soft Reset** — ORAS legendaries (Regis etc.) and non-DexNav species lack a route. |
-| 7 | SM / USUM | Masuda, SOS Chaining | ✅ | ❌ **No Random Encounter, no Soft Reset.** Non-SOS species + static legendaries/Ultra Beasts have no hunt route. Ultra Wormhole method absent from catalog. |
+| 6 | ORAS | Chain Fishing, DexNav, Masuda, Random, Soft Reset | ✅ | ✅ Wild coverage widened via RSE→ORAS proxy + ORAS additions (Random/DexNav 235). All 19 Soaring/Mirage legendaries added (Soft Reset). Residual: Eon-Ticket Lati@s same-id nuance (left unlocked). |
+| 7 | SM / USUM | Masuda, SOS Chaining, Random, Soft Reset | ✅ | ✅ Random + Soft Reset (UBs/Type:Null/Zygarde/Necrozma). All 37 USUM Ultra Wormhole legendaries added (Soft Reset; incl. Kyogre/Groudon/Rayquaza/Xerneas/Yveltal — locked elsewhere, huntable here). |
 | 7 | LGPE | Catch Combo | ✅ | ✅ Correct. |
 | 8 | SwSh | Dynamax Adventures, KO Method, Masuda, Run Away | ✅ | ✅ "KO Method" verified legitimate (catch-count rerolls). |
 | 8 | BDSP | Masuda, Poké Radar, Random, Soft Reset | ✅ | ✅ Fully seeded this session. |
@@ -43,8 +43,9 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 ## Remaining work (prioritized)
 
-1. **Gen 7 SM/USUM** — add Random Encounter + Soft Reset (static legendaries/UBs); consider an Ultra Wormhole method. *Biggest method gap.*
-2. **Gen 6 ORAS** — add Random Encounter + Soft Reset for legendaries.
+1. **Gen 3 RSE/FRLG starter/fossil gifts** — confirm + flip the remaining NEEDS-REVIEW gift/fossil mislabels (Treecko/Torchic/Mudkip, Lileep/Anorith, Kanto starters, Omanyte/Kabuto) from Random → Soft Reset.
+2. **Odds — Shiny Charm availability guard: DONE.** Audited the odds engine (`calc.EffectiveOdds` — per-formula chaining logic is sound and Bulbapedia-aligned). Fixed the charm bleed: charm now only applies in games where it exists (B2W2 + Gen 6+, ids 8–17) — enforced at the toggle API, in route/dex odds, in `GetOddsHandler` (now formula-aware), and mirrored in the frontend (toggle hidden + odds gated). Residual odds items: confirm a few method roll-values (e.g. **Friend Safari** base_rolls 5 → ~1/819 vs commonly-cited ~1/512); the frontend `odds.ts` ↔ backend `EffectiveOdds` parity has one known divergence noted in code (outbreak sparkling-power term).
+3. **Optional polish** — Eon-Ticket Lati@s encounter-level granularity; dedicated Mirage-Spot / Ultra-Wormhole methods (distinct odds vs plain Soft Reset); same-region wild proxies for any other sparse-data gens; Gen 3 RSE/FRLG starter/fossil gifts.
 3. **Gen 2 / Gen 3** — fix the "wild/other"-driven gift/static mislabels (move to `legendary_encounters.json` static) and backfill missing legendaries. Root cause is the overloaded `wild/other` encounter bucket in the PokeAPI mapper.
 4. **Gen 1** — exclude RBY from hunting (drop the 4 Soft Reset rows; no shiny mechanic exists).
 5. **Odds verification phase** — validate `base_odds`/`base_rolls`/`charm_rolls` per method/game, incl. the Soft Reset `charm_rolls=2` bleed for pre-Gen-5 games (Shiny Charm didn't exist until Gen 5/B2W2).

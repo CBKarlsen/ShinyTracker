@@ -48,7 +48,7 @@ const HuntNextPanel: React.FC<{
 	if (loading) {
 		return (
 			<section className="hunt-next">
-				<h2 className="hunt-next-title">⭐ Hunt next</h2>
+				<h2 className="hunt-next-title">Hunt next</h2>
 				<div className="hunt-next-grid">
 					{Array.from({ length: 12 }).map((_, i) => (
 						<div key={i} className="hunt-next-card hunt-next-card--skeleton" />
@@ -61,7 +61,7 @@ const HuntNextPanel: React.FC<{
 	if (!data || data.total_huntable === 0) {
 		return (
 			<section className="hunt-next">
-				<h2 className="hunt-next-title">⭐ Hunt next</h2>
+				<h2 className="hunt-next-title">Hunt next</h2>
 				<p className="hunt-next-empty">
 					No huntable targets left — your dex is complete or the rest are
 					blocked 🎉
@@ -73,7 +73,7 @@ const HuntNextPanel: React.FC<{
 	return (
 		<section className="hunt-next">
 			<h2 className="hunt-next-title">
-				⭐ Hunt next{" "}
+				Hunt next{" "}
 				<span className="hunt-next-count">
 					· {data.total_huntable} huntable targets left
 				</span>

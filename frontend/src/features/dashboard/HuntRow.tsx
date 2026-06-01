@@ -1,7 +1,8 @@
 import type React from "react";
-import { SparkSm, IcPin } from "../../components/ui/icons";
-import { calculateOdds, defaultParamsFor } from "../../utils/odds";
+import { IcPin, SparkSm } from "../../components/ui/icons";
 import type { Hunt } from "../../types/models";
+import { shinyCharmAvailable } from "../../utils/games";
+import { calculateOdds, defaultParamsFor } from "../../utils/odds";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -46,7 +47,7 @@ function gameShort(title: string | null): string {
 function getLuckLabel(pct: number): string {
 	if (pct < 0.33) return "running lucky";
 	if (pct < 0.67) return "about average";
-	if (pct < 0.90) return "pushing your luck";
+	if (pct < 0.9) return "pushing your luck";
 	return "overdue";
 }
 
@@ -64,18 +65,24 @@ export function HuntRow({
 	onPin: (id: string) => void;
 }) {
 	const storedParams = (hunt.hunt_parameters as Record<string, any>) || {};
-	const resolvedHuntParams = Object.keys(storedParams).length > 0
-		? storedParams
-		: defaultParamsFor(hunt.formula_type);
+	const resolvedHuntParams =
+		Object.keys(storedParams).length > 0
+			? storedParams
+			: defaultParamsFor(hunt.formula_type);
+
+	// Gate charm: a stale `true` from the DB must not inflate odds for games
+	// where the Shiny Charm doesn't exist.
+	const effectiveCharm =
+		(hunt.has_shiny_charm || false) && shinyCharmAvailable(hunt.game_id);
 
 	const { denominator: expected } = calculateOdds(
 		hunt.formula_type,
 		hunt.encounter_count,
-		hunt.has_shiny_charm || false,
+		effectiveCharm,
 		hunt.base_odds || 4096,
 		hunt.base_rolls || 1,
 		hunt.charm_rolls || 0,
-		resolvedHuntParams
+		resolvedHuntParams,
 	);
 	const isOver = hunt.encounter_count > expected;
 
@@ -86,13 +93,13 @@ export function HuntRow({
 			const { denominator } = calculateOdds(
 				hunt.formula_type,
 				e,
-				hunt.has_shiny_charm || false,
+				effectiveCharm,
 				hunt.base_odds,
 				hunt.base_rolls || 1,
 				hunt.charm_rolls || 0,
-				resolvedHuntParams
+				resolvedHuntParams,
 			);
-			currentNotShiny *= (1 - (1 / Math.max(1, denominator)));
+			currentNotShiny *= 1 - 1 / Math.max(1, denominator);
 		}
 		cumP = 1 - currentNotShiny;
 	}
@@ -100,20 +107,31 @@ export function HuntRow({
 	const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
 
 	return (
-		<div className="hunt-row hunt-row-clickable" onClick={() => onPin(hunt.id)} title="Promote to main hunt">
+		<div
+			className="hunt-row hunt-row-clickable"
+			onClick={() => onPin(hunt.id)}
+			title="Promote to main hunt"
+		>
 			<div className="sprite-wrap">
 				<img src={spriteUrl} alt={hunt.pokemon_name} />
 			</div>
 			<div>
-				<div className="nm" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+				<div
+					className="nm"
+					style={{ display: "flex", alignItems: "center", gap: 8 }}
+				>
 					{hunt.pokemon_name}
 					{isOver && <span className="over-pill">Over</span>}
-					{hunt.phase_count > 0 && <span className="phase-pill">P{hunt.phase_count + 1}</span>}
+					{hunt.phase_count > 0 && (
+						<span className="phase-pill">P{hunt.phase_count + 1}</span>
+					)}
 				</div>
 				<div className="meta">
-					<span className="pill">{hunt.custom_method_name ? "Custom" : gameShort(hunt.game_title)}</span>
+					<span className="pill">
+						{hunt.custom_method_name ? "Custom" : gameShort(hunt.game_title)}
+					</span>
 					<span>{hunt.custom_method_name || hunt.method_name || "—"}</span>
-					{hunt.has_shiny_charm && (
+					{effectiveCharm && (
 						<span className="charm-pill">
 							<SparkSm size={8} />
 						</span>
@@ -132,7 +150,13 @@ export function HuntRow({
 				{cumP != null ? (
 					<>
 						<div className="barwrap">
-							<span style={{ width: `${Math.min(cumP * 100, 100)}%`, background: "var(--gold)", opacity: 0.8 }} />
+							<span
+								style={{
+									width: `${Math.min(cumP * 100, 100)}%`,
+									background: "var(--gold)",
+									opacity: 0.8,
+								}}
+							/>
 						</div>
 						<div
 							style={{
@@ -145,12 +169,22 @@ export function HuntRow({
 								gap: 6,
 							}}
 						>
-							<span style={{ color: "var(--ink-2)" }}>{(cumP * 100).toFixed(1)}%</span>
+							<span style={{ color: "var(--ink-2)" }}>
+								{(cumP * 100).toFixed(1)}%
+							</span>
 							{hunt.encounter_count > 0 && <span>· {getLuckLabel(cumP)}</span>}
 						</div>
 					</>
 				) : (
-					<div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-4)" }}>—</div>
+					<div
+						style={{
+							fontFamily: "var(--font-mono)",
+							fontSize: 10,
+							color: "var(--ink-4)",
+						}}
+					>
+						—
+					</div>
 				)}
 			</div>
 			<div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
