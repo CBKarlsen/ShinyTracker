@@ -42,9 +42,14 @@ function App() {
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
+			// Ignore ⌘K while the user is typing in an unrelated input, but NOT
+			// the palette's own input — otherwise ⌘K could open the palette but
+			// never close it, since opening moves focus into that input.
 			const t = e.target as HTMLElement | null;
+			const insidePalette = !!t?.closest(".cmd-panel");
 			if (
 				t &&
+				!insidePalette &&
 				(t.tagName === "INPUT" ||
 					t.tagName === "TEXTAREA" ||
 					t.isContentEditable)
