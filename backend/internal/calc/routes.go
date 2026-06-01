@@ -25,15 +25,16 @@ type EvolveFrom struct {
 
 // Route is a computed, rankable way to obtain a shiny.
 type Route struct {
-	Kind        string      `json:"kind"` // "direct" or "evolve"
-	GameID      int         `json:"game_id"`
-	GameTitle   string      `json:"game_title"`
-	MethodName  string      `json:"method_name"`
-	MethodID    int         `json:"method_id"`
-	FormulaType string      `json:"formula_type"`
-	Odds        int         `json:"odds"` // integer-floored denominator of the 1/Odds probability (matches the displayed "1 / N"); ETAHours keeps full precision
-	ETAHours    float64     `json:"eta_hours"`
-	EvolveFrom  *EvolveFrom `json:"evolve_from,omitempty"`
+	Kind          string      `json:"kind"` // "direct" or "evolve"
+	GameID        int         `json:"game_id"`
+	GameTitle     string      `json:"game_title"`
+	MethodName    string      `json:"method_name"`
+	MethodID      int         `json:"method_id"`
+	FormulaType   string      `json:"formula_type"`
+	Odds          int         `json:"odds"` // integer-floored denominator of the 1/Odds probability (matches the displayed "1 / N"); ETAHours keeps full precision
+	ETAHours      float64     `json:"eta_hours"`
+	EvolveFrom    *EvolveFrom `json:"evolve_from,omitempty"`
+	HasShinyCharm bool        `json:"has_shiny_charm"`
 }
 
 // computeRoute turns a candidate into a Route (Kind/EvolveFrom set by callers).
@@ -52,13 +53,14 @@ func computeRoute(c MethodCandidate) Route {
 	// ETA: expected encounters (= odds denominator) * avg_time.
 	eta := float64(odds) * float64(c.AvgTimeSeconds) / 3600.0
 	return Route{
-		GameID:      c.GameID,
-		GameTitle:   c.GameTitle,
-		MethodName:  c.MethodName,
-		MethodID:    c.MethodID,
-		FormulaType: c.FormulaType,
-		Odds:        odds,
-		ETAHours:    eta,
+		GameID:        c.GameID,
+		GameTitle:     c.GameTitle,
+		MethodName:    c.MethodName,
+		MethodID:      c.MethodID,
+		FormulaType:   c.FormulaType,
+		Odds:          odds,
+		ETAHours:      eta,
+		HasShinyCharm: c.HasShinyCharm,
 	}
 }
 
