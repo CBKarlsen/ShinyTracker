@@ -110,6 +110,9 @@ func main() {
 	log.Println("Seeding BDSP wild encounters (DPPt proxy + Grand Underground)...")
 	seedBDSPWildEncounters(ctx)
 
+	log.Println("Seeding ORAS wild encounters (RSE proxy + ORAS additions)...")
+	seedORASWildEncounters(ctx)
+
 	log.Println("Reconciling pokemon_availability with encounters...")
 	reconcileAvailability(ctx)
 
@@ -537,6 +540,75 @@ func seedBDSPWildEncounters(ctx context.Context) {
 		log.Fatal("seedBDSPWildEncounters: Grand Underground insert failed: ", err)
 	}
 	log.Printf("  BDSP Grand Underground: +%d wild rows (terrain=other)", tag.RowsAffected())
+}
+
+// seedORASWildEncounters populates wild encounter rows for Omega Ruby/Alpha
+// Sapphire (game_id resolved by title). Two sources:
+//
+//  1. RSE proxy: copies all kind='wild' rows from Ruby/Sapphire/Emerald,
+//     excluding Pokémon that are RSE-only and absent from ORAS routes (see
+//     exclusion set below). Preserves the original kind and terrain values.
+//
+//  2. ORAS additions: reads seeds/oras_wild_additions.json and inserts each
+//     as (pokemon_id, ORAS, 'wild', 'other') so they receive the
+//     random_encounter_oras and dexnav_gen6 methods (both have NULL
+//     requires_terrain and therefore match terrain='other') but NOT
+//     chain_fishing_gen6 (which requires_terrain='fishing').
+//
+// Both steps use ON CONFLICT DO NOTHING for idempotency.
+func seedORASWildEncounters(ctx context.Context) {
+	gameIDs := loadGameIDs(ctx)
+
+	orasID, ok := gameIDs["Omega Ruby/Alpha Sapphire"]
+	if !ok {
+		log.Fatal("seedORASWildEncounters: game 'Omega Ruby/Alpha Sapphire' not found in games table")
+	}
+	rseID, ok := gameIDs["Ruby/Sapphire/Emerald"]
+	if !ok {
+		log.Fatal("seedORASWildEncounters: game 'Ruby/Sapphire/Emerald' not found in games table")
+	}
+
+	// Part 1: RSE proxy. Excludes species that exist in RSE but are not
+	// available as wild encounters in ORAS routes.
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT pokemon_id, $1, kind, terrain
+		FROM pokemon_game_encounter
+		WHERE game_id = $2
+		  AND kind = 'wild'
+		  AND pokemon_id NOT IN (
+		    55, 85, 111, 163, 165, 167, 177, 179, 183, 190, 191, 194, 195, 204,
+		    207, 209, 213, 216, 223, 224, 228, 231, 234, 241, 277, 310, 321
+		  )
+		ON CONFLICT DO NOTHING
+	`, orasID, rseID)
+	if err != nil {
+		log.Fatal("seedORASWildEncounters: RSE proxy insert failed: ", err)
+	}
+	log.Printf("  ORAS RSE proxy: +%d wild rows", tag.RowsAffected())
+
+	// Part 2: ORAS-added species not in RSE (terrain='other' → Random
+	// Encounter / DexNav; not terrain='grass' so Poké Radar never applies,
+	// and these rows won't interfere with fishing-terrain methods).
+	data, err := os.ReadFile("seeds/oras_wild_additions.json")
+	if err != nil {
+		log.Fatal("seedORASWildEncounters: failed to read oras_wild_additions.json: ", err)
+	}
+	var additionIDs []int
+	if err := json.Unmarshal(data, &additionIDs); err != nil {
+		log.Fatal("seedORASWildEncounters: JSON parse error in oras_wild_additions.json: ", err)
+	}
+	tag, err = database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT p.id, $1, 'wild', 'other'
+		FROM pokemon p
+		WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+		ON CONFLICT DO NOTHING
+	`, orasID, additionIDs)
+	if err != nil {
+		log.Fatal("seedORASWildEncounters: ORAS additions insert failed: ", err)
+	}
+	log.Printf("  ORAS additions: +%d wild rows (terrain=other)", tag.RowsAffected())
 }
 
 // expandGameRef turns a game title or @alias into a list of game titles.

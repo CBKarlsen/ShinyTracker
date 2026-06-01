@@ -3,154 +3,154 @@
     "pokemon_id": 144,
     "name": "Articuno",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 145,
     "name": "Zapdos",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 146,
     "name": "Moltres",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 150,
     "name": "Mewtwo",
     "default_kind": "static",
-    "default_games": ["FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 249,
     "name": "Lugia",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver"],
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 250,
     "name": "Ho-Oh",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver"],
+    "default_games": ["Gold/Silver/Crystal", "HeartGold/SoulSilver", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 382,
     "name": "Kyogre",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 383,
     "name": "Groudon",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 384,
     "name": "Rayquaza",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire"],
+    "default_games": ["Ruby/Sapphire/Emerald", "HeartGold/SoulSilver", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 487,
     "name": "Giratina",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 643,
     "name": "Reshiram",
     "default_kind": "static",
-    "default_games": ["Black/White", "Black 2/White 2"],
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 644,
     "name": "Zekrom",
     "default_kind": "static",
-    "default_games": ["Black/White", "Black 2/White 2"],
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 716,
     "name": "Xerneas",
     "default_kind": "static",
-    "default_games": ["X/Y"],
+    "default_games": ["X/Y", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 717,
     "name": "Yveltal",
     "default_kind": "static",
-    "default_games": ["X/Y"],
+    "default_games": ["X/Y", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 243,
     "name": "Raikou",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 244,
     "name": "Entei",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 245,
     "name": "Suicune",
     "default_kind": "static",
-    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 380,
     "name": "Latias",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 381,
     "name": "Latios",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 377,
     "name": "Regirock",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 378,
     "name": "Regice",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
     "pokemon_id": 379,
     "name": "Registeel",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
@@ -161,7 +161,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -172,7 +174,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -183,7 +187,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -194,7 +200,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -205,7 +213,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -216,14 +226,15 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
     "pokemon_id": 486,
     "name": "Regigigas",
     "default_kind": "static",
-    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   },
   {
@@ -234,7 +245,9 @@
     "overrides": {
       "@swsh-dynamax": "raid",
       "Brilliant Diamond/Shining Pearl": "static",
-      "Diamond/Pearl/Platinum": "static"
+      "Diamond/Pearl/Platinum": "static",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
     }
   },
   {
@@ -242,28 +255,44 @@
     "name": "Tornadus",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
+    }
   },
   {
     "pokemon_id": 642,
     "name": "Thundurus",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
+    }
   },
   {
     "pokemon_id": 645,
     "name": "Landorus",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
+    }
   },
   {
     "pokemon_id": 646,
     "name": "Kyurem",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Omega Ruby/Alpha Sapphire": "static",
+      "Ultra Sun/Ultra Moon": "static"
+    }
   },
   {
     "pokemon_id": 718,
@@ -474,6 +503,28 @@
     "name": "Tyrogue",
     "default_kind": "static",
     "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+
+  {
+    "pokemon_id": 638,
+    "name": "Cobalion",
+    "default_kind": "static",
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 639,
+    "name": "Terrakion",
+    "default_kind": "static",
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 640,
+    "name": "Virizion",
+    "default_kind": "static",
+    "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Ultra Sun/Ultra Moon"],
     "overrides": {}
   }
 ]
