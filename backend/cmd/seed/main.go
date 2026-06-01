@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/casper/shinytracker/internal/database"
+	"github.com/casper/shinytracker/internal/seeds"
 	"github.com/casper/shinytracker/internal/services"
 	"github.com/joho/godotenv"
 )
@@ -49,6 +50,22 @@ func main() {
 
 	ctx := context.Background()
 
+	// RUNBOOK ORDER (each step depends on the ones above it):
+	//   1. seedMethods          — populate hunt_methods / method_games
+	//   2. seedMethodExceptions — manual include/exclude corrections
+	//   3. ensureWildEncounters — PokeAPI wild kinds (skipped if already present)
+	//   4. seedCuratedEncounters / seedOverworldSpecies / seedFishingSpecies /
+	//      seedFriendSafariSpecies / seedBDSPWildEncounters — curated encounter rows
+	//   5. reconcileAvailability — backfill pokemon_availability from encounters
+	//   6. deriveEggEncounters   — egg kinds for breedable base-stage Pokemon
+	//   7. seedShinyLocks        — MUST run before computeAvailability so locked
+	//                              pairs are guaranteed current when availability
+	//                              is derived (replaces run-order dependency on
+	//                              standalone cmd/seed_shiny_locks)
+	//   8. computeAvailability   — join encounters × methods, exclude locked pairs
+	//   9. runInvariantChecks    — sanity assertions including regression guard
+	//      against shiny_locks leaking into method_availability
+
 	log.Println("Wiping method tables (keeping wild encounter kinds)...")
 	if _, err := database.DB.Exec(ctx, `TRUNCATE TABLE hunt_methods, method_games, method_availability CASCADE`); err != nil {
 		log.Fatal("Failed to truncate method tables: ", err)
@@ -78,9 +95,6 @@ func main() {
 	log.Println("Ensuring wild encounter kinds are populated...")
 	ensureWildEncounters(ctx)
 
-	log.Println("Deriving egg encounter kinds...")
-	deriveEggEncounters(ctx)
-
 	log.Println("Seeding curated static/raid encounter kinds...")
 	seedCuratedEncounters(ctx)
 
@@ -90,8 +104,25 @@ func main() {
 	log.Println("Seeding fishing wild species (curated terrain=fishing)...")
 	seedFishingSpecies(ctx)
 
+	log.Println("Seeding Friend Safari species (X/Y, terrain=friend_safari)...")
+	seedFriendSafariSpecies(ctx)
+
+	log.Println("Seeding BDSP wild encounters (DPPt proxy + Grand Underground)...")
+	seedBDSPWildEncounters(ctx)
+
 	log.Println("Reconciling pokemon_availability with encounters...")
 	reconcileAvailability(ctx)
+
+	// Egg derivation runs AFTER reconcileAvailability so that pokemon_availability
+	// is fully populated for all games (including Gen 5/6/7 rows inserted by
+	// cmd/seed_availability_legacy) before we fan out egg rows from it.
+	// Running it before reconcile on a fresh DB would silently produce zero egg
+	// rows for any game whose availability comes solely from that seeder.
+	log.Println("Deriving egg encounter kinds...")
+	deriveEggEncounters(ctx)
+
+	log.Println("Seeding shiny_locks (must precede computeAvailability)...")
+	seedShinyLocks(ctx)
 
 	log.Println("Computing method_availability...")
 	computeAvailability(ctx)
@@ -238,15 +269,20 @@ func ensureWildEncounters(ctx context.Context) {
 	}
 }
 
-// deriveEggEncounters records an `egg` kind for every breedable Pokemon in each
-// game it is available in. Masuda methods are mapped only to Switch-era games,
-// which is exactly the coverage of pokemon_availability, so this gating is safe.
+// deriveEggEncounters records an `egg` kind for every breedable base-stage
+// Pokemon in each game that supports breeding. It must run AFTER
+// reconcileAvailability (and after cmd/seed_availability_legacy for Gen 5/6/7)
+// so that pokemon_availability is fully populated before we fan out egg rows.
+// The supports_breeding guard keeps LGPE (no Day-Care) and Legends: Arceus
+// (no breeding at all) from gaining egg rows.
 func deriveEggEncounters(ctx context.Context) {
 	tag, err := database.DB.Exec(ctx, `
 		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind)
 		SELECT pa.pokemon_id, pa.game_id, 'egg'
 		FROM pokemon_availability pa
 		JOIN pokemon p ON p.id = pa.pokemon_id
+		-- Restrict to games where breeding is possible (excludes LGPE and PLA).
+		JOIN games g ON g.id = pa.game_id AND g.supports_breeding = true
 		-- Eggs only ever hatch the base form of an evolution line, so an egg
 		-- (Masuda) route belongs only to base-stage species. Evolved forms get
 		-- a "hunt a pre-evolution, then evolve" route instead (computed in the
@@ -397,6 +433,112 @@ func seedFishingSpecies(ctx context.Context) {
 	log.Printf("Inserted %d fishing wild encounter rows.", inserted)
 }
 
+// seedFriendSafariSpecies inserts wild encounter rows with terrain='friend_safari'
+// for X/Y (game_id resolved by title "X/Y"). seeds/friend_safari_species.json
+// is the verified Friend Safari Pokémon pool (185 entries as of last audit).
+// These rows feed the friend_safari_xy method (requires_terrain='friend_safari')
+// during computeAvailability, scoping Friend Safari to exactly the right species.
+// Legendaries and mythicals are not in the FS pool and are guarded out anyway.
+//
+// RUNBOOK: the pokemon_game_encounter.terrain CHECK constraint must already
+// include 'friend_safari' on the live DB (via the ALTER TABLE in schema.sql)
+// before running cmd/seed. If the method tables were truncated and this seeder
+// runs against a DB whose CHECK doesn't yet know about 'friend_safari', the
+// INSERT will fail with a check-violation error. Apply the schema ALTER first.
+func seedFriendSafariSpecies(ctx context.Context) {
+	data, err := os.ReadFile("seeds/friend_safari_species.json")
+	if err != nil {
+		log.Fatal("Failed to read friend_safari_species.json: ", err)
+	}
+	var ids []int
+	if err := json.Unmarshal(data, &ids); err != nil {
+		log.Fatal("JSON parse error in friend_safari_species.json: ", err)
+	}
+	gameIDs := loadGameIDs(ctx)
+	gameID, ok := gameIDs["X/Y"]
+	if !ok {
+		log.Fatal("seedFriendSafariSpecies: game title 'X/Y' not found in games table")
+	}
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT p.id, $1, 'wild', 'friend_safari'
+		FROM pokemon p
+		WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+		ON CONFLICT DO NOTHING
+	`, gameID, ids)
+	if err != nil {
+		log.Fatal("seedFriendSafariSpecies: failed to insert rows: ", err)
+	}
+	log.Printf("Inserted %d Friend Safari encounter rows (X/Y).", tag.RowsAffected())
+}
+
+// seedBDSPWildEncounters populates wild encounter rows for Brilliant
+// Diamond/Shining Pearl (game_id resolved by title). Two sources:
+//
+//  1. DPPt proxy: copies all kind='wild' rows from Diamond/Pearl/Platinum,
+//     excluding Pokémon that are Great-Marsh/DPPt-only and absent from BDSP
+//     routes: Ekans(23)/Arbok(24) — Great Marsh / not on BDSP routes;
+//     Tangela(114)/Tropius(357) Great-Marsh-only.
+//
+//  2. Grand Underground: reads seeds/bdsp_underground_species.json and
+//     inserts each as (pokemon_id, BDSP, 'wild', 'other') so they receive
+//     the random_encounter_bdsp method but NOT poke_radar_bdsp (which
+//     requires terrain='grass').
+//
+// Both steps use ON CONFLICT DO NOTHING for idempotency.
+func seedBDSPWildEncounters(ctx context.Context) {
+	gameIDs := loadGameIDs(ctx)
+
+	bdspID, ok := gameIDs["Brilliant Diamond/Shining Pearl"]
+	if !ok {
+		log.Fatal("seedBDSPWildEncounters: game 'Brilliant Diamond/Shining Pearl' not found in games table")
+	}
+	dpptID, ok := gameIDs["Diamond/Pearl/Platinum"]
+	if !ok {
+		log.Fatal("seedBDSPWildEncounters: game 'Diamond/Pearl/Platinum' not found in games table")
+	}
+
+	// Part 1: DPPt proxy. Excludes Great-Marsh species absent from BDSP routes:
+	// Ekans(23)/Arbok(24) — Great Marsh only, not on BDSP routes (Ekans is
+	// Grand-Underground-only in BDSP and is handled via bdsp_underground_species.json);
+	// Tangela(114)/Tropius(357) — Great-Marsh-only in DPPt.
+	tag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT pokemon_id, $1, kind, terrain
+		FROM pokemon_game_encounter
+		WHERE game_id = $2
+		  AND kind = 'wild'
+		  AND pokemon_id NOT IN (23, 24, 114, 357)
+		ON CONFLICT DO NOTHING
+	`, bdspID, dpptID)
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: DPPt proxy insert failed: ", err)
+	}
+	log.Printf("  BDSP DPPt proxy: +%d wild rows", tag.RowsAffected())
+
+	// Part 2: Grand Underground species (terrain='other' — random encounter
+	// but not Poké Radar, which requires terrain='grass').
+	data, err := os.ReadFile("seeds/bdsp_underground_species.json")
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: failed to read bdsp_underground_species.json: ", err)
+	}
+	var undergroundIDs []int
+	if err := json.Unmarshal(data, &undergroundIDs); err != nil {
+		log.Fatal("seedBDSPWildEncounters: JSON parse error in bdsp_underground_species.json: ", err)
+	}
+	tag, err = database.DB.Exec(ctx, `
+		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+		SELECT p.id, $1, 'wild', 'other'
+		FROM pokemon p
+		WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+		ON CONFLICT DO NOTHING
+	`, bdspID, undergroundIDs)
+	if err != nil {
+		log.Fatal("seedBDSPWildEncounters: Grand Underground insert failed: ", err)
+	}
+	log.Printf("  BDSP Grand Underground: +%d wild rows (terrain=other)", tag.RowsAffected())
+}
+
 // expandGameRef turns a game title or @alias into a list of game titles.
 func expandGameRef(ref string, groups map[string][]string, e LegendaryEncounter) []string {
 	if strings.HasPrefix(ref, "@") {
@@ -438,16 +580,47 @@ func loadGameIDs(ctx context.Context) map[string]int {
 	return ids
 }
 
+// seedShinyLocks delegates to the shared helper in internal/seeds. It must be
+// called after the games table is populated and before computeAvailability so
+// that locked (pokemon_id, game_id) pairs are excluded from method derivation.
+// The standalone cmd/seed_shiny_locks calls the same helper for ad-hoc re-seeds.
+func seedShinyLocks(ctx context.Context) {
+	inserted, skipped, err := seeds.SeedShinyLocks(ctx, database.DB, "seeds/shiny_locks.json")
+	if err != nil {
+		log.Fatal("Failed to seed shiny_locks: ", err)
+	}
+	log.Printf("shiny_locks seeded: %d inserted, %d skipped (unknown game)", inserted, skipped)
+}
+
 // computeAvailability rebuilds method_availability as the join of encounter kinds
 // to methods (on the kind a method consumes) and to method_games (on the game).
+//
+// Terrain-matching rule:
+//   - hm.requires_terrain = pge.terrain  → explicit match (e.g. friend_safari,
+//     grass Poké Radar, fishing Chain Fishing).
+//   - hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'  → generic
+//     method (e.g. Random Encounter) matches any terrain except the dedicated
+//     friend_safari terrain, preventing spurious Random Encounter rows for
+//     Friend-Safari-only species.
+//
+// Shiny-lock guard: any (pokemon_id, game_id) pair that is present in
+// shiny_locks is unconditionally excluded from method_availability. This is the
+// systemic fix for locked Pokemon (e.g. the SV Indigo Disk Paradoxes) that
+// previously leaked hunt methods via their encounter rows. seedShinyLocks must
+// run before computeAvailability for this guard to be effective.
 func computeAvailability(ctx context.Context) {
 	_, err := database.DB.Exec(ctx, `
 		INSERT INTO method_availability (pokemon_id, method_id, game_id)
 		SELECT DISTINCT pge.pokemon_id, hm.id, pge.game_id
 		FROM pokemon_game_encounter pge
 		JOIN hunt_methods hm ON hm.requires_kind = pge.kind
-			AND (hm.requires_terrain IS NULL OR hm.requires_terrain = pge.terrain)
+			AND (hm.requires_terrain = pge.terrain
+				OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
 		JOIN method_games mg ON mg.method_id = hm.id AND mg.game_id = pge.game_id
+		-- Never grant a hunt method to a shiny-locked (pokemon, game) pair.
+		AND NOT EXISTS (
+			SELECT 1 FROM shiny_locks sl
+			WHERE sl.pokemon_id = pge.pokemon_id AND sl.game_id = pge.game_id)
 		ON CONFLICT DO NOTHING
 	`)
 	if err != nil {
@@ -499,6 +672,13 @@ func runInvariantChecks(ctx context.Context) {
 	}
 
 	// 6.1: every availability row is backed by a matching encounter-kind record.
+	// Uses the same terrain-matching rule as computeAvailability: explicit
+	// requires_terrain must equal pge.terrain; NULL requires_terrain matches any
+	// terrain except 'friend_safari' (which is reserved for its dedicated method).
+	// Shiny-locked pairs are excluded from this check to match the insertion rule:
+	// a method_exceptions include on a locked Pokemon is explicitly tolerated (it
+	// would never have been inserted by computeAvailability) and must not trigger
+	// a false orphan report.
 	var orphans int
 	database.DB.QueryRow(ctx, `
 		SELECT COUNT(*)
@@ -508,11 +688,36 @@ func runInvariantChecks(ctx context.Context) {
 			ON pge.pokemon_id = ma.pokemon_id
 			AND pge.game_id = ma.game_id
 			AND pge.kind = hm.requires_kind
-			AND (hm.requires_terrain IS NULL OR pge.terrain = hm.requires_terrain)
+			AND (hm.requires_terrain = pge.terrain
+				OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
 		WHERE pge.pokemon_id IS NULL
+		  -- Mirror the computeAvailability exclusion: locked pairs are never
+		  -- inserted by the derivation, so they must not be checked here either.
+		  AND NOT EXISTS (
+			SELECT 1 FROM shiny_locks sl
+			WHERE sl.pokemon_id = ma.pokemon_id AND sl.game_id = ma.game_id)
 	`).Scan(&orphans)
 	if orphans > 0 {
 		log.Fatalf("Invariant violation: %d method_availability rows have no matching encounter kind", orphans)
+	}
+
+	// 6.3 (regression guard): no method_availability row may exist for a
+	// shiny-locked (pokemon, game) pair. A violation means either
+	// computeAvailability ran before shiny_locks was populated, or a
+	// method_exceptions include was added for a locked Pokemon (which would
+	// bypass the derivation guard). Logged as a warning rather than fatal so
+	// that a single misconfigured method_exception does not abort the entire
+	// seed — the operator can inspect and fix.
+	var lockedWithMethods int
+	database.DB.QueryRow(ctx, `
+		SELECT COUNT(DISTINCT (ma.pokemon_id, ma.game_id))
+		FROM method_availability ma
+		JOIN shiny_locks sl ON sl.pokemon_id = ma.pokemon_id AND sl.game_id = ma.game_id
+	`).Scan(&lockedWithMethods)
+	if lockedWithMethods > 0 {
+		log.Printf("WARNING: %d shiny-locked (pokemon,game) pairs still have method_availability rows "+
+			"— check method_exceptions for include=true overrides on locked Pokemon, "+
+			"or verify seedShinyLocks ran before computeAvailability", lockedWithMethods)
 	}
 
 	// Warning (non-fatal): a Pokemon is huntable in a game it isn't legally

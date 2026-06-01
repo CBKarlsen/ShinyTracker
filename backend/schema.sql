@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS pokemon_game_encounter (
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
     kind TEXT NOT NULL CHECK (kind IN ('wild','static','raid','egg')),
-    terrain TEXT NOT NULL DEFAULT 'none' CHECK (terrain IN ('grass','surf','fishing','other','none')),
+    terrain TEXT NOT NULL DEFAULT 'none' CHECK (terrain IN ('grass','surf','fishing','other','none','friend_safari')),
     PRIMARY KEY (pokemon_id, game_id, kind, terrain)
 );
 

@@ -133,53 +133,109 @@
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
+    "pokemon_id": 377,
+    "name": "Regirock",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 378,
+    "name": "Regice",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 379,
+    "name": "Registeel",
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
     "pokemon_id": 480,
     "name": "Uxie",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 481,
     "name": "Mesprit",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 482,
     "name": "Azelf",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 483,
     "name": "Dialga",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 484,
     "name": "Palkia",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 485,
     "name": "Heatran",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
+  },
+  {
+    "pokemon_id": 486,
+    "name": "Regigigas",
+    "default_kind": "static",
+    "default_games": ["Diamond/Pearl/Platinum", "Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
   },
   {
     "pokemon_id": 488,
     "name": "Cresselia",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": {
+      "@swsh-dynamax": "raid",
+      "Brilliant Diamond/Shining Pearl": "static",
+      "Diamond/Pearl/Platinum": "static"
+    }
   },
   {
     "pokemon_id": 641,
