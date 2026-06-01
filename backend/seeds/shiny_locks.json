@@ -2,19 +2,19 @@
   "_comment": "Game titles in 'games' arrays MUST match the 'title' column in the games table exactly (e.g. 'X/Y', 'Sword/Shield', 'Scarlet/Violet'). These combined-version strings are taken from seeds/hunt_methods.json and cmd/seed_availability/main.go. If a title is unrecognised the seeder logs a warning and skips — reconcile against the live games table before relying on a complete seed. Only list a (pokemon_id, game) pair where the shiny is genuinely locked in THAT game; never list a game where the shiny is obtainable via soft-reset or normal hunting.",
   "locks": [
     {
-      "_note": "Articuno — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "_note": "Articuno — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
       "pokemon_id": 144,
-      "games": ["Let's Go Pikachu/Eevee"]
+      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
     },
     {
-      "_note": "Zapdos — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "_note": "Zapdos — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
       "pokemon_id": 145,
-      "games": ["Let's Go Pikachu/Eevee"]
+      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
     },
     {
-      "_note": "Moltres — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG",
+      "_note": "Moltres — shiny-locked in Let's Go Pikachu/Eevee and as the X/Y roaming bird; soft-resettable in RBY/FRLG",
       "pokemon_id": 146,
-      "games": ["Let's Go Pikachu/Eevee"]
+      "games": ["Let's Go Pikachu/Eevee", "X/Y"]
     },
     {
       "_note": "Mewtwo — shiny-locked in Let's Go Pikachu/Eevee; soft-resettable in RBY/FRLG/XY",
@@ -122,6 +122,16 @@
       "games": ["Sword/Shield"]
     },
     {
+      "_note": "Glastrier — shiny-locked static (Crown Tundra DLC) in Sword/Shield",
+      "pokemon_id": 896,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Spectrier — shiny-locked static (Crown Tundra DLC) in Sword/Shield",
+      "pokemon_id": 897,
+      "games": ["Sword/Shield"]
+    },
+    {
       "_note": "Dialga — shiny-locked story encounter in Legends: Arceus only; soft-resettable in DPPt and Brilliant Diamond/Shining Pearl (Spear Pillar)",
       "pokemon_id": 483,
       "games": ["Legends: Arceus"]
@@ -222,7 +232,7 @@
       "games": ["Scarlet/Violet"]
     },
     {
-      "_note": "Gouging Fire — lock status uncertain (Indigo Disk Paradox legendary); left locked pending verification",
+      "_note": "Gouging Fire — shiny-locked Indigo Disk Paradox legendary (Scarlet) in Scarlet/Violet",
       "pokemon_id": 1020,
       "games": ["Scarlet/Violet"]
     },
@@ -234,6 +244,51 @@
     {
       "_note": "Pecharunt — shiny-locked story encounter (Indigo Disk DLC epilogue) in Scarlet/Violet",
       "pokemon_id": 1025,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Wo-Chien — shiny-locked Treasure of Ruin (cutscene encounter) in Scarlet/Violet; shiny only via Mystery Gift event",
+      "pokemon_id": 1001,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Chien-Pao — shiny-locked Treasure of Ruin in Scarlet/Violet; shiny only via Mystery Gift event",
+      "pokemon_id": 1002,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Ting-Lu — shiny-locked Treasure of Ruin in Scarlet/Violet; shiny only via Mystery Gift event",
+      "pokemon_id": 1003,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Chi-Yu — shiny-locked Treasure of Ruin in Scarlet/Violet; shiny only via Mystery Gift event",
+      "pokemon_id": 1004,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Walking Wake — shiny-locked event Tera-raid Paradox in Scarlet/Violet",
+      "pokemon_id": 1009,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Iron Leaves — shiny-locked event Tera-raid Paradox in Scarlet/Violet",
+      "pokemon_id": 1010,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Raging Bolt — shiny-locked Indigo Disk Paradox legendary (Scarlet) in Scarlet/Violet",
+      "pokemon_id": 1021,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Iron Boulder — shiny-locked Indigo Disk Paradox legendary (Violet) in Scarlet/Violet",
+      "pokemon_id": 1022,
+      "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Iron Crown — shiny-locked Indigo Disk Paradox legendary (Violet) in Scarlet/Violet",
+      "pokemon_id": 1023,
       "games": ["Scarlet/Violet"]
     }
   ]
