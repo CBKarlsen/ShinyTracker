@@ -1397,6 +1397,39 @@ ul {
 	background: var(--bg-3);
 	color: var(--ink-2);
 }
+.dex-drawer-body {
+	padding: 16px 16px 12px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+	/* Thin scrollbar */
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+/* Bottom fade: only when there is content below the fold */
+.dex-drawer-body.has-fade {
+	mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent 100%);
+	-webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent 100%);
+}
+.dex-drawer-body::-webkit-scrollbar {
+	width: 6px;
+}
+.dex-drawer-body::-webkit-scrollbar-track {
+	background: transparent;
+}
+.dex-drawer-body::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.12);
+	border-radius: 99px;
+}
+.dex-drawer-body::-webkit-scrollbar-thumb:hover {
+	background: rgba(255, 255, 255, 0.24);
+}
+.dex-drawer-foot {
+	flex-shrink: 0;
+	padding: 12px 16px;
+	border-top: 1px solid var(--line-1);
+	background: var(--bg-1);
+}
 .dex-route {
 	display: flex;
 	justify-content: space-between;
