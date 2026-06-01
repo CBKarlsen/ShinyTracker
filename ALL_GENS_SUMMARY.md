@@ -31,7 +31,7 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 | 5 | BW / B2W2 | Masuda, Random, Soft Reset | ✅ | ◑ Masuda complete. Residual: not all Unova static legendaries have Soft Reset; SR charm-roll bleed (odds). |
 | 6 | XY | Chain Fishing, Friend Safari, Masuda, Poké Radar, Random | ✅ | ✅ Friend Safari fixed; full method set. |
 | 6 | ORAS | Chain Fishing, DexNav, Masuda | ✅ | ◑ **No Random Encounter, no Soft Reset** — ORAS legendaries (Regis etc.) and non-DexNav species lack a route. |
-| 7 | SM / USUM | Masuda, SOS Chaining | ✅ | ❌ **No Random Encounter, no Soft Reset.** Non-SOS species + static legendaries/Ultra Beasts have no hunt route. Ultra Wormhole method absent from catalog. |
+| 7 | SM / USUM | Masuda, SOS Chaining, Random, Soft Reset | ✅ | ◑ Random Encounter + Soft Reset added (UBs, Type:Null, Zygarde, USUM-Necrozma). Residual: full Ultra Wormhole past-legendary roster (USUM) not yet seeded — needs a dedicated Ultra Wormhole method. |
 | 7 | LGPE | Catch Combo | ✅ | ✅ Correct. |
 | 8 | SwSh | Dynamax Adventures, KO Method, Masuda, Run Away | ✅ | ✅ "KO Method" verified legitimate (catch-count rerolls). |
 | 8 | BDSP | Masuda, Poké Radar, Random, Soft Reset | ✅ | ✅ Fully seeded this session. |
@@ -43,8 +43,8 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 ## Remaining work (prioritized)
 
-1. **Gen 7 SM/USUM** — add Random Encounter + Soft Reset (static legendaries/UBs); consider an Ultra Wormhole method. *Biggest method gap.*
-2. **Gen 6 ORAS** — add Random Encounter + Soft Reset for legendaries.
+1. **Gen 6 ORAS** — add Random Encounter + Soft Reset for legendaries. *Largest remaining method gap.*
+2. **Gen 7 USUM** — seed the Ultra Wormhole past-legendary roster (needs a dedicated Ultra Wormhole method in the catalog). *(SM/USUM Random + Soft Reset for UBs/Type:Null/Zygarde/Necrozma — done.)*
 3. **Gen 2 / Gen 3** — fix the "wild/other"-driven gift/static mislabels (move to `legendary_encounters.json` static) and backfill missing legendaries. Root cause is the overloaded `wild/other` encounter bucket in the PokeAPI mapper.
 4. **Gen 1** — exclude RBY from hunting (drop the 4 Soft Reset rows; no shiny mechanic exists).
 5. **Odds verification phase** — validate `base_odds`/`base_rolls`/`charm_rolls` per method/game, incl. the Soft Reset `charm_rolls=2` bleed for pre-Gen-5 games (Shiny Charm didn't exist until Gen 5/B2W2).

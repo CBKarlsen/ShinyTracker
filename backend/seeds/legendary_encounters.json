@@ -268,8 +268,8 @@
   {
     "pokemon_id": 718,
     "name": "Zygarde",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -315,10 +315,94 @@
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
+    "pokemon_id": 772,
+    "name": "Type: Null",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 793,
+    "name": "Nihilego",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 794,
+    "name": "Buzzwole",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 795,
+    "name": "Pheromosa",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 796,
+    "name": "Xurkitree",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 797,
+    "name": "Celesteela",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 798,
+    "name": "Kartana",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 799,
+    "name": "Guzzlord",
+    "default_kind": "static",
+    "default_games": ["Sun/Moon", "Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
     "pokemon_id": 800,
     "name": "Necrozma",
     "default_kind": "raid",
     "default_games": [],
-    "overrides": { "@swsh-dynamax": "raid" }
+    "overrides": { "@swsh-dynamax": "raid", "Ultra Sun/Ultra Moon": "static" }
+  },
+  {
+    "pokemon_id": 803,
+    "name": "Poipole",
+    "default_kind": "static",
+    "default_games": ["Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 804,
+    "name": "Naganadel",
+    "default_kind": "static",
+    "default_games": ["Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 805,
+    "name": "Stakataka",
+    "default_kind": "static",
+    "default_games": ["Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 806,
+    "name": "Blacephalon",
+    "default_kind": "static",
+    "default_games": ["Ultra Sun/Ultra Moon"],
+    "overrides": {}
   }
 ]
