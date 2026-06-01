@@ -390,4 +390,152 @@ WHERE hm.method_name = 'Soft Reset'
 -- that maps to BDSP). Pokémon remain locked in Legends: Arceus — those
 -- shiny_locks rows are untouched and will suppress Soft Reset in PLA.
 
+-- ============================================================================
+-- I  Batch of web-verified legendary corrections (2026-06-01)
+--    Mirrors Parts A and B of the seed-source updates on branch
+--    chore/method-data-audit; see legendary_encounters.json + shiny_locks.json.
+--
+--    Static encounter additions (Part A):
+--      144/145/146 Kanto birds    → Diamond/Pearl/Platinum (Pal Park transfers, Route 144/145/146)
+--      151 Mew                    → Ruby/Sapphire/Emerald (Faraway Island, Mystic Ticket event)
+--      249 Lugia                  → Ruby/Sapphire/Emerald (Navel Rock, Mystic Ticket),
+--                                   FireRed/LeafGreen (Navel Rock, Mystic Ticket),
+--                                   Omega Ruby/Alpha Sapphire (Sea Mauville / Diving event)
+--      250 Ho-Oh                  → Ruby/Sapphire/Emerald (Navel Rock, Mystic Ticket),
+--                                   FireRed/LeafGreen (Navel Rock, Mystic Ticket),
+--                                   Omega Ruby/Alpha Sapphire (Sea Mauville / Diving event)
+--      251 Celebi                 → Gold/Silver/Crystal (GS Ball event static)
+--      380 Latias                 → Omega Ruby/Alpha Sapphire (roaming/static in ORAS)
+--      381 Latios                 → Omega Ruby/Alpha Sapphire (roaming/static in ORAS)
+--      386 Deoxys                 → Ruby/Sapphire/Emerald (Birth Island, Aurora Ticket),
+--                                   FireRed/LeafGreen (Birth Island, Aurora Ticket)
+--                                   NOTE: ORAS Deoxys is shiny-locked — NOT added here.
+--      485 Heatran                → Omega Ruby/Alpha Sapphire (Scorched Slab)
+--      486 Regigigas              → Omega Ruby/Alpha Sapphire (Island Cave / Sealed Chamber)
+--      491 Darkrai                → Diamond/Pearl/Platinum (Newmoon Island, Member Card)
+--      492 Shaymin                → Diamond/Pearl/Platinum (Flower Paradise, Oak's Letter)
+--      493 Arceus                 → Diamond/Pearl/Platinum (Hall of Origin, Azure Flute)
+--      641/642/645 Forces of Nature → Black/White (Abundant Shrine / Route 7 roaming,
+--                                   modelled as static)
+--
+--    Under-lock additions (Part B):
+--      151 Mew      → Brilliant Diamond/Shining Pearl (Poke Ball Plus gift, locked)
+--      385 Jirachi  → Brilliant Diamond/Shining Pearl (Mystery Gift, locked)
+--      494 Victini  → Black/White (Liberty Garden static, hardcoded non-shiny)
+--      905 Enamorus → Scarlet/Violet (Snacksworth gift in Indigo Disk, locked)
+--
+--    Safety: the shiny-lock guard in I2 prevents method_availability rows being
+--    written for the under-locked (pokemon, game) pairs added in I3.
+--    Consistency: Mew RSE (huntable) and Mew BDSP (locked) are different games —
+--    both correct and non-conflicting.
+--
+--    NOT run here (already applied to live DB via MCP session on 2026-06-01).
+--    DO NOT run again unless re-seeding from scratch.
+-- ============================================================================
+
+-- I1. Static encounter rows.
+INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+SELECT v.pid, g.id, 'static', 'none'
+FROM (VALUES
+    -- Kanto birds → DPPt
+    (144, 'Diamond/Pearl/Platinum'),
+    (145, 'Diamond/Pearl/Platinum'),
+    (146, 'Diamond/Pearl/Platinum'),
+    -- Mew → RSE
+    (151, 'Ruby/Sapphire/Emerald'),
+    -- Lugia → RSE, FRLG, ORAS
+    (249, 'Ruby/Sapphire/Emerald'),
+    (249, 'FireRed/LeafGreen'),
+    (249, 'Omega Ruby/Alpha Sapphire'),
+    -- Ho-Oh → RSE, FRLG, ORAS
+    (250, 'Ruby/Sapphire/Emerald'),
+    (250, 'FireRed/LeafGreen'),
+    (250, 'Omega Ruby/Alpha Sapphire'),
+    -- Celebi → GSC
+    (251, 'Gold/Silver/Crystal'),
+    -- Latias, Latios → ORAS
+    (380, 'Omega Ruby/Alpha Sapphire'),
+    (381, 'Omega Ruby/Alpha Sapphire'),
+    -- Deoxys → RSE, FRLG  (ORAS is shiny-locked, excluded)
+    (386, 'Ruby/Sapphire/Emerald'),
+    (386, 'FireRed/LeafGreen'),
+    -- Heatran, Regigigas → ORAS
+    (485, 'Omega Ruby/Alpha Sapphire'),
+    (486, 'Omega Ruby/Alpha Sapphire'),
+    -- Darkrai, Shaymin, Arceus → DPPt
+    (491, 'Diamond/Pearl/Platinum'),
+    (492, 'Diamond/Pearl/Platinum'),
+    (493, 'Diamond/Pearl/Platinum'),
+    -- Forces of Nature → BW
+    (641, 'Black/White'),
+    (642, 'Black/White'),
+    (645, 'Black/White')
+) AS v(pid, gtitle)
+JOIN games g ON g.title = v.gtitle
+ON CONFLICT DO NOTHING;
+-- Expect: up to 23 rows inserted (0 on re-run).
+
+-- I2. Soft Reset method_availability for the static additions above.
+--     Shiny-lock guard prevents rows for 151-BDSP, 385-BDSP, 494-BW, 905-SV.
+INSERT INTO method_availability (pokemon_id, method_id, game_id)
+SELECT v.pid, hm.id, g.id
+FROM (VALUES
+    (144, 'Diamond/Pearl/Platinum'),
+    (145, 'Diamond/Pearl/Platinum'),
+    (146, 'Diamond/Pearl/Platinum'),
+    (151, 'Ruby/Sapphire/Emerald'),
+    (249, 'Ruby/Sapphire/Emerald'),
+    (249, 'FireRed/LeafGreen'),
+    (249, 'Omega Ruby/Alpha Sapphire'),
+    (250, 'Ruby/Sapphire/Emerald'),
+    (250, 'FireRed/LeafGreen'),
+    (250, 'Omega Ruby/Alpha Sapphire'),
+    (251, 'Gold/Silver/Crystal'),
+    (380, 'Omega Ruby/Alpha Sapphire'),
+    (381, 'Omega Ruby/Alpha Sapphire'),
+    (386, 'Ruby/Sapphire/Emerald'),
+    (386, 'FireRed/LeafGreen'),
+    (485, 'Omega Ruby/Alpha Sapphire'),
+    (486, 'Omega Ruby/Alpha Sapphire'),
+    (491, 'Diamond/Pearl/Platinum'),
+    (492, 'Diamond/Pearl/Platinum'),
+    (493, 'Diamond/Pearl/Platinum'),
+    (641, 'Black/White'),
+    (642, 'Black/White'),
+    (645, 'Black/White')
+) AS v(pid, gtitle)
+JOIN games g ON g.title = v.gtitle
+CROSS JOIN hunt_methods hm
+WHERE hm.method_name = 'Soft Reset'
+  AND NOT EXISTS (
+    SELECT 1 FROM method_availability ma
+    WHERE ma.pokemon_id = v.pid
+      AND ma.method_id = hm.id
+      AND ma.game_id = g.id)
+  AND NOT EXISTS (
+    SELECT 1 FROM shiny_locks sl
+    WHERE sl.pokemon_id = v.pid AND sl.game_id = g.id)
+  AND EXISTS (
+    SELECT 1 FROM method_games mg
+    WHERE mg.method_id = hm.id AND mg.game_id = g.id);
+-- Expect: up to 23 rows inserted. The lock guard keeps 151-BDSP, 385-BDSP,
+-- 494-BW, and 905-SV method-less as required. 0 rows on re-run.
+
+-- I3. Under-lock additions: insert missing shiny_locks rows.
+INSERT INTO shiny_locks (pokemon_id, game_id)
+SELECT v.pid, g.id
+FROM (VALUES
+    -- Mew — Poke Ball Plus gift in BDSP, hardcoded non-shiny
+    (151, 'Brilliant Diamond/Shining Pearl'),
+    -- Jirachi — Mystery Gift in BDSP, hardcoded non-shiny
+    (385, 'Brilliant Diamond/Shining Pearl'),
+    -- Victini — Liberty Garden encounter in BW, engine-locked non-shiny
+    (494, 'Black/White'),
+    -- Enamorus — Snacksworth gift (Indigo Disk) in SV, hardcoded non-shiny
+    (905, 'Scarlet/Violet')
+) AS v(pid, gtitle)
+JOIN games g ON g.title = v.gtitle
+ON CONFLICT DO NOTHING;
+-- Expect: up to 4 rows inserted (0 on re-run or if already present).
+
 COMMIT;

@@ -192,9 +192,24 @@
       "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus",
+      "_note": "Mew — shiny-locked gift (Mystery Gift via Poke Ball Plus) in Brilliant Diamond/Shining Pearl; soft-resettable in Ruby/Sapphire/Emerald (Faraway Island event)",
+      "pokemon_id": 151,
+      "games": ["Brilliant Diamond/Shining Pearl"]
+    },
+    {
+      "_note": "Jirachi — shiny-locked gift (Mystery Gift) in Brilliant Diamond/Shining Pearl; not obtainable via SR in any main-series game",
+      "pokemon_id": 385,
+      "games": ["Brilliant Diamond/Shining Pearl"]
+    },
+    {
+      "_note": "Victini — shiny-locked Liberty Garden static encounter in Black/White (hardcoded non-shiny by game engine, Bulbapedia-verified)",
+      "pokemon_id": 494,
+      "games": ["Black/White"]
+    },
+    {
+      "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus; also locked in Scarlet/Violet (Indigo Disk Snacksworth gift, not a soft-resettable static)",
       "pokemon_id": 905,
-      "games": ["Legends: Arceus"]
+      "games": ["Legends: Arceus", "Scarlet/Violet"]
     },
     {
       "_note": "Koraidon — shiny-locked story encounter in Scarlet/Violet",
