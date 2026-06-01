@@ -82,6 +82,7 @@ export interface PokemonRoute {
 	odds: number;
 	eta_hours: number;
 	evolve_from?: { pokemon_id: number; name: string };
+	has_shiny_charm?: boolean;
 }
 
 export interface PokemonRouteResponse {
