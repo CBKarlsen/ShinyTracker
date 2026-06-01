@@ -177,19 +177,19 @@
       "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only, never obtainable via soft reset)",
+      "_note": "Darkrai — shiny-locked in Legends: Arceus (event gift) only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Member Card event item at Newmoon Island, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
       "pokemon_id": 491,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
+      "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift) and in BDSP (event-distribution only)",
+      "_note": "Shaymin — shiny-locked in Legends: Arceus (event gift) only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Oak's Letter event item at Flower Paradise, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
       "pokemon_id": 492,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
+      "games": ["Legends: Arceus"]
     },
     {
-      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus and in BDSP (event-distribution only)",
+      "_note": "Arceus — shiny-locked story encounter in Legends: Arceus only. NOT locked in Brilliant Diamond/Shining Pearl: obtained via the Azure Flute event item at Hall of Origin, which is a soft-resettable static encounter (Bulbapedia-verified). BDSP removed from this entry.",
       "pokemon_id": 493,
-      "games": ["Legends: Arceus", "Brilliant Diamond/Shining Pearl"]
+      "games": ["Legends: Arceus"]
     },
     {
       "_note": "Enamorus — shiny-locked story encounter in Legends: Arceus",

@@ -332,4 +332,62 @@ WHERE NOT EXISTS (
 -- removed their shiny_locks rows). 0 rows for shiny-locked partner Pikachu(25)/
 -- Eevee(133) and Mew(151) because those remain in shiny_locks for LGPE.
 
+-- ============================================================================
+-- H  BDSP Darkrai/Shaymin/Arceus shiny-lock correction
+--    Pokémon: 491 Darkrai (Newmoon Island), 492 Shaymin (Flower Paradise),
+--             493 Arceus (Hall of Origin).
+--
+--    Background: these three were previously marked shiny-locked in BDSP on the
+--    (incorrect) assumption they were event-distribution-only without a SR target.
+--    Bulbapedia confirms all three are soft-resettable static encounters in BDSP,
+--    gated behind event items (Member Card / Oak's Letter / Azure Flute).
+--    They ARE locked in Legends: Arceus — those rows are retained.
+--
+--    Durable fix: backend/seeds/shiny_locks.json has been corrected (BDSP removed
+--    from each entry's games array); backend/seeds/legendary_encounters.json has
+--    been updated to include BDSP static encounter entries for all three.
+--    After a re-seed, computeAvailability will derive Soft Reset for them in BDSP.
+--
+--    This section brings the live DB into sync without a full re-seed.
+--    Safe to re-run: DELETE WHERE is idempotent; ON CONFLICT / NOT EXISTS guards
+--    on all INSERTs prevent duplicates.
+-- ============================================================================
+
+-- H1. Remove the incorrect BDSP shiny_locks rows for Darkrai, Shaymin, Arceus.
+DELETE FROM shiny_locks
+WHERE game_id = (SELECT id FROM games WHERE title = 'Brilliant Diamond/Shining Pearl')
+  AND pokemon_id IN (491, 492, 493);
+-- Expect: 3 rows deleted on first run, 0 on subsequent runs.
+
+-- H2. Insert BDSP static encounter rows for Darkrai, Shaymin, Arceus.
+INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+SELECT v.pid, g.id, 'static', 'none'
+FROM (VALUES (491),(492),(493)) AS v(pid)
+CROSS JOIN games g
+WHERE g.title = 'Brilliant Diamond/Shining Pearl'
+ON CONFLICT DO NOTHING;
+-- Expect: up to 3 rows inserted.
+
+-- H3. Derive Soft Reset method_availability for Darkrai, Shaymin, Arceus in BDSP.
+--     Shiny-lock guard included for safety (rows removed in H1, so the guard
+--     fires clean; it also future-proofs against accidental re-insertion).
+INSERT INTO method_availability (pokemon_id, method_id, game_id)
+SELECT v.pid, hm.id, g.id
+FROM (VALUES (491),(492),(493)) AS v(pid)
+CROSS JOIN hunt_methods hm
+CROSS JOIN games g
+WHERE hm.method_name = 'Soft Reset'
+  AND g.title = 'Brilliant Diamond/Shining Pearl'
+  AND NOT EXISTS (
+    SELECT 1 FROM method_availability ma
+    WHERE ma.pokemon_id = v.pid
+      AND ma.method_id = hm.id
+      AND ma.game_id = g.id)
+  AND NOT EXISTS (
+    SELECT 1 FROM shiny_locks sl
+    WHERE sl.pokemon_id = v.pid AND sl.game_id = g.id);
+-- Expect: up to 3 rows inserted (one per Pokémon, for the Soft Reset method
+-- that maps to BDSP). Pokémon remain locked in Legends: Arceus — those
+-- shiny_locks rows are untouched and will suppress Soft Reset in PLA.
+
 COMMIT;

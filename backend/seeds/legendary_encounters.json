@@ -548,5 +548,27 @@
     "default_kind": "static",
     "default_games": ["Black/White", "Black 2/White 2", "Omega Ruby/Alpha Sapphire", "Sword/Shield", "Ultra Sun/Ultra Moon"],
     "overrides": {}
+  },
+
+  {
+    "pokemon_id": 491,
+    "name": "Darkrai",
+    "default_kind": "static",
+    "default_games": ["Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 492,
+    "name": "Shaymin",
+    "default_kind": "static",
+    "default_games": ["Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 493,
+    "name": "Arceus",
+    "default_kind": "static",
+    "default_games": ["Brilliant Diamond/Shining Pearl"],
+    "overrides": {}
   }
 ]
