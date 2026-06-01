@@ -113,6 +113,18 @@
     "requires_kind": "wild"
   },
   {
+    "id": "random_encounter_oras",
+    "games": [
+      "Omega Ruby/Alpha Sapphire"
+    ],
+    "method_name": "Random Encounter",
+    "avg_time_seconds": 20,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "static",
+    "requires_kind": "wild"
+  },
+  {
     "id": "dexnav_gen6",
     "games": [
       "Omega Ruby/Alpha Sapphire"

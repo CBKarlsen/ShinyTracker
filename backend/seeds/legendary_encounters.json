@@ -24,7 +24,7 @@
     "pokemon_id": 150,
     "name": "Mewtwo",
     "default_kind": "static",
-    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -136,21 +136,21 @@
     "pokemon_id": 377,
     "name": "Regirock",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
     "overrides": {}
   },
   {
     "pokemon_id": 378,
     "name": "Regice",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
     "overrides": {}
   },
   {
     "pokemon_id": 379,
     "name": "Registeel",
     "default_kind": "static",
-    "default_games": ["Ruby/Sapphire/Emerald", "Brilliant Diamond/Shining Pearl"],
+    "default_games": ["Ruby/Sapphire/Emerald", "Omega Ruby/Alpha Sapphire", "Brilliant Diamond/Shining Pearl"],
     "overrides": {}
   },
   {
