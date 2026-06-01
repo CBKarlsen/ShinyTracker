@@ -608,11 +608,21 @@ func seedShinyLocks(ctx context.Context) {
 // systemic fix for locked Pokemon (e.g. the SV Indigo Disk Paradoxes) that
 // previously leaked hunt methods via their encounter rows. seedShinyLocks must
 // run before computeAvailability for this guard to be effective.
+//
+// Generation-1 guard: shinies do not exist in Gen 1 (RBY). Game IDs whose
+// generation = 1 are excluded entirely so that static encounter rows for the
+// legendary birds and Mewtwo never produce method_availability entries.
+// Shiny hunting legitimately starts in Gen 2 (GSC introduced the DV mechanic).
+// NOTE: Red/Blue/Yellow has been removed from SeedGames and all seed data, so
+// this guard will never match any existing row — it remains as a cheap invariant
+// preventing accidental Gen-1 reintroduction and is safe when no Gen-1 row exists.
 func computeAvailability(ctx context.Context) {
 	_, err := database.DB.Exec(ctx, `
 		INSERT INTO method_availability (pokemon_id, method_id, game_id)
 		SELECT DISTINCT pge.pokemon_id, hm.id, pge.game_id
 		FROM pokemon_game_encounter pge
+		-- Shinies do not exist in Gen 1; skip all Gen-1 games.
+		JOIN games g ON g.id = pge.game_id AND g.generation >= 2
 		JOIN hunt_methods hm ON hm.requires_kind = pge.kind
 			AND (hm.requires_terrain = pge.terrain
 				OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
@@ -738,11 +748,16 @@ func runInvariantChecks(ctx context.Context) {
 
 	// Warning (non-fatal): a game has wild encounter rows but no wild method
 	// mapped to it, so none of those encounters are huntable. Flags games whose
-	// method catalog is incomplete (e.g. Gen 1/2/5 have wild data but no
+	// method catalog is incomplete (e.g. Gen 5 has wild data but no
 	// random-encounter method defined in seeds/hunt_methods.json).
+	// Gen 1 is excluded: shinies don't exist in RBY, so having wild encounters
+	// with no wild method is correct-by-design, not an anomaly. RBY has been
+	// removed from the seed data entirely, so generation >= 2 simply never
+	// matches a Gen-1 row (the filter is a no-cost invariant, not dead code).
 	rows, err := database.DB.Query(ctx, `
 		SELECT g.title FROM games g
-		WHERE EXISTS (SELECT 1 FROM pokemon_game_encounter pge WHERE pge.game_id = g.id AND pge.kind = 'wild')
+		WHERE g.generation >= 2
+		  AND EXISTS (SELECT 1 FROM pokemon_game_encounter pge WHERE pge.game_id = g.id AND pge.kind = 'wild')
 		  AND NOT EXISTS (
 			SELECT 1 FROM method_games mg JOIN hunt_methods hm ON hm.id = mg.method_id
 			WHERE mg.game_id = g.id AND hm.requires_kind = 'wild')

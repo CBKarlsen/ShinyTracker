@@ -3,28 +3,28 @@
     "pokemon_id": 144,
     "name": "Articuno",
     "default_kind": "static",
-    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 145,
     "name": "Zapdos",
     "default_kind": "static",
-    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 146,
     "name": "Moltres",
     "default_kind": "static",
-    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "Let's Go Pikachu/Eevee"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 150,
     "name": "Mewtwo",
     "default_kind": "static",
-    "default_games": ["Red/Blue/Yellow", "FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee"],
+    "default_games": ["FireRed/LeafGreen", "X/Y", "Let's Go Pikachu/Eevee"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -100,36 +100,36 @@
   {
     "pokemon_id": 243,
     "name": "Raikou",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 244,
     "name": "Entei",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 245,
     "name": "Suicune",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal", "FireRed/LeafGreen"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 380,
     "name": "Latias",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
     "pokemon_id": 381,
     "name": "Latios",
-    "default_kind": "raid",
-    "default_games": [],
+    "default_kind": "static",
+    "default_games": ["Ruby/Sapphire/Emerald"],
     "overrides": { "@swsh-dynamax": "raid" }
   },
   {
@@ -403,6 +403,77 @@
     "name": "Blacephalon",
     "default_kind": "static",
     "default_games": ["Ultra Sun/Ultra Moon"],
+    "overrides": {}
+  },
+
+  {
+    "pokemon_id": 131,
+    "name": "Lapras",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 133,
+    "name": "Eevee",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 142,
+    "name": "Aerodactyl",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 143,
+    "name": "Snorlax",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 152,
+    "name": "Chikorita",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 155,
+    "name": "Cyndaquil",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 158,
+    "name": "Totodile",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 175,
+    "name": "Togepi",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 185,
+    "name": "Sudowoodo",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
+    "overrides": {}
+  },
+  {
+    "pokemon_id": 236,
+    "name": "Tyrogue",
+    "default_kind": "static",
+    "default_games": ["Gold/Silver/Crystal"],
     "overrides": {}
   }
 ]

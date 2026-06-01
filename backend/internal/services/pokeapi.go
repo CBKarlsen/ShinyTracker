@@ -53,8 +53,10 @@ type PokeAPIEncounter struct {
 	} `json:"version_details"`
 }
 
+// versionMap translates PokeAPI version names to the game-group titles used in
+// the games table. Gen-1 versions (red/blue/yellow) are deliberately absent:
+// shinies do not exist in Gen 1, so those encounter rows are never needed.
 var versionMap = map[string]string{
-	"red": "Red/Blue/Yellow", "blue": "Red/Blue/Yellow", "yellow": "Red/Blue/Yellow",
 	"gold": "Gold/Silver/Crystal", "silver": "Gold/Silver/Crystal", "crystal": "Gold/Silver/Crystal",
 	"ruby": "Ruby/Sapphire/Emerald", "sapphire": "Ruby/Sapphire/Emerald", "emerald": "Ruby/Sapphire/Emerald",
 	"firered": "FireRed/LeafGreen", "leafgreen": "FireRed/LeafGreen",
@@ -391,12 +393,14 @@ func syncWildEncounters(pokemonID int) {
 
 func SeedGames() error {
 	log.Println("Seeding games...")
+	// Red/Blue/Yellow (Gen 1) is intentionally absent: shinies do not exist in
+	// Gen 1, so there is nothing to track there. The earliest supported game is
+	// Gold/Silver/Crystal (Gen 2), where the shiny DV mechanic was introduced.
 	games := []struct {
 		Title      string
 		Generation int
 		BaseOdds   int
 	}{
-		{"Red/Blue/Yellow", 1, 8192},
 		{"Gold/Silver/Crystal", 2, 8192},
 		{"Ruby/Sapphire/Emerald", 3, 8192},
 		{"FireRed/LeafGreen", 3, 8192},

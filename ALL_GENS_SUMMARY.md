@@ -24,9 +24,9 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 | Gen | Game(s) | Methods | Shiny-locks | Status |
 |---|---|---|---|---|
-| 1 | RBY | Soft Reset (4 rows) | n/a | ❌ Shinies don't exist in Gen 1 — these 4 rows are bogus; RBY should be non-huntable. |
-| 2 | GSC | Random, Soft Reset | ✅ (none needed) | ◑ ~10 gift/static species still mislabeled Random instead of Soft Reset (Eevee, starters, Snorlax, Lapras…); legendary beasts missing. |
-| 3 | RSE / FRLG | Random, Soft Reset | ✅ | ◑ "Run Away" mislabel fixed. Residual: some gift/fossil statics still Random; a few legendary coverage gaps (Regis/Lati@s/beasts). |
+| 1 | RBY | — | n/a | ✅ **Removed** — RBY dropped from the tracker (no shiny mechanic before Gen 2). Out of seed; `generation >= 2` guard prevents reintroduction. |
+| 2 | GSC | Random, Soft Reset | ✅ | ✅ 10 gift/static mislabels fixed (Eevee/starters/Snorlax/Lapras/etc. → Soft Reset); legendary beasts added. Minor: a few lower-confidence gifts (Shuckle/Igglybuff/Porygon) left as NEEDS REVIEW. |
+| 3 | RSE / FRLG | Random, Soft Reset | ✅ | ◑ "Run Away" fixed; Lati@s + beasts added (RSE/FRLG). Residual: RSE/FRLG starter/fossil gifts (Treecko/fossils/Kanto starters) still Random — were NEEDS-REVIEW in audit, not yet confirmed. |
 | 4 | DPPt / HGSS | Poké Radar, Random, Soft Reset | ✅ | ✅ Clean (pilot). DPPt legendary statics now covered. |
 | 5 | BW / B2W2 | Masuda, Random, Soft Reset | ✅ | ◑ Masuda complete. Residual: not all Unova static legendaries have Soft Reset; SR charm-roll bleed (odds). |
 | 6 | XY | Chain Fishing, Friend Safari, Masuda, Poké Radar, Random | ✅ | ✅ Friend Safari fixed; full method set. |
@@ -43,9 +43,10 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 ## Remaining work (prioritized)
 
-1. **Gen 2 / Gen 3** — fix the "wild/other"-driven gift/static mislabels (Eevee, starters, fossils → Soft Reset) and backfill missing legendaries. *Largest remaining correctness gap.*
-2. **Past-legendary rosters via special mechanics** — ORAS Soaring/Mirage spots + Eon Lati@s, and Gen 7 USUM Ultra Wormholes: large shiny-able legendary sets needing dedicated methods + curated lists. *(Gen 6/7 base methods + Regis/Mewtwo/UBs — done.)*
+1. **Gen 3 RSE/FRLG starter/fossil gifts** — confirm + flip the remaining NEEDS-REVIEW gift/fossil mislabels (Treecko/Torchic/Mudkip, Lileep/Anorith, Kanto starters, Omanyte/Kabuto) from Random → Soft Reset.
+2. **Past-legendary rosters via special mechanics** — ORAS Soaring/Mirage spots + Eon Lati@s, and Gen 7 USUM Ultra Wormholes: large shiny-able legendary sets needing dedicated methods + curated lists.
 3. **Sparse PokéAPI wild data** — ORAS (~127) and others could be widened via same-region proxies (like DPPt→BDSP) if fuller coverage is wanted.
+4. **Odds-verification phase** — still entirely unaudited (incl. SR `charm_rolls=2` bleed for pre-Gen-5 games).
 3. **Gen 2 / Gen 3** — fix the "wild/other"-driven gift/static mislabels (move to `legendary_encounters.json` static) and backfill missing legendaries. Root cause is the overloaded `wild/other` encounter bucket in the PokeAPI mapper.
 4. **Gen 1** — exclude RBY from hunting (drop the 4 Soft Reset rows; no shiny mechanic exists).
 5. **Odds verification phase** — validate `base_odds`/`base_rolls`/`charm_rolls` per method/game, incl. the Soft Reset `charm_rolls=2` bleed for pre-Gen-5 games (Shiny Charm didn't exist until Gen 5/B2W2).

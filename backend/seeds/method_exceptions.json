@@ -1,1 +1,62 @@
-[]
+[
+  {
+    "pokemon_id": 131,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 133,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 142,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 143,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 152,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 155,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 158,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 175,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 185,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  },
+  {
+    "pokemon_id": 236,
+    "method": "random_encounter_fullodds_nocharm",
+    "game": "Gold/Silver/Crystal",
+    "include": false
+  }
+]
