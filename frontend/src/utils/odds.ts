@@ -115,7 +115,9 @@ export function calculateOdds(
 		if (searchLevel > 100) t += Math.min(searchLevel - 100, 100) * 2;
 		if (searchLevel > 200) t += (searchLevel - 200) * 1;
 		
-		const probDexNav = searchLevel > 0 ? t / 10000 : 0;
+		// dexnav_level = (tiered points) / 100, per-check shiny prob = dexnav_level / 10000.
+		// Mirrors backend calc.EffectiveOdds; the /100 was missing (100x too high → bogus 1/12).
+		const probDexNav = searchLevel > 0 ? t / 100 / 10000 : 0;
 		
 		let extraRolls = 0;
 		if (chain > 0 && chain % 100 === 0) extraRolls = 10;
