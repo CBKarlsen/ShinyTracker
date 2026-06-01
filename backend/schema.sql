@@ -144,3 +144,26 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_method_xor CHECK (NOT (hunt_method_id IS NOT NULL AND custom_method_name IS NOT NULL))
 );
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Row Level Security (default-deny)
+--
+-- Supabase auto-exposes every public table over its PostgREST API. Enabling RLS
+-- with NO policies denies the anon/authenticated roles all access, closing that
+-- hole. The backend connects as the `postgres` role, which owns these tables and
+-- has BYPASSRLS, so the Go API and seed/migrate tools are unaffected. FORCE is
+-- intentionally omitted so the owner stays exempt as a second safety layer.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE pokemon                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE games                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokemon_availability    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokemon_game_encounter  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shiny_locks             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hunt_methods            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE method_games            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE method_availability     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE method_exceptions       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_games              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_hunts              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hunt_phases             ENABLE ROW LEVEL SECURITY;
