@@ -23,6 +23,28 @@ export function routeNeedsParams(formulaType: string | null | undefined): boolea
 }
 
 /**
+ * Formula types whose odds come from a *consecutive chain* that the player
+ * builds up and that resets to zero when broken. These are the only methods
+ * that track a live `hunt_parameters.chain_length` separate from the lifetime
+ * encounter total, and the only ones that show a "Break chain" control.
+ *
+ * Note: `chain_fishing_gen6` and `catch_combo_lgpe` are streak methods but are
+ * NOT in `PARAM_FORMULAS` — their chain is incremented live by the dashboard,
+ * not configured up-front via HuntParametersEditor.
+ */
+export const STREAK_FORMULAS = [
+	"chain_fishing_gen6",
+	"catch_combo_lgpe",
+	"sos_chain_gen7",
+	"radar_chain_gen4",
+	"dexnav_gen6",
+] as const;
+
+export function isStreakMethod(formulaType: string | null | undefined): boolean {
+	return !!formulaType && (STREAK_FORMULAS as readonly string[]).includes(formulaType);
+}
+
+/**
  * Returns the canonical default hunt_parameters for a given formula_type.
  * Used both in NewHuntModal (so we POST non-empty params from the start)
  * and as a fallback in dashboard components for hunts stored with empty params.
@@ -83,7 +105,10 @@ export function calculateOdds(
 		// Shiny Charm doesn't apply to Gen 4 Pokeradar
 		rolls = 1;
 	} else if (type === "catch_combo_lgpe") {
-		const combo = Math.max(0, encounters);
+		// chain_length is the live catch combo; fall back to the encounter
+		// counter for legacy hunts created before chain tracking existed.
+		const paramCombo = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		const combo = Math.max(0, paramCombo);
 		let extraRolls = 0;
 		if (combo >= 31) {
 			extraRolls = 11;
@@ -160,7 +185,10 @@ export function calculateOdds(
 		denominator = hasShinyCharm ? 100 : 300;
 		rolls = 1;
 	} else if (type === "chain_fishing_gen6") {
-		const chain = Math.max(0, Math.min(encounters, 20));
+		// chain_length is the live current chain; fall back to the encounter
+		// counter for legacy hunts created before chain tracking existed.
+		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		const chain = Math.max(0, Math.min(paramChain, 20));
 		const extraRolls = chain * 2;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
 		denominator = Math.floor(baseOdds / rolls);
