@@ -48,30 +48,32 @@ Charm is `+3` (published "+1 charm" rows secretly bundle the Lv10 prerequisite).
 
 **MMO is per-encounter WORSE than MO, by design — do not "fix" it.** Verified across RotomLabs (Anubis datamine), Serebii, dotesports, Game8: MMO = +12 rolls (~1/315 base) vs MO = +25 (~1/158 base). MMO's real-world advantage is **spawn volume** — it produces many times more encounters per outbreak (waves of hordes), not better odds on any single spawn. Serebii states this explicitly. We therefore keep MMO's per-encounter odds lower and express its speed advantage purely through a lower `avg_time_seconds` on its seed row. A future reader seeing "Massive < regular" is looking at correct behavior.
 
-### Formula `pla_research`
+### Formulas `pla_research` / `pla_mass_outbreak` / `pla_massive_outbreak`
+The outbreak is determined by *which method you chose*, not a per-hunt parameter — so it is encoded in the `formula_type`, not in `hunt_parameters`. (Revised during code review: a single `pla_research` formula meant `defaultParamsFor` could not pre-select the outbreak, so picking "Mass Outbreak" silently started at 1/4096.) All three share a `plaResearchRolls` helper for the research bonus:
 ```
-rolls = base_rolls
-      + (research_level >= 10 ? 1 : 0)
-      + (dex_perfect ? 2 : 0)
-      + (mass_outbreak ? 25 : massive_outbreak ? 12 : 0)
-      + (hasCharm ? charm_rolls : 0)
-return floorDiv(rolls)            // base_odds / rolls, integer division
+research = base_rolls
+         + (research_level >= 10 ? 1 : 0)
+         + (dex_perfect ? 2 : 0)
+pla_research          -> floorDiv(research + 0  + charm)
+pla_mass_outbreak     -> floorDiv(research + 25 + charm)
+pla_massive_outbreak  -> floorDiv(research + 12 + charm)
+                         // floorDiv = base_odds / rolls, integer division; charm = +3 if hasCharm
 ```
 
-`hunt_parameters` keys (all user-set, none derived from the encounter counter):
-`research_level` (int, 0 or 10), `dex_perfect` (bool), `mass_outbreak` (bool), `massive_outbreak` (bool).
+`hunt_parameters` keys (user-set, none derived from the encounter counter):
+`research_level` (int, 0 or 10), `dex_perfect` (bool). No outbreak flags — the outbreak lives in the formula_type.
 
 ### Seed rows (`hunt_methods.json`, games `["Legends: Arceus"]`)
-Replace the current implicit static + `mass_outbreak_la` with three rows (all `base_rolls 1, charm_rolls 3, formula_type pla_research`). A dedicated row per outbreak type is a UX convenience that pre-selects the right flag *and* carries the right `avg_time_seconds`:
-- `pla_full_odds` — "Wild / Static", `avg_time_seconds 30, requires_kind wild`.
-- `pla_mass_outbreak` — "Mass Outbreak", `avg_time_seconds 15` (pre-sets `mass_outbreak`).
-- `pla_massive_outbreak` — "Massive Mass Outbreak", `avg_time_seconds 8` (pre-sets `massive_outbreak`). Lower per-encounter time than MO captures MMO's spawn-volume advantage: worse per-spawn odds, but you churn through far more spawns, so ETA still favors it.
+Replace the current implicit static + `mass_outbreak_la` with three rows (all `base_rolls 1, charm_rolls 3`), each with its own `formula_type` and `avg_time_seconds`:
+- `pla_full_odds` — "Wild / Static", `formula_type pla_research`, `avg_time_seconds 30, requires_kind wild`.
+- `pla_mass_outbreak` — "Mass Outbreak", `formula_type pla_mass_outbreak`, `avg_time_seconds 15`.
+- `pla_massive_outbreak` — "Massive Mass Outbreak", `formula_type pla_massive_outbreak`, `avg_time_seconds 8`. Lower per-encounter time than MO captures MMO's spawn-volume advantage: worse per-spawn odds, but you churn through far more spawns, so ETA still favors it.
 
 `charm.go` already lists game 16 (Legends: Arceus) as charm-available — no change.
 
 ### Test anchors (floorDiv, base 4096)
-base→4096, Lv10→2048, perfect(4 rolls)→1024, charm-only(5)→819, MO(26)→157, MO+perfect(29)→141, MO+perfect+charm(32)→128, MMO(13)→315, MMO+perfect(16)→256, MMO+perfect+charm(19)→215.
-("perfect" rows include the Lv10 +1 since they stack: perfect = base1 + lv10 1 + perfect 2 = 4 rolls. Exact-geometric values differ by ≤1, e.g. MO=158 vs floor 157; we use floorDiv for consistency with every other method and the existing test style.)
+base→4096, Lv10→2048, perfect(4 rolls)→1024, charm-only(4 rolls)→1024, MO(26)→157, MO+perfect(29)→141, MO+perfect+charm(32)→128, MMO(13)→315, MMO+perfect(16)→256, MMO+perfect+charm(19)→215.
+("perfect" rows include the Lv10 +1 since they stack: perfect = base1 + lv10 1 + perfect 2 = 4 rolls. "charm only" = base1 + charm3 = 4 rolls → 1024. Exact-geometric values differ by ≤1, e.g. MO=158 vs floor 157; we use floorDiv for consistency with every other method and the existing test style.)
 
 ---
 
