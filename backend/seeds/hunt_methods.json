@@ -278,16 +278,44 @@
     "requires_kind": "wild"
   },
   {
-    "id": "mass_outbreak_la",
-    "games": [
-      "Legends: Arceus"
-    ],
+    "id": "pla_full_odds",
+    "games": ["Legends: Arceus"],
+    "method_name": "Wild / Static",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 3,
+    "formula_type": "pla_research",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "pla_mass_outbreak",
+    "games": ["Legends: Arceus"],
     "method_name": "Mass Outbreak",
     "avg_time_seconds": 15,
     "base_rolls": 1,
-    "charm_rolls": 2,
-    "formula_type": "static",
+    "charm_rolls": 3,
+    "formula_type": "pla_research",
     "requires_kind": "wild"
+  },
+  {
+    "id": "pla_massive_outbreak",
+    "games": ["Legends: Arceus"],
+    "method_name": "Massive Mass Outbreak",
+    "avg_time_seconds": 8,
+    "base_rolls": 1,
+    "charm_rolls": 3,
+    "formula_type": "pla_research",
+    "requires_kind": "wild"
+  },
+  {
+    "id": "ultra_warp_ride_usum",
+    "games": ["Ultra Sun/Ultra Moon"],
+    "method_name": "Ultra Warp Ride",
+    "avg_time_seconds": 60,
+    "base_rolls": 1,
+    "charm_rolls": 2,
+    "formula_type": "ultra_wormhole",
+    "requires_kind": "static"
   },
   {
     "id": "soft_reset_static",
