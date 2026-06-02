@@ -38,6 +38,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 	const [loading, setLoading] = useState(true);
 	const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
 	const committedRef = useRef<Record<string, number>>({});
+	const committedChainRef = useRef<Record<string, number>>({});
 	const localCountsRef = useRef<Record<string, number>>({});
 	const [localChains, setLocalChains] = useState<Record<string, number>>({});
 	const localChainsRef = useRef<Record<string, number>>({});
@@ -86,6 +87,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				committedRef.current = { ...initial };
 				localCountsRef.current = { ...initial };
 				localChainsRef.current = { ...initialChains };
+				committedChainRef.current = { ...initialChains };
 				onHuntCountChange(active.length);
 			}
 		} catch (err) {
@@ -111,7 +113,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				active.map(([huntId, count]) => {
 					const hunt = hunts.find((h) => h.id === huntId);
 					if (!hunt) return Promise.resolve();
-					const params = streakParams(hunt, localChainsRef.current[huntId] ?? count);
+					const chainSent = localChainsRef.current[huntId] ?? count;
+					const params = streakParams(hunt, chainSent);
 					return authedFetch(
 						`${API_BASE}/api/hunts/${huntId}`,
 						token,
@@ -126,7 +129,10 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 						},
 						handleSessionExpired,
 					).then((res) => {
-						if (res.ok) committedRef.current[huntId] = count;
+						if (res.ok) {
+							committedRef.current[huntId] = count;
+							committedChainRef.current[huntId] = chainSent;
+						}
 					}).catch((err) => {
 						if (err instanceof SessionExpiredError) return;
 						console.error(err);
@@ -175,6 +181,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				);
 				if (res.ok) {
 					committedRef.current[id] = count;
+					committedChainRef.current[id] = chain;
 					setHunts((prev) =>
 						prev.map((h) =>
 							h.id === id
@@ -188,6 +195,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 						localCountsRef.current = reverted;
 						return reverted;
 					});
+					setLocalChains((prev) => {
+						const reverted = { ...prev, [id]: committedChainRef.current[id] ?? 0 };
+						localChainsRef.current = reverted;
+						return reverted;
+					});
 					setErrorMsg("Sync failed — clicks weren't saved.");
 				}
 			} catch (err) {
@@ -195,6 +207,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				setLocalCounts((prev) => {
 					const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
 					localCountsRef.current = reverted;
+					return reverted;
+				});
+				setLocalChains((prev) => {
+					const reverted = { ...prev, [id]: committedChainRef.current[id] ?? 0 };
+					localChainsRef.current = reverted;
 					return reverted;
 				});
 				setErrorMsg("Sync failed — clicks weren't saved.");
@@ -255,6 +272,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		if (timers.current[id]) { clearTimeout(timers.current[id]); delete timers.current[id]; }
 		const count = localCountsRef.current[id] ?? hunt.encounter_count;
 		const params = streakParams(hunt, 0) as Record<string, any>; // streak-guarded above, never undefined
+		const prevChain = localChainsRef.current[id] ?? 0;
 		setLocalChains((prev) => {
 			const next = { ...prev, [id]: 0 };
 			localChainsRef.current = next;
@@ -273,11 +291,22 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			);
 			if (res.ok) {
 				setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, hunt_parameters: params } : h)));
+				committedChainRef.current[id] = 0;
 			} else {
+				setLocalChains((prev) => {
+					const restored = { ...prev, [id]: prevChain };
+					localChainsRef.current = restored;
+					return restored;
+				});
 				setErrorMsg("Break failed — chain wasn't reset.");
 			}
 		} catch (err) {
 			if (err instanceof SessionExpiredError) return;
+			setLocalChains((prev) => {
+				const restored = { ...prev, [id]: prevChain };
+				localChainsRef.current = restored;
+				return restored;
+			});
 			setErrorMsg("Break failed — chain wasn't reset.");
 		}
 	};
@@ -292,6 +321,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		localCountsRef.current[updated.id] = 0;
 		setLocalChains((prev) => ({ ...prev, [updated.id]: 0 }));
 		localChainsRef.current[updated.id] = 0;
+		committedChainRef.current[updated.id] = 0;
 		setPhaseHunt(null);
 	};
 

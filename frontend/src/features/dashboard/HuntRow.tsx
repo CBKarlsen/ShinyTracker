@@ -154,7 +154,7 @@ export function HuntRow({
 			<div className="col-num">
 				{fmtNum(hunt.encounter_count)}
 				<small>
-					{streak ? `chain ${fmtNum(currentChain ?? 0)}` : "encounters"}
+					{streak ? `chain ${fmtNum(currentChain ?? 0)} · total` : "encounters"}
 				</small>
 			</div>
 			<div className="col-num col-time">
