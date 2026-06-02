@@ -154,6 +154,28 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		chain := max(0, min(paramInt(params, "count", 0), 20))
 		return floorDiv(base.BaseRolls + chain*2 + charmRolls)
 
+	case "ultra_wormhole":
+		// USUM Ultra Warp Ride (non-legendary). Shiny percent scales with distance
+		// (capped at 5000 ly, k<=9) and ring rarity; Shiny Charm has NO effect.
+		// Legendary wormhole encounters are soft-resets and use "static", not this.
+		ring := paramInt(params, "wormhole_ring_type", 4)
+		k := max(0, min(paramInt(params, "wormhole_distance_ly", 0)/500-1, 9))
+		percent := 1
+		switch ring {
+		case 2:
+			percent = min(10, 1+1*k)
+		case 3:
+			percent = min(19, 1+2*k)
+		case 4:
+			percent = min(36, 1+4*k)
+		default: // ring 1 (or unknown): flat 1%
+			percent = 1
+		}
+		if percent < 1 {
+			percent = 1
+		}
+		return int(math.Round(100.0 / float64(percent)))
+
 	case "pla_research":
 		// Legends: Arceus additive rolls. Research Lv10 (+1) and Perfect (+2)
 		// STACK (matches RotomLabs' published 1/128 for MO+perfect+charm = 32
@@ -210,6 +232,8 @@ func DefaultParams(formulaType string) map[string]any {
 	case "pla_research":
 		// Best realistic non-charm case: Mass Outbreak + Perfect research.
 		return map[string]any{"research_level": 10, "dex_perfect": true, "mass_outbreak": true}
+	case "ultra_wormhole":
+		return map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 5000}
 	default: // static, dynamax_adventures_gen8 (no params)
 		return map[string]any{}
 	}
