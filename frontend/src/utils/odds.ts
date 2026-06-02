@@ -16,6 +16,8 @@ export const PARAM_FORMULAS = [
 	"sos_chain_gen7",
 	"dexnav_gen6",
 	"sandwich_power_sv",
+	"pla_research",
+	"ultra_wormhole",
 ] as const;
 
 export function routeNeedsParams(formulaType: string | null | undefined): boolean {
@@ -42,6 +44,11 @@ export function defaultParamsFor(formulaType: string | null | undefined): Record
 		case "sandwich_power_sv":
 			// sparkling_power is user-set.
 			return { sparkling_power: 0 };
+		case "pla_research":
+			// research_level/dex_perfect/outbreak flags are all user-set.
+			return { research_level: 0, dex_perfect: false, mass_outbreak: false, massive_outbreak: false };
+		case "ultra_wormhole":
+			return { wormhole_ring_type: 4, wormhole_distance_ly: 0 };
 		default:
 			// radar_chain_gen4, sos_chain_gen7, dexnav_gen6, catch_combo_lgpe,
 			// chain_fishing_gen6, static, dynamax_adventures_gen8, etc. all either
@@ -164,6 +171,35 @@ export function calculateOdds(
 		const extraRolls = chain * 2;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
 		denominator = Math.floor(baseOdds / rolls);
+	} else if (type === "pla_research") {
+		// Legends: Arceus additive rolls. Anchors (charmRolls=3, floorDiv):
+		// base 4096 | research10 2048 | perfect 1024 | charm-only 1024 |
+		// MO 157 | MO+perfect 141 | MO+perfect+charm 128 |
+		// MMO 315 | MMO+perfect 256 | MMO+perfect+charm 215.
+		// Lv10 (+1) and Perfect (+2) STACK. MO (+25) and MMO (+12) are exclusive; MO wins.
+		let extraRolls = 0;
+		const research = typeof huntParams.research_level === "number" ? huntParams.research_level : 0;
+		if (research >= 10) extraRolls += 1;
+		if (huntParams.dex_perfect === true) extraRolls += 2;
+		if (huntParams.mass_outbreak === true) extraRolls += 25;
+		else if (huntParams.massive_outbreak === true) extraRolls += 12;
+		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
+		denominator = Math.floor(baseOdds / rolls);
+	} else if (type === "ultra_wormhole") {
+		// USUM Ultra Warp Ride (non-legendary). Distance (cap 5000ly, k<=9) x ring rarity.
+		// Shiny Charm has NO effect. Anchors: ring4@5000 ->3, ring4@2000 ->8,
+		// ring3@5000 ->5, ring2@5000 ->10, ring1 ->100, ring4@0 ->100.
+		const ring = typeof huntParams.wormhole_ring_type === "number" ? huntParams.wormhole_ring_type : 4;
+		const dist = typeof huntParams.wormhole_distance_ly === "number" ? huntParams.wormhole_distance_ly : 0;
+		const k = Math.max(0, Math.min(Math.floor(dist / 500) - 1, 9));
+		let percent = 1;
+		if (ring === 2) percent = Math.min(10, 1 + 1 * k);
+		else if (ring === 3) percent = Math.min(19, 1 + 2 * k);
+		else if (ring === 4) percent = Math.min(36, 1 + 4 * k);
+		else percent = 1;
+		if (percent < 1) percent = 1;
+		denominator = Math.round(100 / percent);
+		rolls = 1;
 	}
 
 	return { rolls, denominator };
