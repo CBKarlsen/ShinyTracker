@@ -117,7 +117,7 @@ export function MethodPreview({
 						</div>
 					</div>
 					<div>
-						<div className="t-label">ETA expected</div>
+						<div className="t-label">Expected time</div>
 						<div className="t-mono" style={{ fontSize: 13, marginTop: 2 }}>
 							~{selectedRoute.eta_hours.toFixed(1)} h
 						</div>
