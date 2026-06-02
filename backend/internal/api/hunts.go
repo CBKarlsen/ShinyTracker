@@ -240,11 +240,13 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify hunt ownership, active status, and capture current encounter count.
+	// parentGameID is nullable (custom-method hunts have no game).
 	var currentCount int
 	var huntStatus string
+	var parentGameID *int
 	err := database.DB.QueryRow(context.Background(),
-		`SELECT encounter_count, status FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&currentCount, &huntStatus)
+		`SELECT encounter_count, status, game_id FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&currentCount, &huntStatus, &parentGameID)
 	if err != nil {
 		http.Error(w, "Hunt not found", http.StatusNotFound)
 		return
@@ -277,11 +279,13 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add phase pokemon to collection (completed hunt entry).
+	// Add phase pokemon to collection as its own completed entry. It carries the
+	// parent hunt's game, encounter_count 0 (a phase appeared once, mid-hunt), and
+	// the PHASE acquisition type so it is distinguishable from a deliberate hunt.
 	if _, err := tx.Exec(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, hunt_method_id, acquisition_type, encounter_count, status, hunt_parameters)
-		 VALUES ($1, $2, NULL, 'HUNTED', $3, 'completed', '{}')`,
-		userID, req.PokemonID, currentCount); err != nil {
+		`INSERT INTO user_hunts (user_id, pokemon_id, game_id, hunt_method_id, acquisition_type, encounter_count, status, hunt_parameters)
+		 VALUES ($1, $2, $3, NULL, 'PHASE', 0, 'completed', '{}')`,
+		userID, req.PokemonID, parentGameID); err != nil {
 		http.Error(w, "Failed to add phase pokemon to collection", http.StatusInternalServerError)
 		return
 	}
