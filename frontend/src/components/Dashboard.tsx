@@ -322,6 +322,29 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		setLocalChains((prev) => ({ ...prev, [updated.id]: 0 }));
 		localChainsRef.current[updated.id] = 0;
 		committedChainRef.current[updated.id] = 0;
+		// LogPhase resets encounter_count server-side but leaves hunt_parameters
+		// untouched; persist chain_length: 0 for streak hunts so a reload doesn't
+		// restore the pre-phase chain.
+		if (isStreakMethod(updated.formula_type)) {
+			const stored = (updated.hunt_parameters as Record<string, any>) || {};
+			authedFetch(
+				`${API_BASE}/api/hunts/${updated.id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						encounter_count: 0,
+						status: "active",
+						hunt_parameters: { ...stored, chain_length: 0 },
+					}),
+				},
+				handleSessionExpired,
+			).catch((err) => {
+				if (err instanceof SessionExpiredError) return;
+				console.error(err);
+			});
+		}
 		setPhaseHunt(null);
 	};
 
@@ -416,7 +439,23 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				onComplete={handleComplete}
 				onPhase={setPhaseHunt}
 				onBreakChain={handleBreakChain}
-				onUpdate={(updated) => setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)))}
+				onUpdate={(updated) => {
+					const existing = hunts.find((h) => h.id === updated.id);
+					setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)));
+					// If a streak hunt's params were just saved, sync the optimistic
+					// chain to the saved value so the render injection doesn't override
+					// it with the stale live value (e.g. Poké Radar manual chain edit).
+					const params = (updated.hunt_parameters as Record<string, any>) || {};
+					if (existing && isStreakMethod(existing.formula_type) && typeof params.chain_length === "number") {
+						const saved = params.chain_length;
+						setLocalChains((prev) => {
+							const next = { ...prev, [updated.id]: saved };
+							localChainsRef.current = next;
+							return next;
+						});
+						committedChainRef.current[updated.id] = saved;
+					}
+				}}
 			/>
 
 			<div style={{ height: 22 }} />
