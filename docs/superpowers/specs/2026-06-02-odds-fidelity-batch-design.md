@@ -42,7 +42,11 @@ PLA literally rolls N independent 1/4096 PID checks; the additive-rolls model is
 | Mass Outbreak | +25 | `mass_outbreak = true` |
 | Massive Mass Outbreak | +12 | `massive_outbreak = true` (weaker than MO) |
 
-Charm is `+3` (published "+1 charm" rows secretly bundle the Lv10 prerequisite). MMO is `+12`, *less* than MO. MO and MMO are mutually exclusive in practice; if both flags set, take MO (the larger).
+Charm is `+3` (published "+1 charm" rows secretly bundle the Lv10 prerequisite). MO and MMO are mutually exclusive in practice; if both flags set, take MO (the larger).
+
+**Research stacking (the one contested point — decided):** Lv10 (+1) and Perfect (+2) **stack to +3** in the perfect case. This is deliberate: it reconciles RotomLabs/Serebii's published anchors exactly — MO+perfect+charm = `1+25+1+2+3 = 32` rolls → 1/128, which is the number those sources print. The alternative (Perfect supersedes Lv10 at +2) would not match. Document this in code next to the formula.
+
+**MMO is per-encounter WORSE than MO, by design — do not "fix" it.** Verified across RotomLabs (Anubis datamine), Serebii, dotesports, Game8: MMO = +12 rolls (~1/315 base) vs MO = +25 (~1/158 base). MMO's real-world advantage is **spawn volume** — it produces many times more encounters per outbreak (waves of hordes), not better odds on any single spawn. Serebii states this explicitly. We therefore keep MMO's per-encounter odds lower and express its speed advantage purely through a lower `avg_time_seconds` on its seed row. A future reader seeing "Massive < regular" is looking at correct behavior.
 
 ### Formula `pla_research`
 ```
@@ -58,15 +62,16 @@ return floorDiv(rolls)            // base_odds / rolls, integer division
 `research_level` (int, 0 or 10), `dex_perfect` (bool), `mass_outbreak` (bool), `massive_outbreak` (bool).
 
 ### Seed rows (`hunt_methods.json`, games `["Legends: Arceus"]`)
-Replace the current implicit static + `mass_outbreak_la`:
-- `pla_full_odds` — method_name "Wild / Static", `base_rolls 1, charm_rolls 3, formula_type pla_research, avg_time_seconds 30, requires_kind wild`.
-- `pla_mass_outbreak` — "Mass Outbreak", same rolls/formula, `avg_time_seconds 15`. (The `mass_outbreak` flag is set per-hunt; a dedicated row is a UX convenience that pre-selects it — see UI.)
+Replace the current implicit static + `mass_outbreak_la` with three rows (all `base_rolls 1, charm_rolls 3, formula_type pla_research`). A dedicated row per outbreak type is a UX convenience that pre-selects the right flag *and* carries the right `avg_time_seconds`:
+- `pla_full_odds` — "Wild / Static", `avg_time_seconds 30, requires_kind wild`.
+- `pla_mass_outbreak` — "Mass Outbreak", `avg_time_seconds 15` (pre-sets `mass_outbreak`).
+- `pla_massive_outbreak` — "Massive Mass Outbreak", `avg_time_seconds 8` (pre-sets `massive_outbreak`). Lower per-encounter time than MO captures MMO's spawn-volume advantage: worse per-spawn odds, but you churn through far more spawns, so ETA still favors it.
 
 `charm.go` already lists game 16 (Legends: Arceus) as charm-available — no change.
 
 ### Test anchors (floorDiv, base 4096)
-base→4096, Lv10→2048, perfect(4)→1024, charm-only(5)→819, MO(26)→157, MO+perfect(29)→141, MO+perfect+charm(32)→128, MMO+perfect+charm(19)→215.
-(Exact-geometric values differ by ≤1, e.g. MO=158 vs floor 157; we use floorDiv for consistency with every other method and the existing test style.)
+base→4096, Lv10→2048, perfect(4 rolls)→1024, charm-only(5)→819, MO(26)→157, MO+perfect(29)→141, MO+perfect+charm(32)→128, MMO(13)→315, MMO+perfect(16)→256, MMO+perfect+charm(19)→215.
+("perfect" rows include the Lv10 +1 since they stack: perfect = base1 + lv10 1 + perfect 2 = 4 rolls. Exact-geometric values differ by ≤1, e.g. MO=158 vs floor 157; we use floorDiv for consistency with every other method and the existing test style.)
 
 ---
 
