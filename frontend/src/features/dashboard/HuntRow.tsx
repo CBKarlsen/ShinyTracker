@@ -2,7 +2,11 @@ import type React from "react";
 import { IcPin, SparkSm } from "../../components/ui/icons";
 import type { Hunt } from "../../types/models";
 import { shinyCharmAvailable } from "../../utils/games";
-import { calculateOdds, defaultParamsFor } from "../../utils/odds";
+import {
+	calculateOdds,
+	defaultParamsFor,
+	isStreakMethod,
+} from "../../utils/odds";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -57,18 +61,27 @@ export function HuntRow({
 	onComplete,
 	onPhase,
 	onPin,
+	onBreakChain,
 }: {
 	hunt: Hunt;
 	onIncrement: (id: string, e: React.MouseEvent) => void;
 	onComplete: (id: string) => void;
 	onPhase: (hunt: Hunt) => void;
 	onPin: (id: string) => void;
+	onBreakChain?: (id: string) => void;
 }) {
 	const storedParams = (hunt.hunt_parameters as Record<string, any>) || {};
 	const resolvedHuntParams =
 		Object.keys(storedParams).length > 0
 			? storedParams
 			: defaultParamsFor(hunt.formula_type);
+
+	const streak = isStreakMethod(hunt.formula_type);
+	const currentChain = streak
+		? typeof resolvedHuntParams.chain_length === "number"
+			? resolvedHuntParams.chain_length
+			: hunt.encounter_count
+		: null;
 
 	// Gate charm: a stale `true` from the DB must not inflate odds for games
 	// where the Shiny Charm doesn't exist.
@@ -140,7 +153,9 @@ export function HuntRow({
 			</div>
 			<div className="col-num">
 				{fmtNum(hunt.encounter_count)}
-				<small>encounters</small>
+				<small>
+					{streak ? `chain ${fmtNum(currentChain ?? 0)}` : "encounters"}
+				</small>
 			</div>
 			<div className="col-num col-time">
 				{fmtHM(hunt.total_time_seconds)}
@@ -199,6 +214,20 @@ export function HuntRow({
 				>
 					<IcPin />
 				</button>
+				{streak && onBreakChain && (
+					<button
+						type="button"
+						className="btn ghost"
+						style={{ padding: "6px 8px", fontSize: 11 }}
+						onClick={(e) => {
+							e.stopPropagation();
+							onBreakChain(hunt.id);
+						}}
+						title="Reset the current chain to 0 (keeps your encounter total)"
+					>
+						Break
+					</button>
+				)}
 				<button
 					className="btn"
 					style={{ padding: "6px 10px" }}

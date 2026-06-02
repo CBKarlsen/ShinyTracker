@@ -7,6 +7,7 @@ import { HuntRow } from "../features/dashboard/HuntRow";
 import { PhaseModal } from "../features/dashboard/PhaseModal";
 import type { Hunt } from "../types/models";
 import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
+import { isStreakMethod } from "../utils/odds";
 import { EmptyState } from "./ui/EmptyState";
 import { ErrorBanner } from "./ui/ErrorBanner";
 import { IcPlus, SparkSm } from "./ui/icons";
@@ -38,6 +39,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 	const [localCounts, setLocalCounts] = useState<Record<string, number>>({});
 	const committedRef = useRef<Record<string, number>>({});
 	const localCountsRef = useRef<Record<string, number>>({});
+	const [localChains, setLocalChains] = useState<Record<string, number>>({});
+	const localChainsRef = useRef<Record<string, number>>({});
 	const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 	const [pinnedId, setPinnedId] = useState<string | null>(null);
 	const [phaseHunt, setPhaseHunt] = useState<Hunt | null>(null);
@@ -48,6 +51,19 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		setErrorMsg("Your session expired — please sign in again.");
 	}, [logout]);
 
+	// For streak hunts, build the hunt_parameters payload carrying the live
+	// chain so PATCHes advance/reset chain_length. Returns undefined for
+	// non-streak hunts (their hunt_parameters must be left untouched — the
+	// backend preserves existing params when the field is omitted).
+	const streakParams = useCallback(
+		(hunt: Hunt, chain: number): Record<string, any> | undefined => {
+			if (!isStreakMethod(hunt.formula_type)) return undefined;
+			const stored = (hunt.hunt_parameters as Record<string, any>) || {};
+			return { ...stored, chain_length: Math.max(0, chain) };
+		},
+		[],
+	);
+
 	const fetchHunts = async () => {
 		try {
 			const res = await authedFetch(`${API_BASE}/api/hunts`, token, {}, handleSessionExpired);
@@ -56,10 +72,20 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				const active = data.filter((h) => h.status === "active");
 				setHunts(active);
 				const initial: Record<string, number> = {};
-				for (const h of active) initial[h.id] = h.encounter_count;
+				const initialChains: Record<string, number> = {};
+				for (const h of active) {
+					initial[h.id] = h.encounter_count;
+					// Seed the chain from stored chain_length, falling back to the
+					// encounter count for legacy hunts (matches the odds fallback).
+					const stored = (h.hunt_parameters as Record<string, any>) || {};
+					initialChains[h.id] =
+						typeof stored.chain_length === "number" ? stored.chain_length : h.encounter_count;
+				}
 				setLocalCounts(initial);
+				setLocalChains(initialChains);
 				committedRef.current = { ...initial };
 				localCountsRef.current = { ...initial };
+				localChainsRef.current = { ...initialChains };
 				onHuntCountChange(active.length);
 			}
 		} catch (err) {
@@ -85,13 +111,18 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				active.map(([huntId, count]) => {
 					const hunt = hunts.find((h) => h.id === huntId);
 					if (!hunt) return Promise.resolve();
+					const params = streakParams(hunt, localChainsRef.current[huntId] ?? count);
 					return authedFetch(
 						`${API_BASE}/api/hunts/${huntId}`,
 						token,
 						{
 							method: "PATCH",
 							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ encounter_count: count, status: hunt.status }),
+							body: JSON.stringify({
+								encounter_count: count,
+								status: hunt.status,
+								...(params ? { hunt_parameters: params } : {}),
+							}),
 						},
 						handleSessionExpired,
 					).then((res) => {
@@ -104,10 +135,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			);
 		}, 60_000);
 		return () => clearInterval(id);
-	}, [localCounts, hunts, token, handleSessionExpired]);
+	}, [localCounts, hunts, token, handleSessionExpired, streakParams]);
 
 	// Keep localCountsRef in sync so the debounce timer always reads the latest count.
 	useEffect(() => { localCountsRef.current = localCounts; }, [localCounts]);
+	useEffect(() => { localChainsRef.current = localChains; }, [localChains]);
 
 	const increment = useCallback((id: string) => {
 		setLocalCounts((prev) => {
@@ -115,9 +147,17 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			localCountsRef.current = next;
 			return next;
 		});
+		setLocalChains((prev) => {
+			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
+			localChainsRef.current = next;
+			return next;
+		});
 		if (timers.current[id]) clearTimeout(timers.current[id]);
 		timers.current[id] = setTimeout(async () => {
 			const count = localCountsRef.current[id] ?? 0;
+			const chain = localChainsRef.current[id] ?? 0;
+			const hunt = hunts.find((h) => h.id === id);
+			const params = hunt ? streakParams(hunt, chain) : undefined;
 			try {
 				const res = await authedFetch(
 					`${API_BASE}/api/hunts/${id}`,
@@ -125,13 +165,23 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 					{
 						method: "PATCH",
 						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({ encounter_count: count, status: "active" }),
+						body: JSON.stringify({
+							encounter_count: count,
+							status: "active",
+							...(params ? { hunt_parameters: params } : {}),
+						}),
 					},
 					handleSessionExpired,
 				);
 				if (res.ok) {
 					committedRef.current[id] = count;
-					setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, encounter_count: count } : h)));
+					setHunts((prev) =>
+						prev.map((h) =>
+							h.id === id
+								? { ...h, encounter_count: count, ...(params ? { hunt_parameters: params } : {}) }
+								: h,
+						),
+					);
 				} else {
 					setLocalCounts((prev) => {
 						const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
@@ -150,7 +200,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				setErrorMsg("Sync failed — clicks weren't saved.");
 			}
 		}, 1500);
-	}, [token, handleSessionExpired]);
+	}, [token, handleSessionExpired, hunts, streakParams]);
 
 	// SPACE key → increment primary hunt
 	useEffect(() => {
@@ -199,6 +249,39 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	};
 
+	const handleBreakChain = async (id: string) => {
+		const hunt = hunts.find((h) => h.id === id);
+		if (!hunt || !isStreakMethod(hunt.formula_type)) return;
+		if (timers.current[id]) { clearTimeout(timers.current[id]); delete timers.current[id]; }
+		const count = localCountsRef.current[id] ?? hunt.encounter_count;
+		const params = streakParams(hunt, 0) as Record<string, any>; // streak-guarded above, never undefined
+		setLocalChains((prev) => {
+			const next = { ...prev, [id]: 0 };
+			localChainsRef.current = next;
+			return next;
+		});
+		try {
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/${id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ encounter_count: count, status: "active", hunt_parameters: params }),
+				},
+				handleSessionExpired,
+			);
+			if (res.ok) {
+				setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, hunt_parameters: params } : h)));
+			} else {
+				setErrorMsg("Break failed — chain wasn't reset.");
+			}
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
+			setErrorMsg("Break failed — chain wasn't reset.");
+		}
+	};
+
 	const handlePhaseSuccess = (updated: Hunt) => {
 		// Cancel any pending increment flush so a stale timer can't PATCH the
 		// pre-phase count over the freshly-reset phase (mirrors handleComplete).
@@ -207,6 +290,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		setLocalCounts((prev) => ({ ...prev, [updated.id]: 0 }));
 		committedRef.current[updated.id] = 0;
 		localCountsRef.current[updated.id] = 0;
+		setLocalChains((prev) => ({ ...prev, [updated.id]: 0 }));
+		localChainsRef.current[updated.id] = 0;
 		setPhaseHunt(null);
 	};
 
@@ -249,7 +334,14 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 	const primary = hunts.find((h) => h.id === pinnedId) || hunts[0];
 	const others = hunts.filter((h) => h.id !== primary.id);
 	// Merge local counts into primary/others
-	const primaryWithCount = { ...primary, encounter_count: localCounts[primary.id] ?? primary.encounter_count };
+	const primaryChain = localChains[primary.id] ?? primary.encounter_count;
+	const primaryWithCount = {
+		...primary,
+		encounter_count: localCounts[primary.id] ?? primary.encounter_count,
+		hunt_parameters: isStreakMethod(primary.formula_type)
+			? { ...((primary.hunt_parameters as Record<string, any>) || {}), chain_length: primaryChain }
+			: primary.hunt_parameters,
+	};
 	const totalEncounters = hunts.reduce((s, h) => s + (localCounts[h.id] ?? h.encounter_count), 0);
 	const totalTime = hunts.reduce((s, h) => s + h.total_time_seconds, 0);
 
@@ -293,6 +385,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				onIncrement={handleIncrement}
 				onComplete={handleComplete}
 				onPhase={setPhaseHunt}
+				onBreakChain={handleBreakChain}
 				onUpdate={(updated) => setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)))}
 			/>
 
@@ -325,10 +418,17 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 							{others.map((h) => (
 								<HuntRow
 									key={h.id}
-									hunt={{ ...h, encounter_count: localCounts[h.id] ?? h.encounter_count }}
+									hunt={{
+										...h,
+										encounter_count: localCounts[h.id] ?? h.encounter_count,
+										hunt_parameters: isStreakMethod(h.formula_type)
+											? { ...((h.hunt_parameters as Record<string, any>) || {}), chain_length: localChains[h.id] ?? h.encounter_count }
+											: h.hunt_parameters,
+									}}
 									onIncrement={handleIncrement}
 									onComplete={handleComplete}
 									onPhase={setPhaseHunt}
+									onBreakChain={handleBreakChain}
 									onPin={handlePin}
 								/>
 							))}

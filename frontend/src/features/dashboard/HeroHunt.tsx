@@ -13,7 +13,11 @@ import { useNotification } from "../../context/NotificationContext";
 import type { Hunt } from "../../types/models";
 import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 import { shinyCharmAvailable } from "../../utils/games";
-import { calculateOdds, defaultParamsFor } from "../../utils/odds";
+import {
+	calculateOdds,
+	defaultParamsFor,
+	isStreakMethod,
+} from "../../utils/odds";
 import { getShowdownGif } from "../../utils/pokemon";
 import {
 	isSoundEnabled,
@@ -39,12 +43,14 @@ export function HeroHunt({
 	onComplete,
 	onPhase,
 	onUpdate,
+	onBreakChain,
 }: {
 	hunt: Hunt;
 	onIncrement: (id: string, e: React.MouseEvent) => void;
 	onComplete: (id: string) => void;
 	onPhase: (hunt: Hunt) => void;
 	onUpdate?: (hunt: Hunt) => void;
+	onBreakChain?: (id: string) => void;
 }) {
 	const { token, logout } = useAuth();
 	const { showError } = useNotification();
@@ -102,6 +108,13 @@ export function HeroHunt({
 		Object.keys(storedParams).length > 0
 			? storedParams
 			: defaultParamsFor(hunt.formula_type);
+
+	const streak = isStreakMethod(hunt.formula_type);
+	const currentChain = streak
+		? typeof resolvedHuntParams.chain_length === "number"
+			? resolvedHuntParams.chain_length
+			: hunt.encounter_count
+		: null;
 
 	// Gate charm: a stale `true` from the DB must not inflate odds for games
 	// where the Shiny Charm doesn't exist.
@@ -337,6 +350,19 @@ export function HeroHunt({
 
 				<div className="hero-counter">
 					<span className="num">{fmtNum(hunt.encounter_count)}</span>
+					{streak && (
+						<span
+							style={{
+								fontFamily: "var(--font-mono)",
+								fontSize: 12,
+								color: "var(--ink-3)",
+								marginLeft: 10,
+								letterSpacing: "0.04em",
+							}}
+						>
+							chain {fmtNum(currentChain ?? 0)}
+						</span>
+					)}
 					<span className="lbl">encounters</span>
 					<TimerDisplay
 						sessionSec={sessionSec}
@@ -408,6 +434,20 @@ export function HeroHunt({
 					>
 						<IcPlus /> +1 encounter <span className="key">SPACE</span>
 					</button>
+					{streak && onBreakChain && (
+						<button
+							type="button"
+							className="btn ghost"
+							style={{ padding: "6px 10px" }}
+							onClick={(e) => {
+								e.stopPropagation();
+								onBreakChain(hunt.id);
+							}}
+							title="Reset the current chain to 0 (keeps your encounter total)"
+						>
+							Break chain
+						</button>
+					)}
 					<button className="btn" onClick={() => onPhase(hunt)}>
 						<SparkSm size={9} color="var(--violet)" /> Log phase
 					</button>

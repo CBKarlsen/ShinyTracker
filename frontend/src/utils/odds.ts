@@ -27,6 +27,10 @@ export function routeNeedsParams(formulaType: string | null | undefined): boolea
  * builds up and that resets to zero when broken. These are the only methods
  * that track a live `hunt_parameters.chain_length` separate from the lifetime
  * encounter total, and the only ones that show a "Break chain" control.
+ *
+ * Note: `chain_fishing_gen6` and `catch_combo_lgpe` are streak methods but are
+ * NOT in `PARAM_FORMULAS` — their chain is incremented live by the dashboard,
+ * not configured up-front via HuntParametersEditor.
  */
 export const STREAK_FORMULAS = [
 	"chain_fishing_gen6",
