@@ -92,7 +92,7 @@ export function ChosenRoute({
 					</div>
 				</div>
 				<div>
-					<div className="t-label">ETA expected</div>
+					<div className="t-label">Expected time</div>
 					<div className="t-mono" style={{ fontSize: 13, marginTop: 2 }}>
 						~{route.eta_hours.toFixed(1)} h
 					</div>
