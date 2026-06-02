@@ -11,15 +11,17 @@ import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
 import { MethodPreview } from "../features/new-hunt/MethodPreview";
 import { usePokemonRoute } from "../features/routes/usePokemonRoute";
 import RouteList, { routeKey } from "../features/routes/RouteList";
+import { ChosenRoute } from "../features/new-hunt/ChosenRoute";
 
 interface Props {
 	open: boolean;
 	onClose: () => void;
 	onGoToGames?: () => void;
+	onHuntStarted?: () => void;
 	prefill?: { pokemon: Pokemon; route?: PokemonRoute } | null;
 }
 
-const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) => {
+const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStarted, prefill }) => {
 	const { token, userId } = useAuth();
 	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
@@ -33,8 +35,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	const [userGameCount, setUserGameCount] = useState<number | null>(null);
 	const [loadingSearch, setLoadingSearch] = useState(false);
 	const [starting, setStarting] = useState(false);
+	const [changing, setChanging] = useState(false);
 
-	const { status, routes, loading: loadingRoutes } = usePokemonRoute(selectedPokemon?.id ?? null);
+	// In the prefill path the chosen route already carries odds/eta/formula, so
+	// we skip the route fetch entirely (no flash, no double-fetch). It only runs
+	// once the user clicks "Change method".
+	const routeFetchId = prefill?.route && !changing ? null : (selectedPokemon?.id ?? null);
+	const { status, routes, loading: loadingRoutes } = usePokemonRoute(routeFetchId);
 
 	const [recentPokemon, setRecentPokemon] = useState<Pokemon[]>([]);
 
@@ -48,6 +55,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 			setUseCustomMethod(false);
 			setCustomMethodName("");
 			setHuntParams({});
+			setChanging(false);
 			setRecentPokemon([]); // clear so stale chips don't flash on re-open
 			return;
 		}
@@ -84,10 +92,15 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	}, [open, token]);
 
 	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
+	// If a route was provided, select it directly from the prefill (no fetch needed).
 	useEffect(() => {
 		if (open && prefill) {
 			setSelectedPokemon(prefill.pokemon);
 			setStep(2);
+			if (prefill.route) {
+				setSelectedRoute(prefill.route);
+				setHuntParams(defaultParamsFor(prefill.route.formula_type));
+			}
 		}
 	}, [open, prefill]);
 
@@ -95,22 +108,11 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
 		const prefillHasRoute = !!prefill?.route;
-		if (!prefillHasRoute && !useCustomMethod && routes.length > 0 && !selectedRoute) {
+		if ((!prefillHasRoute || changing) && !useCustomMethod && routes.length > 0 && !selectedRoute) {
 			setSelectedRoute(routes[0]);
 			setHuntParams(defaultParamsFor(routes[0].formula_type));
 		}
 	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
-
-	// Once routes load, select the prefill route by key (only when a route was provided).
-	useEffect(() => {
-		if (prefill?.route && routes.length > 0) {
-			const r =
-				routes.find((r) => routeKey(r) === routeKey(prefill.route!)) ??
-				prefill.route!;
-			setSelectedRoute(r);
-			setHuntParams(defaultParamsFor(r.formula_type));
-		}
-	}, [prefill, routes]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Pokémon search
 	useEffect(() => {
@@ -158,8 +160,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 				}),
 			});
 			if (res.ok) {
+				onHuntStarted?.();
 				onClose();
-				window.location.reload();
 			} else {
 				showError((await res.text()) || "Failed to start hunt.");
 			}
@@ -185,8 +187,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 				}),
 			});
 			if (res.ok) {
+				onHuntStarted?.();
 				onClose();
-				window.location.reload();
 			} else {
 				showError((await res.text()) || "Failed to start custom hunt.");
 			}
@@ -343,132 +345,146 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, prefill }) 
 								</button>
 							</div>
 
-							{loadingRoutes && (
-								<div className="empty" style={{ padding: 20 }}>
-									Loading methods…
-								</div>
-							)}
-
-							{!loadingRoutes && routes.length > 0 && (
-								<RouteList
-									routes={routes}
-									variant="select"
-									selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
-									onRouteClick={(r) => {
-										setSelectedRoute(r);
-										setUseCustomMethod(false);
-										setHuntParams(defaultParamsFor(r.formula_type));
+							{prefill?.route && !changing ? (
+								<ChosenRoute
+									route={selectedRoute ?? prefill.route}
+									huntParams={huntParams}
+									setHuntParams={setHuntParams}
+									onChange={() => {
+										setChanging(true);
+										setSelectedRoute(null);
 									}}
 								/>
-							)}
-
-							{!loadingRoutes && userGameCount === 0 && routes.length === 0 && (
-								<div
-									className="empty"
-									style={{ textAlign: "center", padding: "20px 0" }}
-								>
-									<div style={{ marginBottom: 6 }}>
-										You haven't added any games yet.
-									</div>
-									<div className="t-label" style={{ marginBottom: 14 }}>
-										Add a game to your library to see available hunt methods.
-									</div>
-									{onGoToGames && (
-										<button className="btn gold" onClick={onGoToGames}>
-											Go to Game Library →
-										</button>
-									)}
-								</div>
-							)}
-
-							{!loadingRoutes && status === "not_in_your_games" && userGameCount !== null && userGameCount > 0 && (
-								<div
-									className="empty"
-									style={{ textAlign: "center", padding: "20px 0" }}
-								>
-									<div
-										style={{ marginBottom: 6, textTransform: "capitalize" }}
-									>
-										{selectedPokemon.name} isn't available in your games.
-									</div>
-									<div className="t-label" style={{ marginBottom: 14 }}>
-										Try adding a game that includes it, or it may be shiny-locked.
-									</div>
-									{onGoToGames && (
-										<button
-											className="btn ghost"
-											onClick={onGoToGames}
-											style={{ fontSize: 12 }}
-										>
-											Manage games →
-										</button>
-									)}
-								</div>
-							)}
-
-							{!loadingRoutes && status === "locked_everywhere" && (
-								<div
-									className="empty"
-									style={{ textAlign: "center", padding: "20px 0", textTransform: "capitalize" }}
-								>
-									{selectedPokemon.name} is shiny-locked in every game it appears in — obtain it by trading or transferring from Pokémon HOME.
-								</div>
-							)}
-
-							{!loadingRoutes && status === "available" && routes.length === 0 && (
-								<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
-									Available in your games, but no hunt method recorded yet.
-								</div>
-							)}
-
-							{!loadingRoutes && (
+							) : (
 								<>
-									<div className="t-label" style={{ margin: "12px 0 6px" }}>
-										Custom method
-									</div>
-									<div
-										className={`opt-row ${useCustomMethod ? "sel" : ""}`}
-										onClick={() => {
-											setUseCustomMethod(true);
-											setSelectedRoute(null);
-										}}
-										style={{ alignItems: "center", gap: 8 }}
-									>
-										<div className="method" style={{ flex: 1 }}>
-											Use custom method
+									{loadingRoutes && (
+										<div className="empty" style={{ padding: 20 }}>
+											Loading methods…
 										</div>
-										<div className="t-label" style={{ fontSize: 11 }}>
-											no odds data
-										</div>
-									</div>
-									{useCustomMethod && (
-										<input
-											className="input"
-											placeholder="e.g. Chain fishing, DexNav, Outbreak…"
-											value={customMethodName}
-											onChange={(e) => setCustomMethodName(e.target.value)}
-											style={{ marginTop: 8 }}
-											autoFocus
+									)}
+
+									{!loadingRoutes && routes.length > 0 && (
+										<RouteList
+											routes={routes}
+											variant="select"
+											selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
+											onRouteClick={(r) => {
+												setSelectedRoute(r);
+												setUseCustomMethod(false);
+												setHuntParams(defaultParamsFor(r.formula_type));
+											}}
 										/>
 									)}
+
+									{!loadingRoutes && userGameCount === 0 && routes.length === 0 && (
+										<div
+											className="empty"
+											style={{ textAlign: "center", padding: "20px 0" }}
+										>
+											<div style={{ marginBottom: 6 }}>
+												You haven't added any games yet.
+											</div>
+											<div className="t-label" style={{ marginBottom: 14 }}>
+												Add a game to your library to see available hunt methods.
+											</div>
+											{onGoToGames && (
+												<button className="btn gold" onClick={onGoToGames}>
+													Go to Game Library →
+												</button>
+											)}
+										</div>
+									)}
+
+									{!loadingRoutes && status === "not_in_your_games" && userGameCount !== null && userGameCount > 0 && (
+										<div
+											className="empty"
+											style={{ textAlign: "center", padding: "20px 0" }}
+										>
+											<div
+												style={{ marginBottom: 6, textTransform: "capitalize" }}
+											>
+												{selectedPokemon.name} isn't available in your games.
+											</div>
+											<div className="t-label" style={{ marginBottom: 14 }}>
+												Try adding a game that includes it, or it may be shiny-locked.
+											</div>
+											{onGoToGames && (
+												<button
+													className="btn ghost"
+													onClick={onGoToGames}
+													style={{ fontSize: 12 }}
+												>
+													Manage games →
+												</button>
+											)}
+										</div>
+									)}
+
+									{!loadingRoutes && status === "locked_everywhere" && (
+										<div
+											className="empty"
+											style={{ textAlign: "center", padding: "20px 0", textTransform: "capitalize" }}
+										>
+											{selectedPokemon.name} is shiny-locked in every game it appears in — obtain it by trading or transferring from Pokémon HOME.
+										</div>
+									)}
+
+									{!loadingRoutes && status === "available" && routes.length === 0 && (
+										<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
+											Available in your games, but no hunt method recorded yet.
+										</div>
+									)}
+
+									{!loadingRoutes && (
+										<>
+											<div className="t-label" style={{ margin: "12px 0 6px" }}>
+												Custom method
+											</div>
+											<div
+												className={`opt-row ${useCustomMethod ? "sel" : ""}`}
+												onClick={() => {
+													setUseCustomMethod(true);
+													setSelectedRoute(null);
+												}}
+												style={{ alignItems: "center", gap: 8 }}
+											>
+												<div className="method" style={{ flex: 1 }}>
+													Use custom method
+												</div>
+												<div className="t-label" style={{ fontSize: 11 }}>
+													no odds data
+												</div>
+											</div>
+											{useCustomMethod && (
+												<input
+													className="input"
+													placeholder="e.g. Chain fishing, DexNav, Outbreak…"
+													value={customMethodName}
+													onChange={(e) => setCustomMethodName(e.target.value)}
+													style={{ marginTop: 8 }}
+													autoFocus
+												/>
+											)}
+										</>
+									)}
+
+									{/* Inline Preview Section */}
+									<MethodPreview
+										selectedPokemon={selectedPokemon}
+										selectedRoute={selectedRoute}
+										useCustomMethod={useCustomMethod}
+										customMethodName={customMethodName}
+										gifUrl={gifUrl}
+										huntParams={huntParams}
+										setHuntParams={setHuntParams}
+									/>
+
+									{selectedRoute?.evolve_from && !useCustomMethod && (
+										<div className="t-label" style={{ marginTop: 10 }}>
+											You'll hunt {selectedRoute.evolve_from.name}, then evolve into {selectedPokemon.name}.
+										</div>
+									)}
 								</>
-							)}
-
-							{/* Inline Preview Section */}
-							<MethodPreview
-								selectedPokemon={selectedPokemon}
-								selectedRoute={selectedRoute}
-								useCustomMethod={useCustomMethod}
-								customMethodName={customMethodName}
-								gifUrl={gifUrl}
-								huntParams={huntParams}
-								setHuntParams={setHuntParams}
-							/>
-
-							{selectedRoute?.evolve_from && !useCustomMethod && (
-								<div className="t-label" style={{ marginTop: 10 }}>
-									You'll hunt {selectedRoute.evolve_from.name}, then evolve into {selectedPokemon.name}.
-								</div>
 							)}
 
 							<div

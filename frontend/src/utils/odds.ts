@@ -4,6 +4,25 @@ export interface OddsResult {
 }
 
 /**
+ * Formula types that require user-supplied parameters at hunt start
+ * (a chain length, search level, or Sparkling Power). Every other formula
+ * derives its odds from the live encounter counter and needs no setup step.
+ * This is the single source of truth shared by HuntParametersEditor (which
+ * renders the inputs) and the drawer (which decides whether to open the modal).
+ */
+export const PARAM_FORMULAS = [
+	"outbreak_defeats_sv",
+	"radar_chain_gen4",
+	"sos_chain_gen7",
+	"dexnav_gen6",
+	"sandwich_power_sv",
+] as const;
+
+export function routeNeedsParams(formulaType: string | null | undefined): boolean {
+	return !!formulaType && (PARAM_FORMULAS as readonly string[]).includes(formulaType);
+}
+
+/**
  * Returns the canonical default hunt_parameters for a given formula_type.
  * Used both in NewHuntModal (so we POST non-empty params from the start)
  * and as a fallback in dashboard components for hunts stored with empty params.

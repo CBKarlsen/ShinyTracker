@@ -25,7 +25,8 @@ const Collection: React.FC<{
 	onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void;
 	focusPokemonId?: number | null;
 	onFocusHandled?: () => void;
-}> = ({ onStartHunt, focusPokemonId, onFocusHandled }) => {
+	onHuntStarted?: () => void;
+}> = ({ onStartHunt, focusPokemonId, onFocusHandled, onHuntStarted }) => {
 	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
@@ -310,6 +311,7 @@ const Collection: React.FC<{
 								setDrawerId(null);
 								onStartHunt?.(poke, route);
 							}}
+							onHuntStarted={onHuntStarted}
 						/>
 					);
 				})()}

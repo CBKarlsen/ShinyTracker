@@ -1,3 +1,4 @@
+import { routeNeedsParams } from "../../utils/odds";
 
 interface Props {
 	formulaType: string | null | undefined;
@@ -7,15 +8,7 @@ interface Props {
 }
 
 export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, inline }: Props) {
-	const validFormulas = [
-		"outbreak_defeats_sv",
-		"radar_chain_gen4",
-		"sos_chain_gen7",
-		"dexnav_gen6",
-		"sandwich_power_sv"
-	];
-
-	if (!formulaType || !validFormulas.includes(formulaType)) {
+	if (!formulaType || !routeNeedsParams(formulaType)) {
 		return null;
 	}
 

@@ -36,6 +36,8 @@ function App() {
 		route?: PokemonRoute;
 	} | null>(null);
 	const [activeHuntCount, setActiveHuntCount] = useState(0);
+	const [huntsVersion, setHuntsVersion] = useState(0);
+	const handleHuntStarted = () => setHuntsVersion((v) => v + 1);
 	const [moreOpen, setMoreOpen] = useState(false);
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [focusPokemonId, setFocusPokemonId] = useState<number | null>(null);
@@ -88,6 +90,7 @@ function App() {
 					<Dashboard
 						onNewHunt={() => setNewHuntOpen(true)}
 						onHuntCountChange={setActiveHuntCount}
+						refreshKey={huntsVersion}
 					/>
 				</div>
 				{route === "historic" && <HistoricHunts />}
@@ -99,6 +102,7 @@ function App() {
 							setHuntPrefill({ pokemon, route: pokemonRoute });
 							setNewHuntOpen(true);
 						}}
+						onHuntStarted={handleHuntStarted}
 					/>
 				)}
 				{route === "games" && <CollectionManager />}
@@ -135,6 +139,7 @@ function App() {
 					setHuntPrefill(null);
 					setRoute("games");
 				}}
+				onHuntStarted={handleHuntStarted}
 				prefill={huntPrefill}
 			/>
 
