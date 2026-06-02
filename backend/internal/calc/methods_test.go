@@ -38,6 +38,34 @@ func TestEffectiveOddsParity(t *testing.T) {
 	}
 }
 
+func TestEffectiveOddsPLA(t *testing.T) {
+	plaBase := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 3}
+	cases := []struct {
+		name    string
+		params  map[string]any
+		charm   bool
+		want    int
+	}{
+		{"pla base", map[string]any{}, false, 4096},
+		{"pla research10", map[string]any{"research_level": 10}, false, 2048},
+		{"pla perfect", map[string]any{"research_level": 10, "dex_perfect": true}, false, 1024},
+		{"pla charm only", map[string]any{}, true, 1024}, // base 1 + PLA charm 3 = 4 rolls -> 4096/4=1024
+		{"pla MO", map[string]any{"mass_outbreak": true}, false, 157},
+		{"pla MO+perfect", map[string]any{"mass_outbreak": true, "research_level": 10, "dex_perfect": true}, false, 141},
+		{"pla MO+perfect+charm", map[string]any{"mass_outbreak": true, "research_level": 10, "dex_perfect": true}, true, 128},
+		{"pla MMO", map[string]any{"massive_outbreak": true}, false, 315},
+		{"pla MMO+perfect", map[string]any{"massive_outbreak": true, "research_level": 10, "dex_perfect": true}, false, 256},
+		{"pla MMO+perfect+charm", map[string]any{"massive_outbreak": true, "research_level": 10, "dex_perfect": true}, true, 215},
+		{"pla MO beats MMO when both set", map[string]any{"mass_outbreak": true, "massive_outbreak": true}, false, 157},
+	}
+	for _, c := range cases {
+		got := EffectiveOdds("pla_research", c.params, plaBase, c.charm)
+		if got != c.want {
+			t.Errorf("%s: EffectiveOdds = %d, want %d", c.name, got, c.want)
+		}
+	}
+}
+
 // catch_combo and chain_fishing read the live count, fed via the "count" param.
 func TestEffectiveOddsCountDriven(t *testing.T) {
 	base := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2}

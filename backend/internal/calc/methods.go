@@ -20,12 +20,22 @@ func paramInt(params map[string]any, key string, fallback int) int {
 	return fallback
 }
 
-// EffectiveOdds returns the integer "1 / N" denominator for a method. It mostly
-// mirrors calculateOdds() in frontend/src/utils/odds.ts, with two known
-// divergences: outbreak_defeats_sv also adds a sparkling_power term (TS doesn't
-// yet — tracked follow-up), and catch_combo_lgpe/chain_fishing_gen6 read their
-// count from the "count" param instead of the live encounter arg. Unknown
-// formulas behave as "static".
+// paramBool reads a boolean param, tolerating bool. Missing/!bool -> false.
+func paramBool(params map[string]any, key string) bool {
+	v, ok := params[key]
+	if !ok {
+		return false
+	}
+	b, ok := v.(bool)
+	return ok && b
+}
+
+// EffectiveOdds returns the integer "1 / N" denominator for a method. It mirrors
+// calculateOdds() in frontend/src/utils/odds.ts. Known intentional divergence:
+// catch_combo_lgpe/chain_fishing_gen6 read their count from the "count" param in
+// Go (route ranking supplies it via DefaultParams) but from the live encounter
+// counter in TS. Both engines now add the SV sparkling term. ultra_wormhole and
+// pla_research are also mirrored in both. Unknown formulas behave as "static".
 func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, hasCharm bool) int {
 	if params == nil {
 		params = map[string]any{}
@@ -144,6 +154,27 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		chain := max(0, min(paramInt(params, "count", 0), 20))
 		return floorDiv(base.BaseRolls + chain*2 + charmRolls)
 
+	case "pla_research":
+		// Legends: Arceus additive rolls. Research Lv10 (+1) and Perfect (+2)
+		// STACK (matches RotomLabs' published 1/128 for MO+perfect+charm = 32
+		// rolls). Mass Outbreak (+25) and Massive Mass Outbreak (+12) are
+		// mutually exclusive; MO wins if both flags are set. MMO is intentionally
+		// worse per-encounter than MO — its real advantage is spawn volume, which
+		// lives in avg_time_seconds, not here. PLA charm is +3 (base.CharmRolls).
+		rolls := base.BaseRolls
+		if paramInt(params, "research_level", 0) >= 10 {
+			rolls++
+		}
+		if paramBool(params, "dex_perfect") {
+			rolls += 2
+		}
+		if paramBool(params, "mass_outbreak") {
+			rolls += 25
+		} else if paramBool(params, "massive_outbreak") {
+			rolls += 12
+		}
+		return floorDiv(rolls + charmRolls)
+
 	default: // "static" and any unknown formula
 		return floorDiv(base.BaseRolls + charmRolls)
 	}
@@ -176,6 +207,9 @@ func DefaultParams(formulaType string) map[string]any {
 		return map[string]any{"count": 31}
 	case "chain_fishing_gen6":
 		return map[string]any{"count": 20}
+	case "pla_research":
+		// Best realistic non-charm case: Mass Outbreak + Perfect research.
+		return map[string]any{"research_level": 10, "dex_perfect": true, "mass_outbreak": true}
 	default: // static, dynamax_adventures_gen8 (no params)
 		return map[string]any{}
 	}
