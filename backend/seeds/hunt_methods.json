@@ -294,7 +294,7 @@
     "avg_time_seconds": 15,
     "base_rolls": 1,
     "charm_rolls": 3,
-    "formula_type": "pla_research",
+    "formula_type": "pla_mass_outbreak",
     "requires_kind": "wild"
   },
   {
@@ -304,7 +304,7 @@
     "avg_time_seconds": 8,
     "base_rolls": 1,
     "charm_rolls": 3,
-    "formula_type": "pla_research",
+    "formula_type": "pla_massive_outbreak",
     "requires_kind": "wild"
   },
   {

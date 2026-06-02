@@ -197,8 +197,12 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 					</select>
 				</>
 			)}
-			{formulaType === "pla_research" && (
+			{(formulaType === "pla_research" ||
+				formulaType === "pla_mass_outbreak" ||
+				formulaType === "pla_massive_outbreak") && (
 				<>
+					{/* Outbreak is fixed by the chosen method (formula_type); only the
+					    player's dex-research progress is a per-hunt variable here. */}
 					<div className="t-label" style={{ marginBottom: 6 }}>
 						Research
 					</div>
@@ -222,44 +226,6 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 								}
 							/>{" "}
 							Perfect research
-						</label>
-					</div>
-					<div className="t-label" style={{ marginBottom: 6, marginTop: 10 }}>
-						Outbreak
-					</div>
-					<div style={{ display: "flex", gap: 12 }}>
-						<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-							<input
-								type="radio"
-								name="pla_outbreak"
-								checked={!huntParams.mass_outbreak && !huntParams.massive_outbreak}
-								onChange={() =>
-									setHuntParams({ ...huntParams, mass_outbreak: false, massive_outbreak: false })
-								}
-							/>{" "}
-							None
-						</label>
-						<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-							<input
-								type="radio"
-								name="pla_outbreak"
-								checked={huntParams.mass_outbreak === true}
-								onChange={() =>
-									setHuntParams({ ...huntParams, mass_outbreak: true, massive_outbreak: false })
-								}
-							/>{" "}
-							Mass Outbreak
-						</label>
-						<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
-							<input
-								type="radio"
-								name="pla_outbreak"
-								checked={huntParams.massive_outbreak === true}
-								onChange={() =>
-									setHuntParams({ ...huntParams, massive_outbreak: true, mass_outbreak: false })
-								}
-							/>{" "}
-							Massive Mass Outbreak
 						</label>
 					</div>
 				</>

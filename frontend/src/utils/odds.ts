@@ -17,6 +17,8 @@ export const PARAM_FORMULAS = [
 	"dexnav_gen6",
 	"sandwich_power_sv",
 	"pla_research",
+	"pla_mass_outbreak",
+	"pla_massive_outbreak",
 	"ultra_wormhole",
 ] as const;
 
@@ -67,8 +69,11 @@ export function defaultParamsFor(formulaType: string | null | undefined): Record
 			// sparkling_power is user-set.
 			return { sparkling_power: 0 };
 		case "pla_research":
-			// research_level/dex_perfect/outbreak flags are all user-set.
-			return { research_level: 0, dex_perfect: false, mass_outbreak: false, massive_outbreak: false };
+		case "pla_mass_outbreak":
+		case "pla_massive_outbreak":
+			// research_level/dex_perfect are user-set; the outbreak bonus is implied
+			// by the formula_type (which method row was chosen), not a param.
+			return { research_level: 0, dex_perfect: false };
 		case "ultra_wormhole":
 			return { wormhole_ring_type: 4, wormhole_distance_ly: 0 };
 		default:
@@ -199,18 +204,20 @@ export function calculateOdds(
 		const extraRolls = chain * 2;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
 		denominator = Math.floor(baseOdds / rolls);
-	} else if (type === "pla_research") {
+	} else if (type === "pla_research" || type === "pla_mass_outbreak" || type === "pla_massive_outbreak") {
 		// Legends: Arceus additive rolls. Anchors (charmRolls=3, floorDiv):
 		// base 4096 | research10 2048 | perfect 1024 | charm-only 1024 |
 		// MO 157 | MO+perfect 141 | MO+perfect+charm 128 |
 		// MMO 315 | MMO+perfect 256 | MMO+perfect+charm 215.
-		// Lv10 (+1) and Perfect (+2) STACK. MO (+25) and MMO (+12) are exclusive; MO wins.
+		// Lv10 (+1) and Perfect (+2) STACK. The outbreak bonus comes from the
+		// formula_type (where you hunt), not a param: pla_mass_outbreak +25,
+		// pla_massive_outbreak +12. MMO is worse per-encounter than MO by design.
 		let extraRolls = 0;
 		const research = typeof huntParams.research_level === "number" ? huntParams.research_level : 0;
 		if (research >= 10) extraRolls += 1;
 		if (huntParams.dex_perfect === true) extraRolls += 2;
-		if (huntParams.mass_outbreak === true) extraRolls += 25;
-		else if (huntParams.massive_outbreak === true) extraRolls += 12;
+		if (type === "pla_mass_outbreak") extraRolls += 25;
+		else if (type === "pla_massive_outbreak") extraRolls += 12;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
 		denominator = Math.floor(baseOdds / rolls);
 	} else if (type === "ultra_wormhole") {

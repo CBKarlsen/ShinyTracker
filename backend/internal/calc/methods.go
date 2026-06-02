@@ -30,6 +30,24 @@ func paramBool(params map[string]any, key string) bool {
 	return ok && b
 }
 
+// plaResearchRolls returns base rolls plus Legends:Arceus dex-research bonuses.
+// Research Lv10 (+1) and Perfect (+2) STACK (matches RotomLabs' published 1/128
+// for Mass Outbreak + perfect + charm = 32 rolls). The OUTBREAK bonus is NOT here:
+// it is encoded by the formula_type (pla_mass_outbreak = +25, pla_massive_outbreak
+// = +12), because the outbreak is a property of where you hunt, not a per-hunt
+// parameter. MMO is intentionally worse per-encounter than MO — MMO's advantage is
+// spawn volume, which lives in avg_time_seconds. PLA charm is +3 (base.CharmRolls).
+func plaResearchRolls(params map[string]any, baseRolls int) int {
+	rolls := baseRolls
+	if paramInt(params, "research_level", 0) >= 10 {
+		rolls++
+	}
+	if paramBool(params, "dex_perfect") {
+		rolls += 2
+	}
+	return rolls
+}
+
 // EffectiveOdds returns the integer "1 / N" denominator for a method. It mirrors
 // calculateOdds() in frontend/src/utils/odds.ts. Known intentional divergence:
 // catch_combo_lgpe/chain_fishing_gen6 read their count from the "count" param in
@@ -86,7 +104,7 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		case defeats >= 30:
 			extra = 1
 		}
-		// New term (not yet in TS): sandwich Sparkling Power stacks additively.
+		// Sandwich Sparkling Power stacks additively (mirrored in TS calculateOdds).
 		extra += sparklingRolls(paramInt(params, "sparkling_power", 0))
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
@@ -177,25 +195,11 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return int(math.Round(100.0 / float64(percent)))
 
 	case "pla_research":
-		// Legends: Arceus additive rolls. Research Lv10 (+1) and Perfect (+2)
-		// STACK (matches RotomLabs' published 1/128 for MO+perfect+charm = 32
-		// rolls). Mass Outbreak (+25) and Massive Mass Outbreak (+12) are
-		// mutually exclusive; MO wins if both flags are set. MMO is intentionally
-		// worse per-encounter than MO — its real advantage is spawn volume, which
-		// lives in avg_time_seconds, not here. PLA charm is +3 (base.CharmRolls).
-		rolls := base.BaseRolls
-		if paramInt(params, "research_level", 0) >= 10 {
-			rolls++
-		}
-		if paramBool(params, "dex_perfect") {
-			rolls += 2
-		}
-		if paramBool(params, "mass_outbreak") {
-			rolls += 25
-		} else if paramBool(params, "massive_outbreak") {
-			rolls += 12
-		}
-		return floorDiv(rolls + charmRolls)
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + charmRolls)
+	case "pla_mass_outbreak":
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + 25 + charmRolls)
+	case "pla_massive_outbreak":
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + 12 + charmRolls)
 
 	default: // "static" and any unknown formula
 		return floorDiv(base.BaseRolls + charmRolls)
@@ -229,9 +233,10 @@ func DefaultParams(formulaType string) map[string]any {
 		return map[string]any{"count": 31}
 	case "chain_fishing_gen6":
 		return map[string]any{"count": 20}
-	case "pla_research":
-		// Best realistic non-charm case: Mass Outbreak + Perfect research.
-		return map[string]any{"research_level": 10, "dex_perfect": true, "mass_outbreak": true}
+	case "pla_research", "pla_mass_outbreak", "pla_massive_outbreak":
+		// Best realistic case: Perfect research. The outbreak bonus (if any) is
+		// implied by the formula_type, so it is not a param here.
+		return map[string]any{"research_level": 10, "dex_perfect": true}
 	case "ultra_wormhole":
 		return map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 5000}
 	default: // static, dynamax_adventures_gen8 (no params)
