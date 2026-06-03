@@ -38,6 +38,61 @@ func TestEffectiveOddsParity(t *testing.T) {
 	}
 }
 
+func TestEffectiveOddsPLA(t *testing.T) {
+	plaBase := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 3}
+	// Outbreak is encoded by formula_type, not a param. Research (Lv10/perfect) is a param.
+	cases := []struct {
+		name    string
+		formula string
+		params  map[string]any
+		charm   bool
+		want    int
+	}{
+		{"pla base", "pla_research", map[string]any{}, false, 4096},
+		{"pla research10", "pla_research", map[string]any{"research_level": 10}, false, 2048},
+		{"pla perfect", "pla_research", map[string]any{"research_level": 10, "dex_perfect": true}, false, 1024},
+		{"pla charm only", "pla_research", map[string]any{}, true, 1024}, // base 1 + PLA charm 3 = 4 rolls -> 4096/4=1024
+		{"pla MO", "pla_mass_outbreak", map[string]any{}, false, 157},
+		{"pla MO+perfect", "pla_mass_outbreak", map[string]any{"research_level": 10, "dex_perfect": true}, false, 141},
+		{"pla MO+perfect+charm", "pla_mass_outbreak", map[string]any{"research_level": 10, "dex_perfect": true}, true, 128},
+		{"pla MMO", "pla_massive_outbreak", map[string]any{}, false, 315},
+		{"pla MMO+perfect", "pla_massive_outbreak", map[string]any{"research_level": 10, "dex_perfect": true}, false, 256},
+		{"pla MMO+perfect+charm", "pla_massive_outbreak", map[string]any{"research_level": 10, "dex_perfect": true}, true, 215},
+	}
+	for _, c := range cases {
+		got := EffectiveOdds(c.formula, c.params, plaBase, c.charm)
+		if got != c.want {
+			t.Errorf("%s: EffectiveOdds = %d, want %d", c.name, got, c.want)
+		}
+	}
+}
+
+func TestEffectiveOddsWormhole(t *testing.T) {
+	base := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2}
+	cases := []struct {
+		name   string
+		params map[string]any
+		want   int
+	}{
+		{"ring4 5000ly", map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 5000}, 3},
+		{"ring4 2000ly", map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 2000}, 8},
+		{"ring3 5000ly", map[string]any{"wormhole_ring_type": 3, "wormhole_distance_ly": 5000}, 5},
+		{"ring2 5000ly", map[string]any{"wormhole_ring_type": 2, "wormhole_distance_ly": 5000}, 10},
+		{"ring1 any", map[string]any{"wormhole_ring_type": 1, "wormhole_distance_ly": 9999}, 100},
+		{"ring4 0ly", map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 0}, 100},
+		{"default params best case", DefaultParams("ultra_wormhole"), 3},
+	}
+	for _, c := range cases {
+		// Charm must not affect wormhole; test both to prove it.
+		for _, charm := range []bool{false, true} {
+			got := EffectiveOdds("ultra_wormhole", c.params, base, charm)
+			if got != c.want {
+				t.Errorf("%s (charm=%v): EffectiveOdds = %d, want %d", c.name, charm, got, c.want)
+			}
+		}
+	}
+}
+
 // catch_combo and chain_fishing read the live count, fed via the "count" param.
 func TestEffectiveOddsCountDriven(t *testing.T) {
 	base := OddsConfig{BaseOdds: 4096, BaseRolls: 1, CharmRolls: 2}

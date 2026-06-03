@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
     hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
     custom_method_name TEXT,
-    acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED')),
+    acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED', 'PHASE')),
     encounter_count INTEGER NOT NULL DEFAULT 0,
     phase_count INTEGER NOT NULL DEFAULT 0,
     total_time_seconds INTEGER NOT NULL DEFAULT 0,

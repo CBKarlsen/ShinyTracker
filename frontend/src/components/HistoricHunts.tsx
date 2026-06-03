@@ -171,6 +171,9 @@ const HistoricHunts: React.FC = () => {
 										>
 											SHINY · {h.method_name?.split(" ")[0] || "Manual"}
 										</span>
+										{h.acquisition_type === "PHASE" && (
+											<span className="phase-pill">Phase</span>
+										)}
 									</div>
 									<div className="num">
 										{fmtNum(h.encounter_count)}

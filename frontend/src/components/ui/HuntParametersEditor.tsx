@@ -197,6 +197,77 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 					</select>
 				</>
 			)}
+			{(formulaType === "pla_research" ||
+				formulaType === "pla_mass_outbreak" ||
+				formulaType === "pla_massive_outbreak") && (
+				<>
+					{/* Outbreak is fixed by the chosen method (formula_type); only the
+					    player's dex-research progress is a per-hunt variable here. */}
+					<div className="t-label" style={{ marginBottom: 6 }}>
+						Research
+					</div>
+					<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+						<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+							<input
+								type="checkbox"
+								checked={huntParams.research_level >= 10}
+								onChange={(e) =>
+									setHuntParams({ ...huntParams, research_level: e.target.checked ? 10 : 0 })
+								}
+							/>{" "}
+							Research Lv.10
+						</label>
+						<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+							<input
+								type="checkbox"
+								checked={huntParams.dex_perfect === true}
+								onChange={(e) =>
+									setHuntParams({ ...huntParams, dex_perfect: e.target.checked })
+								}
+							/>{" "}
+							Perfect research
+						</label>
+					</div>
+				</>
+			)}
+			{formulaType === "ultra_wormhole" && (
+				<div style={{ display: "flex", gap: 16 }}>
+					<div>
+						<div className="t-label" style={{ marginBottom: 6 }}>
+							Ring Type (rarity)
+						</div>
+						<select
+							className="input"
+							style={{ padding: "4px 8px" }}
+							value={huntParams.wormhole_ring_type || 4}
+							onChange={(e) =>
+								setHuntParams({ ...huntParams, wormhole_ring_type: parseInt(e.target.value, 10) || 4 })
+							}
+						>
+							<option value={1}>1 ring</option>
+							<option value={2}>2 rings</option>
+							<option value={3}>3 rings</option>
+							<option value={4}>4 rings</option>
+						</select>
+					</div>
+					<div>
+						<div className="t-label" style={{ marginBottom: 6 }}>
+							Distance (light-years)
+						</div>
+						<input
+							type="number"
+							min={0}
+							max={9999}
+							className="input"
+							style={{ width: 90, padding: "4px 8px" }}
+							value={huntParams.wormhole_distance_ly || 0}
+							onChange={(e) =>
+								setHuntParams({ ...huntParams, wormhole_distance_ly: parseInt(e.target.value, 10) || 0 })
+							}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

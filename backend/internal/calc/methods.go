@@ -20,12 +20,40 @@ func paramInt(params map[string]any, key string, fallback int) int {
 	return fallback
 }
 
-// EffectiveOdds returns the integer "1 / N" denominator for a method. It mostly
-// mirrors calculateOdds() in frontend/src/utils/odds.ts, with two known
-// divergences: outbreak_defeats_sv also adds a sparkling_power term (TS doesn't
-// yet — tracked follow-up), and catch_combo_lgpe/chain_fishing_gen6 read their
-// count from the "count" param instead of the live encounter arg. Unknown
-// formulas behave as "static".
+// paramBool reads a boolean param, tolerating bool. Missing/!bool -> false.
+func paramBool(params map[string]any, key string) bool {
+	v, ok := params[key]
+	if !ok {
+		return false
+	}
+	b, ok := v.(bool)
+	return ok && b
+}
+
+// plaResearchRolls returns base rolls plus Legends:Arceus dex-research bonuses.
+// Research Lv10 (+1) and Perfect (+2) STACK (matches RotomLabs' published 1/128
+// for Mass Outbreak + perfect + charm = 32 rolls). The OUTBREAK bonus is NOT here:
+// it is encoded by the formula_type (pla_mass_outbreak = +25, pla_massive_outbreak
+// = +12), because the outbreak is a property of where you hunt, not a per-hunt
+// parameter. MMO is intentionally worse per-encounter than MO — MMO's advantage is
+// spawn volume, which lives in avg_time_seconds. PLA charm is +3 (base.CharmRolls).
+func plaResearchRolls(params map[string]any, baseRolls int) int {
+	rolls := baseRolls
+	if paramInt(params, "research_level", 0) >= 10 {
+		rolls++
+	}
+	if paramBool(params, "dex_perfect") {
+		rolls += 2
+	}
+	return rolls
+}
+
+// EffectiveOdds returns the integer "1 / N" denominator for a method. It mirrors
+// calculateOdds() in frontend/src/utils/odds.ts. Known intentional divergence:
+// catch_combo_lgpe/chain_fishing_gen6 read their count from the "count" param in
+// Go (route ranking supplies it via DefaultParams) but from the live encounter
+// counter in TS. Both engines now add the SV sparkling term. ultra_wormhole and
+// pla_research are also mirrored in both. Unknown formulas behave as "static".
 func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, hasCharm bool) int {
 	if params == nil {
 		params = map[string]any{}
@@ -76,7 +104,7 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		case defeats >= 30:
 			extra = 1
 		}
-		// New term (not yet in TS): sandwich Sparkling Power stacks additively.
+		// Sandwich Sparkling Power stacks additively (mirrored in TS calculateOdds).
 		extra += sparklingRolls(paramInt(params, "sparkling_power", 0))
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
@@ -144,6 +172,35 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		chain := max(0, min(paramInt(params, "count", 0), 20))
 		return floorDiv(base.BaseRolls + chain*2 + charmRolls)
 
+	case "ultra_wormhole":
+		// USUM Ultra Warp Ride (non-legendary). Shiny percent scales with distance
+		// (capped at 5000 ly, k<=9) and ring rarity; Shiny Charm has NO effect.
+		// Legendary wormhole encounters are soft-resets and use "static", not this.
+		ring := paramInt(params, "wormhole_ring_type", 4)
+		k := max(0, min(paramInt(params, "wormhole_distance_ly", 0)/500-1, 9))
+		percent := 1
+		switch ring {
+		case 2:
+			percent = min(10, 1+1*k)
+		case 3:
+			percent = min(19, 1+2*k)
+		case 4:
+			percent = min(36, 1+4*k)
+		default: // ring 1 (or unknown): flat 1%
+			percent = 1
+		}
+		if percent < 1 {
+			percent = 1
+		}
+		return int(math.Round(100.0 / float64(percent)))
+
+	case "pla_research":
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + charmRolls)
+	case "pla_mass_outbreak":
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + 25 + charmRolls)
+	case "pla_massive_outbreak":
+		return floorDiv(plaResearchRolls(params, base.BaseRolls) + 12 + charmRolls)
+
 	default: // "static" and any unknown formula
 		return floorDiv(base.BaseRolls + charmRolls)
 	}
@@ -176,6 +233,12 @@ func DefaultParams(formulaType string) map[string]any {
 		return map[string]any{"count": 31}
 	case "chain_fishing_gen6":
 		return map[string]any{"count": 20}
+	case "pla_research", "pla_mass_outbreak", "pla_massive_outbreak":
+		// Best realistic case: Perfect research. The outbreak bonus (if any) is
+		// implied by the formula_type, so it is not a param here.
+		return map[string]any{"research_level": 10, "dex_perfect": true}
+	case "ultra_wormhole":
+		return map[string]any{"wormhole_ring_type": 4, "wormhole_distance_ly": 5000}
 	default: // static, dynamax_adventures_gen8 (no params)
 		return map[string]any{}
 	}
