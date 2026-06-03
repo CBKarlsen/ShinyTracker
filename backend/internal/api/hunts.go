@@ -3,7 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -56,7 +56,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		 WHERE h.user_id = $1
 		 ORDER BY h.created_at DESC`, userID)
 	if err != nil {
-		fmt.Println("GetHunts error:", err)
+		log.Printf("GetHunts error: %v", err)
 		http.Error(w, "Failed to fetch hunts", http.StatusInternalServerError)
 		return
 	}
@@ -165,7 +165,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
-		fmt.Println("CreateHunt error:", err)
+		log.Printf("CreateHunt error: %v", err)
 		http.Error(w, "Failed to create hunt", http.StatusInternalServerError)
 		return
 	}
@@ -329,7 +329,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
 		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
 	); err != nil {
-		fmt.Println("LogPhase load err:", err)
+		log.Printf("LogPhase load err: %v", err)
 		http.Error(w, "Failed to load updated hunt", http.StatusInternalServerError)
 		return
 	}

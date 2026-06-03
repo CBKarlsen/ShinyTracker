@@ -10,6 +10,9 @@
 # Claude Code local state
 .claude/scheduled_tasks.lock
 
+# JetBrains IDE config (machine-specific; never commit)
+.idea/
+
 .superpowers/
 
 # Playwright MCP QA artifacts (screenshots, snapshots, console logs)
