@@ -23,3 +23,8 @@
 
 # Root QA/test harness deps (Playwright) — never commit
 node_modules/
+
+# Generated Playwright HTML report — build artifact; can embed auth tokens/headers
+e2e/report/
+e2e/test-results/
+e2e/playwright-report/

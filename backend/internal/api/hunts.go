@@ -188,6 +188,19 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate client-supplied fields before they reach the UPDATE. status drives
+	// the hunt lifecycle (and the active|completed filters across the app), so an
+	// arbitrary value would corrupt state; a negative encounter_count would break
+	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
+	if req.Status != "active" && req.Status != "completed" {
+		http.Error(w, "status must be 'active' or 'completed'", http.StatusBadRequest)
+		return
+	}
+	if req.EncounterCount < 0 {
+		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
+		return
+	}
+
 	var prevUpdatedAt time.Time
 	var currentTotalTime int
 	var huntParameters json.RawMessage
@@ -271,10 +284,13 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reset encounter count, increment phase count.
+	// Reset encounter count, increment phase count. Re-assert user_id inside the
+	// transaction (not just the pre-tx ownership SELECT) so the write can never
+	// touch a row the caller doesn't own — the API layer is the only isolation
+	// (the backend connects with a BYPASSRLS role).
 	if _, err := tx.Exec(context.Background(),
-		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-		huntID); err != nil {
+		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2`,
+		huntID, userID); err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)
 		return
 	}
