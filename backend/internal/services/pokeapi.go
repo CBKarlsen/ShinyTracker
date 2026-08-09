@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,6 +50,12 @@ type PokeAPIEncounter struct {
 			Method struct {
 				Name string `json:"name"`
 			} `json:"method"`
+			MinLevel        int `json:"min_level"`
+			MaxLevel        int `json:"max_level"`
+			Chance          int `json:"chance"`
+			ConditionValues []struct {
+				Name string `json:"name"`
+			} `json:"condition_values"`
 		} `json:"encounter_details"`
 	} `json:"version_details"`
 }
@@ -421,7 +428,7 @@ func SeedGames() error {
 
 	for _, g := range games {
 		_, err := database.DB.Exec(context.Background(),
-			`INSERT INTO games (title, generation, base_odds) 
+			`INSERT INTO games (title, generation, base_odds)
 			 SELECT $1, $2, $3
 			 WHERE NOT EXISTS (SELECT 1 FROM games WHERE title = $1)`,
 			g.Title, g.Generation, g.BaseOdds)
@@ -431,4 +438,91 @@ func SeedGames() error {
 	}
 	log.Println("Games seeded!")
 	return nil
+}
+
+// LocationRow is one parsed encounter slot, ready for insertion into
+// pokemon_locations.
+type LocationRow struct {
+	PokemonID     int
+	GameID        int
+	Version       string
+	Area          string
+	Terrain       string
+	PokeAPIMethod string
+	MinLevel      int
+	MaxLevel      int
+	Chance        int
+	Conditions    []string
+}
+
+// ParseLocations flattens a PokeAPI /encounters payload into location rows.
+//
+// Versions absent from versionMap are skipped, which is how Gen 1 (no shinies,
+// no game row) and Gen 8/9 (no PokeAPI encounter data) fall out without a
+// special case. Game titles absent from gameIDs are skipped rather than
+// defaulted, so a missing game row can never produce game_id 0.
+//
+// PokeAPI repeats an encounter slot once per condition combination, so
+// identical rows are deduped on the full natural key.
+func ParseLocations(pokemonID int, encounters []PokeAPIEncounter, gameIDs map[string]int) []LocationRow {
+	type key struct {
+		gameID         int
+		version        string
+		area           string
+		method         string
+		minLvl, maxLvl int
+		chance         int
+		conditions     string
+	}
+	seen := make(map[key]bool)
+	var rows []LocationRow
+
+	for _, enc := range encounters {
+		for _, vd := range enc.VersionDetails {
+			gameTitle, ok := versionMap[vd.Version.Name]
+			if !ok {
+				continue
+			}
+			gameID, ok := gameIDs[gameTitle]
+			if !ok {
+				continue
+			}
+			for _, ed := range vd.EncounterDetails {
+				conds := make([]string, 0, len(ed.ConditionValues))
+				for _, cv := range ed.ConditionValues {
+					conds = append(conds, cv.Name)
+				}
+				sort.Strings(conds)
+
+				k := key{
+					gameID:     gameID,
+					version:    vd.Version.Name,
+					area:       enc.LocationArea.Name,
+					method:     ed.Method.Name,
+					minLvl:     ed.MinLevel,
+					maxLvl:     ed.MaxLevel,
+					chance:     ed.Chance,
+					conditions: strings.Join(conds, ","),
+				}
+				if seen[k] {
+					continue
+				}
+				seen[k] = true
+
+				rows = append(rows, LocationRow{
+					PokemonID:     pokemonID,
+					GameID:        gameID,
+					Version:       vd.Version.Name,
+					Area:          enc.LocationArea.Name,
+					Terrain:       terrainForMethod(ed.Method.Name),
+					PokeAPIMethod: ed.Method.Name,
+					MinLevel:      ed.MinLevel,
+					MaxLevel:      ed.MaxLevel,
+					Chance:        ed.Chance,
+					Conditions:    conds,
+				})
+			}
+		}
+	}
+	return rows
 }
