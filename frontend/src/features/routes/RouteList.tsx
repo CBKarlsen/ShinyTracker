@@ -117,12 +117,15 @@ const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
 	if (!locations || locations.length === 0) return null;
 	return (
 		<div className="dex-route-locs">
-			{locations.map((l) => {
+			{locations.map((l, idx) => {
 				const parts = [formatLevels(l), l.chance ? `${l.chance}%` : ""]
 					.concat(l.conditions.map(formatCondition))
 					.filter(Boolean);
 				return (
-					<div className="dex-route-loc" key={`${l.version}-${l.area}-${l.min_level}-${l.chance}`}>
+					<div
+						className="dex-route-loc"
+						key={`${l.version}-${l.area}-${l.terrain}-${l.min_level}-${l.max_level}-${l.chance}-${idx}`}
+					>
 						<span className="dex-route-loc-area">{formatArea(l.area)}</span>
 						{parts.length > 0 && (
 							<span className="dex-route-loc-meta"> · {parts.join(" · ")}</span>
