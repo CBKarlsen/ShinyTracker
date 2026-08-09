@@ -1486,6 +1486,27 @@ ul {
 	color: var(--gold);
 	margin-top: 1px;
 }
+.dex-route-locs {
+	margin-top: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.dex-route-loc {
+	font-size: 11px;
+	line-height: 1.4;
+	color: var(--ink-3);
+}
+
+.dex-route-loc-area {
+	color: var(--ink-2);
+}
+
+.dex-route-loc-meta {
+	opacity: 0.75;
+}
+
 .dex-route-start {
 	background: transparent;
 	border: none;

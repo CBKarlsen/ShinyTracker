@@ -1,11 +1,33 @@
 import type React from "react";
-import type { PokemonRoute } from "../../types/models";
+import type { PokemonRoute, RouteLocation } from "../../types/models";
 
 // Stable identity for a route, used for selection highlighting.
 // Assumes (kind, game_id, method_id) is unique per route — method_id is unique
 // per game, so do not weaken this to method_name.
 export function routeKey(r: PokemonRoute): string {
 	return `${r.kind}-${r.game_id}-${r.method_id}`;
+}
+
+// PokeAPI area slugs are kebab-case and often carry a trailing "-area":
+// "route-210-area" -> "Route 210". Deliberately not a curated name table.
+function formatArea(slug: string): string {
+	return slug
+		.replace(/-area$/, "")
+		.split("-")
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.join(" ");
+}
+
+// "time-night" -> "Night", "season-spring" -> "Spring".
+function formatCondition(c: string): string {
+	const last = c.split("-").pop() ?? c;
+	return last.charAt(0).toUpperCase() + last.slice(1);
+}
+
+function formatLevels(l: RouteLocation): string {
+	if (!l.min_level && !l.max_level) return "";
+	if (l.min_level === l.max_level) return `Lv ${l.min_level}`;
+	return `Lv ${l.min_level}-${l.max_level}`;
 }
 
 interface Props {
@@ -90,6 +112,28 @@ const RouteList: React.FC<Props> = ({ routes, selectedKey, onRouteClick, variant
 	);
 };
 
+const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
+	const locations = route.locations;
+	if (!locations || locations.length === 0) return null;
+	return (
+		<div className="dex-route-locs">
+			{locations.map((l) => {
+				const parts = [formatLevels(l), l.chance ? `${l.chance}%` : ""]
+					.concat(l.conditions.map(formatCondition))
+					.filter(Boolean);
+				return (
+					<div className="dex-route-loc" key={`${l.version}-${l.area}-${l.min_level}-${l.chance}`}>
+						<span className="dex-route-loc-area">{formatArea(l.area)}</span>
+						{parts.length > 0 && (
+							<span className="dex-route-loc-meta"> · {parts.join(" · ")}</span>
+						)}
+					</div>
+				);
+			})}
+		</div>
+	);
+};
+
 const Row: React.FC<{
 	route: PokemonRoute;
 	showGame: boolean;
@@ -111,6 +155,7 @@ const Row: React.FC<{
 					</div>
 				)}
 				{r.evolve_from && <div className="dex-route-evo">↳ then evolve</div>}
+				<Locations route={r} />
 			</div>
 			<div style={{ textAlign: "right" }}>
 				<div className="dex-route-odds">1 / {r.odds.toLocaleString()}</div>

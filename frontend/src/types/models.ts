@@ -72,6 +72,16 @@ export interface DexStatus {
 	locked_everywhere: number[];
 }
 
+export interface RouteLocation {
+	area: string;
+	version: string;
+	terrain: string;
+	min_level: number;
+	max_level: number;
+	chance: number;
+	conditions: string[];
+}
+
 export interface PokemonRoute {
 	kind: "direct" | "evolve";
 	game_id: number;
@@ -83,6 +93,8 @@ export interface PokemonRoute {
 	eta_hours: number;
 	evolve_from?: { pokemon_id: number; name: string };
 	has_shiny_charm?: boolean;
+	requires_kind?: string;
+	locations?: RouteLocation[];
 }
 
 export interface PokemonRouteResponse {
