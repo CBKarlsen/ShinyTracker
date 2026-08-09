@@ -110,6 +110,26 @@ func terrainForMethod(method string) string {
 	return "other"
 }
 
+// nonWildMethods lists PokeAPI encounter methods that are not "stand here and
+// find one": ParseLocations excludes them so they never surface as a place to
+// hunt. Left unfiltered, generic wild routes (requires_terrain IS NULL) accept
+// terrain "other", and 100%-chance non-wild rows like a Game Corner prize
+// outrank real wild spots under chance-descending sort.
+var nonWildMethods = map[string]bool{
+	"gift":     true, // handed over the counter (Game Corner prizes, etc.), not encountered
+	"gift-egg": true, // starter/gift eggs -- not a wild encounter, has no location in the hunting sense
+	"static":   true, // scripted stationary encounter (legendaries, gift Pokemon)
+	"wanderer": true, // roaming legendary; "location" is the whole region, not one area
+	"max-raid": true, // Dynamax Adventures / Max Raid Den, a queue not a place to walk
+	"only-one": true, // one-time scripted encounter, not repeatable wild hunting
+}
+
+// isColosseumMethod reports whether method is one of the Colosseum/XD
+// "colosseum-..." family, which are all scripted battles, not wild encounters.
+func isColosseumMethod(method string) bool {
+	return strings.HasPrefix(method, "colosseum-")
+}
+
 var gameIDCache map[string]int
 var gameIDMutex sync.Mutex
 
@@ -488,6 +508,9 @@ func ParseLocations(pokemonID int, encounters []PokeAPIEncounter, gameIDs map[st
 				continue
 			}
 			for _, ed := range vd.EncounterDetails {
+				if nonWildMethods[ed.Method.Name] || isColosseumMethod(ed.Method.Name) {
+					continue
+				}
 				conds := make([]string, 0, len(ed.ConditionValues))
 				for _, cv := range ed.ConditionValues {
 					conds = append(conds, cv.Name)

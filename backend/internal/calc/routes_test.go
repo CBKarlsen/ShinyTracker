@@ -121,7 +121,10 @@ func TestMatchLocationsTerrainRule(t *testing.T) {
 	locs := []Location{
 		{GameID: 4, Area: "route-210-area", Terrain: "grass", Chance: 15},
 		{GameID: 4, Area: "lake-verity-area", Terrain: "surf", Chance: 60},
-		{GameID: 4, Area: "friend-safari", Terrain: "friend_safari", Chance: 50},
+		// Real Friend Safari rows carry terrain "grass" (their PokeAPI method is
+		// "walk", same as every other patch of grass) -- only the area slug
+		// marks them as Friend Safari. See TestMatchLocationsFriendSafariKeysOffAreaSlug.
+		{GameID: 4, Area: "friend-safari-electric", Terrain: "grass", Chance: 50},
 		{GameID: 9, Area: "other-game-area", Terrain: "grass", Chance: 99},
 	}
 
@@ -132,12 +135,12 @@ func TestMatchLocationsTerrainRule(t *testing.T) {
 		t.Fatalf("grass-restricted route: got %+v", got)
 	}
 
-	// A generic method (no terrain requirement) takes every terrain EXCEPT
-	// friend_safari, mirroring computeAvailability in cmd/seed/main.go.
+	// A generic method (no terrain requirement) takes every terrain but
+	// excludes friend-safari-prefixed areas, which are a dedicated pool.
 	generic := Route{GameID: 4, RequiresKind: "wild", RequiresTerrain: ""}
 	got = MatchLocations(generic, locs, 5)
 	if len(got) != 2 {
-		t.Fatalf("generic route: want 2 (grass+surf, not friend_safari), got %+v", got)
+		t.Fatalf("generic route: want 2 (grass+surf, not friend safari), got %+v", got)
 	}
 	// Ordered by chance descending.
 	if got[0].Area != "lake-verity-area" {
@@ -159,6 +162,45 @@ func TestMatchLocationsNonWildKindsHaveNone(t *testing.T) {
 	got := MatchLocations(Route{GameID: 4, RequiresKind: "egg"}, locs, 5)
 	if got == nil {
 		t.Error("MatchLocations returned nil; must be an empty slice so JSON is [] not null")
+	}
+}
+
+func TestMatchLocationsCollapsesVersionDuplicates(t *testing.T) {
+	locs := []Location{
+		// Same place, three versions of the same game group -> one representative.
+		{GameID: 4, Area: "canalave-city-area", Version: "diamond", Terrain: "surf", MinLevel: 4, MaxLevel: 6, Chance: 60},
+		{GameID: 4, Area: "canalave-city-area", Version: "pearl", Terrain: "surf", MinLevel: 4, MaxLevel: 6, Chance: 60},
+		{GameID: 4, Area: "canalave-city-area", Version: "platinum", Terrain: "surf", MinLevel: 4, MaxLevel: 6, Chance: 60},
+		// Same area, but a different terrain -> must NOT collapse into the above.
+		{GameID: 4, Area: "canalave-city-area", Version: "platinum", Terrain: "fishing", MinLevel: 4, MaxLevel: 6, Chance: 60},
+		// Same area+terrain, but a different min_level -> must NOT collapse either.
+		{GameID: 4, Area: "canalave-city-area", Version: "diamond", Terrain: "surf", MinLevel: 10, MaxLevel: 12, Chance: 60},
+	}
+	r := Route{GameID: 4, RequiresKind: "wild"}
+	got := MatchLocations(r, locs, 5)
+	if len(got) != 3 {
+		t.Fatalf("want 3 collapsed rows (dup-version group + terrain-diff + level-diff), got %d: %+v", len(got), got)
+	}
+}
+
+func TestMatchLocationsFriendSafariKeysOffAreaSlug(t *testing.T) {
+	// terrainForMethod never produces "friend_safari" -- these rows carry the
+	// terrain that "walk" actually buckets to (grass), same as real data.
+	locs := []Location{
+		{GameID: 6, Area: "friend-safari-electric", Terrain: "grass", Chance: 33},
+		{GameID: 6, Area: "route-1-area", Terrain: "grass", Chance: 10},
+	}
+
+	generic := Route{GameID: 6, RequiresKind: "wild", RequiresTerrain: ""}
+	got := MatchLocations(generic, locs, 5)
+	if len(got) != 1 || got[0].Area != "route-1-area" {
+		t.Fatalf("generic route must exclude friend-safari-prefixed areas, got %+v", got)
+	}
+
+	friendSafari := Route{GameID: 6, RequiresKind: "wild", RequiresTerrain: "friend_safari"}
+	got = MatchLocations(friendSafari, locs, 5)
+	if len(got) != 1 || got[0].Area != "friend-safari-electric" {
+		t.Fatalf("friend_safari route must match only friend-safari-prefixed areas, got %+v", got)
 	}
 }
 

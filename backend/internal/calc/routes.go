@@ -1,6 +1,9 @@
 package calc
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // MethodCandidate is one huntable method for a Pokemon in a specific game,
 // before odds are computed.
@@ -142,10 +145,14 @@ type Location struct {
 // MatchLocations selects the locations that apply to one route, capped at max
 // and ordered by encounter chance descending (then area, for stability).
 //
-// The terrain rule is copied verbatim from computeAvailability in
-// cmd/seed/main.go: an explicit requires_terrain matches that terrain exactly,
-// while a generic method (no requirement) matches every terrain EXCEPT
-// friend_safari, which is a dedicated pool rather than a real terrain.
+// Friend Safari cannot be identified by terrain here: pokemon_locations.terrain
+// comes solely from terrainForMethod, whose vocabulary is grass/fishing/surf/
+// other (Friend Safari's PokeAPI method is "walk", so it lands in "grass" like
+// every other patch of tall grass). The 'friend_safari' terrain value that
+// computeAvailability uses lives on a different table (pokemon_game_encounter),
+// written by a separate seeder. So here we key off the one thing PokeAPI's
+// payload actually carries for it: the area slug always starts with
+// "friend-safari-<type>".
 //
 // Non-wild methods (egg/static/raid) have no location: Masuda breeding and
 // soft-resetting do not happen at a place on the map.
@@ -153,18 +160,46 @@ func MatchLocations(r Route, locs []Location, max int) []Location {
 	if r.RequiresKind != "wild" {
 		return []Location{}
 	}
+
+	// Group key for collapsing version duplicates: versionMap folds 2-3
+	// PokeAPI versions onto one games row, and pokemon_locations stores one
+	// row per version, so the same real place shows up once per version.
+	// Collapse those before the cap, or the cap gets consumed by duplicates
+	// of the same handful of places instead of showing distinct locations.
+	type groupKey struct {
+		area                       string
+		terrain                    string
+		minLevel, maxLevel, chance int
+		conditions                 string // joined; ParseLocations already sorts them
+	}
+	seen := make(map[groupKey]bool, len(locs))
 	out := make([]Location, 0, len(locs))
 	for _, l := range locs {
 		if l.GameID != r.GameID {
 			continue
 		}
-		if r.RequiresTerrain != "" {
-			if l.Terrain != r.RequiresTerrain {
+		isFriendSafari := strings.HasPrefix(l.Area, "friend-safari")
+		if r.RequiresTerrain == "friend_safari" {
+			if !isFriendSafari {
 				continue
 			}
-		} else if l.Terrain == "friend_safari" {
+		} else {
+			if isFriendSafari {
+				continue
+			}
+			if r.RequiresTerrain != "" && l.Terrain != r.RequiresTerrain {
+				continue
+			}
+		}
+		k := groupKey{
+			area: l.Area, terrain: l.Terrain,
+			minLevel: l.MinLevel, maxLevel: l.MaxLevel, chance: l.Chance,
+			conditions: strings.Join(l.Conditions, ","),
+		}
+		if seen[k] {
 			continue
 		}
+		seen[k] = true
 		out = append(out, l)
 	}
 	sort.SliceStable(out, func(i, j int) bool {

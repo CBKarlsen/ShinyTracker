@@ -120,16 +120,19 @@ func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([
 	return cands, rows.Err()
 }
 
-// fetchLocations returns every stored location for one Pokemon, across all
-// games. Callers filter to a route's game and terrain via calc.MatchLocations.
-func fetchLocations(ctx context.Context, pokemonID int) ([]calc.Location, error) {
+// fetchLocations returns every stored location for one Pokemon, restricted to
+// the given games. Opening the dex drawer on a species with thousands of
+// location rows (Magikarp: ~3,900) must not transfer every game's rows to
+// filter down to at most 5 per route -- callers already have the owned-game
+// set loaded, so the query does the filtering instead of Go.
+func fetchLocations(ctx context.Context, pokemonID int, gameIDs []int) ([]calc.Location, error) {
 	rows, err := database.DB.Query(ctx, `
 		SELECT game_id, area, version, terrain,
 		       COALESCE(min_level, 0), COALESCE(max_level, 0), COALESCE(chance, 0),
 		       COALESCE(conditions, '{}')
 		FROM pokemon_locations
-		WHERE pokemon_id = $1
-	`, pokemonID)
+		WHERE pokemon_id = $1 AND game_id = ANY($2)
+	`, pokemonID, gameIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +236,7 @@ func PokemonRouteHandler(w http.ResponseWriter, r *http.Request) {
 			locs, ok := locCache[srcID]
 			if !ok {
 				var err error
-				locs, err = fetchLocations(ctx, srcID)
+				locs, err = fetchLocations(ctx, srcID, ownedGames)
 				if err != nil {
 					log.Printf("warn: locations for #%d: %v", srcID, err)
 					locs = nil
@@ -306,7 +309,8 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(ctx, `
 		SELECT ma.pokemon_id, p.name, p.sprite_url,
 		       hm.id, g.id, g.title, hm.method_name, g.base_odds,
-		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm, hm.formula_type
+		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm, hm.formula_type,
+		       hm.requires_kind
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
 		JOIN games g         ON g.id = ma.game_id
@@ -338,7 +342,8 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 		var c calc.MethodCandidate
 		if err := rows.Scan(&pid, &name, &sprite,
 			&c.MethodID, &c.GameID, &c.GameTitle, &c.MethodName, &c.BaseOdds,
-			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType); err != nil {
+			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType,
+			&c.RequiresKind); err != nil {
 			http.Error(w, "Failed to read suggestions", http.StatusInternalServerError)
 			return
 		}

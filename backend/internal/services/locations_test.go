@@ -41,6 +41,30 @@ const samplePayload = `[
         ]
       }
     ]
+  },
+  {
+    "location_area": {"name": "celadon-city-prize-corner"},
+    "version_details": [
+      {
+        "version": {"name": "platinum"},
+        "encounter_details": [
+          {"method": {"name": "gift"}, "min_level": 0, "max_level": 0,
+           "chance": 100, "condition_values": []}
+        ]
+      }
+    ]
+  },
+  {
+    "location_area": {"name": "meetup-spot-area"},
+    "version_details": [
+      {
+        "version": {"name": "platinum"},
+        "encounter_details": [
+          {"method": {"name": "max-raid"}, "min_level": 0, "max_level": 0,
+           "chance": 100, "condition_values": []}
+        ]
+      }
+    ]
   }
 ]`
 
@@ -58,9 +82,15 @@ func TestParseLocations(t *testing.T) {
 	rows := ParseLocations(129, encounters, gameIDs)
 
 	// The duplicate walk slot is deduped; the Gen-1 'red' row is skipped
-	// because versionMap has no entry for it.
+	// because versionMap has no entry for it; the gift and max-raid rows are
+	// denylisted non-wild methods and must never reach the table.
 	if len(rows) != 2 {
 		t.Fatalf("want 2 rows, got %d: %+v", len(rows), rows)
+	}
+	for _, r := range rows {
+		if r.Area == "celadon-city-prize-corner" || r.Area == "meetup-spot-area" {
+			t.Errorf("denylisted method leaked through as a location row: %+v", r)
+		}
 	}
 
 	byArea := map[string]LocationRow{}
