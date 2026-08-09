@@ -241,9 +241,6 @@ func PokemonRouteHandler(w http.ResponseWriter, r *http.Request) {
 				locCache[srcID] = locs
 			}
 			routes[i].Locations = calc.MatchLocations(routes[i], locs, 5)
-			if routes[i].Locations == nil {
-				routes[i].Locations = []calc.Location{}
-			}
 		}
 
 		resp.Routes = routes

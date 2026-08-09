@@ -153,6 +153,13 @@ func TestMatchLocationsNonWildKindsHaveNone(t *testing.T) {
 			t.Errorf("kind %q: want no locations, got %+v", kind, got)
 		}
 	}
+
+	// Non-nil guarantee: Route.Locations must serialize as [] and never null,
+	// including on endpoints that build Routes without attaching locations.
+	got := MatchLocations(Route{GameID: 4, RequiresKind: "egg"}, locs, 5)
+	if got == nil {
+		t.Error("MatchLocations returned nil; must be an empty slice so JSON is [] not null")
+	}
 }
 
 func TestMatchLocationsCaps(t *testing.T) {

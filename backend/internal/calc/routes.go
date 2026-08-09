@@ -68,6 +68,7 @@ func computeRoute(c MethodCandidate) Route {
 		HasShinyCharm:   c.HasShinyCharm,
 		RequiresKind:    c.RequiresKind,
 		RequiresTerrain: c.RequiresTerrain,
+		Locations:       []Location{},
 	}
 }
 
@@ -150,7 +151,7 @@ type Location struct {
 // soft-resetting do not happen at a place on the map.
 func MatchLocations(r Route, locs []Location, max int) []Location {
 	if r.RequiresKind != "wild" {
-		return nil
+		return []Location{}
 	}
 	out := make([]Location, 0, len(locs))
 	for _, l := range locs {
