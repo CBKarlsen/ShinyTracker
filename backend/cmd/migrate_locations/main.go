@@ -36,6 +36,7 @@ func main() {
 			ON pokemon_locations (pokemon_id, game_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_pokemon_locations_game_area
 			ON pokemon_locations (game_id, area)`,
+		`ALTER TABLE pokemon_locations ENABLE ROW LEVEL SECURITY`,
 	}
 	for _, s := range stmts {
 		if _, err := database.DB.Exec(ctx, s); err != nil {
