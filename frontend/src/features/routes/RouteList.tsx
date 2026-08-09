@@ -114,27 +114,36 @@ const RouteList: React.FC<Props> = ({ routes, selectedKey, onRouteClick, variant
 
 const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
 	const locations = route.locations;
-	if (!locations || locations.length === 0) return null;
-	return (
-		<div className="dex-route-locs">
-			{locations.map((l, idx) => {
-				const parts = [formatLevels(l), l.chance ? `${l.chance}%` : ""]
-					.concat(l.conditions.map(formatCondition))
-					.filter(Boolean);
-				return (
-					<div
-						className="dex-route-loc"
-						key={`${l.version}-${l.area}-${l.terrain}-${l.min_level}-${l.max_level}-${l.chance}-${idx}`}
-					>
-						<span className="dex-route-loc-area">{formatArea(l.area)}</span>
-						{parts.length > 0 && (
-							<span className="dex-route-loc-meta"> · {parts.join(" · ")}</span>
-						)}
-					</div>
-				);
-			})}
-		</div>
-	);
+	if (locations && locations.length > 0) {
+		return (
+			<div className="dex-route-locs">
+				{locations.map((l, idx) => {
+					const parts = [formatLevels(l), l.chance ? `${l.chance}%` : ""]
+						.concat(l.conditions.map(formatCondition))
+						.filter(Boolean);
+					return (
+						<div
+							className="dex-route-loc"
+							key={`${l.version}-${l.area}-${l.terrain}-${l.min_level}-${l.max_level}-${l.chance}-${idx}`}
+						>
+							<span className="dex-route-loc-area">{formatArea(l.area)}</span>
+							{parts.length > 0 && (
+								<span className="dex-route-loc-meta"> · {parts.join(" · ")}</span>
+							)}
+						</div>
+					);
+				})}
+			</div>
+		);
+	}
+	// Breeding, soft-resets and raids have no map location by nature -- say
+	// nothing. Anything else with no rows is a genuine data gap (Gen 8/9, BDSP,
+	// LGPE, LA) and must say so, rather than read as "nowhere to find it".
+	//
+	// requires_kind comes from the backend so this check cannot drift from the
+	// method data; do not re-derive it from method_name.
+	if (route.requires_kind && route.requires_kind !== "wild") return null;
+	return <div className="dex-route-loc dex-route-loc-empty">No location data for this game yet</div>;
 };
 
 const Row: React.FC<{

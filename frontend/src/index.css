@@ -2925,3 +2925,7 @@ ul {
 	text-align: left;
 	color: var(--ink-3);
 }
+.dex-route-loc-empty {
+	font-style: italic;
+	opacity: 0.55;
+}
