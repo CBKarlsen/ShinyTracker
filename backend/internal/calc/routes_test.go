@@ -116,3 +116,52 @@ func TestRankUsesEffectiveOddsForModernMethods(t *testing.T) {
 		t.Fatalf("outbreak odds = %d, want 512 (default best params + charm)", routes[0].Odds)
 	}
 }
+
+func TestMatchLocationsTerrainRule(t *testing.T) {
+	locs := []Location{
+		{GameID: 4, Area: "route-210-area", Terrain: "grass", Chance: 15},
+		{GameID: 4, Area: "lake-verity-area", Terrain: "surf", Chance: 60},
+		{GameID: 4, Area: "friend-safari", Terrain: "friend_safari", Chance: 50},
+		{GameID: 9, Area: "other-game-area", Terrain: "grass", Chance: 99},
+	}
+
+	// A terrain-restricted method takes only its own terrain, in its own game.
+	radar := Route{GameID: 4, RequiresKind: "wild", RequiresTerrain: "grass"}
+	got := MatchLocations(radar, locs, 5)
+	if len(got) != 1 || got[0].Area != "route-210-area" {
+		t.Fatalf("grass-restricted route: got %+v", got)
+	}
+
+	// A generic method (no terrain requirement) takes every terrain EXCEPT
+	// friend_safari, mirroring computeAvailability in cmd/seed/main.go.
+	generic := Route{GameID: 4, RequiresKind: "wild", RequiresTerrain: ""}
+	got = MatchLocations(generic, locs, 5)
+	if len(got) != 2 {
+		t.Fatalf("generic route: want 2 (grass+surf, not friend_safari), got %+v", got)
+	}
+	// Ordered by chance descending.
+	if got[0].Area != "lake-verity-area" {
+		t.Errorf("want highest chance first, got %q", got[0].Area)
+	}
+}
+
+func TestMatchLocationsNonWildKindsHaveNone(t *testing.T) {
+	locs := []Location{{GameID: 4, Area: "route-210-area", Terrain: "grass", Chance: 15}}
+	for _, kind := range []string{"egg", "static", "raid"} {
+		r := Route{GameID: 4, RequiresKind: kind}
+		if got := MatchLocations(r, locs, 5); len(got) != 0 {
+			t.Errorf("kind %q: want no locations, got %+v", kind, got)
+		}
+	}
+}
+
+func TestMatchLocationsCaps(t *testing.T) {
+	var locs []Location
+	for i := 0; i < 20; i++ {
+		locs = append(locs, Location{GameID: 4, Area: "a", Terrain: "grass", Chance: i})
+	}
+	r := Route{GameID: 4, RequiresKind: "wild"}
+	if got := MatchLocations(r, locs, 5); len(got) != 5 {
+		t.Fatalf("want cap of 5, got %d", len(got))
+	}
+}
