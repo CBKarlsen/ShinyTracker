@@ -55,10 +55,26 @@ table, and a seed command over a crawl that already runs.
   denominators `DexStatusHandler` computes over — offering a shiny-hunting UI a
   game without shinies. Gen 1 gets its own later slice together with a
   `games.supports_shinies` flag.
-- **Gen 8/9, BDSP, LGPE, LA render an honest empty state.** PokeAPI has no
-  encounter data for them. They show "No location data for this game yet", not an
-  empty list and not a silent omission. Curated data for those games is a later
-  slice; the precedent exists in `seeds/overworld_species.json`.
+- **Gen 8/9, BDSP, LGPE, LA render an honest empty state**, and are excluded from
+  seeding by an explicit `generation BETWEEN 2 AND 7` filter.
+
+  > **Correction (found during the whole-branch review).** This decision was
+  > originally justified by two claims that are both false: that PokeAPI has no
+  > encounter data for those games, and that they "fall out naturally" because
+  > `versionMap` has no keys for them. `versionMap` in fact contains `sword`,
+  > `shield`, `scarlet`, `violet`, `legends-arceus`, `brilliant-diamond`,
+  > `shining-pearl` and `lets-go-*`, and PokeAPI genuinely serves SwSh and LGPE
+  > encounters (Pikachu returns 11 SwSh rows).
+  >
+  > The exclusion is kept, but for the real reason: coverage would be **silently
+  > partial**. The DLC version names (`the-isle-of-armor-sword` / `-shield`, and
+  > the Crown Tundra equivalents) are absent from `versionMap`, so those areas
+  > would be dropped without warning, and Max Raid dens would be presented as wild
+  > spots. Half-covered data that looks complete is worse than an honest gap.
+  >
+  > Gen 8 is therefore cheap follow-up work, not a data-sourcing project: add the
+  > DLC version keys, widen the generation filter, and verify BDSP/LA/SV coverage
+  > (SV and LA appear to have no PokeAPI encounter data; SwSh and LGPE do).
 - **Separate seed command, not an extension of `cmd/sync`.** `cmd/sync` truncates
   `hunt_methods` (cascading `method_availability` to 0), and re-running it on the
   live shared DB is flagged unsafe. A standalone command is independently
@@ -135,8 +151,10 @@ New `cmd/seed_locations`, following the existing 5-worker pool pattern.
 Per Pokémon:
 1. `GET /pokemon/{id}/encounters`
 2. For each `(location_area, version, encounter_detail)`: map `version` →
-   `game_id` via `versionMap`; skip unmapped versions (Gen 1 and Gen 8/9 fall out
-   here naturally)
+   `game_id` via a map built from `SELECT id, title FROM games WHERE generation
+   BETWEEN 2 AND 7`; skip versions absent from that map (Gen 1 falls out because
+   it has no game row; Gen 8/9 are excluded by the generation filter — see the
+   correction under Decisions, they do NOT fall out via `versionMap`)
 3. `DELETE FROM pokemon_locations WHERE pokemon_id = $1`
 4. Batch insert the rows
 
