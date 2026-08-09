@@ -24,6 +24,8 @@ go run ./cmd/seed_availability/main.go # Populate pokemon_availability table
 go run ./cmd/seed_fulldex/main.go     # Seed recommended methods from FullDexMethods.csv
 go run ./cmd/seed_methods/main.go     # Seed encounter methods from CSV
 go run ./cmd/truncate_encounters/main.go # Clear encounters for re-seeding
+go run ./cmd/migrate_locations/main.go  # Create pokemon_locations (additive, safe to re-run)
+go run ./cmd/seed_locations/main.go     # Seed Gen 2-7 encounter locations from PokeAPI
 ```
 
 No test framework is configured in either frontend or backend.
