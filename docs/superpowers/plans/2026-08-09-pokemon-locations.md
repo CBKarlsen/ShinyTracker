@@ -67,6 +67,8 @@ CREATE INDEX IF NOT EXISTS idx_pokemon_locations_game_area
     ON pokemon_locations (game_id, area);
 ```
 
+Also add `pokemon_locations` to the `ENABLE ROW LEVEL SECURITY` block near the end of `schema.sql` (~line 191), keeping the existing column alignment. Every public table carries it: Supabase exposes public tables over PostgREST, and RLS with no policies is what denies anon access.
+
 - [ ] **Step 2: Create `backend/cmd/migrate_locations/main.go`**
 
 `cmd/apply_schema` is destructive to the method tables, so this slice gets its own additive migration command.
@@ -110,6 +112,11 @@ func main() {
 			ON pokemon_locations (pokemon_id, game_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_pokemon_locations_game_area
 			ON pokemon_locations (game_id, area)`,
+		// Required, not optional: schema.sql:176-184 documents that Supabase
+		// auto-exposes every public table over PostgREST, and that RLS with no
+		// policies is what denies anon/authenticated access. Omitting it here
+		// would leave the live table readable while schema.sql claims otherwise.
+		`ALTER TABLE pokemon_locations ENABLE ROW LEVEL SECURITY`,
 	}
 	for _, s := range stmts {
 		if _, err := database.DB.Exec(ctx, s); err != nil {
@@ -739,10 +746,10 @@ In `backend/internal/calc/routes.go`, add these two fields to `MethodCandidate`:
 	RequiresTerrain string // "" means "any terrain"
 ```
 
-Add these three fields to `Route` (the first two are internal matching inputs, not part of the API contract, hence `json:"-"`):
+Add these three fields to `Route`. `RequiresKind` **is** serialized: the frontend needs it to tell "this method has no map location by nature" (breeding, soft-resets) apart from "we have no data for this game", and deriving that from `method_name` in the UI would duplicate backend knowledge and drift on any rename. `RequiresTerrain` stays internal.
 
 ```go
-	RequiresKind    string     `json:"-"`
+	RequiresKind    string     `json:"requires_kind"`
 	RequiresTerrain string     `json:"-"`
 	Locations       []Location `json:"locations"`
 ```
@@ -965,10 +972,11 @@ export interface RouteLocation {
 and add this field to `PokemonRoute`:
 
 ```ts
+	requires_kind?: string;
 	locations?: RouteLocation[];
 ```
 
-Optional because older cached responses and the suggestions endpoint may omit it.
+Both optional because the suggestions endpoint embeds a `Route` too and older cached responses may omit them.
 
 - [ ] **Step 2: Add the display helpers and render them in `RouteList.tsx`**
 
@@ -1006,8 +1014,11 @@ function formatLevels(l: RouteLocation): string {
 
 Add the `Locations` component below `Row`:
 
+Task 6 adds an empty-state branch to this same component, so it takes the whole route now rather than just the array.
+
 ```tsx
-const Locations: React.FC<{ locations?: RouteLocation[] }> = ({ locations }) => {
+const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
+	const locations = route.locations;
 	if (!locations || locations.length === 0) return null;
 	return (
 		<div className="dex-route-locs">
@@ -1040,7 +1051,7 @@ Then render it inside `Row`, replacing the left-hand `<div>` (currently lines 10
 					</div>
 				)}
 				{r.evolve_from && <div className="dex-route-evo">↳ then evolve</div>}
-				<Locations locations={r.locations} />
+				<Locations route={r} />
 			</div>
 ```
 
@@ -1107,7 +1118,7 @@ The spec requires that Gen 8/9, BDSP, LGPE and LA render an explicit "no locatio
 
 - [ ] **Step 1: Add the empty state to the `Locations` component**
 
-Replace the early return in `Locations` (Task 5, Step 2) with a version that takes the route's kind into account:
+`Locations` already takes the whole route (Task 5). Replace its `return null` early-exit with a version that distinguishes "no location by nature" from "no data":
 
 ```tsx
 const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
@@ -1131,30 +1142,20 @@ const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
 			</div>
 		);
 	}
-	// Breeding and soft-reset routes have no location by nature -- say nothing.
-	// Anything else with no rows is a genuine data gap (Gen 8/9, BDSP, LGPE, LA),
-	// and must say so rather than look like "nowhere to find it".
-	if (LOCATIONLESS_METHODS.test(route.method_name)) return null;
+	// Breeding, soft-resets and raids have no map location by nature -- say
+	// nothing. Anything else with no rows is a genuine data gap (Gen 8/9, BDSP,
+	// LGPE, LA) and must say so, rather than read as "nowhere to find it".
+	//
+	// requires_kind comes from the backend so this check cannot drift from the
+	// method data; do not re-derive it from method_name.
+	if (route.requires_kind && route.requires_kind !== "wild") return null;
 	return <div className="dex-route-loc dex-route-loc-empty">No location data for this game yet</div>;
 };
 ```
 
-Add above it:
+The call site in `Row` already passes `route={r}` from Task 5 and needs no change.
 
-```ts
-// Methods that legitimately have no map location: breeding and soft-resetting.
-const LOCATIONLESS_METHODS = /masuda|breed|egg|soft.?reset|reset|raid|dynamax/i;
-```
-
-- [ ] **Step 2: Update the call site**
-
-In `Row`, change `<Locations locations={r.locations} />` to:
-
-```tsx
-				<Locations route={r} />
-```
-
-- [ ] **Step 3: Add the style**
+- [ ] **Step 2: Add the style**
 
 Append to `frontend/src/index.css`:
 
@@ -1165,16 +1166,16 @@ Append to `frontend/src/index.css`:
 }
 ```
 
-- [ ] **Step 4: Verify the build**
+- [ ] **Step 3: Verify the build**
 
 Run: `cd frontend && PATH="/opt/homebrew/opt/node@20/bin:$PATH" npm run build`
 Expected: `✓ built in ...`, no TypeScript errors.
 
-- [ ] **Step 5: Verify visually**
+- [ ] **Step 4: Verify visually**
 
 Open a Pokémon available in both an old and a modern game (e.g. Pikachu). Confirm the Gen 2–7 routes show areas, the SV/SwSh routes show "No location data for this game yet", and a Masuda route shows nothing at all.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add frontend/src/features/routes/RouteList.tsx frontend/src/index.css
