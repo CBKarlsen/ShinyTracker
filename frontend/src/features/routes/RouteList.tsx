@@ -18,10 +18,20 @@ function formatArea(slug: string): string {
 		.join(" ");
 }
 
+// Condition slugs are an open PokeAPI vocabulary (backlot-*, story-progress-*,
+// coins-*, save-data-*, friend-safari-slot-*, max-den-rarity-*, ...) with no
+// bounded set of families and no positional way to detect negations (e.g.
+// "backlot-not-mentioned" vs "backlot-mentioned" both end in "mentioned").
+// Rather than parse an unbounded namespace, only render the families that are
+// unambiguous and useful to a hunter standing in a location.
 // "time-night" -> "Night", "season-spring" -> "Spring".
+const CONDITION_PREFIXES = ["time-", "season-", "weather-", "radio-"];
+
 function formatCondition(c: string): string {
-	const last = c.split("-").pop() ?? c;
-	return last.charAt(0).toUpperCase() + last.slice(1);
+	const prefix = CONDITION_PREFIXES.find((p) => c.startsWith(p));
+	if (!prefix) return "";
+	const rest = c.slice(prefix.length);
+	return rest.charAt(0).toUpperCase() + rest.slice(1);
 }
 
 function formatLevels(l: RouteLocation): string {
@@ -119,7 +129,7 @@ const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
 			<div className="dex-route-locs">
 				{locations.map((l, idx) => {
 					const parts = [formatLevels(l), l.chance ? `${l.chance}%` : ""]
-						.concat(l.conditions.map(formatCondition))
+						.concat(l.conditions?.map(formatCondition) ?? [])
 						.filter(Boolean);
 					return (
 						<div
@@ -143,7 +153,7 @@ const Locations: React.FC<{ route: PokemonRoute }> = ({ route }) => {
 	// requires_kind comes from the backend so this check cannot drift from the
 	// method data; do not re-derive it from method_name.
 	if (route.requires_kind && route.requires_kind !== "wild") return null;
-	return <div className="dex-route-loc dex-route-loc-empty">No location data for this game yet</div>;
+	return <div className="dex-route-loc dex-route-loc-empty">No location data yet</div>;
 };
 
 const Row: React.FC<{
