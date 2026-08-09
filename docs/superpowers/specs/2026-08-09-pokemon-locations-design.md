@@ -55,8 +55,15 @@ table, and a seed command over a crawl that already runs.
   denominators `DexStatusHandler` computes over — offering a shiny-hunting UI a
   game without shinies. Gen 1 gets its own later slice together with a
   `games.supports_shinies` flag.
-- **Gen 8/9, BDSP, LGPE, LA render an honest empty state**, and are excluded from
-  seeding by an explicit `generation BETWEEN 2 AND 7` filter.
+- **Gen 8/9 (SwSh, BDSP, LA, SV) render an honest empty state**, and are excluded
+  from seeding by an explicit `generation BETWEEN 2 AND 7` filter.
+
+  **LGPE is NOT excluded.** Let's Go Pikachu/Eevee is `generation = 7` in
+  `SeedGames`, so the filter includes it and PokeAPI has real data for it — the
+  live seed produced 1,336 LGPE rows. Earlier drafts of this spec listed LGPE
+  among the empty-state games; that was wrong, and the shipped behaviour (real
+  locations for LGPE) is the better outcome. Verified against the live database
+  2026-08-09.
 
   > **Correction (found during the whole-branch review).** This decision was
   > originally justified by two claims that are both false: that PokeAPI has no
