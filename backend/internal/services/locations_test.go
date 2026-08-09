@@ -49,7 +49,11 @@ func TestParseLocations(t *testing.T) {
 	if err := json.Unmarshal([]byte(samplePayload), &encounters); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	gameIDs := map[string]int{"Diamond/Pearl/Platinum": 4}
+	// "" is the zero value of a failed versionMap lookup. Mapping it to a real
+	// game ID means that if the versionMap ok-check were ever dropped, the
+	// unmapped 'red' row would fall through and produce a third row -- failing
+	// this test instead of being masked by the gameIDs lookup.
+	gameIDs := map[string]int{"Diamond/Pearl/Platinum": 4, "": 999}
 
 	rows := ParseLocations(129, encounters, gameIDs)
 
@@ -62,6 +66,9 @@ func TestParseLocations(t *testing.T) {
 	byArea := map[string]LocationRow{}
 	for _, r := range rows {
 		byArea[r.Area] = r
+		if r.GameID == 999 {
+			t.Errorf("unmapped version 'red' leaked through as game 999: %+v", r)
+		}
 	}
 
 	walk, ok := byArea["route-210-area"]
