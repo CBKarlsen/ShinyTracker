@@ -23,3 +23,13 @@
 
 # Root QA/test harness deps (Playwright) — never commit
 node_modules/
+
+# IDE / local tooling state
+.idea/
+.codegraph/
+
+# Handoff archives (contents live in docs/handoff/)
+*.zip
+
+# Swift Package Manager build output
+ios/**/.build/

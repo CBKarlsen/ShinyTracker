@@ -6,29 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ShinyTracker is a full-stack web app for tracking Pokemon shiny hunts. Users start hunts, increment encounter counters, and mark Pokemon as found — building a shiny Living Dex. The backend serves a REST API; the frontend is a React SPA.
 
-## Commands
+Test setup is uneven: the Go backend has `go test ./...` (including the shared odds-anchor suite in `internal/calc`), and the Swift package in `ios/` has `swift test`. The **frontend has no test runner** — verify TypeScript changes with `npx tsc -b` and, for non-trivial logic, a throwaway `npx tsx` script. Do not add a frontend test framework without asking.
 
-### Frontend (`/frontend`)
-```bash
-npm run dev       # Vite dev server on http://localhost:5173
-npm run build     # tsc -b && vite build
-npm run lint      # Biome check
-npm run format    # Biome format --write .
-```
-
-### Backend (`/backend`)
-```bash
-go run ./cmd/api/main.go              # API server on :8080
-go run ./cmd/seed/main.go             # Seed Pokemon + encounters from PokeAPI
-go run ./cmd/seed_availability/main.go # Populate pokemon_availability table
-go run ./cmd/seed_fulldex/main.go     # Seed recommended methods from FullDexMethods.csv
-go run ./cmd/seed_methods/main.go     # Seed encounter methods from CSV
-go run ./cmd/truncate_encounters/main.go # Clear encounters for re-seeding
-go run ./cmd/migrate_locations/main.go  # Create pokemon_locations (additive, safe to re-run)
-go run ./cmd/seed_locations/main.go     # Seed Gen 2-7 encounter locations from PokeAPI
-```
-
-No test framework is configured in either frontend or backend.
+Backend seed/migrate command notes live in `backend/CLAUDE.md`.
 
 ## Architecture
 
@@ -37,38 +17,7 @@ No test framework is configured in either frontend or backend.
 2. Frontend hardcodes `http://localhost:8080` as the API base; all requests include `Authorization: Bearer <token>`.
 3. Auth middleware extracts the JWT and injects `X-User-ID` into the request context.
 
-### Key Backend Files
-- `cmd/api/main.go` — startup, DB connection, router mount
-- `internal/api/router.go` — chi routes, CORS (`localhost:5173`), auth middleware
-- `internal/api/handlers.go` — auth, Pokemon search, game/encounter endpoints
-- `internal/api/hunts.go` — hunt CRUD (create, patch encounter count, complete, delete)
-- `internal/api/auth.go` — JWT (HS256) + bcrypt; `JWT_SECRET` env var, defaults to a dev string
-- `internal/database/db.go` — pgx connection pool
-- `internal/models/models.go` — shared structs (User, Pokemon, Hunt, Encounter)
-- `internal/services/pokeapi.go` — 5-worker pool fetches all 1025+ Pokemon; version name mapping
-- `internal/calc/odds.go` — shiny odds (base × rolls) and ETA calculation
-- `schema.sql` — full DDL; no migration framework, schema changes are manual SQL
-
-### Key Frontend Files
-- `src/main.tsx` — React root, AuthProvider, MUI theme, CSS vars
-- `src/App.tsx` — top-level layout: AppBar + tabs (Dashboard / Historic / Collection / Games)
-- `src/context/AuthContext.tsx` — token + userId in localStorage
-- `src/components/Dashboard.tsx` — active hunts; optimistic `+1` increments debounced 1.5 s before PATCH
-- `src/components/NewHuntModal.tsx` — Pokemon search → game → method picker (recommended methods highlighted)
-- `src/components/Collection.tsx` — shiny Living Dex grid; click to toggle ownership
-- `src/palette.ts` + `src/theme.ts` — dark-mode design tokens (blue/slate/emerald), MUI theme
-
-### Database Schema (key tables)
-```
-users            id (uuid), username, email, password_hash
-pokemon          id (int), name, sprite_url, types[]
-games            id (int), title, generation, base_odds, supports_breeding
-user_games       user_id, game_id, has_shiny_charm
-encounters       id, pokemon_id, game_id, method_name, avg_time_seconds, base_rolls, charm_rolls
-user_hunts       id (uuid), user_id, pokemon_id, encounter_id, encounter_count, status (active|completed),
-                 acquisition_type (HUNTED|EVOLVED|MANUAL_OVERRIDE|TRADED), hunt_parameters (JSONB)
-pokemon_availability  pokemon_id, game_id  -- legal availability per game
-```
+`backend/schema.sql` holds the full DDL — there is no migration framework, schema changes are manual SQL.
 
 ### Patterns to Know
 - **No ORM** — all queries are raw SQL via pgx with `$1/$2` placeholders.
@@ -76,6 +25,14 @@ pokemon_availability  pokemon_id, game_id  -- legal availability per game
 - **Masuda Method** encounters are injected synthetically for games where a Pokemon is available but has no wild encounter row.
 - The frontend does **optimistic updates** for encounter counts and rolls back on API error.
 - `acquisition_type` and `hunt_parameters` (JSONB) are the extension points for non-standard acquisitions.
+
+## Domain accuracy
+
+See `docs/audit/ODDS_DOMAIN_REVIEW.md` for open odds-engine findings.
+
+Finding 1 requires the same fix in `backend/internal/calc/methods.go` **and** `frontend/src/utils/odds.ts` — the two odds engines are independent implementations, so a fix in one is only half the fix.
+
+Note that finding 1 is not detectable from inside the repo: both engines agree with each other and the tests pass. Passing tests are not evidence the odds are right — the reference is Bulbapedia/Serebii, not the other engine.
 
 ## Agent Orchestration
 
