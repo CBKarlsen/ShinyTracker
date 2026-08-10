@@ -75,15 +75,46 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 
 	switch t {
 	case "radar_chain_gen4":
-		// Bulbapedia: numerator = ceil(65535 / (8200 - 200*chain)); rate = numerator / 65536.
-		// chain 0 -> 1/8192 (base Gen 4 odds); chain 40 (cap) -> 1/200. No Shiny Charm in Gen 4.
+		// DPPt ONLY. Bulbapedia: numerator = ceil(65535 / (8200 - 200*chain)); rate = numerator / 65536.
+		// chain 0 -> 1/8192 (base Gen 4 odds); chain 40 (cap) -> 1/200. base_odds is intentionally NOT
+		// read: the curve already encodes 1/8192 at chain 0. Shiny Charm is intentionally IGNORED — it
+		// does not exist in Gen IV. This is correct BY DESIGN, do not "fix" it by threading the charm in.
+		// X/Y and BDSP have their own formula_types (radar_chain_xy, radar_chain_bdsp) below, since
+		// all three Radar mechanics are genuinely different, not one curve with a scale factor.
 		chain := max(0, min(paramInt(params, "chain_length", 0), 40))
-		numerator := int(math.Ceil(65535.0 / float64(8200-200*chain)))
-		return int(math.Round(65536.0 / float64(numerator)))
+		d := 8200 - 200*chain
+		numerator := ceilDiv(65535, d)
+		return roundDiv(65536, numerator)
+
+	case "radar_chain_xy":
+		// X/Y ONLY. Bulbapedia: a chain-dependent "sparkle" check (8100 - 200*chain at chain 0..40)
+		// is rolled independently of, and in addition to, the normal roll-count check. Shiny Charm
+		// affects ONLY the normal-roll side (pNormal), never the sparkle probability itself.
+		chain := max(0, min(paramInt(params, "chain_length", 0), 40))
+		sparkleD := 8100 - 200*chain
+		pSparkle := 1.0 / float64(sparkleD)
+		rolls := base.BaseRolls + charmRolls
+		pNormal := float64(rolls) / float64(base.BaseOdds)
+		pTotal := pSparkle + (1-pSparkle)*pNormal
+		return int(math.Round(1 / pTotal))
+
+	case "radar_chain_bdsp":
+		// BDSP ONLY. Bulbapedia (https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9_Radar): the
+		// numerator/65536 table has two discontinuities (chain 30 and chain 36) and is not a closed
+		// form, so it is looked up rather than computed. numerator[0] = 16 already IS 1/4096, so
+		// base_odds is intentionally NOT read. Shiny Charm is intentionally IGNORED here — datamined,
+		// the BDSP Shiny Charm affects breeding ONLY (see seeds/hunt_methods.json for the other rows
+		// this touches).
+		chain := max(0, min(paramInt(params, "chain_length", 0), 40))
+		return roundDiv(65536, bdspRadarNumerators[chain])
 
 	case "catch_combo_lgpe":
-		// NOTE: TS reads the live encounter counter here; the Go engine takes the count via the "count" param (route ranking supplies it through DefaultParams).
-		combo := max(0, paramInt(params, "count", 0))
+		// The combo arrives under two historical key names: stored hunt_parameters
+		// written by the frontend use "chain_length", while route ranking supplies
+		// "count" via DefaultParams. Precedence is chain_length > count: the former
+		// is live per-hunt state, the latter only ever a synthetic default. Both
+		// engines MUST agree on this order — see shared/odds_anchors.json.
+		combo := max(0, paramInt(params, "chain_length", paramInt(params, "count", 0)))
 		extra := 0
 		switch {
 		case combo >= 31:
@@ -92,6 +123,38 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 			extra = 7
 		case combo >= 11:
 			extra = 3
+		}
+		// An active Lure adds exactly one roll. Verified: combo 31+ (12) + charm (2) + lure (1)
+		// = 15 rolls -> 1/273.
+		lure := 0
+		if paramBool(params, "lure_active") {
+			lure = 1
+		}
+		return floorDiv(base.BaseRolls + extra + charmRolls + lure)
+
+	case "brilliant_swsh":
+		// SwSh Brilliant (sparkle-aura) Pokemon. Rolls scale with how many of that
+		// species the player has battled. Bulbapedia and Serebii agree row for row:
+		// https://bulbapedia.bulbagarden.net/wiki/Brilliant_Pok%C3%A9mon
+		// Charm is additive on top. Odds are PER BRILLIANT ENCOUNTER -- the brilliant
+		// spawn rate itself is only 1.5-3%, which is why avg_time_seconds is high.
+		// number_battled is NOT a chain: it never resets, so it does not go through
+		// the chain_length/count precedence rule the streak formulas use.
+		battled := max(0, paramInt(params, "number_battled", 0))
+		extra := 0
+		switch {
+		case battled >= 500:
+			extra = 6
+		case battled >= 300:
+			extra = 5
+		case battled >= 200:
+			extra = 4
+		case battled >= 100:
+			extra = 3
+		case battled >= 50:
+			extra = 2
+		case battled >= 1:
+			extra = 1
 		}
 		return floorDiv(base.BaseRolls + extra + charmRolls)
 
@@ -168,8 +231,12 @@ func EffectiveOdds(formulaType string, params map[string]any, base OddsConfig, h
 		return 300
 
 	case "chain_fishing_gen6":
-		// NOTE: TS reads the live encounter counter here; the Go engine takes the count via the "count" param (route ranking supplies it through DefaultParams).
-		chain := max(0, min(paramInt(params, "count", 0), 20))
+		// Same two-key situation as catch_combo_lgpe: stored hunt_parameters use
+		// "chain_length", route ranking supplies "count" via DefaultParams.
+		// Precedence must match that formula exactly — chain_length > count.
+		// (Go has no live encounter counter to fall back to; EffectiveOdds is only
+		// ever called with DefaultParams for ranking. TS falls back to the counter.)
+		chain := max(0, min(paramInt(params, "chain_length", paramInt(params, "count", 0)), 20))
 		return floorDiv(base.BaseRolls + chain*2 + charmRolls)
 
 	case "ultra_wormhole":
@@ -213,17 +280,43 @@ func sparklingRolls(power int) int {
 	return 0
 }
 
+// ceilDiv and roundDiv are integer-only equivalents of math.Ceil/math.Round for
+// positive-int division, used where the result must be bit-identical to the TS
+// mirror: Go's math.Round is half-away-from-zero and JS's Math.round is half-up,
+// and floats disagree at these magnitudes often enough to matter.
+func ceilDiv(a, b int) int {
+	return (a + b - 1) / b
+}
+
+func roundDiv(a, b int) int {
+	return (2*a + b) / (2 * b)
+}
+
+// bdspRadarNumerators is the Poké Radar chain -> numerator/65536 table for BDSP.
+// Bulbapedia: https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9_Radar
+// Not a closed form — two discontinuities at chain 30 and chain 36 — so it is
+// looked up rather than computed. Index = clamp(chain_length, 0, 40).
+var bdspRadarNumerators = [41]int{
+	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, // chain  0- 9
+	26, 27, 28, 29, 30, 31, 32, 33, 34, 35, // chain 10-19
+	36, 37, 38, 39, 40, 41, 42, 43, 44, 45, // chain 20-29
+	50, 51, 52, 53, 54, 55, // chain 30-35
+	66, 82, 164, 328, 662, // chain 36-40
+}
+
 // DefaultParams returns each method's achievable-best parameters, used for
 // route ranking (where no per-hunt params exist yet). avg_time keeps ETA honest.
 func DefaultParams(formulaType string) map[string]any {
 	switch formulaType {
+	case "brilliant_swsh":
+		return map[string]any{"number_battled": 500}
 	case "outbreak_defeats_sv":
 		return map[string]any{"defeated_count": 60, "sparkling_power": 3}
 	case "sandwich_power_sv":
 		return map[string]any{"sparkling_power": 3}
 	case "sos_chain_gen7":
 		return map[string]any{"chain_length": 31}
-	case "radar_chain_gen4":
+	case "radar_chain_gen4", "radar_chain_xy", "radar_chain_bdsp":
 		return map[string]any{"chain_length": 40}
 	// search_level 200 is a typical mid/late-game value, not the theoretical
 	// cap (which would push DexNav near 1/1 and dominate ranking unrealistically).

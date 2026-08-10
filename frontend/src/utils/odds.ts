@@ -3,6 +3,28 @@ export interface OddsResult {
 	denominator: number;
 }
 
+// Integer ceil/round division. Must match Go's integer math bit-for-bit: JS
+// `Math.round` rounds half-up, Go rounds half-away-from-zero, and for the
+// positive-only inputs here that's the same rule as `Math.floor((2a+b)/(2b))`.
+// Do not swap these for `Math.ceil`/`Math.round` on the float division.
+function ceilDiv(a: number, b: number): number {
+	return Math.floor((a + b - 1) / b);
+}
+function roundDiv(a: number, b: number): number {
+	return Math.floor((2 * a + b) / (2 * b));
+}
+
+// Bulbapedia: https://bulbapedia.bulbagarden.net/wiki/Pok%C3%A9_Radar
+// BDSP Poké Radar numerator per chain length (rate = numerator / 65536).
+// Two real discontinuities (chain 30, chain 36) -- not a closed form.
+const BDSP_RADAR_NUMERATORS = [
+	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, // chain  0- 9
+	26, 27, 28, 29, 30, 31, 32, 33, 34, 35, // chain 10-19
+	36, 37, 38, 39, 40, 41, 42, 43, 44, 45, // chain 20-29
+	50, 51, 52, 53, 54, 55, // chain 30-35
+	66, 82, 164, 328, 662, // chain 36-40
+];
+
 /**
  * Formula types that require user-supplied parameters at hunt start
  * (a chain length, search level, or Sparkling Power). Every other formula
@@ -11,8 +33,11 @@ export interface OddsResult {
  * renders the inputs) and the drawer (which decides whether to open the modal).
  */
 export const PARAM_FORMULAS = [
+	"brilliant_swsh",
 	"outbreak_defeats_sv",
 	"radar_chain_gen4",
+	"radar_chain_xy",
+	"radar_chain_bdsp",
 	"sos_chain_gen7",
 	"dexnav_gen6",
 	"sandwich_power_sv",
@@ -41,6 +66,8 @@ export const STREAK_FORMULAS = [
 	"catch_combo_lgpe",
 	"sos_chain_gen7",
 	"radar_chain_gen4",
+	"radar_chain_xy",
+	"radar_chain_bdsp",
 	"dexnav_gen6",
 ] as const;
 
@@ -76,6 +103,13 @@ export function defaultParamsFor(formulaType: string | null | undefined): Record
 			return { research_level: 0, dex_perfect: false };
 		case "ultra_wormhole":
 			return { wormhole_ring_type: 4, wormhole_distance_ly: 0 };
+		case "radar_chain_xy":
+		case "radar_chain_bdsp":
+			return { chain_length: 40 };
+		// number_battled is a persistent per-species tally, not a resettable chain,
+		// so it IS seeded as a default (unlike the streak formulas below).
+		case "brilliant_swsh":
+			return { number_battled: 500 };
 		default:
 			// radar_chain_gen4, sos_chain_gen7, dexnav_gen6, catch_combo_lgpe,
 			// chain_fishing_gen6, static, dynamax_adventures_gen8, etc. all either
@@ -98,28 +132,68 @@ export function calculateOdds(
 ): OddsResult {
 	const type = formulaType || "static";
 
+	// Mirrors Go's floorDiv in internal/calc/methods.go: a roll count of 0 or less
+	// is clamped to 1 rather than dividing by zero. Without this TS returns Infinity
+	// where Go returns baseOdds.
+	const floorDiv = (r: number) => Math.floor(baseOdds / (r > 0 ? r : 1));
+
 	let rolls = baseRolls;
 	let denominator = baseOdds;
 
 	if (type === "static") {
 		rolls = baseRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 		return { rolls, denominator };
 	}
 
 	if (type === "radar_chain_gen4") {
+		// DPPt ONLY -- radar_chain_xy and radar_chain_bdsp (below) are separate
+		// formulas: these are three genuinely different mechanics, not one curve
+		// with a scale factor.
 		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
 		const chain = Math.max(0, Math.min(paramChain, 40));
 		// Bulbapedia: numerator = ceil(65535 / (8200 - 200*chain)); rate = numerator / 65536.
 		// chain 0 -> 1/8192 (base Gen 4 odds); chain 40 (cap) -> 1/200.
-		const numerator = Math.ceil(65535 / (8200 - 200 * chain));
-		denominator = Math.round(65536 / numerator);
-		// Shiny Charm doesn't apply to Gen 4 Pokeradar
+		// base_odds is NOT read -- the curve already encodes 1/8192 at chain 0.
+		// Shiny Charm is IGNORED -- it does not exist in Gen IV. Correct by design.
+		const d = 8200 - 200 * chain;
+		const numerator = ceilDiv(65535, d);
+		denominator = roundDiv(65536, numerator);
+		rolls = 1;
+	} else if (type === "radar_chain_xy") {
+		// X/Y ONLY. The only radar formula that reads base_odds / applies the
+		// Shiny Charm -- the charm affects the normal-roll probability only,
+		// never the sparkle (chain) probability. Same composition shape as
+		// dexnav_gen6 below (pSparkle + (1-pSparkle)*pNormal).
+		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		const chain = Math.max(0, Math.min(paramChain, 40));
+		const sparkleD = 8100 - 200 * chain; // 8100 at chain 0, 100 at chain 40
+		const pSparkle = 1 / sparkleD;
+		rolls = baseRolls + (hasShinyCharm ? charmRolls : 0);
+		const pNormal = rolls / baseOdds;
+		const pTotal = pSparkle + (1 - pSparkle) * pNormal;
+		denominator = pTotal > 0 ? Math.round(1 / pTotal) : baseOdds;
+		rolls = 1;
+	} else if (type === "radar_chain_bdsp") {
+		// BDSP ONLY -- lookup table, see BDSP_RADAR_NUMERATORS above.
+		// base_odds is NOT read (numerator[0]=16 already IS 1/4096); Shiny Charm
+		// is IGNORED -- BDSP's Shiny Charm effect on the Radar is breeding-only/datamined.
+		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		const chain = Math.max(0, Math.min(paramChain, 40));
+		const numerator = BDSP_RADAR_NUMERATORS[chain];
+		denominator = roundDiv(65536, numerator);
 		rolls = 1;
 	} else if (type === "catch_combo_lgpe") {
-		// chain_length is the live catch combo; fall back to the encounter
-		// counter for legacy hunts created before chain tracking existed.
-		const paramCombo = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		// chain_length is the live catch combo; "count" is the equivalent key used
+		// by the Go engine's route ranking and by shared/odds_anchors.json. Accept
+		// both so every engine reading the same params agrees. Falls back to the
+		// encounter counter for legacy hunts created before chain tracking existed.
+		const paramCombo =
+			typeof huntParams.chain_length === "number"
+				? huntParams.chain_length
+				: typeof huntParams.count === "number"
+					? huntParams.count
+					: encounters;
 		const combo = Math.max(0, paramCombo);
 		let extraRolls = 0;
 		if (combo >= 31) {
@@ -129,8 +203,33 @@ export function calculateOdds(
 		} else if (combo >= 11) {
 			extraRolls = 3;
 		}
+		// An active Lure adds exactly one extra roll.
+		const lure = huntParams.lure_active === true;
+		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0) + (lure ? 1 : 0);
+		denominator = floorDiv(rolls);
+	} else if (type === "brilliant_swsh") {
+		// SwSh Brilliant (sparkle-aura) Pokemon. Rolls scale with how many of that
+		// species the player has battled; charm is additive on top.
+		// https://bulbapedia.bulbagarden.net/wiki/Brilliant_Pok%C3%A9mon
+		// number_battled is NOT a chain -- it never resets, so it defaults to 0
+		// rather than falling back to the live encounter counter.
+		const battled = Math.max(0, typeof huntParams.number_battled === "number" ? huntParams.number_battled : 0);
+		let extraRolls = 0;
+		if (battled >= 500) {
+			extraRolls = 6;
+		} else if (battled >= 300) {
+			extraRolls = 5;
+		} else if (battled >= 200) {
+			extraRolls = 4;
+		} else if (battled >= 100) {
+			extraRolls = 3;
+		} else if (battled >= 50) {
+			extraRolls = 2;
+		} else if (battled >= 1) {
+			extraRolls = 1;
+		}
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "outbreak_defeats_sv") {
 		const paramDefeats = typeof huntParams.defeated_count === "number" ? huntParams.defeated_count : encounters;
 		const defeats = Math.max(0, paramDefeats);
@@ -147,7 +246,7 @@ export function calculateOdds(
 			extraRolls += power;
 		}
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "sos_chain_gen7") {
 		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
 		const chain = Math.max(0, paramChain) % 255;
@@ -160,7 +259,7 @@ export function calculateOdds(
 			extraRolls = 4;
 		}
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "dexnav_gen6") {
 		const searchLevel = Math.max(0, typeof huntParams.search_level === "number" ? huntParams.search_level : 0);
 		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
@@ -192,18 +291,25 @@ export function calculateOdds(
 		else if (power === 2) extraRolls = 2;
 		else if (power === 3) extraRolls = 3;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "dynamax_adventures_gen8") {
 		denominator = hasShinyCharm ? 100 : 300;
 		rolls = 1;
 	} else if (type === "chain_fishing_gen6") {
-		// chain_length is the live current chain; fall back to the encounter
-		// counter for legacy hunts created before chain tracking existed.
-		const paramChain = typeof huntParams.chain_length === "number" ? huntParams.chain_length : encounters;
+		// Same two-key situation as catch_combo_lgpe: chain_length is the live chain
+		// from stored hunt_parameters, "count" is what Go's route ranking supplies.
+		// Precedence must match that formula exactly -- chain_length > count > the
+		// encounter counter (the last for legacy hunts predating chain tracking).
+		const paramChain =
+			typeof huntParams.chain_length === "number"
+				? huntParams.chain_length
+				: typeof huntParams.count === "number"
+					? huntParams.count
+					: encounters;
 		const chain = Math.max(0, Math.min(paramChain, 20));
 		const extraRolls = chain * 2;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "pla_research" || type === "pla_mass_outbreak" || type === "pla_massive_outbreak") {
 		// Legends: Arceus additive rolls. Anchors (charmRolls=3, floorDiv):
 		// base 4096 | research10 2048 | perfect 1024 | charm-only 1024 |
@@ -219,7 +325,7 @@ export function calculateOdds(
 		if (type === "pla_mass_outbreak") extraRolls += 25;
 		else if (type === "pla_massive_outbreak") extraRolls += 12;
 		rolls = baseRolls + extraRolls + (hasShinyCharm ? charmRolls : 0);
-		denominator = Math.floor(baseOdds / rolls);
+		denominator = floorDiv(rolls);
 	} else if (type === "ultra_wormhole") {
 		// USUM Ultra Warp Ride (non-legendary). Distance (cap 5000ly, k<=9) x ring rarity.
 		// Shiny Charm has NO effect. Anchors: ring4@5000 ->3, ring4@2000 ->8,
@@ -235,6 +341,15 @@ export function calculateOdds(
 		if (percent < 1) percent = 1;
 		denominator = Math.round(100 / percent);
 		rolls = 1;
+	} else {
+		// Unknown formula_type -- typically a backend-first deploy that seeded a
+		// formula this build doesn't know yet. Fall back to `static`, matching Go's
+		// default case and the Swift engine. Returning baseOdds untouched (the old
+		// behaviour) silently dropped the Shiny Charm: 1/4096 in the browser vs
+		// 1/1365 from the API for the same hunt. Pinned by the "unknown formula
+		// falls back to static" anchor in shared/odds_anchors.json.
+		rolls = baseRolls + (hasShinyCharm ? charmRolls : 0);
+		denominator = floorDiv(rolls);
 	}
 
 	return { rolls, denominator };
