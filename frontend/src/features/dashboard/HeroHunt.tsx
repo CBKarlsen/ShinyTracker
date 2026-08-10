@@ -30,6 +30,10 @@ function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
 }
 
+// Kept in sync with Dashboard.tsx's MAX_ENCOUNTER_COUNT — the input rejects
+// out-of-range values before commitCount ever sees them.
+const MAX_ENCOUNTER_COUNT = 999_999;
+
 function getLuckLabel(pct: number): string {
 	if (pct < 0.33) return "running lucky";
 	if (pct < 0.67) return "about average";
@@ -44,6 +48,7 @@ export function HeroHunt({
 	onPhase,
 	onUpdate,
 	onBreakChain,
+	onSetCount,
 }: {
 	hunt: Hunt;
 	onIncrement: (id: string, e: React.MouseEvent) => void;
@@ -51,6 +56,8 @@ export function HeroHunt({
 	onPhase: (hunt: Hunt) => void;
 	onUpdate?: (hunt: Hunt) => void;
 	onBreakChain?: (id: string) => void;
+	/** Direct count entry — routes through the same optimistic-update path as +1. */
+	onSetCount?: (id: string, count: number) => void;
 }) {
 	const { token, logout } = useAuth();
 	const { showError } = useNotification();
@@ -61,6 +68,11 @@ export function HeroHunt({
 	const [savingParams, setSavingParams] = useState(false);
 	const [confirmComplete, setConfirmComplete] = useState(false);
 	const [soundOn, setSoundOn] = useState<boolean>(isSoundEnabled);
+
+	// Direct count entry — tap the number to type a corrected value.
+	const [editingCount, setEditingCount] = useState(false);
+	const [countDraft, setCountDraft] = useState("");
+	const countInputRef = useRef<HTMLInputElement>(null);
 
 	// Sync local state when prop updates
 	useEffect(() => {
@@ -236,6 +248,36 @@ export function HeroHunt({
 		localStorage.removeItem(pausedKey);
 	};
 
+	const startEditCount = () => {
+		if (!onSetCount) return;
+		setCountDraft(String(hunt.encounter_count));
+		setEditingCount(true);
+	};
+
+	// Runs after the input is in the DOM so the ref is attached.
+	useEffect(() => {
+		if (editingCount) {
+			countInputRef.current?.focus();
+			countInputRef.current?.select();
+		}
+	}, [editingCount]);
+
+	const commitEditCount = () => {
+		const parsed = Number(countDraft.trim());
+		if (
+			countDraft.trim() === "" ||
+			!Number.isInteger(parsed) ||
+			parsed < 0 ||
+			parsed > MAX_ENCOUNTER_COUNT
+		) {
+			showError(`Enter a whole number between 0 and ${fmtNum(MAX_ENCOUNTER_COUNT)}.`);
+			setEditingCount(false);
+			return;
+		}
+		setEditingCount(false);
+		if (onSetCount && parsed !== hunt.encounter_count) onSetCount(hunt.id, parsed);
+	};
+
 	const gifUrl = getShowdownGif(hunt.pokemon_name);
 	const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
 
@@ -349,13 +391,45 @@ export function HeroHunt({
 				</div>
 
 				<div className="hero-counter">
-					<span className="num">{fmtNum(hunt.encounter_count)}</span>
+					{editingCount ? (
+						<input
+							ref={countInputRef}
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							className="hero-counter-input"
+							aria-label={`Set encounter count for ${hunt.pokemon_name}`}
+							value={countDraft}
+							onChange={(e) => setCountDraft(e.target.value)}
+							onBlur={commitEditCount}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									commitEditCount();
+								} else if (e.key === "Escape") {
+									e.preventDefault();
+									setEditingCount(false);
+								}
+							}}
+						/>
+					) : onSetCount ? (
+						<button
+							type="button"
+							className="hero-counter-edit"
+							onClick={startEditCount}
+							aria-label={`Encounter count ${fmtNum(hunt.encounter_count)} — tap to enter a value directly`}
+						>
+							<span className="num">{fmtNum(hunt.encounter_count)}</span>
+						</button>
+					) : (
+						<span className="num">{fmtNum(hunt.encounter_count)}</span>
+					)}
 					{streak && (
 						<span
 							style={{
 								fontFamily: "var(--font-mono)",
 								fontSize: 12,
-								color: "var(--ink-3)",
+								color: "var(--ink-2)",
 								marginLeft: 10,
 								letterSpacing: "0.04em",
 							}}
@@ -364,6 +438,12 @@ export function HeroHunt({
 						</span>
 					)}
 					<span className="lbl">encounters</span>
+					{/* Announces the count without requiring sight of the screen — pairs
+					    with SPACE-to-count and haptic feedback (see HANDOFF items 2–3). */}
+					<span className="sr-only" aria-live="polite">
+						{fmtNum(hunt.encounter_count)} encounters
+						{streak ? `, chain ${fmtNum(currentChain ?? 0)}` : ""}
+					</span>
 					<TimerDisplay
 						sessionSec={sessionSec}
 						totalSec={totalSeconds}
@@ -455,8 +535,10 @@ export function HeroHunt({
 						<SparkSm size={9} /> Found it!
 					</button>
 					<button
+						type="button"
 						className="btn"
 						title={soundOn ? "Mute found-it chime" : "Unmute found-it chime"}
+						aria-label={soundOn ? "Mute found-it chime" : "Unmute found-it chime"}
 						onClick={() => {
 							const next = !soundOn;
 							setSoundOn(next);
@@ -464,8 +546,12 @@ export function HeroHunt({
 						}}
 						style={{
 							padding: "0 8px",
-							minWidth: 32,
-							color: soundOn ? "var(--ink-2)" : "var(--ink-4)",
+							minWidth: 44,
+							minHeight: 44,
+							// ink-4 fails contrast even for a non-text icon; ink-2 + opacity
+							// keeps the muted look without dropping below 3:1.
+							color: "var(--ink-2)",
+							opacity: soundOn ? 1 : 0.6,
 						}}
 					>
 						{soundOn ? (

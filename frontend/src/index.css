@@ -713,7 +713,9 @@ ul {
 	gap: 2px;
 	font-family: var(--font-mono);
 	font-size: 11px;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size against the hero gradient —
+	   bumped to ink-2 locally rather than touching the shared token. */
+	color: var(--ink-2);
 	white-space: nowrap;
 }
 .hero-title .pmeta > span {
@@ -749,9 +751,44 @@ ul {
 	font-family: var(--font-mono);
 	font-size: 11px;
 	letter-spacing: 0.06em;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 	text-transform: uppercase;
 	padding-bottom: 14px;
+}
+.hero-counter-edit {
+	display: inline-flex;
+	background: transparent;
+	border: none;
+	padding: 0;
+	cursor: text;
+	border-radius: 8px;
+}
+.hero-counter-edit:hover .num,
+.hero-counter-edit:focus-visible .num {
+	text-shadow:
+		0 0 8px rgba(245, 198, 97, 0.45),
+		0 0 28px rgba(245, 198, 97, 0.22),
+		0 0 56px rgba(245, 198, 97, 0.1);
+}
+.hero-counter-edit:focus-visible {
+	outline: 2px solid var(--gold);
+	outline-offset: 4px;
+}
+.hero-counter-input {
+	font-family: var(--font-display);
+	font-variant-numeric: tabular-nums;
+	font-size: 64px;
+	font-weight: 700;
+	letter-spacing: -0.045em;
+	line-height: 0.9;
+	color: var(--ink-1);
+	background: var(--bg-2);
+	border: 1px solid var(--gold-line);
+	border-radius: 8px;
+	padding: 0 8px;
+	width: 5.5ch;
+	min-height: 44px;
 }
 
 /* ── Smart timer ── */
@@ -836,10 +873,12 @@ ul {
 	font-size: 10px;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 }
 .timer-link {
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 	text-decoration: underline;
 	text-underline-offset: 2px;
 	font-size: 10px;
@@ -874,7 +913,8 @@ ul {
 	justify-content: space-between;
 	font-family: var(--font-mono);
 	font-size: 10.5px;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 	margin-top: 6px;
 	letter-spacing: 0.04em;
 }
@@ -889,6 +929,12 @@ ul {
 }
 .hero-actions > * {
 	white-space: nowrap;
+}
+/* 44px minimum touch target on the highest-traffic counter controls. */
+.hero-actions .btn,
+.hero-actions .plus-btn {
+	min-height: 44px;
+	min-width: 44px;
 }
 
 .plus-btn {
@@ -1189,7 +1235,8 @@ ul {
 .hunt-row .meta {
 	font-family: var(--font-mono);
 	font-size: 11px;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 	margin-top: 2px;
 	display: flex;
 	gap: 8px;
@@ -1210,11 +1257,22 @@ ul {
 .hunt-row .col-num small {
 	display: block;
 	font-size: 10px;
-	color: var(--ink-3);
+	/* ink-3 fails WCAG AA (4.5:1) at this size — bumped to ink-2 locally. */
+	color: var(--ink-2);
 	font-weight: 400;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	margin-top: 2px;
+}
+.hunt-row-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+/* 44px minimum touch target on the highest-traffic counter controls. */
+.hunt-row-actions .btn {
+	min-height: 44px;
+	min-width: 44px;
 }
 .hunt-row .barwrap {
 	width: 100%;
@@ -2696,6 +2754,79 @@ ul {
 	to {
 		opacity: 1;
 		transform: translateY(0);
+	}
+}
+
+/* Visually hidden but readable by screen readers (aria-live count region etc). */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Undo toast — for coalesced tap bursts and reversible destructive actions
+   (chain reset, direct count edits). Local, ephemeral UI state. */
+.undo-toast {
+	position: fixed;
+	bottom: 24px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 1200;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 8px 8px 8px 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line-2);
+	border-radius: var(--radius-md);
+	box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+	font-family: var(--font-mono);
+	font-size: 12.5px;
+	color: var(--ink-1);
+	animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.undo-toast-message {
+	white-space: nowrap;
+}
+.undo-toast-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding: 0 10px;
+	color: var(--gold);
+	font-weight: 600;
+	white-space: nowrap;
+}
+.undo-toast-action:hover {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+.undo-toast-dismiss {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	color: var(--ink-2);
+}
+.undo-toast-dismiss:hover {
+	color: var(--ink-1);
+}
+@keyframes slideUp {
+	from {
+		opacity: 0;
+		transform: translate(-50%, 12px);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0);
 	}
 }
 

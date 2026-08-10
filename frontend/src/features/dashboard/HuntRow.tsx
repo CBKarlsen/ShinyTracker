@@ -177,7 +177,8 @@ export function HuntRow({
 							style={{
 								fontFamily: "var(--font-mono)",
 								fontSize: 10,
-								color: "var(--ink-3)",
+								// ink-3 fails WCAG AA (4.5:1) at this size — ink-2 locally.
+								color: "var(--ink-2)",
 								marginTop: 4,
 								letterSpacing: "0.04em",
 								display: "flex",
@@ -195,15 +196,17 @@ export function HuntRow({
 						style={{
 							fontFamily: "var(--font-mono)",
 							fontSize: 10,
-							color: "var(--ink-4)",
+							// ink-4 fails WCAG AA even for large text — ink-2 locally.
+							color: "var(--ink-2)",
 						}}
 					>
 						—
 					</div>
 				)}
 			</div>
-			<div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+			<div className="hunt-row-actions">
 				<button
+					type="button"
 					className="btn ghost"
 					style={{ padding: "6px 8px" }}
 					onClick={(e) => {
@@ -211,6 +214,7 @@ export function HuntRow({
 						onPin(hunt.id);
 					}}
 					title="Make this the main hunt"
+					aria-label={`Make ${hunt.pokemon_name} the main hunt`}
 				>
 					<IcPin />
 				</button>
@@ -229,6 +233,7 @@ export function HuntRow({
 					</button>
 				)}
 				<button
+					type="button"
 					className="btn"
 					style={{ padding: "6px 10px" }}
 					onClick={(e) => {
@@ -239,6 +244,7 @@ export function HuntRow({
 					+1
 				</button>
 				<button
+					type="button"
 					className="btn ghost"
 					style={{ padding: "6px 8px" }}
 					onClick={(e) => {
@@ -246,10 +252,12 @@ export function HuntRow({
 						onPhase(hunt);
 					}}
 					title="Log phase"
+					aria-label={`Log phase for ${hunt.pokemon_name}`}
 				>
 					<SparkSm size={10} color="var(--violet)" />
 				</button>
 				<button
+					type="button"
 					className="btn ghost"
 					style={{ padding: "6px 8px" }}
 					onClick={(e) => {
@@ -257,6 +265,7 @@ export function HuntRow({
 						onComplete(hunt.id);
 					}}
 					title="Found it"
+					aria-label={`Mark ${hunt.pokemon_name} as found`}
 				>
 					<SparkSm size={10} color="var(--gold)" />
 				</button>
