@@ -75,3 +75,31 @@ Fishing to `fishing`. Remaining gaps:
 - **`backend/update_json.go` is an orphaned generator.** It still uses the
   defunct `Generation` / `method_rules` / `method_exceptions` model and no longer
   matches the current `hunt_methods.json` shape.
+
+## Non-shiny ("just catch it") lookups — blockers found 2026-08-10
+
+Scoping a catch-oriented mode surfaced three facts about the shipped code. The
+design was parked, but these are properties of the codebase, not opinions:
+
+- **Shiny locks block catch lookups.** `computeAvailability` (`cmd/seed/main.go`)
+  excludes shiny-locked `(pokemon, game)` pairs from `method_availability`
+  entirely, and `PokemonRouteHandler` returns `locked_everywhere` with zero
+  routes. A shiny-locked Pokémon is still catchable normally, so any catch-mode
+  feature must read `pokemon_locations` directly and ignore both `shiny_locks`
+  and `method_availability`.
+
+- **Gift/static/raid encounters are discarded at ingest.** `ParseLocations`
+  (`internal/services/pokeapi.go`) drops `gift`, `gift-egg`, `static`,
+  `wanderer`, `max-raid`, `only-one` and `colosseum-*`. That is correct for wild
+  shiny routes — they were ranking a Game Corner prize counter as the best place
+  to stand — but it means the data cannot answer "how do I get Charmander"
+  (a gift starter). Fixing it means an `encounter_kind` column and a re-seed
+  rather than a denylist at parse time; the seed is idempotent and takes ~22s.
+
+- **Encounter rates are per slot and are displayed unaggregated.** A species
+  occupying two fishing slots on one route renders as two rows (e.g. Kalos Route
+  22 at 60% and again at 35%) when the honest figure is one row at 95%. The rod
+  (`pokeapi_method`) is stored but never displayed, so those rows look like
+  duplicates and a player cannot tell which rod is required. Fix: group by
+  `(area, kind, method, levels, conditions)` and sum chances after the version
+  dedup, and render the method label when it is not `walk`.
