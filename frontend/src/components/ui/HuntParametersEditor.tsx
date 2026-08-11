@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { routeNeedsParams } from "../../utils/odds";
 
 interface Props {
@@ -8,7 +9,14 @@ interface Props {
 }
 
 export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, inline }: Props) {
-	if (!formulaType || !routeNeedsParams(formulaType)) {
+	// This component renders in three places (HeroHunt, MethodPreview, ChosenRoute)
+	// and two of them can be on screen at once, so a hardcoded input id would
+	// collide and point every label at the first match.
+	const battledId = useId();
+	// catch_combo_lgpe is a streak method (its chain comes from the live
+	// encounter counter, not from this editor) but it still needs the Lure
+	// toggle here, so it's allowed through even though routeNeedsParams is false.
+	if (!formulaType || (!routeNeedsParams(formulaType) && formulaType !== "catch_combo_lgpe")) {
 		return null;
 	}
 
@@ -90,7 +98,9 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 					</select>
 				</>
 			)}
-			{formulaType === "radar_chain_gen4" && (
+			{(formulaType === "radar_chain_gen4" ||
+				formulaType === "radar_chain_xy" ||
+				formulaType === "radar_chain_bdsp") && (
 				<>
 					<div className="t-label" style={{ marginBottom: 6 }}>
 						Chain Length
@@ -110,6 +120,18 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						}
 					/>
 				</>
+			)}
+			{formulaType === "catch_combo_lgpe" && (
+				<label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+					<input
+						type="checkbox"
+						checked={huntParams.lure_active === true}
+						onChange={(e) =>
+							setHuntParams({ ...huntParams, lure_active: e.target.checked })
+						}
+					/>{" "}
+					Lure active
+				</label>
 			)}
 			{formulaType === "sos_chain_gen7" && (
 				<>
@@ -173,6 +195,29 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						/>
 					</div>
 				</div>
+			)}
+			{formulaType === "brilliant_swsh" && (
+				<>
+					<label className="t-label" htmlFor={battledId} style={{ display: "block", marginBottom: 6 }}>
+						Total Battled/Caught
+					</label>
+					<input
+						id={battledId}
+						type="number"
+						min={0}
+						max={500}
+						step={1}
+						className="input"
+						style={{ width: 80, padding: "4px 8px" }}
+						value={huntParams.number_battled ?? 0}
+						onChange={(e) =>
+							setHuntParams({
+								...huntParams,
+								number_battled: Math.max(0, parseInt(e.target.value) || 0),
+							})
+						}
+					/>
+				</>
 			)}
 			{formulaType === "sandwich_power_sv" && (
 				<>
