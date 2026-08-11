@@ -47,6 +47,13 @@ it is how the Poké Radar bug survived a full method audit.
 
 Adding a formula means adding anchors first.
 
+**Monorepo-only test dependency.** `ShinyTrackerKit`'s tests locate the fixture by walking up
+from `#filePath` to the repo root, so the anchors stay a single shared file rather than a copy
+per language. The consequence: the package must stay a **local** package inside this repo. If it
+is ever consumed as a remote/pinned SPM dependency from a separate app repo, the fixture will not
+exist in the checkout and the test target goes permanently red. Bundle a resource copy at that
+point — and accept that the copy can then drift, which is the thing this file exists to prevent.
+
 ---
 
 ## D3. Counting interaction — no volume-button counting

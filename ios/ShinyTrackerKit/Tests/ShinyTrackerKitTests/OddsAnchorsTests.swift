@@ -54,7 +54,10 @@ enum Anchors {
 /// parameterised test below silently runs zero cases, which is worse than no test at all.
 @Test func anchorFixtureLoads() {
     #expect(Anchors.url() != nil, "shared/odds_anchors.json not found by walking up from #filePath")
-    #expect(Anchors.all.count >= 30, "loaded only \(Anchors.all.count) anchors")
+    // Pinned to the current fixture size, not a loose floor: a fixture truncated by a bad
+    // merge would still clear a low bar while silently dropping whole formula families.
+    // Raise this when anchors are added; a drop should be a deliberate, visible edit.
+    #expect(Anchors.all.count >= 61, "loaded only \(Anchors.all.count) anchors — fixture truncated?")
 }
 
 @Test(arguments: Anchors.all)
@@ -80,4 +83,40 @@ func matchesAnchor(_ a: OddsAnchor) {
     #expect(odds([:]) == 292)                              // counter used
     #expect(odds(["count": .number(5)]) == 1365)           // count outranks counter
     #expect(odds(["chain_length": .number(5)]) == 1365)    // chain_length outranks counter
+}
+
+// MARK: - hunt_parameters robustness
+//
+// `hunt_parameters` is open JSONB written by several client versions, so the engine must
+// survive values no anchor describes. Neither case below is reachable from the fixture,
+// and both were real defects: out-of-range numbers TRAPPED (crashing the app), and a
+// single malformed key failed the whole dictionary rather than falling back per key the
+// way Go's paramInt/paramBool do.
+
+@Test func outOfRangeParamDegradesInsteadOfTrapping() throws {
+    let json = #"{"chain_length": 1e20, "search_level": -1e20}"#
+    let params = try JSONDecoder().decode([String: ParamValue].self, from: Data(json.utf8))
+    #expect(params["chain_length"]?.intValue == nil)
+    #expect(params["search_level"]?.intValue == nil)
+    // Must behave exactly as if the key were absent: radar at "no chain" = 1/8192.
+    let base = OddsConfig(baseOdds: 8192, baseRolls: 1, charmRolls: 0)
+    #expect(ShinyOdds.effectiveOdds(formulaType: "radar_chain_gen4", params: params, base: base, hasCharm: false) == 8192)
+}
+
+@Test func nonFiniteParamDegradesInsteadOfTrapping() {
+    #expect(ParamValue.number(.nan).intValue == nil)
+    #expect(ParamValue.number(.infinity).intValue == nil)
+    #expect(ParamValue.number(31.9).intValue == 31) // truncates toward zero, like Go
+}
+
+@Test func oneMalformedKeyDoesNotPoisonTheRest() throws {
+    // A null lure_active must not cost us chain_length -- Go falls back per key.
+    let json = #"{"chain_length": 31, "lure_active": null, "legacy": "31"}"#
+    let params = try JSONDecoder().decode([String: ParamValue].self, from: Data(json.utf8))
+    #expect(params["chain_length"]?.intValue == 31)
+    #expect(params["lure_active"]?.boolValue == nil)
+    #expect(params["legacy"]?.intValue == nil)
+    // combo 31 + charm = 14 rolls -> 1/292, i.e. chain_length survived the bad neighbours.
+    let base = OddsConfig(baseOdds: 4096, baseRolls: 1, charmRolls: 2)
+    #expect(ShinyOdds.effectiveOdds(formulaType: "catch_combo_lgpe", params: params, base: base, hasCharm: true) == 292)
 }

@@ -13,10 +13,21 @@
 public enum ParamValue: Equatable, Sendable, Codable {
     case number(Double)
     case bool(Bool)
+    /// Any other JSON shape: null, string, array, object. Represented as a case rather
+    /// than a decode failure on purpose. `hunt_parameters` is open JSONB written by
+    /// several client versions, and Go's `paramInt`/`paramBool` fall back PER KEY — a
+    /// null `lure_active` still leaves `chain_length` readable. Throwing here would fail
+    /// the whole dictionary, so one stale key would silently change the odds of a hunt.
+    case unrecognized
 
     public var intValue: Int? {
-        if case .number(let d) = self { return Int(d) } // truncates toward zero, as Go's paramInt does
-        return nil
+        guard case .number(let d) = self else { return nil }
+        // Int(d) TRAPS (not throws) on NaN, infinity, or magnitudes past Int.max, which
+        // would crash the app outright the moment odds are computed for such a hunt.
+        // Go's int(float64) never panics, so out-of-range must degrade to "absent" here
+        // and take the same fallback path as a missing key.
+        guard d.isFinite, d >= -9.2e18, d <= 9.2e18 else { return nil }
+        return Int(d) // truncates toward zero, as Go's paramInt does
     }
 
     public var boolValue: Bool? {
@@ -28,8 +39,10 @@ public enum ParamValue: Equatable, Sendable, Codable {
         let c = try decoder.singleValueContainer()
         if let b = try? c.decode(Bool.self) {
             self = .bool(b)
+        } else if let d = try? c.decode(Double.self) {
+            self = .number(d)
         } else {
-            self = .number(try c.decode(Double.self))
+            self = .unrecognized
         }
     }
 
@@ -38,6 +51,7 @@ public enum ParamValue: Equatable, Sendable, Codable {
         switch self {
         case .number(let d): try c.encode(d)
         case .bool(let b): try c.encode(b)
+        case .unrecognized: try c.encodeNil()
         }
     }
 }
