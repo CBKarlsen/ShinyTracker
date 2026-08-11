@@ -283,7 +283,10 @@ struct LoginView: View {
         busy = true
         errorMessage = nil
         Task {
-            do { try await operation() } catch { errorMessage = error.localizedDescription }
+            // Same formatting as the hunt list — see userFacingMessage. Using
+            // localizedDescription here silently dropped the real message for the
+            // CustomStringConvertible error types this app actually throws.
+            do { try await operation() } catch { errorMessage = userFacingMessage(for: error) }
             busy = false
         }
     }

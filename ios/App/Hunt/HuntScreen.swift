@@ -2,7 +2,7 @@ import ShinyTrackerAPI
 import ShinyTrackerUI
 import SwiftUI
 
-/// The Hunt tab. Layout, spacing and colour come from `docs/design/hunt-prototype.dc.html`.
+/// The Hunt mode. Layout, spacing and colour come from `docs/design/hunt-prototype.dc.html`.
 ///
 /// Only the **Active** segment is built. History and Games are placeholders, as are the header's
 /// search button (it opens the Reference sheet, which is not built) and the + button.

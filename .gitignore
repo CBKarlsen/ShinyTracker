@@ -51,3 +51,16 @@ ios/App/Info.plist
 
 # Real Supabase config — never commit keys (ios/App/Config/Secrets.example.xcconfig is checked in)
 ios/App/Config/Secrets.xcconfig
+
+# macOS metadata — was tracked, and blocked a rebase
+.DS_Store
+**/.DS_Store
+
+# Compiled Go binaries. These three were COMMITTED (38MB) — `go build` output
+# belongs nowhere near the repo. The bare names are what `go build ./cmd/x` emits
+# when run from backend/.
+/backend/migrate
+/backend/seed_availability
+/backend/seed_fulldex
+/backend/seed_moves
+/backend/seed_nuzlocke

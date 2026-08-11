@@ -120,8 +120,9 @@ public enum Radii {
     public static let segmentItem: CGFloat = 9
     /// Timer badge: `border-radius:11px`.
     public static let badge: CGFloat = 11
-    /// Progress bar: `height:6px;border-radius:3px`.
-    public static let bar: CGFloat = 3
+    // No `bar` radius token: the progress bar is drawn with `Capsule()`, which
+    // self-rounds. The prototype's `border-radius:3px` on a 6px-tall bar is the
+    // same shape, so a token would only be a second way to say it.
     /// Tab-bar pill: `border-radius:19px`.
     public static let pill: CGFloat = 19
     /// Tab-bar shell: `border-radius:24px`.
