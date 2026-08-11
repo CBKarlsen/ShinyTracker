@@ -44,7 +44,13 @@ export function TimerDisplay({
 			<div className="timer-row">
 				<span className={`timer-dot timer-dot-${status}`} />
 				<span className="timer-clock">{display}</span>
-				<button className="timer-btn" onClick={onToggle} title={status === "paused" ? "Resume" : "Pause"}>
+				<button
+					type="button"
+					className="timer-btn"
+					onClick={onToggle}
+					title={status === "paused" ? "Resume" : "Pause"}
+					aria-label={status === "paused" ? "Resume session timer" : "Pause session timer"}
+				>
 					{status === "paused" ? <IcPlay /> : <IcPause />}
 				</button>
 			</div>

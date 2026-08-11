@@ -12,10 +12,20 @@ import { EmptyState } from "./ui/EmptyState";
 import { ErrorBanner } from "./ui/ErrorBanner";
 import { IcPlus, SparkSm } from "./ui/icons";
 import { Stat } from "./ui/Stat";
+import { UndoToast } from "./ui/UndoToast";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
 }
+
+// Trailing window: taps within this many ms of each other are one mistake.
+const BURST_COALESCE_MS = 2500;
+// How long an undo toast stays actionable before it silently expires.
+const UNDO_TOAST_MS = 6000;
+// Direct-entry upper bound — generous but not unbounded (guards against a
+// fat-fingered extra digit going straight to the server). Mirrored in
+// HeroHunt.tsx, which validates the input before it ever reaches commitCount.
+const MAX_ENCOUNTER_COUNT = 999_999;
 
 function fmtHM(s: number) {
 	const h = Math.floor(s / 3600);
@@ -47,6 +57,37 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 	const [phaseHunt, setPhaseHunt] = useState<Hunt | null>(null);
 	const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+	// Miscount undo: the count/chain a tap burst started from, keyed by hunt
+	// id, plus the trailing-window timer that "seals" the burst into one undo
+	// entry once taps stop for BURST_COALESCE_MS.
+	const burstAnchor = useRef<Record<string, { count: number; chain: number }>>({});
+	const burstTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+	// One undo entry can be showing at a time (single toast slot), but a
+	// second hunt's action must not silently destroy a still-fresh entry from
+	// a first hunt — queue instead. A hunt's OWN new action still supersedes
+	// its own pending entry (that's deliberate: e.g. burst -> undo -> tap
+	// again shouldn't leave a dangling stale undo for the same hunt).
+	const [undoQueue, setUndoQueue] = useState<
+		Array<{ huntId: string; message: string; revert: () => void }>
+	>([]);
+	const undoToast = undoQueue[0] ?? null;
+	const undoDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	// Per-hunt monotonic sequence number, captured when a PATCH is issued.
+	// Concurrent PATCHes for the same hunt (e.g. a debounced flush still in
+	// flight when an undo fires its own revert PATCH) can resolve out of
+	// order; only the response for the LATEST issued request is allowed to
+	// write committedRef/committedChainRef/setHunts, so an earlier response
+	// landing later can't silently overwrite a newer, correct state.
+	const seqRef = useRef<Record<string, number>>({});
+	const nextSeq = useCallback((id: string) => {
+		const n = (seqRef.current[id] ?? 0) + 1;
+		seqRef.current[id] = n;
+		return n;
+	}, []);
+	const isLatestSeq = useCallback((id: string, seq: number) => seqRef.current[id] === seq, []);
+
 	const handleSessionExpired = useCallback(() => {
 		logout();
 		setErrorMsg("Your session expired — please sign in again.");
@@ -64,6 +105,44 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		},
 		[],
 	);
+
+	// Dismisses whichever entry is currently showing (front of queue).
+	const dismissUndo = useCallback(() => {
+		setUndoQueue((prev) => prev.slice(1));
+	}, []);
+
+	// Clears `huntId`'s entry wherever it sits in the queue — completing/
+	// phasing one hunt shouldn't dismiss another hunt's still-valid undo.
+	const dismissUndoFor = useCallback((huntId: string) => {
+		setUndoQueue((prev) => prev.filter((e) => e.huntId !== huntId));
+	}, []);
+
+	// A hunt's new action replaces ITS OWN queued/showing entry (deliberate —
+	// see the undoQueue comment above) but is appended behind any other
+	// hunt's still-fresh entry rather than clobbering it.
+	const pushUndo = useCallback((huntId: string, message: string, revert: () => void) => {
+		setUndoQueue((prev) => [...prev.filter((e) => e.huntId !== huntId), { huntId, message, revert }]);
+	}, []);
+
+	// (Re)starts the UNDO_TOAST_MS timer whenever the front-of-queue entry
+	// changes, and advances the queue when it expires unactioned.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally keyed on the head entry's identity (huntId+message), not the whole queue/undoToast object — appending behind the head shouldn't reset its countdown
+	useEffect(() => {
+		if (undoDismissTimer.current) {
+			clearTimeout(undoDismissTimer.current);
+			undoDismissTimer.current = null;
+		}
+		if (!undoToast) return;
+		undoDismissTimer.current = setTimeout(() => {
+			setUndoQueue((prev) => prev.slice(1));
+		}, UNDO_TOAST_MS);
+		return () => {
+			if (undoDismissTimer.current) {
+				clearTimeout(undoDismissTimer.current);
+				undoDismissTimer.current = null;
+			}
+		};
+	}, [undoToast?.huntId, undoToast?.message]);
 
 	const fetchHunts = async () => {
 		try {
@@ -115,6 +194,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 					if (!hunt) return Promise.resolve();
 					const chainSent = localChainsRef.current[huntId] ?? count;
 					const params = streakParams(hunt, chainSent);
+					const seq = nextSeq(huntId);
 					return authedFetch(
 						`${API_BASE}/api/hunts/${huntId}`,
 						token,
@@ -129,7 +209,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 						},
 						handleSessionExpired,
 					).then((res) => {
-						if (res.ok) {
+						if (res.ok && isLatestSeq(huntId, seq)) {
 							committedRef.current[huntId] = count;
 							committedChainRef.current[huntId] = chainSent;
 						}
@@ -141,69 +221,51 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			);
 		}, 60_000);
 		return () => clearInterval(id);
-	}, [localCounts, hunts, token, handleSessionExpired, streakParams]);
+	}, [localCounts, hunts, token, handleSessionExpired, streakParams, nextSeq, isLatestSeq]);
 
 	// Keep localCountsRef in sync so the debounce timer always reads the latest count.
 	useEffect(() => { localCountsRef.current = localCounts; }, [localCounts]);
 	useEffect(() => { localChainsRef.current = localChains; }, [localChains]);
 
-	const increment = useCallback((id: string) => {
-		setLocalCounts((prev) => {
-			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
-			localCountsRef.current = next;
-			return next;
-		});
-		setLocalChains((prev) => {
-			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
-			localChainsRef.current = next;
-			return next;
-		});
-		if (timers.current[id]) clearTimeout(timers.current[id]);
-		timers.current[id] = setTimeout(async () => {
-			const count = localCountsRef.current[id] ?? 0;
-			const chain = localChainsRef.current[id] ?? 0;
-			const hunt = hunts.find((h) => h.id === id);
-			const params = hunt ? streakParams(hunt, chain) : undefined;
-			try {
-				const res = await authedFetch(
-					`${API_BASE}/api/hunts/${id}`,
-					token,
-					{
-						method: "PATCH",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							encounter_count: count,
-							status: "active",
-							...(params ? { hunt_parameters: params } : {}),
-						}),
-					},
-					handleSessionExpired,
+	// PATCHes whatever is currently in localCounts/localChains for `id`. Same
+	// optimistic-update body used by every write path below (tap, undo revert,
+	// direct entry, break-chain) so they all roll back on API error the same way.
+	const flush = useCallback(async (id: string) => {
+		const count = localCountsRef.current[id] ?? 0;
+		const chain = localChainsRef.current[id] ?? 0;
+		const hunt = hunts.find((h) => h.id === id);
+		const params = hunt ? streakParams(hunt, chain) : undefined;
+		// Captured at issue time: if a newer PATCH for this hunt is issued (by
+		// this or any other write path) before this one resolves, this
+		// response is stale and must not touch committedRef/setHunts.
+		const seq = nextSeq(id);
+		try {
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/${id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						encounter_count: count,
+						status: "active",
+						...(params ? { hunt_parameters: params } : {}),
+					}),
+				},
+				handleSessionExpired,
+			);
+			if (!isLatestSeq(id, seq)) return;
+			if (res.ok) {
+				committedRef.current[id] = count;
+				committedChainRef.current[id] = chain;
+				setHunts((prev) =>
+					prev.map((h) =>
+						h.id === id
+							? { ...h, encounter_count: count, ...(params ? { hunt_parameters: params } : {}) }
+							: h,
+					),
 				);
-				if (res.ok) {
-					committedRef.current[id] = count;
-					committedChainRef.current[id] = chain;
-					setHunts((prev) =>
-						prev.map((h) =>
-							h.id === id
-								? { ...h, encounter_count: count, ...(params ? { hunt_parameters: params } : {}) }
-								: h,
-						),
-					);
-				} else {
-					setLocalCounts((prev) => {
-						const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
-						localCountsRef.current = reverted;
-						return reverted;
-					});
-					setLocalChains((prev) => {
-						const reverted = { ...prev, [id]: committedChainRef.current[id] ?? 0 };
-						localChainsRef.current = reverted;
-						return reverted;
-					});
-					setErrorMsg("Sync failed — clicks weren't saved.");
-				}
-			} catch (err) {
-				if (err instanceof SessionExpiredError) return;
+			} else {
 				setLocalCounts((prev) => {
 					const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
 					localCountsRef.current = reverted;
@@ -214,10 +276,187 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 					localChainsRef.current = reverted;
 					return reverted;
 				});
+				dismissUndoFor(id);
 				setErrorMsg("Sync failed — clicks weren't saved.");
 			}
-		}, 1500);
-	}, [token, handleSessionExpired, hunts, streakParams]);
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
+			if (!isLatestSeq(id, seq)) return;
+			setLocalCounts((prev) => {
+				const reverted = { ...prev, [id]: committedRef.current[id] ?? 0 };
+				localCountsRef.current = reverted;
+				return reverted;
+			});
+			setLocalChains((prev) => {
+				const reverted = { ...prev, [id]: committedChainRef.current[id] ?? 0 };
+				localChainsRef.current = reverted;
+				return reverted;
+			});
+			dismissUndoFor(id);
+			setErrorMsg("Sync failed — clicks weren't saved.");
+		}
+	}, [token, handleSessionExpired, hunts, streakParams, dismissUndoFor, nextSeq, isLatestSeq]);
+
+	// (Re)start the 1500ms debounce that flushes the current count, or flush
+	// right away for a deliberate one-shot edit (undo revert, direct entry).
+	const scheduleFlush = useCallback((id: string, immediate = false) => {
+		if (timers.current[id]) {
+			clearTimeout(timers.current[id]);
+			delete timers.current[id];
+		}
+		if (immediate) {
+			flush(id);
+			return;
+		}
+		timers.current[id] = setTimeout(() => flush(id), 1500);
+	}, [flush]);
+
+	// Reverts a sealed burst back to its anchor {count, chain}. Builds the
+	// PATCH body directly from the captured anchor values instead of routing
+	// through flush(), which reads localCountsRef/localChainsRef: this fires
+	// two setState calls (count, then chain) in the same tick, and React only
+	// runs the SECOND one's updater eagerly if nothing else is pending — so a
+	// synchronous flush() right after could read a stale, not-yet-reverted
+	// chain out of the ref and PATCH it to the server. Same direct-PATCH
+	// pattern as handleBreakChain's own two-field (count+chain) revert below.
+	const revertBurst = useCallback(
+		async (id: string, anchor: { count: number; chain: number }) => {
+			if (timers.current[id]) {
+				clearTimeout(timers.current[id]);
+				delete timers.current[id];
+			}
+			setLocalCounts((prev) => {
+				const next = { ...prev, [id]: anchor.count };
+				localCountsRef.current = next;
+				return next;
+			});
+			setLocalChains((prev) => {
+				const next = { ...prev, [id]: anchor.chain };
+				localChainsRef.current = next;
+				return next;
+			});
+			const hunt = hunts.find((h) => h.id === id);
+			const params = hunt ? streakParams(hunt, anchor.chain) : undefined;
+			const seq = nextSeq(id);
+			try {
+				const res = await authedFetch(
+					`${API_BASE}/api/hunts/${id}`,
+					token,
+					{
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							encounter_count: anchor.count,
+							status: "active",
+							...(params ? { hunt_parameters: params } : {}),
+						}),
+					},
+					handleSessionExpired,
+				);
+				if (!isLatestSeq(id, seq)) return;
+				if (res.ok) {
+					committedRef.current[id] = anchor.count;
+					committedChainRef.current[id] = anchor.chain;
+					setHunts((prev) =>
+						prev.map((h) =>
+							h.id === id
+								? { ...h, encounter_count: anchor.count, ...(params ? { hunt_parameters: params } : {}) }
+								: h,
+						),
+					);
+				} else {
+					setErrorMsg("Undo failed — count wasn't restored.");
+				}
+			} catch (err) {
+				if (err instanceof SessionExpiredError) return;
+				if (!isLatestSeq(id, seq)) return;
+				setErrorMsg("Undo failed — count wasn't restored.");
+			}
+		},
+		[token, handleSessionExpired, hunts, streakParams, nextSeq, isLatestSeq],
+	);
+
+	// Seals a tap burst into a single undo entry once BURST_COALESCE_MS has
+	// passed with no further taps on this hunt.
+	const sealBurst = useCallback((id: string) => {
+		const anchor = burstAnchor.current[id];
+		delete burstAnchor.current[id];
+		delete burstTimers.current[id];
+		if (!anchor) return;
+		const finalCount = localCountsRef.current[id] ?? 0;
+		if (finalCount === anchor.count) return;
+		const delta = finalCount - anchor.count;
+		pushUndo(id, `+${fmtNum(delta)} encounter${delta === 1 ? "" : "s"} — undo?`, () => {
+			revertBurst(id, anchor);
+		});
+	}, [pushUndo, revertBurst]);
+
+	const increment = useCallback((id: string) => {
+		// First tap of a burst: remember where it started so a trailing-window
+		// undo can revert the whole mistake, not just the last tap.
+		if (!(id in burstAnchor.current)) {
+			burstAnchor.current[id] = {
+				count: localCountsRef.current[id] ?? 0,
+				chain: localChainsRef.current[id] ?? 0,
+			};
+		}
+		setLocalCounts((prev) => {
+			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
+			localCountsRef.current = next;
+			return next;
+		});
+		setLocalChains((prev) => {
+			const next = { ...prev, [id]: (prev[id] ?? 0) + 1 };
+			localChainsRef.current = next;
+			return next;
+		});
+		scheduleFlush(id);
+
+		if (burstTimers.current[id]) clearTimeout(burstTimers.current[id]);
+		burstTimers.current[id] = setTimeout(() => sealBurst(id), BURST_COALESCE_MS);
+	}, [scheduleFlush, sealBurst]);
+
+	// Direct count entry (tap the number, type a value). Validated by the
+	// input itself; this is a defensive second guard plus the commit.
+	const commitCount = useCallback((id: string, count: number) => {
+		const prevCount = localCountsRef.current[id] ?? 0;
+		if (!Number.isInteger(count) || count < 0 || count > MAX_ENCOUNTER_COUNT) return;
+		if (count === prevCount) return;
+
+		// A manual edit supersedes any tap burst in flight so a later undo
+		// can't fire against a now-stale pre-burst anchor.
+		if (burstTimers.current[id]) {
+			clearTimeout(burstTimers.current[id]);
+			delete burstTimers.current[id];
+		}
+		delete burstAnchor.current[id];
+
+		setLocalCounts((prev) => {
+			const next = { ...prev, [id]: count };
+			localCountsRef.current = next;
+			return next;
+		});
+		scheduleFlush(id, true);
+
+		pushUndo(id, `Count set to ${fmtNum(count)} (was ${fmtNum(prevCount)}) — undo?`, () => {
+			setLocalCounts((prev) => {
+				const next = { ...prev, [id]: prevCount };
+				localCountsRef.current = next;
+				return next;
+			});
+			scheduleFlush(id, true);
+		});
+	}, [scheduleFlush, pushUndo]);
+
+	// Drop any in-flight tap burst for `id` — used before an action that makes
+	// the burst's undo anchor meaningless (hunt completed / phase logged).
+	const clearBurst = (id: string) => {
+		if (burstTimers.current[id]) {
+			clearTimeout(burstTimers.current[id]);
+			delete burstTimers.current[id];
+		}
+		delete burstAnchor.current[id];
+	};
 
 	// SPACE key → increment primary hunt
 	useEffect(() => {
@@ -238,6 +477,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 
 	const handleComplete = async (id: string) => {
 		if (timers.current[id]) { clearTimeout(timers.current[id]); delete timers.current[id]; }
+		clearBurst(id);
+		dismissUndoFor(id);
 		const currentCount = localCounts[id] ?? 0;
 		try {
 			const res = await authedFetch(
@@ -270,6 +511,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		const hunt = hunts.find((h) => h.id === id);
 		if (!hunt || !isStreakMethod(hunt.formula_type)) return;
 		if (timers.current[id]) { clearTimeout(timers.current[id]); delete timers.current[id]; }
+		// A pending tap burst's undo anchor captured chain BEFORE this break —
+		// if left alone, its trailing timer fires after the break, clobbers
+		// this action's undo toast, and its revert PATCHes the pre-break chain
+		// back to the server, resurrecting the chain the user just reset.
+		clearBurst(id);
 		const count = localCountsRef.current[id] ?? hunt.encounter_count;
 		const params = streakParams(hunt, 0) as Record<string, any>; // streak-guarded above, never undefined
 		const prevChain = localChainsRef.current[id] ?? 0;
@@ -278,6 +524,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			localChainsRef.current = next;
 			return next;
 		});
+		const seq = nextSeq(id);
 		try {
 			const res = await authedFetch(
 				`${API_BASE}/api/hunts/${id}`,
@@ -289,9 +536,50 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				},
 				handleSessionExpired,
 			);
+			if (!isLatestSeq(id, seq)) return;
 			if (res.ok) {
 				setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, hunt_parameters: params } : h)));
 				committedChainRef.current[id] = 0;
+				// Frequent, recoverable destructive action — undo toast instead of an
+				// upfront confirm dialog (unlike "Found it!", which stays confirmed).
+				pushUndo(id, `Chain reset to 0 (was ${fmtNum(prevChain)}) — undo?`, async () => {
+					const revertParams = streakParams(hunt, prevChain) as Record<string, any>;
+					setLocalChains((prev) => {
+						const next = { ...prev, [id]: prevChain };
+						localChainsRef.current = next;
+						return next;
+					});
+					const undoSeq = nextSeq(id);
+					try {
+						const res2 = await authedFetch(
+							`${API_BASE}/api/hunts/${id}`,
+							token,
+							{
+								method: "PATCH",
+								headers: { "Content-Type": "application/json" },
+								body: JSON.stringify({
+									encounter_count: localCountsRef.current[id] ?? count,
+									status: "active",
+									hunt_parameters: revertParams,
+								}),
+							},
+							handleSessionExpired,
+						);
+						if (!isLatestSeq(id, undoSeq)) return;
+						if (res2.ok) {
+							setHunts((prev) =>
+								prev.map((h) => (h.id === id ? { ...h, hunt_parameters: revertParams } : h)),
+							);
+							committedChainRef.current[id] = prevChain;
+						} else {
+							setErrorMsg("Undo failed — chain wasn't restored.");
+						}
+					} catch (err) {
+						if (err instanceof SessionExpiredError) return;
+						if (!isLatestSeq(id, undoSeq)) return;
+						setErrorMsg("Undo failed — chain wasn't restored.");
+					}
+				});
 			} else {
 				setLocalChains((prev) => {
 					const restored = { ...prev, [id]: prevChain };
@@ -302,6 +590,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			}
 		} catch (err) {
 			if (err instanceof SessionExpiredError) return;
+			if (!isLatestSeq(id, seq)) return;
 			setLocalChains((prev) => {
 				const restored = { ...prev, [id]: prevChain };
 				localChainsRef.current = restored;
@@ -315,6 +604,8 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		// Cancel any pending increment flush so a stale timer can't PATCH the
 		// pre-phase count over the freshly-reset phase (mirrors handleComplete).
 		if (timers.current[updated.id]) { clearTimeout(timers.current[updated.id]); delete timers.current[updated.id]; }
+		clearBurst(updated.id);
+		dismissUndoFor(updated.id);
 		setHunts((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
 		setLocalCounts((prev) => ({ ...prev, [updated.id]: 0 }));
 		committedRef.current[updated.id] = 0;
@@ -432,6 +723,17 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 
 			<ErrorBanner message={errorMsg || ""} onDismiss={() => setErrorMsg(null)} />
 
+			{undoToast && (
+				<UndoToast
+					message={undoToast.message}
+					onUndo={() => {
+						undoToast.revert();
+						dismissUndo();
+					}}
+					onDismiss={dismissUndo}
+				/>
+			)}
+
 			<HeroHunt
 				key={primary.id}
 				hunt={primaryWithCount}
@@ -439,6 +741,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				onComplete={handleComplete}
 				onPhase={setPhaseHunt}
 				onBreakChain={handleBreakChain}
+				onSetCount={commitCount}
 				onUpdate={(updated) => {
 					const existing = hunts.find((h) => h.id === updated.id);
 					setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)));
