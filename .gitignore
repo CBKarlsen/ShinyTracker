@@ -10,6 +10,9 @@
 # Claude Code local state
 .claude/scheduled_tasks.lock
 
+# JetBrains IDE config (machine-specific; never commit)
+.idea/
+
 .superpowers/
 
 # Playwright MCP QA artifacts (screenshots, snapshots, console logs)
@@ -23,6 +26,11 @@
 
 # Root QA/test harness deps (Playwright) — never commit
 node_modules/
+
+# Generated Playwright HTML report — build artifact; can embed auth tokens/headers
+e2e/report/
+e2e/test-results/
+e2e/playwright-report/
 
 # IDE / local tooling state
 .idea/

@@ -3,13 +3,15 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // loadPhasesForHunts fetches all phases for the given hunt IDs and groups them by hunt ID.
@@ -40,10 +42,11 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 	return result, rows.Err()
 }
 
-func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
-
-	rows, err := database.DB.Query(context.Background(),
+// loadHuntsForUser fetches every hunt (with join details and phases) owned by
+// one user. Shared by GetHuntsHandler and ExportHandler so the export can't
+// drift from what the hunts list actually returns.
+func loadHuntsForUser(ctx context.Context, userID string) ([]models.UserHuntDetail, error) {
+	rows, err := database.DB.Query(ctx,
 		`SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
 		        p.name as pokemon_name, e.method_name, h.custom_method_name, g.title as game_title,
 		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
@@ -56,9 +59,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		 WHERE h.user_id = $1
 		 ORDER BY h.created_at DESC`, userID)
 	if err != nil {
-		fmt.Println("GetHunts error:", err)
-		http.Error(w, "Failed to fetch hunts", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -78,7 +79,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		huntIDs = append(huntIDs, h.ID)
 	}
 
-	phasesByHunt, err := loadPhasesForHunts(context.Background(), huntIDs)
+	phasesByHunt, err := loadPhasesForHunts(ctx, huntIDs)
 	if err == nil {
 		for i, h := range hunts {
 			if phases, ok := phasesByHunt[h.ID]; ok {
@@ -87,8 +88,49 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	return hunts, rows.Err()
+}
+
+func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+
+	hunts, err := loadHuntsForUser(context.Background(), userID)
+	if err != nil {
+		log.Printf("GetHunts error: %v", err)
+		http.Error(w, "Failed to fetch hunts", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(hunts)
+}
+
+// DeleteHuntHandler deletes a hunt owned by the calling user. Scoped by
+// user_id as well as id so one user cannot delete another's hunt.
+func DeleteHuntHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	huntID := chi.URLParam(r, "id")
+
+	tag, err := database.DB.Exec(context.Background(),
+		`DELETE FROM user_hunts WHERE id = $1 AND user_id = $2`, huntID, userID)
+	if err != nil {
+		// A malformed id is client error, not server error: Postgres rejects it
+		// with 22P02 (invalid_text_representation) before matching any row.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+			http.Error(w, "Hunt not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to delete hunt", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "Hunt not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Hunt deleted successfully"})
 }
 
 func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
@@ -165,7 +207,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
-		fmt.Println("CreateHunt error:", err)
+		log.Printf("CreateHunt error: %v", err)
 		http.Error(w, "Failed to create hunt", http.StatusInternalServerError)
 		return
 	}
@@ -185,6 +227,19 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate client-supplied fields before they reach the UPDATE. status drives
+	// the hunt lifecycle (and the active|completed filters across the app), so an
+	// arbitrary value would corrupt state; a negative encounter_count would break
+	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
+	if req.Status != "active" && req.Status != "completed" {
+		http.Error(w, "status must be 'active' or 'completed'", http.StatusBadRequest)
+		return
+	}
+	if req.EncounterCount < 0 {
+		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
 		return
 	}
 
@@ -271,10 +326,13 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reset encounter count, increment phase count.
+	// Reset encounter count, increment phase count. Re-assert user_id inside the
+	// transaction (not just the pre-tx ownership SELECT) so the write can never
+	// touch a row the caller doesn't own — the API layer is the only isolation
+	// (the backend connects with a BYPASSRLS role).
 	if _, err := tx.Exec(context.Background(),
-		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-		huntID); err != nil {
+		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2`,
+		huntID, userID); err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)
 		return
 	}
@@ -313,7 +371,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
 		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
 	); err != nil {
-		fmt.Println("LogPhase load err:", err)
+		log.Printf("LogPhase load err: %v", err)
 		http.Error(w, "Failed to load updated hunt", http.StatusInternalServerError)
 		return
 	}
@@ -373,4 +431,161 @@ func RemoveManualCatchHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Catch removed successfully"})
+}
+
+// GameStatBreakdown is one game's slice of a user's stats. GameID/GameTitle
+// are nullable because custom-method hunts have no game.
+type GameStatBreakdown struct {
+	GameID          *int    `json:"game_id"`
+	GameTitle       *string `json:"game_title"`
+	HuntCount       int     `json:"hunt_count"`
+	TotalEncounters int     `json:"total_encounters"`
+}
+
+// MethodStatBreakdown is one method's slice of a user's stats. MethodID is
+// nullable for custom-method hunts; MethodName falls back to the custom name.
+type MethodStatBreakdown struct {
+	MethodID        *int   `json:"method_id"`
+	MethodName      string `json:"method_name"`
+	HuntCount       int    `json:"hunt_count"`
+	TotalEncounters int    `json:"total_encounters"`
+}
+
+type UserStatsResponse struct {
+	TotalHunts       int                   `json:"total_hunts"`
+	CompletedHunts   int                   `json:"completed_hunts"`
+	ActiveHunts      int                   `json:"active_hunts"`
+	TotalEncounters  int                   `json:"total_encounters"`
+	TotalPhases      int                   `json:"total_phases"`
+	TotalTimeSeconds int                   `json:"total_time_seconds"`
+	ByGame           []GameStatBreakdown   `json:"by_game"`
+	ByMethod         []MethodStatBreakdown `json:"by_method"`
+}
+
+// GetStatsHandler returns aggregate stats for the calling user, computed
+// server-side as SQL group-bys over user_hunts.
+func GetStatsHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	ctx := context.Background()
+
+	resp := UserStatsResponse{ByGame: []GameStatBreakdown{}, ByMethod: []MethodStatBreakdown{}}
+	err := database.DB.QueryRow(ctx,
+		`SELECT COUNT(*), COUNT(*) FILTER (WHERE status = 'completed'), COUNT(*) FILTER (WHERE status = 'active'),
+		        COALESCE(SUM(encounter_count), 0), COALESCE(SUM(phase_count), 0), COALESCE(SUM(total_time_seconds), 0)
+		 FROM user_hunts WHERE user_id = $1`, userID).
+		Scan(&resp.TotalHunts, &resp.CompletedHunts, &resp.ActiveHunts, &resp.TotalEncounters, &resp.TotalPhases, &resp.TotalTimeSeconds)
+	if err != nil {
+		http.Error(w, "Failed to compute stats", http.StatusInternalServerError)
+		return
+	}
+
+	gameRows, err := database.DB.Query(ctx,
+		`SELECT h.game_id, g.title, COUNT(*), COALESCE(SUM(h.encounter_count), 0)
+		 FROM user_hunts h
+		 LEFT JOIN games g ON g.id = h.game_id
+		 WHERE h.user_id = $1
+		 GROUP BY h.game_id, g.title
+		 ORDER BY COUNT(*) DESC`, userID)
+	if err != nil {
+		http.Error(w, "Failed to compute game stats", http.StatusInternalServerError)
+		return
+	}
+	defer gameRows.Close()
+	for gameRows.Next() {
+		var gs GameStatBreakdown
+		if err := gameRows.Scan(&gs.GameID, &gs.GameTitle, &gs.HuntCount, &gs.TotalEncounters); err != nil {
+			continue
+		}
+		resp.ByGame = append(resp.ByGame, gs)
+	}
+	if err := gameRows.Err(); err != nil {
+		http.Error(w, "Failed to compute game stats", http.StatusInternalServerError)
+		return
+	}
+
+	methodRows, err := database.DB.Query(ctx,
+		`SELECT h.hunt_method_id, COALESCE(hm.method_name, h.custom_method_name, 'Unknown'), COUNT(*), COALESCE(SUM(h.encounter_count), 0)
+		 FROM user_hunts h
+		 LEFT JOIN hunt_methods hm ON hm.id = h.hunt_method_id
+		 WHERE h.user_id = $1
+		 GROUP BY h.hunt_method_id, hm.method_name, h.custom_method_name
+		 ORDER BY COUNT(*) DESC`, userID)
+	if err != nil {
+		http.Error(w, "Failed to compute method stats", http.StatusInternalServerError)
+		return
+	}
+	defer methodRows.Close()
+	for methodRows.Next() {
+		var ms MethodStatBreakdown
+		if err := methodRows.Scan(&ms.MethodID, &ms.MethodName, &ms.HuntCount, &ms.TotalEncounters); err != nil {
+			continue
+		}
+		resp.ByMethod = append(resp.ByMethod, ms)
+	}
+	if err := methodRows.Err(); err != nil {
+		http.Error(w, "Failed to compute method stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// UserExport is everything a user owns, for the GDPR-style data export.
+type UserExport struct {
+	Profile   any                     `json:"profile"`
+	UserGames []models.UserGame       `json:"user_games"`
+	Hunts     []models.UserHuntDetail `json:"hunts"`
+}
+
+// ExportHandler returns the calling user's profile, user_games, and hunts
+// (with phases) as one JSON blob. Never touches other users' rows or global
+// reference tables.
+func ExportHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
+	ctx := context.Background()
+
+	var profile struct {
+		ID        string    `json:"id"`
+		Username  string    `json:"username"`
+		IsAdmin   bool      `json:"is_admin"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+	if err := database.DB.QueryRow(ctx,
+		`SELECT id, username, is_admin, created_at FROM profiles WHERE id = $1`, userID).
+		Scan(&profile.ID, &profile.Username, &profile.IsAdmin, &profile.CreatedAt); err != nil {
+		http.Error(w, "Failed to load profile", http.StatusInternalServerError)
+		return
+	}
+
+	gameRows, err := database.DB.Query(ctx,
+		"SELECT game_id, has_shiny_charm FROM user_games WHERE user_id = $1", userID)
+	if err != nil {
+		http.Error(w, "Failed to load user games", http.StatusInternalServerError)
+		return
+	}
+	defer gameRows.Close()
+	userGames := []models.UserGame{}
+	for gameRows.Next() {
+		var ug models.UserGame
+		ug.UserID = userID
+		if err := gameRows.Scan(&ug.GameID, &ug.HasShinyCharm); err != nil {
+			continue
+		}
+		userGames = append(userGames, ug)
+	}
+	// An export that silently drops rows is worse than one that fails loudly.
+	if err := gameRows.Err(); err != nil {
+		http.Error(w, "Failed to load user games", http.StatusInternalServerError)
+		return
+	}
+
+	hunts, err := loadHuntsForUser(ctx, userID)
+	if err != nil {
+		http.Error(w, "Failed to load hunts", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(UserExport{Profile: profile, UserGames: userGames, Hunts: hunts})
 }

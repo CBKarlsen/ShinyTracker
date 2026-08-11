@@ -62,13 +62,18 @@ func NewRouter() *chi.Mux {
 			r.Post("/hunts", CreateHuntHandler)
 			r.Post("/hunts/manual", ManualCatchHandler)
 			r.Patch("/hunts/{id}", UpdateHuntHandler)
+			r.Delete("/hunts/{id}", DeleteHuntHandler)
 			r.Post("/hunts/{id}/phases", LogPhaseHandler)
 			r.Delete("/hunts/manual/{pokemonId}", RemoveManualCatchHandler)
 
 			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
+			r.Get("/stats", GetStatsHandler)
+			r.Get("/export", ExportHandler)
+
 			r.Get("/dex/status", DexStatusHandler)
 			r.Get("/dex/suggestions", DexSuggestionsHandler)
+			r.Get("/pokemon/{id}", PokemonDetailHandler)
 			r.Get("/pokemon/{id}/route", PokemonRouteHandler)
 
 			r.Group(func(r chi.Router) {
