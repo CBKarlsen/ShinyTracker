@@ -66,3 +66,7 @@ The curated lock dataset (`backend/seeds/shiny_locks.json`, 28 entries) is a ~50
 - **Seed order matters:** `cmd/sync` truncates `hunt_methods` (cascading `method_availability` to 0). Always run **`cmd/seed` LAST**. Full rebuild: `apply_schema` → `cmd/sync` (slow PokeAPI crawl; populates `evolves_from_id`) → `cmd/seed` → `cmd/seed_shiny_locks`.
 - `cmd/apply_schema` is destructive to the method tables (drops `hunt_methods`/`method_*`); `cmd/seed` rebuilds them.
 - Health check: `go run ./cmd/audit_methods/main.go` (Section B = real availability inconsistencies).
+- **`cmd/seed_locations` is independent of the seed order above.** It touches only
+  `pokemon_locations` and never `hunt_methods`, so it can be re-run at any time
+  without the `cmd/sync` truncation hazard. It exits non-zero if any Gen 2-7 game
+  ends up with zero rows.

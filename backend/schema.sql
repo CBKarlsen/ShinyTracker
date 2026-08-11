@@ -112,6 +112,34 @@ CREATE TABLE IF NOT EXISTS method_availability (
     UNIQUE (pokemon_id, method_id, game_id)
 );
 
+-- Per-game, per-version wild encounter locations (Gen 2-7, seeded from PokeAPI
+-- by cmd/seed_locations). Distinct from pokemon_game_encounter, which stores the
+-- derived encounter KIND; this stores the raw WHERE facts.
+--
+-- The version column exists because the games table groups versions (versionMap
+-- maps diamond/pearl/platinum onto one row). That grouping is correct for odds
+-- and methods but wrong for locations: Platinum rebuilt much of Sinnoh's
+-- encounter tables and D/P exclusives differ from each other.
+CREATE TABLE IF NOT EXISTS pokemon_locations (
+    id             SERIAL PRIMARY KEY,
+    pokemon_id     INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    game_id        INTEGER NOT NULL REFERENCES games(id)   ON DELETE CASCADE,
+    version        TEXT    NOT NULL,   -- PokeAPI version name, e.g. 'platinum'
+    area           TEXT    NOT NULL,   -- PokeAPI slug, e.g. 'route-210-area'
+    terrain        TEXT    NOT NULL,   -- from services.terrainForMethod
+    pokeapi_method TEXT    NOT NULL,   -- 'walk', 'surf', 'old-rod', ...
+    min_level      INTEGER,
+    max_level      INTEGER,
+    chance         INTEGER,            -- percent, per encounter slot
+    conditions     TEXT[]              -- 'time-night', 'season-spring', ...
+);
+
+CREATE INDEX IF NOT EXISTS idx_pokemon_locations_pokemon_game
+    ON pokemon_locations (pokemon_id, game_id);
+-- Reverse lookup (area -> species). Unused today; the nuzlocke slice needs it.
+CREATE INDEX IF NOT EXISTS idx_pokemon_locations_game_area
+    ON pokemon_locations (game_id, area);
+
 -- profiles: Supabase Auth user metadata, keyed by the Supabase user UUID.
 -- id mirrors auth.users.id (the JWT sub claim from Supabase access tokens).
 -- No hard FK to auth.users is declared here so this DDL can be applied with
@@ -163,6 +191,7 @@ ALTER TABLE hunt_methods            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE method_games            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE method_availability     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE method_exceptions       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokemon_locations       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_games              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_hunts              ENABLE ROW LEVEL SECURITY;
