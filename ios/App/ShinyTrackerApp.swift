@@ -112,13 +112,20 @@ struct AppShell: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        // safeAreaInset rather than a ZStack overlay: it makes SwiftUI inset the
+        // scrollable content by the bar's real measured height, including the home
+        // indicator. The ZStack version floated the bar OVER the list and relied on a
+        // hand-tuned bottom padding, which under-cleared it — the last card was clipped
+        // behind the bar. A measured inset cannot drift when the bar's size changes.
+        Group {
             switch mode {
             case .hunt:
                 HuntScreen(model: model)
             case .nuzlocke, .dex, .team:
                 ModePlaceholder(mode: mode)
             }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             ModeTabBar(mode: $mode)
         }
     }

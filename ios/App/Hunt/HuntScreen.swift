@@ -177,7 +177,6 @@ struct HuntScreen: View {
                         }
                     }
                 }
-                .padding(.bottom, Metrics.tabBarClearance)
             }
             .scrollIndicators(.hidden)
             .refreshable { await model.load() }

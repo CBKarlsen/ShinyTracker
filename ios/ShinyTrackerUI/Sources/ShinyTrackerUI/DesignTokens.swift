@@ -204,6 +204,4 @@ public enum Metrics {
     public static let cardSprite: CGFloat = 62
     /// `height:6px` — the progress bar.
     public static let barHeight: CGFloat = 6
-    /// `padding-bottom:104px` on the scroll body, clearing the floating tab bar.
-    public static let tabBarClearance: CGFloat = 104
 }
