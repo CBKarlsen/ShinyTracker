@@ -1,0 +1,76 @@
+# Source of truth for ios/ShinyTracker.xcodeproj — regenerate with `xcodegen generate` in ios/.
+# The .xcodeproj, the generated Info.plist and the entitlements file are all gitignored: this
+# file is the reviewable artifact.
+name: ShinyTracker
+
+options:
+  bundleIdPrefix: com.casperkarlsen
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+packages:
+  ShinyTrackerKit:
+    # Local, not remote — DECISIONS.md D2: its tests resolve shared/odds_anchors.json by walking
+    # up from #filePath to the repo root, so it only works inside this monorepo.
+    path: ShinyTrackerKit
+  ShinyTrackerAuth:
+    path: ShinyTrackerAuth
+
+targets:
+  ShinyTracker:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: ["Config/**"]
+    configFiles:
+      Debug: App/Config/Secrets.xcconfig
+      Release: App/Config/Secrets.xcconfig
+    dependencies:
+      - package: ShinyTrackerKit
+      - package: ShinyTrackerAuth
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.casperkarlsen.shinytracker
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Populated from Secrets.xcconfig; read by AuthConfig.fromBundle().
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        # The OAuth redirect target. Must also be allow-listed in the Supabase project.
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleTypeRole: Editor
+            CFBundleURLSchemes: [shinytracker]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    entitlements:
+      path: App/ShinyTracker.entitlements
+      properties:
+        # App Store guideline 4.8 — required because GitHub and Google sign-in are offered.
+        com.apple.developer.applesignin: [Default]
+
+schemes:
+  ShinyTracker:
+    build:
+      targets:
+        ShinyTracker: all
+    run:
+      config: Debug
+    archive:
+      config: Release
