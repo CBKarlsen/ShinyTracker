@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -96,7 +96,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 
 	hunts, err := loadHuntsForUser(context.Background(), userID)
 	if err != nil {
-		fmt.Println("GetHunts error:", err)
+		log.Printf("GetHunts error: %v", err)
 		http.Error(w, "Failed to fetch hunts", http.StatusInternalServerError)
 		return
 	}
@@ -207,7 +207,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {
-		fmt.Println("CreateHunt error:", err)
+		log.Printf("CreateHunt error: %v", err)
 		http.Error(w, "Failed to create hunt", http.StatusInternalServerError)
 		return
 	}
@@ -227,6 +227,19 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate client-supplied fields before they reach the UPDATE. status drives
+	// the hunt lifecycle (and the active|completed filters across the app), so an
+	// arbitrary value would corrupt state; a negative encounter_count would break
+	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
+	if req.Status != "active" && req.Status != "completed" {
+		http.Error(w, "status must be 'active' or 'completed'", http.StatusBadRequest)
+		return
+	}
+	if req.EncounterCount < 0 {
+		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
 		return
 	}
 
@@ -313,10 +326,13 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reset encounter count, increment phase count.
+	// Reset encounter count, increment phase count. Re-assert user_id inside the
+	// transaction (not just the pre-tx ownership SELECT) so the write can never
+	// touch a row the caller doesn't own — the API layer is the only isolation
+	// (the backend connects with a BYPASSRLS role).
 	if _, err := tx.Exec(context.Background(),
-		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
-		huntID); err != nil {
+		`UPDATE user_hunts SET encounter_count = 0, phase_count = phase_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND user_id = $2`,
+		huntID, userID); err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)
 		return
 	}
@@ -355,7 +371,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
 		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
 	); err != nil {
-		fmt.Println("LogPhase load err:", err)
+		log.Printf("LogPhase load err: %v", err)
 		http.Error(w, "Failed to load updated hunt", http.StatusInternalServerError)
 		return
 	}
