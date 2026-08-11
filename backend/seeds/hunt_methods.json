@@ -174,6 +174,33 @@
     "requires_kind": "egg"
   },
   {
+    "id": "masuda_method_gen4",
+    "games": [
+      "Diamond/Pearl/Platinum",
+      "HeartGold/SoulSilver"
+    ],
+    "method_name": "Masuda Method",
+    "avg_time_seconds": 60,
+    "base_rolls": 5,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "egg",
+    "_note": "Gen IV Masuda is 5 total personality values (5/8192 = 1/1638.80), NOT the 6 used from Gen V onward - the sixth roll arrived in Gen V. Do NOT append these games to a base_rolls:6 row. charm_rolls 0 because the Shiny Charm does not exist in Gen IV. https://bulbapedia.bulbagarden.net/wiki/Masuda_method"
+  },
+  {
+    "id": "max_raid_swsh",
+    "games": [
+      "Sword/Shield"
+    ],
+    "method_name": "Max Raid Battle",
+    "avg_time_seconds": 150,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "raid",
+    "_note": "Regular Max Raid dens are 1 roll at 1/4096 and are NOT affected by the Shiny Charm (unlike Dynamax Adventures, which is 1/300 -> 1/100 with it). Shininess is fixed by the den seed and does not reroll on soft reset - a hunter re-rolls the den with a Wishing Piece. Seeded for coverage: den-exclusive species would otherwise have no huntable method."
+  },
+  {
     "id": "masuda_method_bw",
     "games": [
       "Black/White"
@@ -235,7 +262,7 @@
     "avg_time_seconds": 30,
     "base_rolls": 1,
     "charm_rolls": 2,
-    "formula_type": "radar_chain_gen4",
+    "formula_type": "radar_chain_xy",
     "requires_kind": "wild",
     "requires_terrain": "grass"
   },
@@ -271,11 +298,12 @@
       "Sword/Shield"
     ],
     "method_name": "KO Method",
-    "avg_time_seconds": 45,
+    "avg_time_seconds": 240,
     "base_rolls": 1,
     "charm_rolls": 2,
-    "formula_type": "static",
-    "requires_kind": "wild"
+    "formula_type": "brilliant_swsh",
+    "requires_kind": "wild",
+    "_note": "Brilliant (sparkle-aura) Pokemon. Was seeded formula_type 'static' with base_rolls 1, which silently discarded the entire number-battled mechanic and showed 1/1365 as the best case when the real ceiling is 1/455. Rolls scale with number_battled for that species: >=1 +1, >=50 +2, >=100 +3, >=200 +4, >=300 +5, >=500 +6; Shiny Charm +2 additive. Odds are PER BRILLIANT ENCOUNTER - the brilliant spawn rate is only 1.5-3%, hence avg_time_seconds 240. Bulbapedia and Serebii agree row for row. https://bulbapedia.bulbagarden.net/wiki/Brilliant_Pok%C3%A9mon"
   },
   {
     "id": "pla_full_odds",
@@ -313,26 +341,38 @@
     "method_name": "Ultra Warp Ride",
     "avg_time_seconds": 60,
     "base_rolls": 1,
-    "charm_rolls": 2,
+    "charm_rolls": 0,
     "formula_type": "ultra_wormhole",
-    "requires_kind": "static"
+    "requires_kind": "static",
+    "_note": "The Shiny Charm has NO effect on Ultra Warp Ride: the ultra_wormhole formula derives its denominator purely from ring type and distance, and never reads charm_rolls. Set to 0 so the data stops claiming a charm bonus the engine correctly ignores (same reasoning as the BDSP rows). base_rolls stays 1 - also unread by this formula, but 0 would render as a broken roll count anywhere rolls are surfaced."
   },
   {
-    "id": "soft_reset_static",
+    "id": "soft_reset_precharm",
     "games": [
       "Gold/Silver/Crystal",
       "Ruby/Sapphire/Emerald",
       "FireRed/LeafGreen",
       "Diamond/Pearl/Platinum",
       "HeartGold/SoulSilver",
-      "Black/White",
+      "Black/White"
+    ],
+    "method_name": "Soft Reset",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "static",
+    "_note": "Split from soft_reset_static: the Shiny Charm does not exist before Black 2/White 2, so charm_rolls MUST be 0 here. Previously these games sat on a charm_rolls:2 row and were kept off-screen only by an unrelated code gate (calc.ShinyCharmAvailable, game ids 8-17) - the data asserted something false. Same surgery as soft_reset_bdsp."
+  },
+  {
+    "id": "soft_reset_static",
+    "games": [
       "Black 2/White 2",
       "X/Y",
       "Omega Ruby/Alpha Sapphire",
       "Sun/Moon",
       "Ultra Sun/Ultra Moon",
       "Sword/Shield",
-      "Brilliant Diamond/Shining Pearl",
       "Scarlet/Violet"
     ],
     "method_name": "Soft Reset",
@@ -343,6 +383,19 @@
     "requires_kind": "static"
   },
   {
+    "id": "soft_reset_bdsp",
+    "games": [
+      "Brilliant Diamond/Shining Pearl"
+    ],
+    "method_name": "Soft Reset",
+    "avg_time_seconds": 30,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "static",
+    "_note": "BDSP Shiny Charm affects breeding ONLY (datamined, Bulbapedia: the internal code explicitly disables the Shiny Charm for other encounter types). Not a mistake — see random_encounter_bdsp and poke_radar_bdsp."
+  },
+  {
     "id": "soft_reset_lgpe",
     "games": [
       "Let's Go Pikachu/Eevee"
@@ -350,9 +403,10 @@
     "method_name": "Soft Reset",
     "avg_time_seconds": 30,
     "base_rolls": 1,
-    "charm_rolls": 0,
+    "charm_rolls": 2,
     "formula_type": "static",
-    "requires_kind": "static"
+    "requires_kind": "static",
+    "_note": "LGPE Shiny Charm DOES apply to static/soft-reset encounters — no exclusion exists in this generation; only trades and gifts are excluded."
   },
   {
     "id": "run_away",
@@ -374,9 +428,10 @@
     "method_name": "Random Encounter",
     "avg_time_seconds": 20,
     "base_rolls": 1,
-    "charm_rolls": 2,
+    "charm_rolls": 0,
     "formula_type": "static",
-    "requires_kind": "wild"
+    "requires_kind": "wild",
+    "_note": "BDSP Shiny Charm affects breeding ONLY (datamined, Bulbapedia: the internal code explicitly disables the Shiny Charm for other encounter types). Not a mistake — see poke_radar_bdsp and soft_reset_bdsp."
   },
   {
     "id": "poke_radar_bdsp",
@@ -386,9 +441,10 @@
     "method_name": "Poké Radar",
     "avg_time_seconds": 30,
     "base_rolls": 1,
-    "charm_rolls": 2,
-    "formula_type": "radar_chain_gen4",
+    "charm_rolls": 0,
+    "formula_type": "radar_chain_bdsp",
     "requires_kind": "wild",
-    "requires_terrain": "grass"
+    "requires_terrain": "grass",
+    "_note": "BDSP Shiny Charm affects breeding ONLY (datamined, Bulbapedia: the internal code explicitly disables the Shiny Charm for other encounter types). Not a mistake — see random_encounter_bdsp and soft_reset_bdsp."
   }
 ]

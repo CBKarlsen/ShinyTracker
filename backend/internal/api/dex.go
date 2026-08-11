@@ -400,6 +400,125 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// PokemonLocationDetail is one row from pokemon_locations, with the game it
+// belongs to (unlike calc.Location, which hides GameID because its callers
+// already know which game they asked for).
+type PokemonLocationDetail struct {
+	GameID     int      `json:"game_id"`
+	Area       string   `json:"area"`
+	Version    string   `json:"version"`
+	Terrain    string   `json:"terrain"`
+	MinLevel   int      `json:"min_level"`
+	MaxLevel   int      `json:"max_level"`
+	Chance     int      `json:"chance"`
+	Conditions []string `json:"conditions"`
+}
+
+// PokemonDetail is the full detail payload for one Pokemon: its own row, its
+// evolution-line relatives, and its stored locations.
+type PokemonDetail struct {
+	ID            int                     `json:"id"`
+	Name          string                  `json:"name"`
+	SpriteURL     string                  `json:"sprite_url"`
+	Types         json.RawMessage         `json:"types"`
+	CanBreed      bool                    `json:"can_breed"`
+	IsLegendary   bool                    `json:"is_legendary"`
+	IsMythical    bool                    `json:"is_mythical"`
+	EvolvesFromID *int                    `json:"evolves_from_id"`
+	EvolvesFrom   []calc.EvolveFrom       `json:"evolves_from"` // pre-evolution line, nearest first
+	EvolvesTo     []calc.EvolveFrom       `json:"evolves_to"`   // direct evolutions
+	Locations     []PokemonLocationDetail `json:"locations"`
+}
+
+// PokemonDetailHandler returns one Pokemon's row, its evolution-line relatives,
+// and its pokemon_locations rows (optionally filtered to one game via
+// ?game_id=). Distinct from PokemonRouteHandler, which returns hunt routes.
+func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
+	pokemonID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "id must be an integer", http.StatusBadRequest)
+		return
+	}
+	ctx := context.Background()
+
+	var p PokemonDetail
+	err = database.DB.QueryRow(ctx,
+		`SELECT id, name, sprite_url, types, can_breed, is_legendary, is_mythical, evolves_from_id
+		 FROM pokemon WHERE id = $1`, pokemonID).
+		Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types, &p.CanBreed, &p.IsLegendary, &p.IsMythical, &p.EvolvesFromID)
+	if err != nil {
+		http.Error(w, "Pokemon not found", http.StatusNotFound)
+		return
+	}
+
+	p.EvolvesFrom, err = fetchAncestors(ctx, pokemonID)
+	if err != nil {
+		http.Error(w, "Failed to load evolution line", http.StatusInternalServerError)
+		return
+	}
+
+	descRows, err := database.DB.Query(ctx, `SELECT id, name FROM pokemon WHERE evolves_from_id = $1`, pokemonID)
+	if err != nil {
+		http.Error(w, "Failed to load evolutions", http.StatusInternalServerError)
+		return
+	}
+	defer descRows.Close()
+	for descRows.Next() {
+		var e calc.EvolveFrom
+		if err := descRows.Scan(&e.PokemonID, &e.Name); err != nil {
+			continue
+		}
+		p.EvolvesTo = append(p.EvolvesTo, e)
+	}
+	if err := descRows.Err(); err != nil {
+		http.Error(w, "Failed to load evolutions", http.StatusInternalServerError)
+		return
+	}
+
+	locQuery := `SELECT game_id, area, version, terrain, COALESCE(min_level, 0), COALESCE(max_level, 0), COALESCE(chance, 0), COALESCE(conditions, '{}')
+		 FROM pokemon_locations WHERE pokemon_id = $1`
+	args := []interface{}{pokemonID}
+	if gameIDStr := r.URL.Query().Get("game_id"); gameIDStr != "" {
+		gameID, err := strconv.Atoi(gameIDStr)
+		if err != nil {
+			http.Error(w, "game_id must be an integer", http.StatusBadRequest)
+			return
+		}
+		locQuery += " AND game_id = $2"
+		args = append(args, gameID)
+	}
+	locRows, err := database.DB.Query(ctx, locQuery, args...)
+	if err != nil {
+		http.Error(w, "Failed to load locations", http.StatusInternalServerError)
+		return
+	}
+	defer locRows.Close()
+	for locRows.Next() {
+		var l PokemonLocationDetail
+		if err := locRows.Scan(&l.GameID, &l.Area, &l.Version, &l.Terrain, &l.MinLevel, &l.MaxLevel, &l.Chance, &l.Conditions); err != nil {
+			continue
+		}
+		p.Locations = append(p.Locations, l)
+	}
+	if err := locRows.Err(); err != nil {
+		http.Error(w, "Failed to load locations", http.StatusInternalServerError)
+		return
+	}
+
+	if p.EvolvesFrom == nil {
+		p.EvolvesFrom = []calc.EvolveFrom{}
+	}
+	if p.EvolvesTo == nil {
+		p.EvolvesTo = []calc.EvolveFrom{}
+	}
+	if p.Locations == nil {
+		p.Locations = []PokemonLocationDetail{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(p)
+}
+
 // fetchAncestors returns the pre-evolution line (nearest first) for a Pokemon.
 func fetchAncestors(ctx context.Context, pokemonID int) ([]calc.EvolveFrom, error) {
 	rows, err := database.DB.Query(ctx, `
