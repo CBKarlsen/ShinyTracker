@@ -1,5 +1,7 @@
 // One-off script: extracts NUZ_TIMELINE out of the owner's design prototype
-// (docs/design/hunt-prototype.dc.html) and writes seeds/nuzlocke_platinum.json.
+// (docs/design/hunt-prototype.dc.html) and writes backend/seeds/nuzlocke_platinum.json.
+//
+//   node scripts/extract_nuzlocke_seed.js ../docs/design/hunt-prototype.dc.html
 // Run this instead of hand-transcribing the prototype's data so the seed can
 // never silently drift from the source of truth.
 //
@@ -75,7 +77,9 @@ const entries = sandbox.NUZ_TIMELINE.map((e, i) => {
 });
 
 const out = { game: 'Diamond/Pearl/Platinum', entries };
-const outPath = path.join(__dirname, 'seeds', 'nuzlocke_platinum.json');
+// Resolved against backend/, not this script's directory, so the script stays
+// relocatable — it lives in backend/scripts/ but writes to backend/seeds/.
+const outPath = path.join(__dirname, '..', 'seeds', 'nuzlocke_platinum.json');
 fs.writeFileSync(outPath, JSON.stringify(out, null, 2) + '\n');
 
 const locs = entries.filter(e => e.kind === 'location').length;
