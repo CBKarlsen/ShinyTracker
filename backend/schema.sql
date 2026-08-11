@@ -17,6 +17,70 @@ CREATE TABLE IF NOT EXISTS pokemon (
 -- "hunt a pre-evolution, then evolve" route suggestions.
 ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS evolves_from_id INTEGER REFERENCES pokemon(id);
 
+-- Base stats (migration 014): six columns rather than a child table, since
+-- every Pokemon has exactly one of each and the Dex screen always wants all
+-- six together. Nullable: NULL means "not seeded yet", not a real 0.
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS hp INTEGER;
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS attack INTEGER;
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS defense INTEGER;
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS special_attack INTEGER;
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS special_defense INTEGER;
+ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS speed INTEGER;
+
+-- abilities / pokemon_abilities / moves / pokemon_moves (migration 014):
+-- abilities and moves are reference tables upserted on their PokeAPI slug
+-- (same stable-key pattern as hunt_methods, migration 011) rather than
+-- truncated, because pokemon_abilities/pokemon_moves reference their ids.
+-- The 18x18 type chart itself is intentionally NOT stored here -- it is
+-- static data that belongs on the client.
+CREATE TABLE IF NOT EXISTS abilities (
+    id     SERIAL PRIMARY KEY,
+    slug   TEXT NOT NULL UNIQUE, -- PokeAPI name, e.g. "static"
+    name   TEXT NOT NULL,        -- display name, e.g. "Static"
+    effect TEXT                  -- short effect text (PokeAPI short_effect, en)
+);
+
+-- Both FKs CASCADE: pokemon and abilities are both reference data, so this
+-- reference-to-reference join does not fall under the "FK from user data
+-- must never CASCADE" rule (that rule is about user_hunts -> reference data).
+CREATE TABLE IF NOT EXISTS pokemon_abilities (
+    pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    ability_id INTEGER NOT NULL REFERENCES abilities(id) ON DELETE CASCADE,
+    slot       INTEGER NOT NULL, -- PokeAPI slot numbering: 1/2 = regular, 3 = hidden
+    is_hidden  BOOLEAN NOT NULL DEFAULT FALSE,
+    PRIMARY KEY (pokemon_id, slot)
+);
+
+CREATE TABLE IF NOT EXISTS moves (
+    id           SERIAL PRIMARY KEY,
+    slug         TEXT NOT NULL UNIQUE,
+    name         TEXT NOT NULL,
+    type         TEXT NOT NULL, -- plain text; joined only against the client-side type chart
+    damage_class TEXT NOT NULL CHECK (damage_class IN ('physical', 'special', 'status')),
+    power        INTEGER, -- NULL for status moves / variable-power moves
+    accuracy     INTEGER, -- NULL for moves that bypass the accuracy check
+    pp           INTEGER NOT NULL,
+    effect       TEXT     -- short effect text (PokeAPI short_effect, en)
+);
+
+-- pokemon_moves: moveset differs by game, so game_id is a required dimension
+-- (do not flatten to one row per pokemon+move). method is normalized in the
+-- seeder from PokeAPI's move-learn-method vocabulary ("machine" -> "tm").
+-- Only Diamond/Pearl/Platinum (version_group "platinum") and Scarlet/Violet
+-- (version_group "scarlet-violet") are seeded so far -- see cmd/seed_moves.
+-- Adding another game is additive: no schema change required.
+CREATE TABLE IF NOT EXISTS pokemon_moves (
+    id         SERIAL PRIMARY KEY,
+    pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    move_id    INTEGER NOT NULL REFERENCES moves(id) ON DELETE CASCADE,
+    game_id    INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    method     TEXT NOT NULL CHECK (method IN ('level-up', 'tm', 'egg', 'tutor')),
+    level      INTEGER, -- level-up only; NULL for tm/egg/tutor
+    UNIQUE NULLS NOT DISTINCT (pokemon_id, move_id, game_id, method, level)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pokemon_moves_pokemon_game ON pokemon_moves (pokemon_id, game_id);
+
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
@@ -335,6 +399,11 @@ ALTER TABLE profiles                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_games              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_hunts              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hunt_phases             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE abilities               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokemon_abilities       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE moves                   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokemon_moves           ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE nuzlocke_timeline_entries  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nuzlocke_encounter_pool    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nuzlocke_boss_pokemon      ENABLE ROW LEVEL SECURITY;
