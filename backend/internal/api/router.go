@@ -76,6 +76,15 @@ func NewRouter() *chi.Mux {
 			r.Get("/pokemon/{id}", PokemonDetailHandler)
 			r.Get("/pokemon/{id}/route", PokemonRouteHandler)
 
+			r.Get("/runs", GetRunsHandler)
+			r.Post("/runs", CreateRunHandler)
+			r.Get("/runs/{id}", GetRunHandler)
+			r.Patch("/runs/{id}", UpdateRunHandler)
+			r.Put("/runs/{id}/encounters/{locationSlug}", PutRunEncounterHandler)
+			r.Patch("/runs/{id}/party/{memberId}", PatchPartyMemberHandler)
+			r.Put("/runs/{id}/bosses/{bossSlug}", PutBossProgressHandler)
+			r.Get("/nuzlocke/timeline", GetNuzlockeTimelineHandler)
+
 			r.Group(func(r chi.Router) {
 				r.Use(AdminMiddleware)
 				// hunt_methods are global, derived availability — read-only view
