@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/casper/shinytracker/internal/calc"
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
 	"github.com/go-chi/chi/v5"
@@ -224,6 +225,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		EncounterCount int             `json:"encounter_count"`
 		Status         string          `json:"status"`
 		HuntParameters json.RawMessage `json:"hunt_parameters"`
+		// Pointer so "absent" (pre-D1 web frontend, keep deriving server-side)
+		// is distinguishable from "zero". See calc.DecideTotalTime.
+		TotalTimeSeconds *int `json:"total_time_seconds"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -245,19 +249,26 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	var prevUpdatedAt time.Time
 	var currentTotalTime int
+	var clientOwnsTime bool
 	var huntParameters json.RawMessage
 	err := database.DB.QueryRow(context.Background(),
-		`SELECT updated_at, total_time_seconds, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &huntParameters)
+		`SELECT updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &clientOwnsTime, &huntParameters)
 	if err != nil {
 		http.Error(w, "Hunt not found", http.StatusNotFound)
 		return
 	}
 
-	newTotalTime := currentTotalTime
-	delta := time.Since(prevUpdatedAt)
-	if delta < 600*time.Second {
-		newTotalTime += int(delta.Seconds())
+	// D1 (docs/handoff/DECISIONS.md): total_time_seconds is client-authoritative
+	// once a client starts sending it — see calc.DecideTotalTime for the full
+	// derive/store/latch decision.
+	newTotalTime, newClientOwnsTime, err := calc.DecideTotalTime(currentTotalTime, clientOwnsTime, req.TotalTimeSeconds, time.Since(prevUpdatedAt))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
+		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)
 	}
 
 	if len(req.HuntParameters) > 0 {
@@ -267,10 +278,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	var hunt models.UserHunt
 	err = database.DB.QueryRow(context.Background(),
 		`UPDATE user_hunts
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, hunt_parameters = $4
-		 WHERE id = $5 AND user_id = $6
+		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5
+		 WHERE id = $6 AND user_id = $7
 		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		req.EncounterCount, req.Status, newTotalTime, huntParameters, huntID, userID).
+		req.EncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, huntID, userID).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
 
 	if err != nil {

@@ -185,6 +185,13 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     encounter_count INTEGER NOT NULL DEFAULT 0,
     phase_count INTEGER NOT NULL DEFAULT 0,
     total_time_seconds INTEGER NOT NULL DEFAULT 0,
+    -- One-way latch (migration 012): flips true the first time a PATCH sends
+    -- total_time_seconds explicitly. Once true, the server never derives
+    -- total_time_seconds for this hunt again — see UpdateHuntHandler /
+    -- calc.DecideTotalTime. Keeps a hunt migrated to a client that owns its
+    -- own elapsed time from being double-counted by a later PATCH that omits
+    -- the field (e.g. the web frontend).
+    client_owns_time BOOLEAN NOT NULL DEFAULT false,
     status TEXT NOT NULL DEFAULT 'active', -- 'active' or 'completed'
     hunt_parameters JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
