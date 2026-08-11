@@ -36,6 +36,25 @@ struct DesignTokensTests {
         #expect(Palette.textFaint.hex == 0x44444E)
     }
 
+    @Test("Dex surfaces and stat-bar tiers match the prototype")
+    func dexTokens() {
+        // `background:#0f0f15` on every block in the species sheet, `#141419` on the sheet.
+        #expect(Palette.surfaceBlock.hex == 0x0F0F15)
+        #expect(Palette.sheet.hex == 0x141419)
+
+        // `v >= 90 ? '#6ee7a2' : v >= 60 ? '#f5c661' : '#ff7373'`
+        #expect(Palette.statLow.hex == 0xFF7373)
+        #expect(Palette.statBar(90).hex == Palette.team.hex)
+        #expect(Palette.statBar(89).hex == Palette.hunt.hex)
+        #expect(Palette.statBar(60).hex == Palette.hunt.hex)
+        #expect(Palette.statBar(59).hex == Palette.statLow.hex)
+
+        #expect(Radii.tile == 14)
+        #expect(Radii.block == 16)
+        #expect(Radii.sheet == 26)
+        #expect(Radii.typeChip == 7)
+    }
+
     @Test("Swatch decomposes hex into the right channels")
     func channels() {
         // 0xF5C661 -> 245, 198, 97. Guards the shift/mask, which a test pinning only `hex`
