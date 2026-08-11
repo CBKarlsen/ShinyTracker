@@ -224,8 +224,8 @@ func SyncPokemonData() error {
 }
 
 type PokeAPISpeciesResponse struct {
-	IsLegendary bool `json:"is_legendary"`
-	IsMythical  bool `json:"is_mythical"`
+	IsLegendary        bool `json:"is_legendary"`
+	IsMythical         bool `json:"is_mythical"`
 	EvolvesFromSpecies *struct {
 		Name string `json:"name"`
 		URL  string `json:"url"`

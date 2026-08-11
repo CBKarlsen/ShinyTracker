@@ -46,17 +46,41 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 // loadHuntsForUser fetches every hunt (with join details and phases) owned by
 // one user. Shared by GetHuntsHandler and ExportHandler so the export can't
 // drift from what the hunts list actually returns.
+// huntDetailQuery is the SELECT/FROM/JOIN shared by every read of a hunt with its
+// joined method, game and shiny-charm state. Callers append their own WHERE (and
+// ORDER BY). Keeping the column list in one place is the point: the hunts list and
+// the single-hunt reload after a phase log must decode to an identical shape, and
+// when these were two copy-pasted queries they were free to drift apart silently.
+const huntDetailQuery = `
+	SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
+	       p.name AS pokemon_name, e.method_name, h.custom_method_name, g.title AS game_title,
+	       h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
+	       COALESCE(e.formula_type, 'static') AS formula_type
+	  FROM user_hunts h
+	  JOIN pokemon p ON h.pokemon_id = p.id
+	  LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
+	  LEFT JOIN games g ON h.game_id = g.id
+	  LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id`
+
+// rowScanner is satisfied by both pgx.Rows and pgx.Row, so scanHuntDetail works for
+// the list query and the single-row reload alike.
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+// scanHuntDetail decodes one row of huntDetailQuery. The order here mirrors that
+// query's column list exactly — change one and you must change the other.
+func scanHuntDetail(row rowScanner, h *models.UserHuntDetail) error {
+	return row.Scan(
+		&h.ID, &h.UserID, &h.PokemonID, &h.GameID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
+		&h.PokemonName, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
+		&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType,
+	)
+}
+
 func loadHuntsForUser(ctx context.Context, userID string) ([]models.UserHuntDetail, error) {
 	rows, err := database.DB.Query(ctx,
-		`SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
-		        p.name as pokemon_name, e.method_name, h.custom_method_name, g.title as game_title,
-		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
-		        COALESCE(e.formula_type, 'static') AS formula_type
-		 FROM user_hunts h
-		 JOIN pokemon p ON h.pokemon_id = p.id
-		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
-		 LEFT JOIN games g ON h.game_id = g.id
-		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
+		huntDetailQuery+`
 		 WHERE h.user_id = $1
 		 ORDER BY h.created_at DESC`, userID)
 	if err != nil {
@@ -68,11 +92,7 @@ func loadHuntsForUser(ctx context.Context, userID string) ([]models.UserHuntDeta
 	huntIDs := []string{}
 	for rows.Next() {
 		var h models.UserHuntDetail
-		if err := rows.Scan(
-			&h.ID, &h.UserID, &h.PokemonID, &h.GameID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
-			&h.PokemonName, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
-			&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType,
-		); err != nil {
+		if err := scanHuntDetail(rows, &h); err != nil {
 			continue
 		}
 		h.Phases = []models.HuntPhase{}
@@ -364,24 +384,14 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load full hunt detail with phases for response.
+	// Load full hunt detail with phases for response. Same query and scan as the
+	// hunts list — see huntDetailQuery — so the two can never return different shapes.
 	var hunt models.UserHuntDetail
-	if err := database.DB.QueryRow(context.Background(),
-		`SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
-		        p.name, e.method_name, h.custom_method_name, g.title,
-		        h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
-		        COALESCE(e.formula_type, 'static') AS formula_type
-		 FROM user_hunts h
-		 JOIN pokemon p ON h.pokemon_id = p.id
-		 LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
-		 LEFT JOIN games g ON h.game_id = g.id
-		 LEFT JOIN user_games ug ON ug.game_id = g.id AND ug.user_id = h.user_id
+	row := database.DB.QueryRow(context.Background(),
+		huntDetailQuery+`
 		 WHERE h.id = $1 AND h.user_id = $2`,
-		huntID, userID).Scan(
-		&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt,
-		&hunt.PokemonName, &hunt.MethodName, &hunt.CustomMethodName, &hunt.GameTitle,
-		&hunt.TotalTimeSeconds, &hunt.BaseRolls, &hunt.CharmRolls, &hunt.AvgTimeSeconds, &hunt.BaseOdds, &hunt.HasShinyCharm, &hunt.FormulaType,
-	); err != nil {
+		huntID, userID)
+	if err := scanHuntDetail(row, &hunt); err != nil {
 		log.Printf("LogPhase load err: %v", err)
 		http.Error(w, "Failed to load updated hunt", http.StatusInternalServerError)
 		return

@@ -7,7 +7,6 @@ package api
 // Usage:
 //
 //	userID, claims, err := ValidateSupabaseJWTWithClaims(tokenString)
-//	userID, err         := ValidateSupabaseJWT(tokenString)  // thin wrapper
 //
 // Configuration (env vars — SUPABASE_URL is required at startup):
 //
@@ -160,14 +159,6 @@ func ValidateSupabaseJWTWithClaims(tokenString string) (userID string, claims jw
 	return sub, mc, nil
 }
 
-// ValidateSupabaseJWT is a thin wrapper around ValidateSupabaseJWTWithClaims
-// that discards the claims and returns only the sub (user UUID). Kept for
-// call-sites that do not need the full claims map.
-func ValidateSupabaseJWT(tokenString string) (userID string, err error) {
-	id, _, err := ValidateSupabaseJWTWithClaims(tokenString)
-	return id, err
-}
-
 // closeSupabaseKeyfunc tears down the background JWKS refresh goroutine.
 // Intended for graceful shutdown; not required for correctness in production.
 func closeSupabaseKeyfunc() {
@@ -179,4 +170,3 @@ func closeSupabaseKeyfunc() {
 		supabaseKeyfuncState.kf = nil
 	}
 }
-

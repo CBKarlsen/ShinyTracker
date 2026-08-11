@@ -54,8 +54,9 @@ func main() {
 	//   1. seedMethods          — populate hunt_methods / method_games
 	//   2. seedMethodExceptions — manual include/exclude corrections
 	//   3. ensureWildEncounters — PokeAPI wild kinds (skipped if already present)
-	//   4. seedCuratedEncounters / seedOverworldSpecies / seedFishingSpecies /
-	//      seedFriendSafariSpecies / seedBDSPWildEncounters — curated encounter rows
+	//   4. seedCuratedEncounters / seedTerrainSpecies (overworld + fishing) /
+	//      seedFriendSafariSpecies / seedBDSPWildEncounters / seedORASWildEncounters
+	//      — curated encounter rows
 	//   5. reconcileAvailability — backfill pokemon_availability from encounters
 	//   6. deriveEggEncounters   — egg kinds for breedable base-stage Pokemon
 	//   7. seedShinyLocks        — MUST run before computeAvailability so locked
@@ -103,11 +104,13 @@ func main() {
 	log.Println("Seeding curated static/raid encounter kinds...")
 	seedCuratedEncounters(ctx)
 
+	// Gen 8/9 have no PokeAPI wild data; ORAS has no fishing terrain. Same shape,
+	// different terrain — see seedTerrainSpecies.
 	log.Println("Seeding overworld wild species (Gen 8/9 curated)...")
-	seedOverworldSpecies(ctx)
+	seedTerrainSpecies(ctx, "overworld_species.json", "none")
 
 	log.Println("Seeding fishing wild species (curated terrain=fishing)...")
-	seedFishingSpecies(ctx)
+	seedTerrainSpecies(ctx, "fishing_species.json", "fishing")
 
 	log.Println("Seeding Friend Safari species (X/Y, terrain=friend_safari)...")
 	seedFriendSafariSpecies(ctx)
@@ -431,77 +434,43 @@ func seedCuratedEncounters(ctx context.Context) {
 	log.Printf("Inserted %d curated static/raid encounter rows.", inserted)
 }
 
-// seedOverworldSpecies inserts curated wild encounter rows for games where PokeAPI
-// provides no wild data (Gen 8/9). The source (seeds/overworld_species.json) maps a
-// game title to the National-Dex IDs that are wild/overworld-encounterable there,
-// taken from regional-dex membership. Legendaries/mythicals are guarded out — in
-// these games they are static/shiny-locked, not wild spawns.
-func seedOverworldSpecies(ctx context.Context) {
-	data, err := os.ReadFile("seeds/overworld_species.json")
+// seedTerrainSpecies inserts curated wild encounter rows for games where PokeAPI
+// lacks terrain data. The source file maps a game title to the National-Dex ids
+// catchable that way. Legendaries and mythicals are guarded out: PokeAPI reports
+// their stationary encounters as locations, which must not become wild rows.
+//
+// Merged from the former seedOverworldSpecies and seedFishingSpecies, which were
+// the same twenty lines with one terrain literal changed.
+func seedTerrainSpecies(ctx context.Context, filename, terrain string) {
+	data, err := os.ReadFile("seeds/" + filename)
 	if err != nil {
-		log.Fatal("Failed to read overworld_species.json: ", err)
+		log.Fatalf("Failed to read %s: %v", filename, err)
 	}
 	var byGame map[string][]int
 	if err := json.Unmarshal(data, &byGame); err != nil {
-		log.Fatal("JSON parse error in overworld_species.json: ", err)
+		log.Fatalf("JSON parse error in %s: %v", filename, err)
 	}
 	gameIDs := loadGameIDs(ctx)
 	inserted := 0
 	for title, ids := range byGame {
 		gameID, ok := gameIDs[title]
 		if !ok {
-			log.Printf("WARNING: overworld_species.json: unknown game title %q — skipping", title)
+			log.Printf("WARNING: %s: unknown game title %q — skipping", filename, title)
 			continue
 		}
 		tag, err := database.DB.Exec(ctx, `
 			INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
-			SELECT p.id, $1, 'wild', 'none'
+			SELECT p.id, $1, 'wild', $2
 			FROM pokemon p
-			WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
+			WHERE p.id = ANY($3::int[]) AND NOT (p.is_legendary OR p.is_mythical)
 			ON CONFLICT DO NOTHING
-		`, gameID, ids)
+		`, gameID, terrain, ids)
 		if err != nil {
-			log.Fatalf("overworld_species: failed to insert wild rows for %s: %v", title, err)
+			log.Fatalf("%s: failed to insert terrain=%s rows for %s: %v", filename, terrain, title, err)
 		}
 		inserted += int(tag.RowsAffected())
 	}
-	log.Printf("Inserted %d overworld wild encounter rows.", inserted)
-}
-
-// seedFishingSpecies inserts curated wild encounter rows with terrain='fishing' for
-// games where PokeAPI lacks fishing-terrain data (e.g. ORAS). Source maps a game title
-// to the National-Dex IDs catchable via rods there. Legendaries/mythicals are guarded
-// out. This is the terrain='fishing' sibling of seedOverworldSpecies.
-func seedFishingSpecies(ctx context.Context) {
-	data, err := os.ReadFile("seeds/fishing_species.json")
-	if err != nil {
-		log.Fatal("Failed to read fishing_species.json: ", err)
-	}
-	var byGame map[string][]int
-	if err := json.Unmarshal(data, &byGame); err != nil {
-		log.Fatal("JSON parse error in fishing_species.json: ", err)
-	}
-	gameIDs := loadGameIDs(ctx)
-	inserted := 0
-	for title, ids := range byGame {
-		gameID, ok := gameIDs[title]
-		if !ok {
-			log.Printf("WARNING: fishing_species.json: unknown game title %q — skipping", title)
-			continue
-		}
-		tag, err := database.DB.Exec(ctx, `
-			INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
-			SELECT p.id, $1, 'wild', 'fishing'
-			FROM pokemon p
-			WHERE p.id = ANY($2::int[]) AND NOT (p.is_legendary OR p.is_mythical)
-			ON CONFLICT DO NOTHING
-		`, gameID, ids)
-		if err != nil {
-			log.Fatalf("fishing_species: failed to insert fishing rows for %s: %v", title, err)
-		}
-		inserted += int(tag.RowsAffected())
-	}
-	log.Printf("Inserted %d fishing wild encounter rows.", inserted)
+	log.Printf("Inserted %d wild encounter rows with terrain=%s (%s).", inserted, terrain, filename)
 }
 
 // seedFriendSafariSpecies inserts wild encounter rows with terrain='friend_safari'

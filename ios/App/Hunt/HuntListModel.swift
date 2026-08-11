@@ -1,5 +1,6 @@
 import Foundation
 import ShinyTrackerAPI
+import ShinyTrackerAuth
 import ShinyTrackerKit
 import SwiftUI
 
@@ -207,12 +208,23 @@ final class HuntListModel {
         }
     }
 
-    private func message(for error: any Error) -> String {
-        // APIError prints the endpoint and the server's plain-text body; URLError does not have
-        // a useful `description`, so it goes through localizedDescription.
-        if let api = error as? APIError { return api.description }
-        return error.localizedDescription
-    }
+    private func message(for error: any Error) -> String { userFacingMessage(for: error) }
+}
+
+/// Turns any error this app throws into something worth showing a user.
+///
+/// Shared by the hunt list and the login screen, which previously disagreed: login
+/// used `localizedDescription` unconditionally. That matters because `APIError` and
+/// `SessionExpiredError` conform to `CustomStringConvertible`, NOT `LocalizedError` —
+/// so `localizedDescription` on them does not reach `description`. It bridges through
+/// NSError and yields "The operation couldn't be completed…", silently discarding the
+/// endpoint and server message those types exist to carry.
+///
+/// `URLError` is the opposite case: no useful `description`, but a good localized one.
+func userFacingMessage(for error: any Error) -> String {
+    if let api = error as? APIError { return api.description }
+    if let expired = error as? SessionExpiredError { return expired.description }
+    return error.localizedDescription
 }
 
 // MARK: - Formatting
