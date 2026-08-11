@@ -1,0 +1,361 @@
+{
+  "game": "Diamond/Pearl/Platinum",
+  "entries": [
+    {
+      "slug": "starter",
+      "kind": "location",
+      "sort_order": 1,
+      "name": "Lake Verity",
+      "encounters": [
+        387,
+        390,
+        393
+      ]
+    },
+    {
+      "slug": "r201",
+      "kind": "location",
+      "sort_order": 2,
+      "name": "Route 201",
+      "encounters": [
+        396,
+        399
+      ]
+    },
+    {
+      "slug": "r202",
+      "kind": "location",
+      "sort_order": 3,
+      "name": "Route 202",
+      "encounters": [
+        403,
+        396,
+        399,
+        401
+      ]
+    },
+    {
+      "slug": "rival1",
+      "kind": "boss",
+      "sort_order": 4,
+      "name": "Barry",
+      "boss_title": "Rival",
+      "place": "Route 203",
+      "level_cap": 9,
+      "squad": [
+        {
+          "pokemon_id": 396,
+          "level": 7,
+          "ability": "Keen Eye",
+          "sort_order": 1,
+          "moves": [
+            {
+              "name": "Quick Attack",
+              "type": "Normal",
+              "power": 40,
+              "sort_order": 1
+            },
+            {
+              "name": "Growl",
+              "type": "Normal",
+              "power": 0,
+              "sort_order": 2
+            },
+            {
+              "name": "Wing Attack",
+              "type": "Flying",
+              "power": 60,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "pokemon_id": 390,
+          "level": 9,
+          "ability": "Blaze",
+          "sort_order": 2,
+          "moves": [
+            {
+              "name": "Scratch",
+              "type": "Normal",
+              "power": 40,
+              "sort_order": 1
+            },
+            {
+              "name": "Ember",
+              "type": "Fire",
+              "power": 40,
+              "sort_order": 2
+            },
+            {
+              "name": "Taunt",
+              "type": "Dark",
+              "power": 0,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "r203",
+      "kind": "location",
+      "sort_order": 5,
+      "name": "Route 203",
+      "encounters": [
+        63,
+        403,
+        396,
+        399,
+        401
+      ]
+    },
+    {
+      "slug": "gate",
+      "kind": "location",
+      "sort_order": 6,
+      "name": "Oreburgh Gate",
+      "encounters": [
+        41,
+        74,
+        54
+      ]
+    },
+    {
+      "slug": "mine",
+      "kind": "location",
+      "sort_order": 7,
+      "name": "Oreburgh Mine",
+      "encounters": [
+        74,
+        95,
+        41
+      ]
+    },
+    {
+      "slug": "gym1",
+      "kind": "boss",
+      "sort_order": 8,
+      "name": "Roark",
+      "boss_title": "Gym Leader · Rock",
+      "place": "Oreburgh Gym",
+      "level_cap": 14,
+      "squad": [
+        {
+          "pokemon_id": 74,
+          "level": 12,
+          "ability": "Rock Head",
+          "sort_order": 1,
+          "moves": [
+            {
+              "name": "Stealth Rock",
+              "type": "Rock",
+              "power": 0,
+              "sort_order": 1
+            },
+            {
+              "name": "Rock Throw",
+              "type": "Rock",
+              "power": 50,
+              "sort_order": 2
+            },
+            {
+              "name": "Tackle",
+              "type": "Normal",
+              "power": 35,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "pokemon_id": 95,
+          "level": 12,
+          "ability": "Sturdy",
+          "sort_order": 2,
+          "moves": [
+            {
+              "name": "Rock Throw",
+              "type": "Rock",
+              "power": 50,
+              "sort_order": 1
+            },
+            {
+              "name": "Bind",
+              "type": "Normal",
+              "power": 15,
+              "sort_order": 2
+            },
+            {
+              "name": "Screech",
+              "type": "Normal",
+              "power": 0,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "pokemon_id": 408,
+          "level": 14,
+          "ability": "Mold Breaker",
+          "sort_order": 3,
+          "moves": [
+            {
+              "name": "Headbutt",
+              "type": "Normal",
+              "power": 70,
+              "sort_order": 1
+            },
+            {
+              "name": "Pursuit",
+              "type": "Dark",
+              "power": 40,
+              "sort_order": 2
+            },
+            {
+              "name": "Leer",
+              "type": "Normal",
+              "power": 0,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "r204",
+      "kind": "location",
+      "sort_order": 9,
+      "name": "Route 204",
+      "encounters": [
+        406,
+        265,
+        396,
+        399
+      ]
+    },
+    {
+      "slug": "ravaged",
+      "kind": "location",
+      "sort_order": 10,
+      "name": "Ravaged Path",
+      "encounters": [
+        41,
+        54,
+        74
+      ]
+    },
+    {
+      "slug": "wind",
+      "kind": "location",
+      "sort_order": 11,
+      "name": "Valley Windworks",
+      "encounters": [
+        417,
+        422,
+        418,
+        425
+      ]
+    },
+    {
+      "slug": "forest",
+      "kind": "location",
+      "sort_order": 12,
+      "name": "Eterna Forest",
+      "encounters": [
+        427,
+        198,
+        92,
+        265
+      ]
+    },
+    {
+      "slug": "gym2",
+      "kind": "boss",
+      "sort_order": 13,
+      "name": "Gardenia",
+      "boss_title": "Gym Leader · Grass",
+      "place": "Eterna Gym",
+      "level_cap": 22,
+      "squad": [
+        {
+          "pokemon_id": 387,
+          "level": 19,
+          "ability": "Overgrow",
+          "sort_order": 1,
+          "moves": [
+            {
+              "name": "Razor Leaf",
+              "type": "Grass",
+              "power": 55,
+              "sort_order": 1
+            },
+            {
+              "name": "Reflect",
+              "type": "Psychic",
+              "power": 0,
+              "sort_order": 2
+            },
+            {
+              "name": "Tackle",
+              "type": "Normal",
+              "power": 35,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "pokemon_id": 421,
+          "level": 19,
+          "ability": "Flower Gift",
+          "sort_order": 2,
+          "moves": [
+            {
+              "name": "Magical Leaf",
+              "type": "Grass",
+              "power": 60,
+              "sort_order": 1
+            },
+            {
+              "name": "Leech Seed",
+              "type": "Grass",
+              "power": 0,
+              "sort_order": 2
+            },
+            {
+              "name": "Growth",
+              "type": "Normal",
+              "power": 0,
+              "sort_order": 3
+            }
+          ]
+        },
+        {
+          "pokemon_id": 407,
+          "level": 22,
+          "ability": "Natural Cure",
+          "sort_order": 3,
+          "moves": [
+            {
+              "name": "Magical Leaf",
+              "type": "Grass",
+              "power": 60,
+              "sort_order": 1
+            },
+            {
+              "name": "Stun Spore",
+              "type": "Grass",
+              "power": 0,
+              "sort_order": 2
+            },
+            {
+              "name": "Poison Sting",
+              "type": "Poison",
+              "power": 15,
+              "sort_order": 3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

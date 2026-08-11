@@ -264,6 +264,119 @@ CREATE TABLE IF NOT EXISTS user_hunts (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Nuzlocke mode (migrations/013_add_nuzlocke.sql)
+--
+-- Reference: the seeded Platinum route timeline (global, shared by every
+-- user). Seeded from seeds/nuzlocke_platinum.json by cmd/seed_nuzlocke,
+-- upserted on (game_id, slug) so ids stay stable across re-seeds — the same
+-- pattern hunt_methods uses via its slug column (migrations/011).
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS nuzlocke_timeline_entries (
+    id          SERIAL PRIMARY KEY,
+    game_id     INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    slug        TEXT NOT NULL,
+    kind        TEXT NOT NULL CHECK (kind IN ('location', 'boss')),
+    name        TEXT NOT NULL,
+    sort_order  INTEGER NOT NULL,
+    place       TEXT,
+    boss_title  TEXT,
+    level_cap   INTEGER,
+    UNIQUE (game_id, slug)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_timeline_entries_game_order
+    ON nuzlocke_timeline_entries (game_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS nuzlocke_encounter_pool (
+    id                 SERIAL PRIMARY KEY,
+    timeline_entry_id  INTEGER NOT NULL REFERENCES nuzlocke_timeline_entries(id) ON DELETE CASCADE,
+    pokemon_id         INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    sort_order         INTEGER NOT NULL,
+    UNIQUE (timeline_entry_id, pokemon_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_encounter_pool_entry
+    ON nuzlocke_encounter_pool (timeline_entry_id);
+
+CREATE TABLE IF NOT EXISTS nuzlocke_boss_pokemon (
+    id                 SERIAL PRIMARY KEY,
+    timeline_entry_id  INTEGER NOT NULL REFERENCES nuzlocke_timeline_entries(id) ON DELETE CASCADE,
+    pokemon_id         INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    level              INTEGER NOT NULL,
+    ability            TEXT NOT NULL,
+    sort_order         INTEGER NOT NULL,
+    UNIQUE (timeline_entry_id, sort_order)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_boss_pokemon_entry
+    ON nuzlocke_boss_pokemon (timeline_entry_id);
+
+CREATE TABLE IF NOT EXISTS nuzlocke_boss_moves (
+    id               SERIAL PRIMARY KEY,
+    boss_pokemon_id  INTEGER NOT NULL REFERENCES nuzlocke_boss_pokemon(id) ON DELETE CASCADE,
+    name             TEXT NOT NULL,
+    type             TEXT NOT NULL,
+    power            INTEGER NOT NULL DEFAULT 0,
+    sort_order       INTEGER NOT NULL,
+    UNIQUE (boss_pokemon_id, sort_order)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_boss_moves_boss_pokemon
+    ON nuzlocke_boss_moves (boss_pokemon_id);
+
+-- User data: a run over the timeline. FKs back to the reference tables above
+-- are ON DELETE SET NULL, never CASCADE — same reasoning as
+-- user_hunts.hunt_method_id (see its comment above): losing/re-slugging a
+-- reference row must never delete a user's run, logged encounter, or boss
+-- progress.
+CREATE TABLE IF NOT EXISTS nuzlocke_runs (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id             UUID NOT NULL,
+    game_id             INTEGER REFERENCES games(id) ON DELETE SET NULL,
+    dupes_clause        BOOLEAN NOT NULL DEFAULT TRUE,
+    battle_style        TEXT NOT NULL DEFAULT 'set' CHECK (battle_style IN ('set', 'shift')),
+    nicknames_required  BOOLEAN NOT NULL DEFAULT TRUE,
+    status              TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'ended')),
+    started_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    ended_at            TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_runs_user
+    ON nuzlocke_runs (user_id);
+
+CREATE TABLE IF NOT EXISTS nuzlocke_encounters_logged (
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    run_id             UUID NOT NULL REFERENCES nuzlocke_runs(id) ON DELETE CASCADE,
+    timeline_entry_id  INTEGER REFERENCES nuzlocke_timeline_entries(id) ON DELETE SET NULL,
+    pokemon_id         INTEGER REFERENCES pokemon(id) ON DELETE SET NULL,
+    nickname           TEXT,
+    status             TEXT NOT NULL CHECK (status IN ('caught', 'missed', 'fainted', 'ran')),
+    nature             TEXT,
+    is_boxed           BOOLEAN NOT NULL DEFAULT FALSE,
+    is_dupe            BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (run_id, timeline_entry_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_encounters_logged_run
+    ON nuzlocke_encounters_logged (run_id);
+
+CREATE TABLE IF NOT EXISTS nuzlocke_boss_progress (
+    id                 SERIAL PRIMARY KEY,
+    run_id             UUID NOT NULL REFERENCES nuzlocke_runs(id) ON DELETE CASCADE,
+    timeline_entry_id  INTEGER REFERENCES nuzlocke_timeline_entries(id) ON DELETE SET NULL,
+    beaten             BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (run_id, timeline_entry_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_nuzlocke_boss_progress_run
+    ON nuzlocke_boss_progress (run_id);
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Row Level Security (default-deny)
 --
 -- Supabase auto-exposes every public table over its PostgREST API. Enabling RLS
@@ -290,3 +403,11 @@ ALTER TABLE abilities               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pokemon_abilities       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moves                   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pokemon_moves           ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE nuzlocke_timeline_entries  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_encounter_pool    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_boss_pokemon      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_boss_moves        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_runs              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_encounters_logged ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nuzlocke_boss_progress     ENABLE ROW LEVEL SECURITY;

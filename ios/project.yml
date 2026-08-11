@@ -18,6 +18,10 @@ packages:
     path: ShinyTrackerAuth
   ShinyTrackerAPI:
     path: ShinyTrackerAPI
+  ShinyTrackerUI:
+    # Design tokens transcribed from docs/design/hunt-prototype.dc.html. SwiftUI only —
+    # no odds engine, no API client, no session.
+    path: ShinyTrackerUI
 
 targets:
   ShinyTracker:
@@ -33,6 +37,7 @@ targets:
       - package: ShinyTrackerKit
       - package: ShinyTrackerAuth
       - package: ShinyTrackerAPI
+      - package: ShinyTrackerUI
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.casperkarlsen.shinytracker
@@ -41,6 +46,16 @@ targets:
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
+        # Sourced from Secrets.xcconfig (gitignored) rather than set here, so a personal
+        # team id is never committed AND survives `xcodegen generate` — setting it in
+        # Xcode's UI instead would be wiped on the next regeneration. Empty is fine for
+        # simulator builds; a device build needs it filled in.
+        DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+        # Which entitlements file to apply, from Secrets.xcconfig. Set to the generated
+        # App/ShinyTracker.entitlements for paid teams / release; set EMPTY on a free
+        # personal team, which cannot provision Sign in with Apple. See the note by the
+        # entitlements block below.
+        CODE_SIGN_ENTITLEMENTS: $(ENTITLEMENTS_FILE)
     info:
       path: App/Info.plist
       properties:
@@ -51,6 +66,13 @@ targets:
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
         # Read by APIConfig.fromBundle().
         API_BASE_URL: $(API_BASE_URL)
+        # Permits cleartext HTTP to loopback / .local / private-range addresses ONLY,
+        # so the simulator can reach a Go API running on localhost:8080 before the
+        # service is deployed. This is NOT NSAllowsArbitraryLoads — public hosts still
+        # require HTTPS, so it is safe to ship and does not weaken the eventual
+        # production configuration.
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         # The OAuth redirect target. Must also be allow-listed in the Supabase project.
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
@@ -64,11 +86,16 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-    entitlements:
-      path: App/ShinyTracker.entitlements
-      properties:
-        # App Store guideline 4.8 — required because GitHub and Google sign-in are offered.
-        com.apple.developer.applesignin: [Default]
+    # NO `entitlements:` block on purpose. xcodegen would write CODE_SIGN_ENTITLEMENTS
+    # into the target, which overrides the settings block above and makes the entitlement
+    # unconditional. Instead App/ShinyTracker.entitlements is a checked-in file, applied
+    # only when ENTITLEMENTS_FILE points at it in Secrets.xcconfig.
+    #
+    # Why it has to be switchable: a FREE personal Apple team cannot provision
+    # com.apple.developer.applesignin — Xcode fails with "Personal development teams ...
+    # do not support the Sign In with Apple capability" — so local device testing needs it
+    # off. Release builds on a paid team must have it ON: guideline 4.8 requires Sign in
+    # with Apple because GitHub and Google sign-in are offered.
 
 schemes:
   ShinyTracker:
