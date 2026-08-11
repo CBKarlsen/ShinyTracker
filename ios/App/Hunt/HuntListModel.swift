@@ -62,21 +62,26 @@ struct HuntRow: Identifiable, Equatable {
     }
 }
 
+/// Loading / loaded / failed. Top-level because the Hunt list and the game library are two
+/// screens with the same three states and no reason to spell them twice.
+enum LoadState: Equatable {
+    case loading
+    case ready
+    case failed(String)
+}
+
 /// Loads the Active list and owns the optimistic counter.
 @MainActor
 @Observable
 final class HuntListModel {
-    enum LoadState: Equatable {
-        case loading
-        case ready
-        case failed(String)
-    }
-
     /// `STEPS = [1, 2, 3, 5, 10]` — the ×N cycler.
     static let steps = [1, 2, 3, 5, 10]
 
     private(set) var state: LoadState = .loading
     private(set) var rows: [HuntRow] = []
+    /// The History tab: `status == "completed"`, newest first (`GET /api/hunts` orders by
+    /// `created_at DESC`).
+    private(set) var history: [HuntRow] = []
 
     /// The emphasised card. The server has no such flag; the prototype sets `live` on whichever
     /// hunt you last counted (see its `bump()`), so this does the same and seeds it with the
@@ -85,10 +90,6 @@ final class HuntListModel {
 
     /// A failed PATCH, surfaced above the list after the count has been rolled back.
     private(set) var syncError: String?
-
-    /// First tap on ✦ arms, second commits. Borrowed from the design's own "End run — tap it
-    /// twice" idiom rather than building the prototype's confirm sheet, which is out of scope.
-    private(set) var armedFoundID: UUID?
 
     /// Per-hunt ×N step. Lives here, not in ``HuntRow``, so it survives a reload of the list.
     private var stepByHunt: [UUID: Int] = [:]
@@ -109,20 +110,46 @@ final class HuntListModel {
         stepByHunt[id] = steps[next]
     }
 
-    func load() async {
-        state = .loading
+    func load() async { await load(quiet: false) }
+
+    /// `quiet` skips the loading state, for the reloads that follow a write the user just made:
+    /// they already saw the sheet close, and blanking the list behind it reads as a bug.
+    func refresh() async { await load(quiet: true) }
+
+    private func load(quiet: Bool) async {
+        if !quiet { state = .loading }
         syncError = nil
         do {
-            // Only the Active tab is built, and `status` is a free-form String on purpose
-            // (Models.swift) — filter here rather than trusting the server to send only active.
-            let active = try await client.hunts().filter { $0.status == "active" }
-            rows = active.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            // `status` is a free-form String on purpose (Models.swift), so both tabs are filled
+            // by filtering one response rather than trusting the server to send one kind.
+            let all = try await client.hunts()
+            // A burst of taps that has not been flushed yet is newer than anything this response
+            // can contain, so it survives the reload. Without this, pull-to-refresh — or the
+            // refresh that follows starting or completing another hunt — silently rolls those
+            // taps back. `preBurstCount` is the unflushed set: `flush` clears it either way.
+            //
+            // ponytail: local wins while unflushed, which is wrong only in the multi-device case
+            // (a second device's higher count would lose). Real reconciliation is the offline
+            // sync layer's job — see DECISIONS.md D1 on the monotonic counter.
+            let unflushed = preBurstCount
+            let current = rows
+            rows = all.filter { $0.status == "active" }.map { detail in
+                let local = unflushed[detail.id] != nil
+                    ? current.first(where: { $0.id == detail.id })?.count : nil
+                return HuntRow(detail: detail, count: local ?? detail.encounterCount)
+            }
+            history = all.filter { $0.status == "completed" }
+                .map { HuntRow(detail: $0, count: $0.encounterCount) }
             if liveHuntID == nil || !rows.contains(where: { $0.id == liveHuntID }) {
                 liveHuntID = rows.first?.id
             }
             state = .ready
         } catch {
-            state = .failed(message(for: error))
+            if quiet {
+                syncError = "Couldn't refresh your hunts. \(message(for: error))"
+            } else {
+                state = .failed(message(for: error))
+            }
         }
     }
 
@@ -136,7 +163,6 @@ final class HuntListModel {
 
         rows[index].count = after
         liveHuntID = id
-        armedFoundID = nil                          // any other interaction disarms ✦
         syncError = nil
         Haptics.impact(delta > 0 ? .light : .rigid)
         scheduleSync(id, rollbackTo: before)
@@ -179,33 +205,55 @@ final class HuntListModel {
         }
     }
 
-    // MARK: Found
+    // MARK: Found and abandoned
 
-    func tapFound(_ id: UUID) {
-        guard armedFoundID == id else {
-            armedFoundID = id
-            Haptics.impact(.light)
-            return
-        }
-        armedFoundID = nil
-        Task { await markFound(id) }
-    }
-
-    private func markFound(_ id: UUID) async {
-        guard let row = rows.first(where: { $0.id == id }) else { return }
+    /// Completes the hunt: it leaves the Active list and appears in History.
+    ///
+    /// Returns false and leaves the hunt alone if the write failed, so the confirm sheet can stay
+    /// open rather than pretending a shiny was registered.
+    @discardableResult
+    func markFound(_ id: UUID) async -> Bool {
+        guard let row = rows.first(where: { $0.id == id }) else { return false }
         // Land any pending count first, otherwise the completing PATCH races the debounced one.
         pendingWrites[id]?.cancel()
         do {
+            // `totalTimeSeconds` stays omitted here for the same reason as in `flush` — see D1.
             _ = try await client.updateHunt(
                 huntID: id,
                 UpdateHuntRequest(encounterCount: row.count, status: .completed)
             )
-            rows.removeAll { $0.id == id }
-            if liveHuntID == id { liveHuntID = rows.first?.id }
+            drop(id)
             Haptics.notify(.success)
+            // The completed hunt's final elapsed time is derived server-side from this very
+            // PATCH, and the response is a `Hunt` (no `total_time_seconds`), so History can only
+            // show the right number after a re-read.
+            await refresh()
+            return true
         } catch {
             syncError = "Couldn't mark that hunt found. \(message(for: error))"
+            return false
         }
+    }
+
+    /// Deletes the hunt outright — no History row, nothing registered. There is no undo: the
+    /// server has no soft delete, so the sheet arms this behind a second tap.
+    @discardableResult
+    func abandon(_ id: UUID) async -> Bool {
+        pendingWrites[id]?.cancel()
+        do {
+            try await client.deleteHunt(huntID: id)
+            drop(id)
+            Haptics.notify(.warning)
+            return true
+        } catch {
+            syncError = "Couldn't abandon that hunt. \(message(for: error))"
+            return false
+        }
+    }
+
+    private func drop(_ id: UUID) {
+        rows.removeAll { $0.id == id }
+        if liveHuntID == id { liveHuntID = rows.first?.id }
     }
 
     private func message(for error: any Error) -> String { userFacingMessage(for: error) }

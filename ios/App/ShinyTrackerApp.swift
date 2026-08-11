@@ -27,7 +27,7 @@ struct RootView: View {
             if let fixture = HuntPreview.requested {
                 // Debug-only: renders the real Hunt views against canned responses so the design
                 // can be checked without a Supabase session. See HuntPreviewHarness.swift.
-                AppShell(model: HuntListModel(client: HuntPreview.client(fixture)))
+                AppShell(client: HuntPreview.client(fixture))
             } else if auth.isSignedIn {
                 AppShell(auth: auth)
             } else {
@@ -99,16 +99,23 @@ enum AppMode: String, CaseIterable, Identifiable {
 
 struct AppShell: View {
     @State private var mode: AppMode = .hunt
-    @State private var model: HuntListModel
+    @State private var hunts: HuntListModel
+    @State private var library: GameLibraryModel
+    @State private var newHunt: NewHuntModel
 
     init(auth: AuthSession) {
         // One client for the session. `APIConfig.fromBundle()` fatalErrors on a missing
         // API_BASE_URL, which is a build-configuration mistake, not a runtime state.
-        self.init(model: HuntListModel(client: APIClient(auth: .session(auth))))
+        self.init(client: APIClient(auth: .session(auth)))
     }
 
-    init(model: HuntListModel) {
-        _model = State(initialValue: model)
+    /// All three models share one client — and the new-hunt sheet shares the *library* model with
+    /// the Games tab, so a charm toggled there moves the odds in the method step immediately.
+    init(client: APIClient) {
+        let library = GameLibraryModel(client: client)
+        _hunts = State(initialValue: HuntListModel(client: client))
+        _library = State(initialValue: library)
+        _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
     }
 
     var body: some View {
@@ -120,7 +127,7 @@ struct AppShell: View {
         Group {
             switch mode {
             case .hunt:
-                HuntScreen(model: model)
+                HuntScreen(model: hunts, library: library, newHunt: newHunt)
             case .nuzlocke, .dex, .team:
                 ModePlaceholder(mode: mode)
             }
