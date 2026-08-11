@@ -66,8 +66,13 @@ func main() {
 	//   9. runInvariantChecks    — sanity assertions including regression guard
 	//      against shiny_locks leaking into method_availability
 
-	log.Println("Wiping method tables (keeping wild encounter kinds)...")
-	if _, err := database.DB.Exec(ctx, `TRUNCATE TABLE hunt_methods, method_games, method_availability CASCADE`); err != nil {
+	log.Println("Wiping derived method tables (keeping wild encounter kinds)...")
+	// hunt_methods is intentionally NOT truncated: its ids must stay stable
+	// across re-seeds (user_hunts.hunt_method_id references them, with no FK
+	// on production to protect it — see migrations/011_add_hunt_methods_slug.sql).
+	// seedMethods upserts on the stable slug instead; method_games and
+	// method_availability are fully derived and safe to rebuild every run.
+	if _, err := database.DB.Exec(ctx, `TRUNCATE TABLE method_games, method_availability CASCADE`); err != nil {
 		log.Fatal("Failed to truncate method tables: ", err)
 	}
 	// Curated/derived kinds are rebuilt every run; wild kinds come from the
@@ -136,6 +141,11 @@ func main() {
 	log.Println("Seeding complete.")
 }
 
+// seedMethods upserts hunt_methods on its stable slug (HuntMethod.IDStr, the
+// JSON "id" field) rather than truncate+insert, so a method's integer id
+// never changes across re-seeds — user_hunts.hunt_method_id depends on that
+// stability (see migrations/011_add_hunt_methods_slug.sql). method_games rows
+// are still fully rebuilt (the table is truncated in main before this runs).
 func seedMethods(ctx context.Context) {
 	data, err := os.ReadFile("seeds/hunt_methods.json")
 	if err != nil {
@@ -146,22 +156,37 @@ func seedMethods(ctx context.Context) {
 		log.Fatal("JSON parse error: ", err)
 	}
 
+	currentSlugs := make([]string, 0, len(methods))
+
 	for _, m := range methods {
 		if !validKinds[m.RequiresKind] {
 			log.Fatalf("Method %q has missing/invalid requires_kind %q", m.MethodName, m.RequiresKind)
 		}
+		if m.IDStr == "" {
+			log.Fatalf("Method %q is missing its stable \"id\" slug", m.MethodName)
+		}
 
 		var id int
 		err := database.DB.QueryRow(ctx,
-			`INSERT INTO hunt_methods (method_name, avg_time_seconds, base_rolls, charm_rolls, formula_type, requires_kind, requires_terrain)
-			 VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, '')) RETURNING id`,
-			m.MethodName, m.AvgTimeSeconds, m.BaseRolls, m.CharmRolls, m.FormulaType, m.RequiresKind, m.RequiresTerrain,
+			`INSERT INTO hunt_methods (slug, method_name, avg_time_seconds, base_rolls, charm_rolls, formula_type, requires_kind, requires_terrain)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''))
+			 ON CONFLICT (slug) DO UPDATE SET
+			     method_name = EXCLUDED.method_name,
+			     avg_time_seconds = EXCLUDED.avg_time_seconds,
+			     base_rolls = EXCLUDED.base_rolls,
+			     charm_rolls = EXCLUDED.charm_rolls,
+			     formula_type = EXCLUDED.formula_type,
+			     requires_kind = EXCLUDED.requires_kind,
+			     requires_terrain = EXCLUDED.requires_terrain
+			 RETURNING id`,
+			m.IDStr, m.MethodName, m.AvgTimeSeconds, m.BaseRolls, m.CharmRolls, m.FormulaType, m.RequiresKind, m.RequiresTerrain,
 		).Scan(&id)
 		if err != nil {
-			log.Fatalf("Failed to insert method %s: %v", m.MethodName, err)
+			log.Fatalf("Failed to upsert method %s: %v", m.MethodName, err)
 		}
 
 		methodIDMap[m.IDStr] = id
+		currentSlugs = append(currentSlugs, m.IDStr)
 
 		for _, gameTitle := range m.Games {
 			var gameID int
@@ -176,6 +201,48 @@ func seedMethods(ctx context.Context) {
 			}
 		}
 	}
+
+	pruneRemovedMethods(ctx, currentSlugs)
+}
+
+// pruneRemovedMethods deletes any hunt_methods row whose slug is no longer
+// present in hunt_methods.json. hunt_methods is no longer truncated each run
+// (see seedMethods), so a row removed from the JSON would otherwise linger
+// forever. Deleting it still orphans any user_hunts row pointing at that id
+// (production has no FK enforcing hunt_method_id — see schema.sql), so every
+// deletion is logged loudly rather than dropped silently.
+func pruneRemovedMethods(ctx context.Context, currentSlugs []string) {
+	rows, err := database.DB.Query(ctx,
+		`SELECT id, slug, method_name FROM hunt_methods WHERE NOT (slug = ANY($1))`, currentSlugs)
+	if err != nil {
+		log.Fatal("Failed to query stale hunt_methods: ", err)
+	}
+	type staleMethod struct {
+		id   int
+		slug string
+		name string
+	}
+	var stale []staleMethod
+	for rows.Next() {
+		var s staleMethod
+		if err := rows.Scan(&s.id, &s.slug, &s.name); err != nil {
+			rows.Close()
+			log.Fatal("Failed to scan stale hunt_methods row: ", err)
+		}
+		stale = append(stale, s)
+	}
+	rows.Close()
+
+	for _, s := range stale {
+		log.Printf("PRUNING hunt_method %q (id=%d, slug=%q): no longer present in hunt_methods.json. "+
+			"Any user_hunts row referencing hunt_method_id=%d is now orphaned.", s.name, s.id, s.slug, s.id)
+		if _, err := database.DB.Exec(ctx, `DELETE FROM hunt_methods WHERE id = $1`, s.id); err != nil {
+			log.Fatalf("Failed to prune hunt_method %q (id=%d): %v", s.name, s.id, err)
+		}
+	}
+	if len(stale) > 0 {
+		log.Printf("Pruned %d hunt_method(s) removed from hunt_methods.json.", len(stale))
+	}
 }
 
 // MethodExceptionSeed is one manual correction in seeds/method_exceptions.json.
@@ -189,10 +256,11 @@ type MethodExceptionSeed struct {
 	Include   bool    `json:"include"`
 }
 
-// seedMethodExceptions repopulates method_exceptions from JSON. The table is
-// cascade-truncated with hunt_methods at the start of every seed, so corrections
-// must live in version control here rather than as DB-only edits. Must run after
-// seedMethods so methodIDMap is populated.
+// seedMethodExceptions repopulates method_exceptions from JSON, upserting on
+// (pokemon_id, method_id, game_id) — the table is no longer truncated each run
+// (hunt_methods, which it cascades from, is now stable-id upserted rather than
+// truncated). Corrections still live in version control here rather than as
+// DB-only edits. Must run after seedMethods so methodIDMap is populated.
 func seedMethodExceptions(ctx context.Context) {
 	data, err := os.ReadFile("seeds/method_exceptions.json")
 	if err != nil {
