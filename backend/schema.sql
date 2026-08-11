@@ -35,6 +35,10 @@ CREATE TABLE IF NOT EXISTS user_games (
 
 CREATE TABLE IF NOT EXISTS hunt_methods (
     id SERIAL PRIMARY KEY,
+    -- Stable key from hunt_methods.json ("id" field). cmd/seed upserts on this
+    -- so `id` stays constant across re-seeds; user_hunts.hunt_method_id
+    -- depends on that (see migrations/011_add_hunt_methods_slug.sql).
+    slug TEXT NOT NULL UNIQUE,
     method_name TEXT NOT NULL,
     avg_time_seconds INTEGER NOT NULL,
     base_rolls INTEGER NOT NULL DEFAULT 1,
@@ -89,7 +93,9 @@ CREATE TABLE IF NOT EXISTS pokemon_game_encounter (
 -- Manual corrections applied on top of the derived method_availability.
 -- game_id scopes the exception to one game; NULL = every game the method is
 -- mapped to (via method_games). Seeded from seeds/method_exceptions.json, which
--- is re-applied each run because this table is cascade-truncated with hunt_methods.
+-- is re-applied (upserted) every run. hunt_methods itself is no longer
+-- truncated each seed (ids are stable via the slug column), so this table
+-- persists across runs too rather than being cascade-cleared.
 CREATE TABLE IF NOT EXISTS method_exceptions (
     id SERIAL PRIMARY KEY,
     pokemon_id INTEGER REFERENCES pokemon(id) ON DELETE CASCADE,
