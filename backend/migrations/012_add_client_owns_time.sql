@@ -1,0 +1,21 @@
+-- 012_add_client_owns_time.sql
+--
+-- D1 (docs/handoff/DECISIONS.md): total_time_seconds moves from server-derived
+-- to client-authoritative. UpdateHuntHandler used to infer elapsed time from
+-- the gap between PATCH requests, discarding gaps >=600s — which silently
+-- zeroes out any hunt counted while offline (a session that produces no
+-- PATCHes is invisible, and the single catch-up PATCH after it looks like one
+-- enormous gap). A client that tracks its own active time now sends
+-- total_time_seconds explicitly and the server just stores it.
+--
+-- client_owns_time is a one-way, per-hunt latch: the first PATCH that
+-- supplies total_time_seconds flips it true, and from then on the server
+-- never derives time for that hunt again (a PATCH without the field leaves
+-- total_time_seconds untouched instead of adding a derived delta on top of
+-- time the client already counted). This is what stops a later web PATCH
+-- from double-counting a hunt a native client has already switched over.
+--
+-- Purely additive, safe to re-run: existing hunts default to false, i.e. the
+-- server keeps deriving exactly as it does today until a client opts a hunt
+-- in by sending total_time_seconds once.
+ALTER TABLE user_hunts ADD COLUMN IF NOT EXISTS client_owns_time BOOLEAN NOT NULL DEFAULT false;
