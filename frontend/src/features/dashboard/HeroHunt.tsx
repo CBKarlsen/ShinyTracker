@@ -34,6 +34,10 @@ function fmtNum(n: number) {
 // out-of-range values before commitCount ever sees them.
 const MAX_ENCOUNTER_COUNT = 999_999;
 
+// Roughly matches Dashboard.tsx's flush debounce cadence — long enough that
+// a tap burst doesn't spam a screen reader, short enough to stay responsive.
+const ANNOUNCE_DEBOUNCE_MS = 1500;
+
 function getLuckLabel(pct: number): string {
 	if (pct < 0.33) return "running lucky";
 	if (pct < 0.67) return "about average";
@@ -73,6 +77,12 @@ export function HeroHunt({
 	const [editingCount, setEditingCount] = useState(false);
 	const [countDraft, setCountDraft] = useState("");
 	const countInputRef = useRef<HTMLInputElement>(null);
+	// Escape unmounts the focused input, which React/the browser can fire a
+	// blur event for on the way out — that would otherwise route straight
+	// into commitEditCount and commit the very value Escape was meant to
+	// discard. Set right before the unmount, checked (and cleared) first
+	// thing in commitEditCount so that blur is a no-op.
+	const discardOnBlur = useRef(false);
 
 	// Sync local state when prop updates
 	useEffect(() => {
@@ -127,6 +137,20 @@ export function HeroHunt({
 			? resolvedHuntParams.chain_length
 			: hunt.encounter_count
 		: null;
+
+	// Screen-reader announcement text lags the live count by ANNOUNCE_DEBOUNCE_MS
+	// so a fast tap burst doesn't read out every intermediate value — the visual
+	// number updates immediately, but announcing that often is just noise.
+	// Debounced (re-armed on every count/chain change) rather than tied to
+	// Dashboard.tsx's burst-seal window, which this component has no access to.
+	const [announced, setAnnounced] = useState(
+		() => `${fmtNum(hunt.encounter_count)} encounters${streak ? `, chain ${fmtNum(currentChain ?? 0)}` : ""}`,
+	);
+	useEffect(() => {
+		const text = `${fmtNum(hunt.encounter_count)} encounters${streak ? `, chain ${fmtNum(currentChain ?? 0)}` : ""}`;
+		const id = setTimeout(() => setAnnounced(text), ANNOUNCE_DEBOUNCE_MS);
+		return () => clearTimeout(id);
+	}, [hunt.encounter_count, currentChain, streak]);
 
 	// Gate charm: a stale `true` from the DB must not inflate odds for games
 	// where the Shiny Charm doesn't exist.
@@ -250,6 +274,7 @@ export function HeroHunt({
 
 	const startEditCount = () => {
 		if (!onSetCount) return;
+		discardOnBlur.current = false;
 		setCountDraft(String(hunt.encounter_count));
 		setEditingCount(true);
 	};
@@ -263,6 +288,10 @@ export function HeroHunt({
 	}, [editingCount]);
 
 	const commitEditCount = () => {
+		if (discardOnBlur.current) {
+			discardOnBlur.current = false;
+			return;
+		}
 		const parsed = Number(countDraft.trim());
 		if (
 			countDraft.trim() === "" ||
@@ -408,6 +437,7 @@ export function HeroHunt({
 									commitEditCount();
 								} else if (e.key === "Escape") {
 									e.preventDefault();
+									discardOnBlur.current = true;
 									setEditingCount(false);
 								}
 							}}
@@ -441,8 +471,7 @@ export function HeroHunt({
 					{/* Announces the count without requiring sight of the screen — pairs
 					    with SPACE-to-count and haptic feedback (see HANDOFF items 2–3). */}
 					<span className="sr-only" aria-live="polite">
-						{fmtNum(hunt.encounter_count)} encounters
-						{streak ? `, chain ${fmtNum(currentChain ?? 0)}` : ""}
+						{announced}
 					</span>
 					<TimerDisplay
 						sessionSec={sessionSec}
