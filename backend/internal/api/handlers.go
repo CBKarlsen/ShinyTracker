@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"github.com/casper/shinytracker/internal/calc"
 	"github.com/casper/shinytracker/internal/database"
@@ -175,8 +177,22 @@ func usernameFromClaims(claims map[string]interface{}) string {
 	return "user"
 }
 
+// syncRunning guards against concurrent PokeAPI re-seeds. SyncPokemonData runs a
+// multi-worker fetch of 1000+ Pokemon; overlapping runs would multiply PokeAPI
+// load and can starve the DB connection pool. Admin-only, but still guarded.
+var syncRunning atomic.Bool
+
 func SyncHandler(w http.ResponseWriter, r *http.Request) {
-	go services.SyncPokemonData()
+	if !syncRunning.CompareAndSwap(false, true) {
+		http.Error(w, "A sync is already in progress", http.StatusConflict)
+		return
+	}
+	go func() {
+		defer syncRunning.Store(false)
+		if err := services.SyncPokemonData(); err != nil {
+			log.Printf("SyncPokemonData error: %v", err)
+		}
+	}()
 	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(map[string]string{"message": "Sync started in background"})
 }
@@ -204,15 +220,15 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("q")
 	query := "SELECT id, name, sprite_url, types, is_legendary, is_mythical FROM pokemon"
 	args := []interface{}{}
-	
+
 	limit := r.URL.Query().Get("limit")
-	
+
 	if search != "" {
 		query += " WHERE name ILIKE $1"
 		args = append(args, "%"+search+"%")
 	}
 	query += " ORDER BY id ASC"
-	
+
 	if limit != "all" {
 		query += " LIMIT 50"
 	}
@@ -288,7 +304,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		ORDER BY g.id ASC, hm.method_name ASC
 	`, gameID)
 	if err != nil {
-		fmt.Println("GetMethodsHandler error:", err)
+		log.Printf("GetMethodsHandler error: %v", err)
 		http.Error(w, "Failed to fetch methods", http.StatusInternalServerError)
 		return
 	}
