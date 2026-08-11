@@ -414,8 +414,53 @@ type PokemonLocationDetail struct {
 	Conditions []string `json:"conditions"`
 }
 
+// PokemonStats is a species' six base stats. A nil *PokemonStats on
+// PokemonDetail (via omitempty) means the species hasn't been through
+// cmd/seed_moves yet, distinct from a real (if unlikely) 0 in some stat.
+type PokemonStats struct {
+	HP             int `json:"hp"`
+	Attack         int `json:"attack"`
+	Defense        int `json:"defense"`
+	SpecialAttack  int `json:"special_attack"`
+	SpecialDefense int `json:"special_defense"`
+	Speed          int `json:"speed"`
+}
+
+// PokemonAbilityDetail is one ability slot for a species. The type chart
+// itself is not here -- weaknesses/resists are computed client-side from
+// PokemonDetail.Types against the client's own static type chart.
+type PokemonAbilityDetail struct {
+	Slug     string `json:"slug"`
+	Name     string `json:"name"`
+	Effect   string `json:"effect"`
+	Slot     int    `json:"slot"`
+	IsHidden bool   `json:"is_hidden"`
+}
+
+// PokemonMoveDetail is one moveset entry for a species in one game. Power and
+// Accuracy are pointers because PokeAPI reports both as null for many moves
+// (status moves, always-hit moves) -- collapsing that to 0 would read as "0
+// power" instead of "not applicable". Level is non-nil only for method ==
+// "level-up".
+type PokemonMoveDetail struct {
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	DamageClass string `json:"damage_class"`
+	Power       *int   `json:"power"`
+	Accuracy    *int   `json:"accuracy"`
+	PP          int    `json:"pp"`
+	Effect      string `json:"effect"`
+	Method      string `json:"method"` // level-up | tm | egg | tutor
+	Level       *int   `json:"level"`
+}
+
 // PokemonDetail is the full detail payload for one Pokemon: its own row, its
-// evolution-line relatives, and its stored locations.
+// evolution-line relatives, its stored locations, and (added for the iOS Dex
+// species-detail screen) base stats, abilities, and -- when ?game_id= is
+// supplied -- that game's moveset. Every field present before that addition
+// keeps its original name and JSON type; Stats/Abilities/Moves are purely
+// additive so existing clients decode unaffected.
 type PokemonDetail struct {
 	ID            int                     `json:"id"`
 	Name          string                  `json:"name"`
@@ -428,27 +473,50 @@ type PokemonDetail struct {
 	EvolvesFrom   []calc.EvolveFrom       `json:"evolves_from"` // pre-evolution line, nearest first
 	EvolvesTo     []calc.EvolveFrom       `json:"evolves_to"`   // direct evolutions
 	Locations     []PokemonLocationDetail `json:"locations"`
+	Stats         *PokemonStats           `json:"stats,omitempty"`
+	Abilities     []PokemonAbilityDetail  `json:"abilities"`
+	// Moves is nil (encodes as JSON null) when no ?game_id= was supplied, and
+	// a (possibly empty) slice when one was -- deliberately NOT omitempty, so
+	// "didn't ask" (null) and "asked, nothing seeded for that game" ([]) stay
+	// distinguishable on the wire instead of both vanishing as a missing key.
+	Moves []PokemonMoveDetail `json:"moves"`
 }
 
 // PokemonDetailHandler returns one Pokemon's row, its evolution-line relatives,
-// and its pokemon_locations rows (optionally filtered to one game via
-// ?game_id=). Distinct from PokemonRouteHandler, which returns hunt routes.
+// its pokemon_locations rows, base stats, and abilities. Passing ?game_id=
+// additionally scopes locations to that game and adds that game's moveset.
+// Distinct from PokemonRouteHandler, which returns hunt routes.
 func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 	pokemonID, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "id must be an integer", http.StatusBadRequest)
 		return
 	}
+	var gameID *int
+	if gameIDStr := r.URL.Query().Get("game_id"); gameIDStr != "" {
+		g, err := strconv.Atoi(gameIDStr)
+		if err != nil {
+			http.Error(w, "game_id must be an integer", http.StatusBadRequest)
+			return
+		}
+		gameID = &g
+	}
 	ctx := context.Background()
 
 	var p PokemonDetail
+	var hp, atk, def, spa, spd, spe *int
 	err = database.DB.QueryRow(ctx,
-		`SELECT id, name, sprite_url, types, can_breed, is_legendary, is_mythical, evolves_from_id
+		`SELECT id, name, sprite_url, types, can_breed, is_legendary, is_mythical, evolves_from_id,
+		        hp, attack, defense, special_attack, special_defense, speed
 		 FROM pokemon WHERE id = $1`, pokemonID).
-		Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types, &p.CanBreed, &p.IsLegendary, &p.IsMythical, &p.EvolvesFromID)
+		Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types, &p.CanBreed, &p.IsLegendary, &p.IsMythical, &p.EvolvesFromID,
+			&hp, &atk, &def, &spa, &spd, &spe)
 	if err != nil {
 		http.Error(w, "Pokemon not found", http.StatusNotFound)
 		return
+	}
+	if hp != nil && atk != nil && def != nil && spa != nil && spd != nil && spe != nil {
+		p.Stats = &PokemonStats{HP: *hp, Attack: *atk, Defense: *def, SpecialAttack: *spa, SpecialDefense: *spd, Speed: *spe}
 	}
 
 	p.EvolvesFrom, err = fetchAncestors(ctx, pokemonID)
@@ -478,14 +546,9 @@ func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 	locQuery := `SELECT game_id, area, version, terrain, COALESCE(min_level, 0), COALESCE(max_level, 0), COALESCE(chance, 0), COALESCE(conditions, '{}')
 		 FROM pokemon_locations WHERE pokemon_id = $1`
 	args := []interface{}{pokemonID}
-	if gameIDStr := r.URL.Query().Get("game_id"); gameIDStr != "" {
-		gameID, err := strconv.Atoi(gameIDStr)
-		if err != nil {
-			http.Error(w, "game_id must be an integer", http.StatusBadRequest)
-			return
-		}
+	if gameID != nil {
 		locQuery += " AND game_id = $2"
-		args = append(args, gameID)
+		args = append(args, *gameID)
 	}
 	locRows, err := database.DB.Query(ctx, locQuery, args...)
 	if err != nil {
@@ -505,6 +568,20 @@ func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p.Abilities, err = fetchAbilities(ctx, pokemonID)
+	if err != nil {
+		http.Error(w, "Failed to load abilities", http.StatusInternalServerError)
+		return
+	}
+
+	if gameID != nil {
+		p.Moves, err = fetchMoveset(ctx, pokemonID, *gameID)
+		if err != nil {
+			http.Error(w, "Failed to load moveset", http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if p.EvolvesFrom == nil {
 		p.EvolvesFrom = []calc.EvolveFrom{}
 	}
@@ -514,9 +591,66 @@ func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 	if p.Locations == nil {
 		p.Locations = []PokemonLocationDetail{}
 	}
+	if p.Abilities == nil {
+		p.Abilities = []PokemonAbilityDetail{}
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(p)
+}
+
+// fetchAbilities returns a species' ability slots (regular + hidden), slot
+// ascending.
+func fetchAbilities(ctx context.Context, pokemonID int) ([]PokemonAbilityDetail, error) {
+	rows, err := database.DB.Query(ctx, `
+		SELECT a.slug, a.name, COALESCE(a.effect, ''), pa.slot, pa.is_hidden
+		FROM pokemon_abilities pa
+		JOIN abilities a ON a.id = pa.ability_id
+		WHERE pa.pokemon_id = $1
+		ORDER BY pa.slot
+	`, pokemonID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []PokemonAbilityDetail
+	for rows.Next() {
+		var a PokemonAbilityDetail
+		if err := rows.Scan(&a.Slug, &a.Name, &a.Effect, &a.Slot, &a.IsHidden); err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+// fetchMoveset returns a species' moveset for one game (method, then level,
+// then name). Only populated for games cmd/seed_moves has actually seeded
+// (Platinum, Scarlet/Violet as of writing); any other game_id legitimately
+// returns an empty slice rather than an error.
+func fetchMoveset(ctx context.Context, pokemonID, gameID int) ([]PokemonMoveDetail, error) {
+	rows, err := database.DB.Query(ctx, `
+		SELECT m.slug, m.name, m.type, m.damage_class, m.power, m.accuracy, m.pp, COALESCE(m.effect, ''),
+		       pm.method, pm.level
+		FROM pokemon_moves pm
+		JOIN moves m ON m.id = pm.move_id
+		WHERE pm.pokemon_id = $1 AND pm.game_id = $2
+		ORDER BY pm.method, pm.level NULLS LAST, m.name
+	`, pokemonID, gameID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []PokemonMoveDetail{}
+	for rows.Next() {
+		var m PokemonMoveDetail
+		if err := rows.Scan(&m.Slug, &m.Name, &m.Type, &m.DamageClass, &m.Power, &m.Accuracy, &m.PP, &m.Effect,
+			&m.Method, &m.Level); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }
 
 // fetchAncestors returns the pre-evolution line (nearest first) for a Pokemon.
