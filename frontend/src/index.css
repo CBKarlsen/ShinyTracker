@@ -13,8 +13,14 @@
 
 	--ink-1: #f4f2ec;
 	--ink-2: #b6b5c0;
-	--ink-3: #6e6d78;
-	--ink-4: #44444e;
+	/* ink-3/ink-4 are sized for WCAG AA (4.5:1) against the LIGHTEST surface,
+	   --bg-hover #1f1f2b, so they pass on every background in the palette.
+	   Previously 3.20:1 and 1.69:1 there. --ink-4 in particular styles 9.5-10px
+	   uppercase labels (.sidebar-section, .more-sheet-section), which get no
+	   large-text exemption, so it was effectively invisible body text.
+	   Worst-case ratios now: ink-3 6.04:1, ink-4 4.62:1. */
+	--ink-3: #9d9da4;
+	--ink-4: #88888e;
 
 	--gold: #f5c661;
 	--gold-soft: #f5c66122;
