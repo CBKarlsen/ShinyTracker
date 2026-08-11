@@ -174,15 +174,19 @@ final class NewHuntModel {
         return methods.filter { $0.gameID == gameID }
     }
 
-    /// `1 / N` for a method, computed on device by ``ShinyOdds``.
+    /// `1 / N` for a method at its BEST realistic case, computed on device by ``ShinyOdds``.
     ///
-    /// `params` is empty on purpose: a hunt starts at chain/combo/defeat zero, so this is the
-    /// denominator the first encounter will actually be rolled against — the same number the
-    /// card will show once the hunt exists.
+    /// Best case, not first-encounter, because this is a picker. With empty params a chain
+    /// method sits at chain zero, where Poké Radar reads 1/8192 — the same as full odds —
+    /// so the list would tell you nothing and make every chain method look pointless. The
+    /// design quotes the radar at its cap for exactly this reason. ``bestCaseNote(for:)``
+    /// supplies the qualifier shown beside the number, so the best case can never be
+    /// mistaken for the hunt's current odds.
     func odds(for method: HuntMethodDetail, hasCharm: Bool? = nil) -> Int? {
         guard let game = library.game(method.gameID), game.baseOdds > 0 else { return nil }
         return ShinyOdds.effectiveOdds(
             formulaType: method.formulaType,
+            params: ShinyOdds.defaultParams(for: method.formulaType),
             base: OddsConfig(
                 baseOdds: game.baseOdds,
                 baseRolls: method.baseRolls,
@@ -190,6 +194,11 @@ final class NewHuntModel {
             ),
             hasCharm: hasCharm ?? library.charmOn(method.gameID)
         )
+    }
+
+    /// The qualifier for ``odds(for:hasCharm:)`` — "at chain 40" and friends.
+    func oddsNote(for method: HuntMethodDetail) -> String? {
+        ShinyOdds.bestCaseNote(for: method.formulaType)
     }
 
     // MARK: Step 4 — start
@@ -455,10 +464,20 @@ struct NewHuntSheet: View {
                     .foregroundStyle(Palette.textPrimary.color)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 8)
-                Text(denominator.map { "1 / \($0.formatted(.number))" } ?? "Odds unknown")
-                    .font(Typography.oddsValue)
-                    .foregroundStyle(Palette.hunt.color)
-                    .lineLimit(1)
+                // The qualifier is not decoration: without it "1 / 200" reads as this
+                // method's odds right now, when it is the value at the chain cap.
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(denominator.map { "1 / \($0.formatted(.number))" } ?? "Odds unknown")
+                        .font(Typography.oddsValue)
+                        .foregroundStyle(Palette.hunt.color)
+                        .lineLimit(1)
+                    if let note = model.oddsNote(for: method) {
+                        Text(note)
+                            .font(Typography.stat)
+                            .foregroundStyle(Palette.textMuted.color)
+                            .lineLimit(1)
+                    }
+                }
             }
 
             Divider().overlay(Palette.hairline.color)
