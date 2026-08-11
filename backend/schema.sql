@@ -166,7 +166,20 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     user_id UUID,
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     game_id INTEGER REFERENCES games(id) ON DELETE CASCADE,
-    hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE CASCADE,
+    -- ON DELETE SET NULL, emphatically NOT CASCADE. This column used to be
+    -- declared CASCADE, which would have been silent user data loss: cmd/seed
+    -- prunes hunt_methods rows that disappear from hunt_methods.json, and under
+    -- CASCADE each prune would delete every hunt using that method. A hunt is
+    -- the user's data; a method is reference data, and losing the second must
+    -- never destroy the first. Losing the link degrades the hunt to "no method"
+    -- (loadHuntsForUser LEFT JOINs), which is recoverable; losing the hunt is not.
+    --
+    -- NOTE: this constraint does not exist on production. It was declared here
+    -- but never applied, which is why re-seeds silently orphaned every hunt for
+    -- months without anything catching it. Applying it requires first clearing
+    -- the existing dangling values. Until then this file overstates what the
+    -- database actually enforces.
+    hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE SET NULL,
     custom_method_name TEXT,
     acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED', 'PHASE')),
     encounter_count INTEGER NOT NULL DEFAULT 0,
