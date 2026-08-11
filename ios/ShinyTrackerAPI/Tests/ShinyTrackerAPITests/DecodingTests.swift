@@ -1,0 +1,312 @@
+import Foundation
+import ShinyTrackerKit
+import Testing
+
+@testable import ShinyTrackerAPI
+
+/// Decoding tests run against fixtures written from the Go handlers' response shapes
+/// (`backend/internal/api/*.go` + `backend/internal/models/models.go`). No server is involved
+/// and none can be — the API is not deployed yet (scope doc, P1).
+
+// MARK: - Hunts
+
+/// `GET /api/hunts` — `[]models.UserHuntDetail`. Two rows on purpose: a curated hunt with a
+/// game, a method and populated `hunt_parameters`, and a custom-method hunt where `game_id`,
+/// `hunt_method_id` and every left-joined column are null.
+private let huntListJSON = """
+[
+  {
+    "id": "8f14e45f-ceea-467a-9e7f-3d1e33f34d43",
+    "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
+    "pokemon_id": 25,
+    "game_id": 34,
+    "hunt_method_id": 7,
+    "encounter_count": 1234,
+    "phase_count": 1,
+    "status": "active",
+    "acquisition_type": "HUNTED",
+    "hunt_parameters": {
+      "chain_length": 31,
+      "lure_active": true,
+      "shiny_charm": null,
+      "note": "left over from an old client"
+    },
+    "created_at": "2026-08-11T12:00:00.482913Z",
+    "updated_at": "2026-08-11T12:34:56Z",
+    "pokemon_name": "pikachu",
+    "method_name": "Masuda Method",
+    "custom_method_name": null,
+    "game_title": "Sword",
+    "total_time_seconds": 4200,
+    "base_rolls": 1,
+    "charm_rolls": 3,
+    "avg_time_seconds": 30,
+    "base_odds": 4096,
+    "has_shiny_charm": true,
+    "formula_type": "masuda",
+    "phases": [
+      {
+        "id": "1c9f0b2a-3d4e-4f50-a617-283940516273",
+        "hunt_id": "8f14e45f-ceea-467a-9e7f-3d1e33f34d43",
+        "pokemon_id": 129,
+        "pokemon_name": "magikarp",
+        "sprite_url": "https://example.invalid/129.png",
+        "encounter_count_at_phase": 812,
+        "created_at": "2026-08-10T22:15:01.5Z"
+      }
+    ]
+  },
+  {
+    "id": "a2d5f8c1-4b6e-4a90-91f2-0c5d7e8a9b01",
+    "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
+    "pokemon_id": 133,
+    "game_id": null,
+    "hunt_method_id": null,
+    "encounter_count": 0,
+    "phase_count": 0,
+    "status": "active",
+    "acquisition_type": "HUNTED",
+    "hunt_parameters": {},
+    "created_at": "2026-08-11T14:03:20+02:00",
+    "updated_at": "2026-08-11T14:03:20+02:00",
+    "pokemon_name": "eevee",
+    "method_name": null,
+    "custom_method_name": "Outbreak sniping",
+    "game_title": null,
+    "total_time_seconds": 0,
+    "base_rolls": null,
+    "charm_rolls": null,
+    "avg_time_seconds": null,
+    "base_odds": null,
+    "has_shiny_charm": null,
+    "formula_type": "static",
+    "phases": []
+  }
+]
+"""
+
+/// The killer case: a custom-method hunt has no game and no method row. If `gameID` or
+/// `huntMethodID` were non-optional, every such hunt would fail to decode.
+@Test func decodesHuntWithNullGameAndMethod() throws {
+    let hunts = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))
+    #expect(hunts.count == 2)
+
+    let custom = hunts[1]
+    #expect(custom.gameID == nil)
+    #expect(custom.huntMethodID == nil)
+    #expect(custom.methodName == nil)
+    #expect(custom.gameTitle == nil)
+    #expect(custom.hasShinyCharm == nil)
+    #expect(custom.customMethodName == "Outbreak sniping")
+    #expect(custom.phases.isEmpty)
+    #expect(custom.huntParameters == [:])
+}
+
+@Test func decodesCuratedHuntAndItsPhases() throws {
+    let hunt = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))[0]
+    #expect(hunt.gameID == 34)
+    #expect(hunt.huntMethodID == 7)
+    #expect(hunt.encounterCount == 1234)
+    #expect(hunt.totalTimeSeconds == 4200)
+    #expect(hunt.pokemonName == "pikachu")
+    #expect(hunt.phases.count == 1)
+    #expect(hunt.phases[0].pokemonName == "magikarp")
+    #expect(hunt.phases[0].encounterCountAtPhase == 812)
+}
+
+/// `hunt_parameters` keys must survive **verbatim** — `ShinyTrackerKit` looks them up as
+/// `chain_length`, not `chainLength`. This is what a `convertFromSnakeCase` key strategy
+/// would have broken silently, since the strategy rewrites dictionary keys too.
+@Test func huntParameterKeysSurviveVerbatimAndTolerateJunk() throws {
+    let hunt = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))[0]
+    let params = try #require(hunt.huntParameters)
+
+    #expect(params["chain_length"]?.intValue == 31)
+    #expect(params["lure_active"]?.boolValue == true)
+    #expect(params["chainLength"] == nil)
+    // A null and a string must degrade to .unrecognized per key, not fail the whole object.
+    #expect(params["shiny_charm"] == ParamValue.unrecognized)
+    #expect(params["note"] == ParamValue.unrecognized)
+}
+
+/// Go trims trailing zeros off the fractional second, and the columns are
+/// `TIMESTAMP WITH TIME ZONE`, so all three of these shapes are real.
+@Test func decodesGoTimestampsWithAndWithoutFractionAndWithOffset() throws {
+    let hunts = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))
+
+    // Epochs computed independently of Foundation (Python datetime.fromisoformat).
+    #expect(abs(hunts[0].createdAt.timeIntervalSince1970 - 1_786_449_600.482913) < 0.001)
+    #expect(hunts[0].updatedAt.timeIntervalSince1970 == 1_786_451_696)  // no fractional part
+    #expect(hunts[0].phases[0].createdAt.timeIntervalSince1970 == 1_786_400_101.5)
+    // 14:03:20+02:00 is 12:03:20Z — a non-UTC offset must not be read as wall-clock UTC.
+    #expect(hunts[1].createdAt.timeIntervalSince1970 == 1_786_449_800)
+}
+
+@Test func rejectsAnUnparseableTimestamp() {
+    let json = huntListJSON.replacingOccurrences(
+        of: "\"2026-08-11T12:34:56Z\"", with: "\"11 Aug 2026\"")
+    #expect(throws: DecodingError.self) {
+        try apiDecoder().decode([HuntDetail].self, from: Data(json.utf8))
+    }
+}
+
+/// `POST /api/hunts` and `PATCH /api/hunts/{id}` answer with the bare `models.UserHunt`.
+/// The PATCH `RETURNING` clause omits `game_id`, so it always encodes as null.
+@Test func decodesBareHuntFromCreateAndPatch() throws {
+    let json = """
+        {
+          "id": "8f14e45f-ceea-467a-9e7f-3d1e33f34d43",
+          "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
+          "pokemon_id": 25,
+          "game_id": null,
+          "hunt_method_id": 7,
+          "encounter_count": 5,
+          "phase_count": 0,
+          "status": "completed",
+          "acquisition_type": "HUNTED",
+          "hunt_parameters": {"chain_length": 4},
+          "created_at": "2026-08-11T12:00:00Z",
+          "updated_at": "2026-08-11T12:00:09Z"
+        }
+        """
+    let hunt = try apiDecoder().decode(Hunt.self, from: Data(json.utf8))
+    #expect(hunt.gameID == nil)
+    #expect(hunt.huntMethodID == 7)
+    #expect(hunt.status == "completed")
+    #expect(hunt.huntParameters?["chain_length"]?.intValue == 4)
+}
+
+// MARK: - Reference data
+
+@Test func decodesReferenceDataPayloads() throws {
+    let decoder = apiDecoder()
+
+    let me = try decoder.decode(
+        Profile.self,
+        from: Data(
+            """
+            {"id":"0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d","username":"casper","is_admin":false}
+            """.utf8))
+    #expect(me.username == "casper")
+    #expect(me.isAdmin == false)
+
+    let games = try decoder.decode(
+        [Game].self,
+        from: Data(#"[{"id":34,"title":"Sword","generation":8,"base_odds":4096}]"#.utf8))
+    #expect(games[0].baseOdds == 4096)
+
+    let pokemon = try decoder.decode(
+        [Pokemon].self,
+        from: Data(
+            """
+            [{"id":25,"name":"pikachu","sprite_url":"https://example.invalid/25.png",
+              "types":["electric"],"is_legendary":false,"is_mythical":false},
+             {"id":9999,"name":"missingno","sprite_url":"","types":null,
+              "is_legendary":false,"is_mythical":false}]
+            """.utf8))
+    #expect(pokemon[0].types == ["electric"])
+    #expect(pokemon[1].types == nil)  // types is a nullable jsonb column
+
+    let methods = try decoder.decode(
+        [MethodDetail].self,
+        from: Data(
+            """
+            [{"id":7,"game_id":34,"game_title":"Sword","method_name":"Masuda Method",
+              "base_rolls":1,"charm_rolls":3,"avg_time_seconds":30,"formula_type":"masuda"}]
+            """.utf8))
+    #expect(methods[0].formulaType == "masuda")
+
+    let huntMethods = try decoder.decode(
+        [HuntMethodDetail].self,
+        from: Data(
+            """
+            [{"id":7,"pokemon_id":25,"game_id":34,"game_title":"Sword",
+              "method_name":"Masuda Method","avg_time_seconds":30,"base_rolls":1,
+              "charm_rolls":3,"formula_type":"masuda"}]
+            """.utf8))
+    #expect(huntMethods[0].pokemonID == 25)
+
+    let userGames = try decoder.decode(
+        [UserGame].self,
+        from: Data(
+            """
+            [{"user_id":"0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d","game_id":34,
+              "has_shiny_charm":true}]
+            """.utf8))
+    #expect(userGames[0].hasShinyCharm)
+}
+
+@Test func decodesPokemonDetail() throws {
+    let json = """
+        {
+          "id": 134, "name": "vaporeon", "sprite_url": "https://example.invalid/134.png",
+          "types": ["water"], "can_breed": true, "is_legendary": false, "is_mythical": false,
+          "evolves_from_id": 133,
+          "evolves_from": [{"pokemon_id": 133, "name": "eevee"}],
+          "evolves_to": [],
+          "locations": [
+            {"game_id": 4, "area": "route-1", "version": "red", "terrain": "walk",
+             "min_level": 2, "max_level": 5, "chance": 20, "conditions": ["time-day"]}
+          ]
+        }
+        """
+    let detail = try apiDecoder().decode(PokemonDetail.self, from: Data(json.utf8))
+    #expect(detail.evolvesFromID == 133)
+    #expect(detail.evolvesFrom == [EvolutionLink(pokemonID: 133, name: "eevee")])
+    #expect(detail.evolvesTo.isEmpty)
+    #expect(detail.locations[0].conditions == ["time-day"])
+    #expect(detail.locations[0].maxLevel == 5)
+}
+
+// MARK: - Request encoding
+
+/// D1: sending `total_time_seconds` latches `client_owns_time`, so it must be *absent*, not
+/// null, when the client is not claiming authority — `UpdateHuntHandler` decodes it into a
+/// `*int` and only distinguishes absent from present.
+@Test func patchBodyOmitsOptionalsRatherThanEncodingNull() throws {
+    let bare = UpdateHuntRequest(encounterCount: 12, status: .active)
+    let json = try #require(String(data: JSONEncoder().encode(bare), encoding: .utf8))
+
+    #expect(!json.contains("total_time_seconds"))
+    #expect(!json.contains("hunt_parameters"))
+    #expect(!json.contains("null"))
+    #expect(json.contains("\"encounter_count\":12"))
+    #expect(json.contains("\"status\":\"active\""))
+
+    let timed = UpdateHuntRequest(
+        encounterCount: 12,
+        status: .completed,
+        huntParameters: ["chain_length": .number(4)],
+        totalTimeSeconds: 900
+    )
+    let timedJSON = try #require(String(data: JSONEncoder().encode(timed), encoding: .utf8))
+    #expect(timedJSON.contains("\"total_time_seconds\":900"))
+    #expect(timedJSON.contains("\"chain_length\":4"))
+}
+
+@Test func createHuntBodyOmitsTheBranchItIsNotUsing() throws {
+    let custom = CreateHuntRequest(pokemonID: 133, customMethodName: "Outbreak sniping")
+    let json = try #require(String(data: JSONEncoder().encode(custom), encoding: .utf8))
+    #expect(json.contains("\"custom_method_name\":\"Outbreak sniping\""))
+    #expect(!json.contains("hunt_method_id"))
+    #expect(!json.contains("game_id"))
+}
+
+/// Requests are plain `Codable` values so an offline queue can persist and replay them later.
+@Test func requestBodiesRoundTrip() throws {
+    let original = UpdateHuntRequest(
+        encounterCount: 7, status: .active, huntParameters: ["lure_active": .bool(true)],
+        totalTimeSeconds: 60)
+    let replayed = try JSONDecoder().decode(
+        UpdateHuntRequest.self, from: JSONEncoder().encode(original))
+    #expect(replayed == original)
+}
+
+// MARK: - Helper
+
+/// The same decoder configuration ``APIClient`` builds.
+private func apiDecoder() -> JSONDecoder {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = .custom(decodeGoTimestamp)
+    return decoder
+}

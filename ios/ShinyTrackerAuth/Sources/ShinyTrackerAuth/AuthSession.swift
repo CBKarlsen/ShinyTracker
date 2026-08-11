@@ -72,6 +72,22 @@ public final class AuthSession {
         }
     }
 
+    /// Force a token rotation and return the new access token.
+    ///
+    /// ``currentAccessToken()`` only refreshes when the SDK itself believes the token expired.
+    /// When the *server* rejects a token the SDK still considers valid, retrying with the same
+    /// cached string is a guaranteed second 401 — so the API client's single 401 retry comes
+    /// through here instead. Same error contract as ``currentAccessToken()``: `AuthError` means
+    /// expiry, `URLError` propagates untouched.
+    public func refreshAccessToken() async throws -> String {
+        do {
+            return try await client.refreshSession().accessToken
+        } catch is AuthError {
+            markSessionExpired()
+            throw SessionExpiredError()
+        }
+    }
+
     /// Call from the API client when a request still returns 401 after a refresh + retry.
     /// Equivalent to the web client's `onSessionExpired` callback.
     public func markSessionExpired() {

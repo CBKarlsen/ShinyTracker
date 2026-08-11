@@ -16,6 +16,8 @@ packages:
     path: ShinyTrackerKit
   ShinyTrackerAuth:
     path: ShinyTrackerAuth
+  ShinyTrackerAPI:
+    path: ShinyTrackerAPI
 
 targets:
   ShinyTracker:
@@ -30,6 +32,7 @@ targets:
     dependencies:
       - package: ShinyTrackerKit
       - package: ShinyTrackerAuth
+      - package: ShinyTrackerAPI
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.casperkarlsen.shinytracker
@@ -46,6 +49,8 @@ targets:
         # Populated from Secrets.xcconfig; read by AuthConfig.fromBundle().
         SUPABASE_URL: $(SUPABASE_URL)
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        # Read by APIConfig.fromBundle().
+        API_BASE_URL: $(API_BASE_URL)
         # The OAuth redirect target. Must also be allow-listed in the Supabase project.
         CFBundleURLTypes:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
