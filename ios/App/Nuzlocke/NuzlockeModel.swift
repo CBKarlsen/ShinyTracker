@@ -60,20 +60,22 @@ final class NuzlockeModel {
 
     func load() async {
         state = .loading
-        await reload(quiet: false)
+        await reload(quiet: false, reopen: true)
     }
 
-    /// After starting a run, where blanking the screen behind the closing sheet reads as a bug.
-    func refresh() async { await reload(quiet: true) }
+    /// Pull-to-refresh: the user asked for the server's version of everything, detail included.
+    func refresh() async { await reload(quiet: true, reopen: true) }
 
     /// What a screen's `.task` calls. Reloading from scratch every time a tab is shown throws
     /// away a screen that is already correct: `AppShell` holds these models as `@State`, so the
     /// data survives the switch even though the view does not. Only a cold model shows a spinner.
     func appear() async {
-        state == .ready ? await refresh() : await load()
+        state == .ready ? await reload(quiet: true, reopen: false) : await load()
     }
 
-    private func reload(quiet: Bool) async {
+    /// - Parameter reopen: whether to re-fetch the open run's detail. See the call site below for
+    ///   why a warm appear says no.
+    private func reload(quiet: Bool, reopen: Bool) async {
         syncError = nil
         do {
             runs = try await client.runs()
@@ -84,7 +86,18 @@ final class NuzlockeModel {
                 ?? runs.first { $0.isActive }
                 ?? runs.first
             if let wanted {
-                try await open(wanted)
+                // A quiet reload leaves the screen interactive, so anything the user does while
+                // it is in flight races the detail GET: `open` assigns `beaten` and `encounters`
+                // wholesale from a response that was assembled *before* the tap, silently undoing
+                // a tick or a just-logged catch, and no later write re-syncs it. Skipped on a warm
+                // appear because it buys nothing — every write already applies the row the server
+                // returned, so the open run is current, and there is no second device to sync
+                // from. Pull-to-refresh still re-opens: that one the user asked for.
+                if reopen || wanted.id != run?.id {
+                    try await open(wanted)
+                } else {
+                    run = wanted                    // list metadata only — never the detail
+                }
             } else {
                 clearOpenRun()
             }

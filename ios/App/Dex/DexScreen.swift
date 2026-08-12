@@ -230,9 +230,9 @@ struct DexScreen: View {
     /// 1,025 tiles.
     ///
     /// `LazyVStack` + one `LazyVGrid` per generation: SwiftUI builds a section's rows only as
-    /// they approach the viewport, so ~30 tiles exist at a time rather than 1,025. Sprites are
-    /// `AsyncImage`s inside those tiles, so nothing is fetched or decoded until its row is
-    /// built, and `URLSession`'s cache serves it on the way back up.
+    /// they approach the viewport, so ~30 tiles exist at a time rather than 1,025. Each tile's
+    /// ``DexSprite`` fetches in its own `.task`, so nothing is fetched or decoded until its row is
+    /// built, and ``SpriteCache`` hands back the already-decoded image on the way back up.
     private var grid: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -356,8 +356,10 @@ struct DexScreen: View {
 
 // MARK: - Sprite
 
-/// A dex sprite. Separate from Hunt's ``SpriteTile`` because that one is shiny-only and has the
-/// card's radial-gradient plate behind it; a dex tile draws the sprite bare on the card.
+/// A dex sprite: the radial-gradient plate with the sprite on top, fetched through
+/// ``SpriteCache``. Still separate from Hunt's ``SpriteTile``, which is shiny-only and still on
+/// `AsyncImage` — the two have converged on the same plate and want merging, but that is a
+/// follow-up, not something this type's existence justifies any more.
 ///
 /// Both variants now come from the API when it has them — `sprite_url` and `shiny_sprite_url`
 /// are separate columns — and ``SpriteSource`` falls back to the id-derived URL for a server
@@ -398,6 +400,11 @@ struct DexSprite: View {
         .grayscale(dimmed ? 1 : 0)
         .opacity(dimmed ? 0.6 : 1)
         .task(id: url) {
+            // `@State` survives a url change on the same view identity (the Shiny segment keeps
+            // every tile's identity), so without this the tile shows its *old* sprite until the
+            // new one lands — a non-shiny under a shiny checklist. The plate is the honest
+            // placeholder. No-op on first appearance and on scroll-back: already nil.
+            image = nil
             guard let url else { return }
             let fetched = await SpriteCache.shared.image(for: url)
             // SpriteCache's fetch is an unstructured Task of its own, so cancelling this
