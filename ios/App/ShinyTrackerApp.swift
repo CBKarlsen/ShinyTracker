@@ -27,7 +27,10 @@ struct RootView: View {
             if let fixture = HuntPreview.requested {
                 // Debug-only: renders the real Hunt views against canned responses so the design
                 // can be checked without a Supabase session. See HuntPreviewHarness.swift.
-                AppShell(client: HuntPreview.client(fixture))
+                AppShell(preview: HuntPreview.client(fixture), mode: .hunt)
+            } else if let fixture = DexPreview.requested {
+                // Same, for the Dex. See DexPreviewHarness.swift.
+                AppShell(preview: DexPreview.client(fixture), mode: .dex)
             } else if auth.isSignedIn {
                 AppShell(auth: auth)
             } else {
@@ -98,25 +101,48 @@ enum AppMode: String, CaseIterable, Identifiable {
 }
 
 struct AppShell: View {
-    @State private var mode: AppMode = .hunt
+    @State private var mode: AppMode
     @State private var hunts: HuntListModel
     @State private var library: GameLibraryModel
     @State private var newHunt: NewHuntModel
+    @State private var dex: DexModel
 
     init(auth: AuthSession) {
-        // One client for the session. `APIConfig.fromBundle()` fatalErrors on a missing
-        // API_BASE_URL, which is a build-configuration mistake, not a runtime state.
-        self.init(client: APIClient(auth: .session(auth)))
+        // One client for the session, shared by every mode. `APIConfig.fromBundle()`
+        // fatalErrors on a missing API_BASE_URL, which is a build-configuration mistake, not a
+        // runtime state.
+        // The living-dex store is keyed by user id: these ticks live in UserDefaults
+        // until the API can hold them, and an unscoped key would show one account
+        // another's dex after a sign-out/sign-in on the same device.
+        self.init(client: APIClient(auth: .session(auth)), userID: auth.userID)
     }
 
-    /// All three models share one client — and the new-hunt sheet shares the *library* model with
+    /// Every model shares one client — and the new-hunt sheet shares the *library* model with
     /// the Games tab, so a charm toggled there moves the odds in the method step immediately.
-    init(client: APIClient) {
+    init(client: APIClient, mode: AppMode = .hunt, userID: UUID? = nil) {
         let library = GameLibraryModel(client: client)
+        _mode = State(initialValue: mode)
         _hunts = State(initialValue: HuntListModel(client: client))
         _library = State(initialValue: library)
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
+        _dex = State(initialValue: DexModel(client: client, store: .userDefaults(userID: userID)))
     }
+
+    #if DEBUG
+    /// A preview-harness client, whose Dex must not write its living-dex ticks into the
+    /// simulator's real `UserDefaults`.
+    init(preview client: APIClient, mode: AppMode) {
+        let dex = DexModel(client: client, store: .ephemeral())
+        dex.view = DexPreview.initialView ?? .browse
+        dex.selectedGameID = DexPreview.initialGameID
+        let library = GameLibraryModel(client: client)
+        _mode = State(initialValue: mode)
+        _hunts = State(initialValue: HuntListModel(client: client))
+        _library = State(initialValue: library)
+        _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
+        _dex = State(initialValue: dex)
+    }
+    #endif
 
     var body: some View {
         // safeAreaInset rather than a ZStack overlay: it makes SwiftUI inset the
@@ -128,7 +154,9 @@ struct AppShell: View {
             switch mode {
             case .hunt:
                 HuntScreen(model: hunts, library: library, newHunt: newHunt)
-            case .nuzlocke, .dex, .team:
+            case .dex:
+                DexScreen(model: dex)
+            case .nuzlocke, .team:
                 ModePlaceholder(mode: mode)
             }
         }

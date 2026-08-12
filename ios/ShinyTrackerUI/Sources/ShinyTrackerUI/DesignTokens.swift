@@ -56,6 +56,10 @@ public enum Palette {
     public static let surfaceSunken = Swatch(0x0B0B10)
     /// The emphasised (live) hunt card: `background:#17151b`.
     public static let surfaceLive = Swatch(0x17151B)
+    /// A block inside the species sheet — stats, weaknesses, locations: `background:#0f0f15`.
+    public static let surfaceBlock = Swatch(0x0F0F15)
+    /// The bottom sheet itself: `background:#141419`.
+    public static let sheet = Swatch(0x141419)
 
     // --- lines ---
     /// The 1px card outline and the progress track: `#1a1a22`.
@@ -87,9 +91,16 @@ public enum Palette {
     /// Dex — the same bone white as primary text.
     public static let dex = Swatch(0xF4F2EC)
 
-    // --- sheets ---
-    /// Every bottom sheet: `background:#141419`.
-    public static let sheet = Swatch(0x141419)
+    // --- base-stat bars: `v >= 90 ? '#6ee7a2' : v >= 60 ? '#f5c661' : '#ff7373'` ---
+    /// A weak base stat. The only red in the palette; the other two tiers are ``team``/``hunt``.
+    public static let statLow = Swatch(0xFF7373)
+
+    /// The bar colour for a stat value, per the prototype's ternary above.
+    public static func statBar(_ value: Int) -> Swatch {
+        value >= 90 ? team : value >= 60 ? hunt : statLow
+    }
+
+    // --- sheets --- (the sheet background itself is ``sheet``, above)
     /// The search field inside a sheet: `background:#0d0d12`.
     public static let field = Swatch(0x0D0D12)
     /// The key/value panel on the Ready and confirm sheets: `background:#0f0f15`.
@@ -143,6 +154,13 @@ public enum Radii {
     // No `bar` radius token: the progress bar is drawn with `Capsule()`, which
     // self-rounds. The prototype's `border-radius:3px` on a 6px-tall bar is the
     // same shape, so a token would only be a second way to say it.
+    /// Dex grid tile: `border-radius:14px`. Same number as ``panel``, kept separate because a
+    /// 1,025-tile grid and a 52px-padded empty state have no reason to move together.
+    public static let tile: CGFloat = 14
+    /// A block inside the species sheet: `border-radius:16px`.
+    public static let block: CGFloat = 16
+    /// A type chip: `border-radius:7px`.
+    public static let typeChip: CGFloat = 7
     /// Tab-bar pill: `border-radius:19px`.
     public static let pill: CGFloat = 19
     /// Tab-bar shell: `border-radius:24px`.
@@ -196,6 +214,20 @@ public enum Typography {
     /// `font:600 15px/1` (selected) / `font:500 15px/1` — segmented control and pill labels.
     public static let segmentOn = Font.system(size: 15, weight: .semibold)
     public static let segmentOff = Font.system(size: 15, weight: .medium)
+    /// `font:700 24px/1;letter-spacing:-.03em` — the species sheet's name.
+    public static let sheetTitle = Font.system(size: 24, weight: .bold)
+    public static let sheetTitleTracking: CGFloat = -0.03 * 24
+
+    /// `font:500 11px/1;letter-spacing:.14em;text-transform:uppercase` — "BASE STATS", and the
+    /// Dex grid's per-generation section headers.
+    public static let blockLabel = Font.system(size: 11, weight: .medium)
+    public static let blockLabelTracking: CGFloat = 0.14 * 11
+
+    /// `font:600 13px/1` — the species name on a Dex tile.
+    public static let tileName = Font.system(size: 13, weight: .semibold)
+    /// `font:400 11px/1` — the line under it ("Registered", "#443", "2,847 enc").
+    public static let tileSub = Font.system(size: 11, weight: .regular)
+
     /// `font:600 18px/1` — the wide gold "+1 encounter" button.
     public static let primaryButton = Font.system(size: 18, weight: .semibold)
     /// `font:600 15px/1` — the ×N chip.
