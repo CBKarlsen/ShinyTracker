@@ -18,6 +18,10 @@ public struct SnapshotKey: Hashable, Sendable {
     public static let species = SnapshotKey("species")
     public static let dex = SnapshotKey("dex")
     public static let runs = SnapshotKey("runs")
+    /// `game_id -> has_shiny_charm` for the signed-in user. Cached alongside `.games` because a
+    /// games list restored without it renders every row as not-in-your-library — a falsehood
+    /// rather than merely stale, and the Games tab is exactly where a user would act on it.
+    public static let userGames = SnapshotKey("user-games")
 
     /// `uuidString.lowercased()` is `[0-9a-f-]` only, so this cannot produce a traversing path.
     public static func run(_ id: UUID) -> SnapshotKey {

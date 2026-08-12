@@ -43,11 +43,16 @@ final class GameLibraryModel {
     private func load(quiet: Bool) async {
         if !quiet { state = .loading }
         syncError = nil
-        // Draw the last-known library immediately rather than a spinner. `owned` is deliberately
-        // not cached — it is keyed by a user id this model only resolves at load time — so every
-        // row renders un-owned for the moment before the refresh below lands and fills it in.
-        if !quiet, state != .ready, let cached = await store.load([Game].self, as: .games) {
-            games = cached                              // already generation-sorted when saved
+        // Draw the last-known library immediately rather than a spinner. `games` and `owned` are
+        // restored together or not at all: a games list without ownership renders every row as
+        // not-in-your-library, which is a false claim (not merely stale) on the one screen where
+        // a user would act on it by re-adding a game they already own.
+        if !quiet, state != .ready,
+            let cachedGames = await store.load([Game].self, as: .games),
+            let cachedOwned = await store.load([Int: Bool].self, as: .userGames)
+        {
+            games = cachedGames                         // already generation-sorted when saved
+            owned = cachedOwned
             state = .ready
         }
         do {
@@ -63,6 +68,7 @@ final class GameLibraryModel {
             )
             state = .ready
             await store.save(games, as: .games)
+            await store.save(owned, as: .userGames)
         } catch {
             if quiet || state == .ready {
                 // A snapshot is on screen — warn inline rather than replacing it with an error.
