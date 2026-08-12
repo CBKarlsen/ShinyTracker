@@ -102,7 +102,19 @@ type NuzlockeBossMove struct {
 	DamageClass string `json:"damage_class"`
 }
 
+// NuzlockeVersionInfo is one seeded version of a game, plus the starter
+// choices its timeline distinguishes. Empty Starters means the rosters are the
+// same whatever you picked, so a run need not record one.
+type NuzlockeVersionInfo struct {
+	Version  string   `json:"version"`
+	Starters []string `json:"starters"`
+}
+
 // NuzlockeBossMon is one member of a boss's squad.
+//
+// Squad members are filtered by the run's starter before they ever reach a
+// client, so this carries no `starter` field: what arrives is already the one
+// team that player will actually fight.
 type NuzlockeBossMon struct {
 	PokemonID   int                `json:"pokemon_id"`
 	PokemonName string             `json:"pokemon_name"`
@@ -137,7 +149,10 @@ type NuzlockeRun struct {
 	// the same vocabulary pokemon_locations.version uses. Fixed at creation:
 	// games.id 5 is "Diamond/Pearl/Platinum" and the three disagree about both
 	// encounter tables and trainers (migration 017).
-	Version           string     `json:"version"`
+	Version string `json:"version"`
+	// Which starter the player picked, or "" when unrecorded. Rival rosters
+	// depend on it (migration 018).
+	Starter           string     `json:"starter"`
 	GameTitle         *string    `json:"game_title,omitempty"`
 	DupesClause       bool       `json:"dupes_clause"`
 	BattleStyle       string     `json:"battle_style"`

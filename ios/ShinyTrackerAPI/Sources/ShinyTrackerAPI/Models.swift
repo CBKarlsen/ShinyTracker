@@ -647,6 +647,16 @@ public struct NuzlockeTimelineEntry: Decodable, Sendable, Equatable, Identifiabl
     }
 }
 
+/// One seeded version of a game, plus the starter choices its rosters depend on —
+/// `models.NuzlockeVersionInfo`. Empty ``starters`` means the rosters are identical whatever
+/// you picked, so the run need not record one and the UI must not ask.
+public struct NuzlockeVersionInfo: Decodable, Sendable, Equatable, Identifiable {
+    public let version: String
+    public let starters: [String]
+
+    public var id: String { version }
+}
+
 /// One playthrough — `models.NuzlockeRun`, from `GET/POST /api/runs` and `PATCH /api/runs/{id}`.
 ///
 /// `gameID`/`gameTitle` are both nullable: the FK is `ON DELETE SET NULL`, so a run outlives the
@@ -660,6 +670,10 @@ public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
     /// one `games` row covers all three Sinnoh versions and they disagree about both routes and
     /// trainers (Fantina is gym 3 in Platinum, gym 5 in D/P).
     public let version: String
+    /// The starter this player picked, or `""` when the timeline's rosters don't depend on one.
+    /// Rival squads arrive already filtered by it, so what you receive is the team you will
+    /// actually fight.
+    public let starter: String
     public let gameTitle: String?
     public let dupesClause: Bool
     /// `"set"` or `"shift"`. ``BattleStyle`` types the write side.
@@ -675,7 +689,7 @@ public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
     public var isActive: Bool { status == "active" }
 
     enum CodingKeys: String, CodingKey {
-        case id, status, version
+        case id, status, version, starter
         case userID = "user_id"
         case gameID = "game_id"
         case gameTitle = "game_title"
@@ -751,6 +765,7 @@ public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
     public let userID: UUID
     public let gameID: Int?
     public let version: String
+    public let starter: String
     public let gameTitle: String?
     public let dupesClause: Bool
     public let battleStyle: String
@@ -769,7 +784,7 @@ public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
     public var isActive: Bool { status == "active" }
 
     enum CodingKeys: String, CodingKey {
-        case id, status, timeline, encounters, version
+        case id, status, timeline, encounters, version, starter
         case userID = "user_id"
         case gameID = "game_id"
         case gameTitle = "game_title"
@@ -822,6 +837,9 @@ public struct CreateRunRequest: Codable, Sendable, Equatable {
     /// Required by the server: it validates the timeline per (game, version), so Platinum being
     /// seeded says nothing about whether Diamond is.
     public let version: String
+    /// Required when — and only when — ``NuzlockeVersionInfo/starters`` is non-empty for this
+    /// version. The server rejects a missing one there, and ignores it everywhere else.
+    public let starter: String?
     public let dupesClause: Bool
     public let battleStyle: BattleStyle
     public let nicknamesRequired: Bool
@@ -829,19 +847,21 @@ public struct CreateRunRequest: Codable, Sendable, Equatable {
     public init(
         gameID: Int,
         version: String,
+        starter: String? = nil,
         dupesClause: Bool = true,
         battleStyle: BattleStyle = .set,
         nicknamesRequired: Bool = true
     ) {
         self.gameID = gameID
         self.version = version
+        self.starter = starter
         self.dupesClause = dupesClause
         self.battleStyle = battleStyle
         self.nicknamesRequired = nicknamesRequired
     }
 
     enum CodingKeys: String, CodingKey {
-        case version
+        case version, starter
         case gameID = "game_id"
         case dupesClause = "dupes_clause"
         case battleStyle = "battle_style"

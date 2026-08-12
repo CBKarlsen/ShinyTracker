@@ -80,9 +80,14 @@ type seedEntry struct {
 }
 
 type seedBossMon struct {
-	Species   string   `json:"species"`
-	Level     int      `json:"level"`
-	Ability   string   `json:"ability"`
+	Species string `json:"species"`
+	Level   int    `json:"level"`
+	Ability string `json:"ability"`
+	// The player's starter this member applies to, or "" (omitted) for every
+	// starter — which is almost all of them, since only rival rosters vary. A
+	// rival battle lists its slots once per starter, each tagged. See
+	// migration 018.
+	Starter   string   `json:"starter"`
 	SortOrder int      `json:"sort_order"`
 	Moves     []string `json:"moves"`
 }
@@ -336,12 +341,17 @@ func seedBossSquad(ctx context.Context, entryID int, e seedEntry) int {
 		log.Fatalf("Failed to clear boss squad for %q: %v", e.Slug, err)
 	}
 	for _, sq := range e.Squad {
+		// A starter tag that isn't a real species would match no run and make
+		// the whole roster invisible — a silent empty squad, not an error.
+		if sq.Starter != "" {
+			resolveSpecies(ctx, sq.Starter, e.Slug+" (starter tag)")
+		}
 		pokemonID := resolveSpecies(ctx, sq.Species, e.Slug)
 		var bossPokemonID int
 		if err := database.DB.QueryRow(ctx,
-			`INSERT INTO nuzlocke_boss_pokemon (timeline_entry_id, pokemon_id, level, ability, sort_order)
-			 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-			entryID, pokemonID, sq.Level, sq.Ability, sq.SortOrder,
+			`INSERT INTO nuzlocke_boss_pokemon (timeline_entry_id, pokemon_id, level, ability, starter, sort_order)
+			 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+			entryID, pokemonID, sq.Level, sq.Ability, strings.ToLower(sq.Starter), sq.SortOrder,
 		).Scan(&bossPokemonID); err != nil {
 			log.Fatalf("Failed to insert boss squad member for %q (%s): %v", e.Slug, sq.Species, err)
 		}

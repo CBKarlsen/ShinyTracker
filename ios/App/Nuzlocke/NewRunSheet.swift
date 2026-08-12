@@ -17,8 +17,11 @@ struct NewRunSheet: View {
     /// Versions of the picked game that have a seeded timeline — nil while unknown, empty when
     /// the game cannot be Nuzlocked at all. One `games` row can cover three versions whose
     /// routes and trainers differ, so this is a real choice, not a formality.
-    @State private var versions: [String]?
-    @State private var version: String?
+    @State private var versions: [NuzlockeVersionInfo]?
+    @State private var version: NuzlockeVersionInfo?
+    /// The player's own starter. Rival rosters depend on it — Barry takes the one that beats
+    /// yours — so without it two players in three would be shown a team they never fight.
+    @State private var starter: String?
     @State private var checking = false
     @State private var dupesClause = true
     @State private var battleStyle: BattleStyle = .set
@@ -27,7 +30,8 @@ struct NewRunSheet: View {
     @State private var failure: String?
 
     private var canStart: Bool {
-        gameID != nil && version != nil && !starting && !checking
+        guard gameID != nil, let version, !starting, !checking else { return false }
+        return version.starters.isEmpty || starter != nil
     }
 
     var body: some View {
@@ -40,6 +44,7 @@ struct NewRunSheet: View {
 
                 gamePicker
                 versionPicker
+                starterPicker
                 presets
                 clauses
 
@@ -126,10 +131,13 @@ struct NewRunSheet: View {
                     .textCase(.uppercase)
                     .foregroundStyle(Palette.textMuted.color)
                 HStack(spacing: 2) {
-                    ForEach(versions, id: \.self) { candidate in
+                    ForEach(versions) { candidate in
                         let on = candidate == version
-                        Button { version = candidate } label: {
-                            Text(candidate.capitalized)
+                        Button {
+                            version = candidate
+                            starter = nil
+                        } label: {
+                            Text(candidate.version.capitalized)
                                 .font(on ? Typography.segmentOn : Typography.segmentOff)
                                 .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
                                 .frame(maxWidth: .infinity)
@@ -156,6 +164,53 @@ struct NewRunSheet: View {
         }
     }
 
+    /// Only shown when this timeline's rosters actually depend on the choice — the server
+    /// derives that list from the data and rejects a starter it has no use for, so a game whose
+    /// rivals never vary is never asked.
+    @ViewBuilder
+    private var starterPicker: some View {
+        if let version, !version.starters.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Your starter")
+                    .font(Typography.blockLabel)
+                    .tracking(Typography.blockLabelTracking)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Palette.textMuted.color)
+                HStack(spacing: 8) {
+                    ForEach(version.starters, id: \.self) { candidate in
+                        let on = candidate == starter
+                        Button { starter = candidate } label: {
+                            // ponytail: the name, not a sprite — the API sends starter *names*
+                            // and a sprite needs a dex id this screen has no reason to fetch.
+                            Text(candidate.capitalized)
+                                .font(Typography.segmentOff)
+                                .foregroundStyle(Palette.textPrimary.color)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.tile))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Radii.tile)
+                                    .strokeBorder(
+                                        on ? Palette.nuzlocke.alpha(0x99) : Palette.hairline.color,
+                                        lineWidth: on ? 2 : 1
+                                    )
+                            )
+                            .contentShape(.rect)
+                        }
+                        .accessibilityAddTraits(on ? [.isSelected] : [])
+                    }
+                }
+                Text("Your rival takes the starter that beats yours, and the rest of his team "
+                     + "changes with it.")
+                    .font(Typography.hint)
+                    .foregroundStyle(Palette.textFaint.color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private func pick(_ id: Int) {
         gameID = id
         versions = nil
@@ -167,6 +222,7 @@ struct NewRunSheet: View {
                 let found = try await model.client.nuzlockeVersions(gameID: id)
                 versions = found
                 version = found.first          // silently correct when there is only one
+                starter = nil
             } catch {
                 failure = userFacingMessage(for: error)
             }
@@ -278,7 +334,8 @@ struct NewRunSheet: View {
             failure = await model.startRun(
                 CreateRunRequest(
                     gameID: gameID,
-                    version: version,
+                    version: version.version,
+                    starter: starter,
                     dupesClause: dupesClause,
                     battleStyle: battleStyle,
                     nicknamesRequired: nicknamesRequired
