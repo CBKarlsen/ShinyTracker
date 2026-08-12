@@ -301,6 +301,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The SELECT's column order and the Scan targets below are positionally
+	// coupled — pgx matches them by position, not by name, so an added column
+	// that lands in the wrong slot loads silently into the wrong variable
+	// instead of failing. Append new columns (and their scan target) last.
 	var prevUpdatedAt time.Time
 	var currentTotalTime int
 	var clientOwnsTime bool
@@ -331,6 +335,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		huntParameters = req.HuntParameters
 	}
 
+	// $1 binds newEncounterCount, not req.EncounterCount: that's the guarded
+	// value from calc.DecideEncounterCount above. Binding the raw request field
+	// here again would silently bring back last-write-wins.
 	var hunt models.UserHunt
 	err = database.DB.QueryRow(context.Background(),
 		`UPDATE user_hunts
