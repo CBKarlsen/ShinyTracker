@@ -1,5 +1,6 @@
 import type { Hunt } from "../../types/models";
 import { shinyCharmAvailable } from "../../utils/games";
+import { getSpriteUrl } from "../../utils/pokemon";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -87,7 +88,7 @@ export function HuntList({
 						const odds = h.base_odds || 4096;
 						const rolls = getEffectiveRolls(h) || 1;
 						const youP = 1 - Math.pow(1 - rolls / odds, h.encounter_count);
-						const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${h.pokemon_id}.png`;
+						const spriteUrl = getSpriteUrl(h.pokemon_id, true, h.shiny_sprite_url);
 
 						return (
 							<tr key={h.id} className={isPinned ? "pinned" : ""}>

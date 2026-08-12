@@ -45,7 +45,11 @@ struct HuntCard: View {
     /// `display:flex;gap:13px;align-items:flex-start`
     private var identityRow: some View {
         HStack(alignment: .top, spacing: 13) {
-            SpriteTile(pokemonID: row.detail.pokemonID, size: Metrics.cardSprite)
+            SpriteTile(
+                pokemonID: row.detail.pokemonID,
+                size: Metrics.cardSprite,
+                served: row.detail.shinySpriteURL
+            )
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(row.name)
@@ -286,17 +290,11 @@ struct PressScaleStyle: ButtonStyle {
 struct SpriteTile: View {
     let pokemonID: Int
     let size: CGFloat
-
-    // ponytail: the prototype's SPRITE_BASE, unchanged. `GET /api/hunts` now returns
-    // `sprite_url`, but that column is the *non-shiny* sprite and this is a shiny tracker, so
-    // the shiny URL is still built client-side. Dropping this constant needs a shiny sprite in
-    // the database (`services/pokeapi.go` seeds `front_default` only), not just the field.
-    // IOS_HANDOVER.md wants the host mirrored or bundled before ship either way.
-    private static let base =
-        "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/"
+    /// `shiny_sprite_url` off the hunt row, when the caller has one.
+    var served: String?
 
     var body: some View {
-        AsyncImage(url: URL(string: "\(Self.base)\(pokemonID).png")) { image in
+        AsyncImage(url: SpriteSource.url(id: pokemonID, shiny: true, served: served)) { image in
             image.resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
         } placeholder: {
             Color.clear

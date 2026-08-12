@@ -4,6 +4,8 @@ export interface HuntPhase {
 	pokemon_id: number;
 	pokemon_name: string;
 	sprite_url: string;
+	/** Optional like the others: a server predating migration 016 omits it. */
+	shiny_sprite_url?: string;
 	encounter_count_at_phase: number;
 	created_at: string;
 }
@@ -24,6 +26,8 @@ export interface Hunt {
 	pokemon_name: string;
 	/** The species' non-shiny sprite. Optional: older servers don't send it. */
 	sprite_url?: string;
+	/** The species' shiny sprite. Optional: older servers don't send it. */
+	shiny_sprite_url?: string;
 	/** Optional user-given name for the catch; null when unset, never "". */
 	nickname?: string | null;
 	method_name: string | null;
@@ -48,6 +52,8 @@ export interface Pokemon {
 	id: number;
 	name: string;
 	sprite_url: string;
+	/** The species' shiny sprite. Optional: older servers don't send it. */
+	shiny_sprite_url?: string;
 	is_legendary?: boolean;
 	is_mythical?: boolean;
 }

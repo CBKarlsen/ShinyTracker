@@ -298,7 +298,9 @@ struct DexScreen: View {
                     size: 52,
                     // `filter:grayscale(1) brightness(.6)` on anything unavailable, and on
                     // anything not yet ticked while a checklist is up.
-                    dimmed: state.unavailable || (model.view != .browse && !state.registered)
+                    dimmed: state.unavailable || (model.view != .browse && !state.registered),
+                    served: model.view == .shiny
+                        ? species.shinySpriteURL : species.spriteURL
                 )
                 Text(species.name.capitalized)
                     .font(Typography.tileName)
@@ -357,19 +359,19 @@ struct DexScreen: View {
 /// A dex sprite. Separate from Hunt's ``SpriteTile`` because that one is shiny-only and has the
 /// card's radial-gradient plate behind it; a dex tile draws the sprite bare on the card.
 ///
-/// ponytail: same `SPRITE_BASE` the prototype and ``SpriteTile`` use. `Pokemon.sprite_url` from
-/// the API is the normal sprite only — there is no shiny column — so both variants are built
-/// from the id rather than mixing two sources.
+/// Both variants now come from the API when it has them — `sprite_url` and `shiny_sprite_url`
+/// are separate columns — and ``SpriteSource`` falls back to the id-derived URL for a server
+/// that has not run migration 016's backfill.
 struct DexSprite: View {
     let pokemonID: Int
     var shiny = false
     var size: CGFloat = 52
     var dimmed = false
+    /// The matching URL from the API, when the caller has the species loaded.
+    var served: String?
 
     private var url: URL? {
-        URL(
-            string: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/"
-                + (shiny ? "shiny/" : "") + "\(pokemonID).png")
+        SpriteSource.url(id: pokemonID, shiny: shiny, served: served)
     }
 
     var body: some View {

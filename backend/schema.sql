@@ -6,6 +6,10 @@ CREATE TABLE IF NOT EXISTS pokemon (
     id INTEGER PRIMARY KEY, -- PokeAPI ID
     name TEXT NOT NULL,
     sprite_url TEXT,
+    -- Migration 016 adds this and backfills it from sprite_url in pure SQL.
+    -- SyncPokemonData (cmd/sync) also writes it, but that path opens with
+    -- TRUNCATE hunt_methods CASCADE, so it is not the way to fill a sprite column.
+    shiny_sprite_url TEXT,
     types JSONB DEFAULT '[]'::jsonb,
     can_breed BOOLEAN NOT NULL DEFAULT TRUE,
     is_legendary BOOLEAN NOT NULL DEFAULT FALSE,

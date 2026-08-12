@@ -27,6 +27,7 @@ type PokeAPIPokemonResponse struct {
 	Name    string `json:"name"`
 	Sprites struct {
 		FrontDefault string `json:"front_default"`
+		FrontShiny   string `json:"front_shiny"`
 	} `json:"sprites"`
 	Species struct {
 		URL string `json:"url"`
@@ -274,10 +275,10 @@ func processPokemon(url string, parentPairs chan<- [2]int) {
 	}
 
 	_, err = database.DB.Exec(context.Background(),
-		`INSERT INTO pokemon (id, name, sprite_url, types, is_legendary, is_mythical)
-		 VALUES ($1, $2, $3, $4, $5, $6)
-		 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, sprite_url = EXCLUDED.sprite_url, types = EXCLUDED.types, is_legendary = EXCLUDED.is_legendary, is_mythical = EXCLUDED.is_mythical`,
-		p.ID, p.Name, p.Sprites.FrontDefault, typesJSON, isLegendary, isMythical)
+		`INSERT INTO pokemon (id, name, sprite_url, shiny_sprite_url, types, is_legendary, is_mythical)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, sprite_url = EXCLUDED.sprite_url, shiny_sprite_url = EXCLUDED.shiny_sprite_url, types = EXCLUDED.types, is_legendary = EXCLUDED.is_legendary, is_mythical = EXCLUDED.is_mythical`,
+		p.ID, p.Name, p.Sprites.FrontDefault, p.Sprites.FrontShiny, typesJSON, isLegendary, isMythical)
 
 	if err != nil {
 		log.Printf("Failed to insert pokemon %s: %v", p.Name, err)

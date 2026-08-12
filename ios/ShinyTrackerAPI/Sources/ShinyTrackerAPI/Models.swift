@@ -42,6 +42,10 @@ public struct Pokemon: Decodable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let name: String
     public let spriteURL: String
+    /// The shiny variant from `pokemon.shiny_sprite_url`. Optional and possibly `""`: the
+    /// column is newer than the shipped app, and older rows stay blank until migration 016's
+    /// backfill runs. Callers fall back rather than showing a hole — see `SpriteSource`.
+    public let shinySpriteURL: String?
     /// `pokemon.types` is a nullable `jsonb` holding a string array (`services/pokeapi.go`
     /// marshals `[]string`), and a nil slice marshals to `null` — hence optional.
     public let types: [String]?
@@ -51,6 +55,7 @@ public struct Pokemon: Decodable, Sendable, Equatable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, types
         case spriteURL = "sprite_url"
+        case shinySpriteURL = "shiny_sprite_url"
         case isLegendary = "is_legendary"
         case isMythical = "is_mythical"
     }
@@ -174,6 +179,10 @@ public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let name: String
     public let spriteURL: String
+    /// The shiny variant from `pokemon.shiny_sprite_url`. Optional and possibly `""`: the
+    /// column is newer than the shipped app, and older rows stay blank until migration 016's
+    /// backfill runs. Callers fall back rather than showing a hole — see `SpriteSource`.
+    public let shinySpriteURL: String?
     public let types: [String]?
     public let canBreed: Bool
     public let isLegendary: Bool
@@ -191,6 +200,7 @@ public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, types, locations, stats, abilities, moves
         case spriteURL = "sprite_url"
+        case shinySpriteURL = "shiny_sprite_url"
         case canBreed = "can_breed"
         case isLegendary = "is_legendary"
         case isMythical = "is_mythical"
@@ -332,6 +342,10 @@ public struct HuntPhase: Decodable, Sendable, Equatable, Identifiable {
     public let pokemonID: Int
     public let pokemonName: String
     public let spriteURL: String
+    /// The shiny variant from `pokemon.shiny_sprite_url`. Optional and possibly `""`: the
+    /// column is newer than the shipped app, and older rows stay blank until migration 016's
+    /// backfill runs. Callers fall back rather than showing a hole — see `SpriteSource`.
+    public let shinySpriteURL: String?
     public let encounterCountAtPhase: Int
     public let createdAt: Date
 
@@ -341,6 +355,7 @@ public struct HuntPhase: Decodable, Sendable, Equatable, Identifiable {
         case pokemonID = "pokemon_id"
         case pokemonName = "pokemon_name"
         case spriteURL = "sprite_url"
+        case shinySpriteURL = "shiny_sprite_url"
         case encounterCountAtPhase = "encounter_count_at_phase"
         case createdAt = "created_at"
     }
@@ -387,6 +402,10 @@ public struct HuntDetail: Decodable, Sendable, Equatable, Identifiable {
     /// shipped app, and the app updates on its own schedule. Requiring it would turn an older
     /// server into a hunts list that fails to decode at all rather than one without sprites.
     public let spriteURL: String?
+    /// The shiny variant from `pokemon.shiny_sprite_url`. Optional and possibly `""`: the
+    /// column is newer than the shipped app, and older rows stay blank until migration 016's
+    /// backfill runs. Callers fall back rather than showing a hole — see `SpriteSource`.
+    public let shinySpriteURL: String?
     /// Optional name the user gave this catch. Absent stays absent — the server never coerces
     /// it to `""`, and omitting it from a PATCH leaves the stored value untouched.
     public let nickname: String?
@@ -416,6 +435,7 @@ public struct HuntDetail: Decodable, Sendable, Equatable, Identifiable {
         case hasShinyCharm = "has_shiny_charm"
         case formulaType = "formula_type"
         case spriteURL = "sprite_url"
+        case shinySpriteURL = "shiny_sprite_url"
     }
 }
 

@@ -462,19 +462,20 @@ type PokemonMoveDetail struct {
 // keeps its original name and JSON type; Stats/Abilities/Moves are purely
 // additive so existing clients decode unaffected.
 type PokemonDetail struct {
-	ID            int                     `json:"id"`
-	Name          string                  `json:"name"`
-	SpriteURL     string                  `json:"sprite_url"`
-	Types         json.RawMessage         `json:"types"`
-	CanBreed      bool                    `json:"can_breed"`
-	IsLegendary   bool                    `json:"is_legendary"`
-	IsMythical    bool                    `json:"is_mythical"`
-	EvolvesFromID *int                    `json:"evolves_from_id"`
-	EvolvesFrom   []calc.EvolveFrom       `json:"evolves_from"` // pre-evolution line, nearest first
-	EvolvesTo     []calc.EvolveFrom       `json:"evolves_to"`   // direct evolutions
-	Locations     []PokemonLocationDetail `json:"locations"`
-	Stats         *PokemonStats           `json:"stats,omitempty"`
-	Abilities     []PokemonAbilityDetail  `json:"abilities"`
+	ID             int                     `json:"id"`
+	Name           string                  `json:"name"`
+	SpriteURL      string                  `json:"sprite_url"`
+	ShinySpriteURL string                  `json:"shiny_sprite_url"`
+	Types          json.RawMessage         `json:"types"`
+	CanBreed       bool                    `json:"can_breed"`
+	IsLegendary    bool                    `json:"is_legendary"`
+	IsMythical     bool                    `json:"is_mythical"`
+	EvolvesFromID  *int                    `json:"evolves_from_id"`
+	EvolvesFrom    []calc.EvolveFrom       `json:"evolves_from"` // pre-evolution line, nearest first
+	EvolvesTo      []calc.EvolveFrom       `json:"evolves_to"`   // direct evolutions
+	Locations      []PokemonLocationDetail `json:"locations"`
+	Stats          *PokemonStats           `json:"stats,omitempty"`
+	Abilities      []PokemonAbilityDetail  `json:"abilities"`
 	// Moves is nil (encodes as JSON null) when no ?game_id= was supplied, and
 	// a (possibly empty) slice when one was -- deliberately NOT omitempty, so
 	// "didn't ask" (null) and "asked, nothing seeded for that game" ([]) stay
@@ -505,11 +506,14 @@ func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 
 	var p PokemonDetail
 	var hp, atk, def, spa, spd, spe *int
+	// shiny_sprite_url is COALESCEd (migration 016): it's NULL for every row
+	// until the next cmd/seed run backfills it, and that must never fail this
+	// request -- an empty string is the expected, unhunted-yet-shiny value.
 	err = database.DB.QueryRow(ctx,
-		`SELECT id, name, sprite_url, types, can_breed, is_legendary, is_mythical, evolves_from_id,
+		`SELECT id, name, sprite_url, COALESCE(shiny_sprite_url, ''), types, can_breed, is_legendary, is_mythical, evolves_from_id,
 		        hp, attack, defense, special_attack, special_defense, speed
 		 FROM pokemon WHERE id = $1`, pokemonID).
-		Scan(&p.ID, &p.Name, &p.SpriteURL, &p.Types, &p.CanBreed, &p.IsLegendary, &p.IsMythical, &p.EvolvesFromID,
+		Scan(&p.ID, &p.Name, &p.SpriteURL, &p.ShinySpriteURL, &p.Types, &p.CanBreed, &p.IsLegendary, &p.IsMythical, &p.EvolvesFromID,
 			&hp, &atk, &def, &spa, &spd, &spe)
 	if err != nil {
 		http.Error(w, "Pokemon not found", http.StatusNotFound)

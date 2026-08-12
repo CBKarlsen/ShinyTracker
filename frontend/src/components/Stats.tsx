@@ -1,8 +1,9 @@
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import type { HuntDetail } from "./HistoricHunts";
 import { API_BASE } from "../config";
+import { useAuth } from "../context/AuthContext";
+import { getSpriteUrl } from "../utils/pokemon";
+import type { HuntDetail } from "./HistoricHunts";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -87,7 +88,11 @@ const Stats: React.FC = () => {
 				if (typeof h.hunt_parameters === "string") {
 					parsedParams = JSON.parse(h.hunt_parameters);
 				}
-				if (parsedParams && typeof parsedParams === "object" && "method" in parsedParams) {
+				if (
+					parsedParams &&
+					typeof parsedParams === "object" &&
+					"method" in parsedParams
+				) {
 					m = String((parsedParams as { method: unknown }).method);
 				}
 			} catch (e) {
@@ -315,7 +320,11 @@ const Stats: React.FC = () => {
 						{unluckiest && (
 							<div className="record-row">
 								<img
-									src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${unluckiest.pokemon_id}.png`}
+									src={getSpriteUrl(
+										unluckiest.pokemon_id,
+										true,
+										unluckiest.shiny_sprite_url,
+									)}
 									alt={unluckiest.pokemon_name}
 								/>
 								<div>
@@ -336,7 +345,11 @@ const Stats: React.FC = () => {
 						{luckiest && (
 							<div className="record-row">
 								<img
-									src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${luckiest.pokemon_id}.png`}
+									src={getSpriteUrl(
+										luckiest.pokemon_id,
+										true,
+										luckiest.shiny_sprite_url,
+									)}
 									alt={luckiest.pokemon_name}
 								/>
 								<div>

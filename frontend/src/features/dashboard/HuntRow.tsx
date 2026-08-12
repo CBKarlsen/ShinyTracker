@@ -7,6 +7,7 @@ import {
 	defaultParamsFor,
 	isStreakMethod,
 } from "../../utils/odds";
+import { getSpriteUrl } from "../../utils/pokemon";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
@@ -117,7 +118,7 @@ export function HuntRow({
 		cumP = 1 - currentNotShiny;
 	}
 
-	const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
+	const spriteUrl = getSpriteUrl(hunt.pokemon_id, true, hunt.shiny_sprite_url);
 
 	return (
 		<div

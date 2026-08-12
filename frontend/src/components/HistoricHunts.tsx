@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { getSpriteUrl } from "../utils/pokemon";
 import { SparkSm } from "./ui/icons";
 
 export interface HuntDetail {
@@ -17,6 +18,8 @@ export interface HuntDetail {
 	updated_at: string;
 	pokemon_id: number;
 	pokemon_name: string;
+	/** The species' shiny sprite. Optional: older servers don't send it. */
+	shiny_sprite_url?: string;
 	method_name: string | null;
 	game_title: string | null;
 	total_time_seconds: number;
@@ -144,7 +147,7 @@ const HistoricHunts: React.FC = () => {
 									</div>
 									<div className="sprite-wrap">
 										<img
-											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${h.pokemon_id}.png`}
+											src={getSpriteUrl(h.pokemon_id, true, h.shiny_sprite_url)}
 											alt={h.pokemon_name}
 										/>
 									</div>

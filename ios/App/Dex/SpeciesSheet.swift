@@ -82,7 +82,12 @@ struct SpeciesSheet: View {
 
     private var header: some View {
         HStack(alignment: .center, spacing: 13) {
-            DexSprite(pokemonID: id, shiny: shiny, size: 64)
+            DexSprite(
+                pokemonID: id, shiny: shiny, size: 64,
+                // The evolution cards below deliberately pass nothing: they are other species,
+                // whose detail this sheet has not loaded, so they fall back on the id.
+                served: shiny ? detail?.shinySpriteURL : detail?.spriteURL
+            )
 
             VStack(alignment: .leading, spacing: 0) {
                 Text("#" + String(format: "%03d", id))

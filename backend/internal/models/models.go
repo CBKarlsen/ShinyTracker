@@ -15,12 +15,13 @@ type User struct {
 }
 
 type Pokemon struct {
-	ID          int             `json:"id"`
-	Name        string          `json:"name"`
-	SpriteURL   string          `json:"sprite_url"`
-	Types       json.RawMessage `json:"types"`
-	IsLegendary bool            `json:"is_legendary"`
-	IsMythical  bool            `json:"is_mythical"`
+	ID             int             `json:"id"`
+	Name           string          `json:"name"`
+	SpriteURL      string          `json:"sprite_url"`
+	ShinySpriteURL string          `json:"shiny_sprite_url"`
+	Types          json.RawMessage `json:"types"`
+	IsLegendary    bool            `json:"is_legendary"`
+	IsMythical     bool            `json:"is_mythical"`
 }
 
 type Game struct {
@@ -72,6 +73,7 @@ type HuntPhase struct {
 	PokemonID             int       `json:"pokemon_id"`
 	PokemonName           string    `json:"pokemon_name"`
 	SpriteURL             string    `json:"sprite_url"`
+	ShinySpriteURL        string    `json:"shiny_sprite_url"`
 	EncounterCountAtPhase int       `json:"encounter_count_at_phase"`
 	CreatedAt             time.Time `json:"created_at"`
 }
@@ -171,6 +173,7 @@ type UserHuntDetail struct {
 	UserHunt
 	PokemonName      string      `json:"pokemon_name"`
 	SpriteURL        string      `json:"sprite_url"`
+	ShinySpriteURL   string      `json:"shiny_sprite_url"`
 	MethodName       *string     `json:"method_name"`
 	CustomMethodName *string     `json:"custom_method_name"`
 	GameTitle        *string     `json:"game_title"`

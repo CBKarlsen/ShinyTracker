@@ -18,7 +18,7 @@ import {
 	defaultParamsFor,
 	isStreakMethod,
 } from "../../utils/odds";
-import { getShowdownGif } from "../../utils/pokemon";
+import { getShowdownGif, getSpriteUrl } from "../../utils/pokemon";
 import {
 	isSoundEnabled,
 	playFoundItChime,
@@ -308,7 +308,7 @@ export function HeroHunt({
 	};
 
 	const gifUrl = getShowdownGif(hunt.pokemon_name);
-	const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${hunt.pokemon_id}.png`;
+	const spriteUrl = getSpriteUrl(hunt.pokemon_id, true, hunt.shiny_sprite_url);
 
 	return (
 		<div className="hero">

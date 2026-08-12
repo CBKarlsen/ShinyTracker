@@ -32,7 +32,7 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 	}
 
 	rows, err := database.DB.Query(ctx,
-		`SELECT hp.id, hp.hunt_id, hp.pokemon_id, p.name, COALESCE(p.sprite_url, ''), hp.encounter_count_at_phase, hp.created_at
+		`SELECT hp.id, hp.hunt_id, hp.pokemon_id, p.name, COALESCE(p.sprite_url, ''), COALESCE(p.shiny_sprite_url, ''), hp.encounter_count_at_phase, hp.created_at
 		 FROM hunt_phases hp
 		 JOIN pokemon p ON hp.pokemon_id = p.id
 		 WHERE hp.hunt_id = ANY($1::uuid[])
@@ -44,7 +44,7 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 
 	for rows.Next() {
 		var ph models.HuntPhase
-		if err := rows.Scan(&ph.ID, &ph.HuntID, &ph.PokemonID, &ph.PokemonName, &ph.SpriteURL, &ph.EncounterCountAtPhase, &ph.CreatedAt); err != nil {
+		if err := rows.Scan(&ph.ID, &ph.HuntID, &ph.PokemonID, &ph.PokemonName, &ph.SpriteURL, &ph.ShinySpriteURL, &ph.EncounterCountAtPhase, &ph.CreatedAt); err != nil {
 			continue
 		}
 		result[ph.HuntID] = append(result[ph.HuntID], ph)
@@ -62,7 +62,7 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 // when these were two copy-pasted queries they were free to drift apart silently.
 const huntDetailQuery = `
 	SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
-	       p.name AS pokemon_name, COALESCE(p.sprite_url, '') AS sprite_url, e.method_name, h.custom_method_name, g.title AS game_title,
+	       p.name AS pokemon_name, COALESCE(p.sprite_url, '') AS sprite_url, COALESCE(p.shiny_sprite_url, '') AS shiny_sprite_url, e.method_name, h.custom_method_name, g.title AS game_title,
 	       h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
 	       COALESCE(e.formula_type, 'static') AS formula_type, h.nickname
 	  FROM user_hunts h
@@ -82,7 +82,7 @@ type rowScanner interface {
 func scanHuntDetail(row rowScanner, h *models.UserHuntDetail) error {
 	return row.Scan(
 		&h.ID, &h.UserID, &h.PokemonID, &h.GameID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
-		&h.PokemonName, &h.SpriteURL, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
+		&h.PokemonName, &h.SpriteURL, &h.ShinySpriteURL, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
 		&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType, &h.Nickname,
 	)
 }
