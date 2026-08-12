@@ -95,12 +95,16 @@ final class HuntListModel {
     private var stepByHunt: [UUID: Int] = [:]
 
     private let client: APIClient
+    private let store: SnapshotStore
     /// Debounced writers, one per hunt. See ``scheduleSync(_:)``.
     private var pendingWrites: [UUID: Task<Void, Never>] = [:]
     /// The count each hunt had before its current burst of taps — the rollback target.
     private var preBurstCount: [UUID: Int] = [:]
 
-    init(client: APIClient) { self.client = client }
+    init(client: APIClient, store: SnapshotStore) {
+        self.client = client
+        self.store = store
+    }
 
     func step(for id: UUID) -> Int { stepByHunt[id] ?? 1 }
 
@@ -126,6 +130,14 @@ final class HuntListModel {
     private func load(quiet: Bool) async {
         if !quiet { state = .loading }
         syncError = nil
+        // Draw last-known data immediately rather than a spinner. The refresh below always runs,
+        // so this is never shown without being corrected in the same breath — the trade is that a
+        // cold launch briefly shows stale data, which is what "opens instantly" costs.
+        if !quiet, state != .ready, let cached: [HuntDetail] = await store.load([HuntDetail].self, as: .hunts) {
+            rows = cached.filter { $0.status == "active" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            history = cached.filter { $0.status == "completed" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            state = .ready
+        }
         do {
             // `status` is a free-form String on purpose (Models.swift), so both tabs are filled
             // by filtering one response rather than trusting the server to send one kind.
@@ -151,8 +163,12 @@ final class HuntListModel {
                 liveHuntID = rows.first?.id
             }
             state = .ready
+            // The raw response, not `rows`/`history`: those are derived on the way back in, and a
+            // second saved copy of the same thing is a second thing to keep in sync.
+            await store.save(all, as: .hunts)
         } catch {
-            if quiet {
+            if quiet || state == .ready {
+                // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
                 syncError = "Couldn't refresh your hunts. \(message(for: error))"
             } else {
                 state = .failed(message(for: error))

@@ -93,10 +93,14 @@ final class DexModel {
     /// than routing every field through this model.
     let client: APIClient
     private let store: LivingDexStore
+    /// Named `snapshots`, not `store`: this model already had a `store`, and the two are
+    /// unrelated — one holds ticks the server cannot, the other caches what the server sent.
+    private let snapshots: SnapshotStore
 
-    init(client: APIClient, store: LivingDexStore) {
+    init(client: APIClient, store: LivingDexStore, snapshots: SnapshotStore) {
         self.client = client
         self.store = store
+        self.snapshots = snapshots
         livingOnlyIDs = store.load()
     }
 
@@ -121,6 +125,17 @@ final class DexModel {
     private func load(quiet: Bool) async {
         if !quiet { state = .loading }
         syncError = nil
+        // Draw last-known data immediately rather than a spinner — 1,025 species is the slowest
+        // response in the app, so this is the screen that gains the most. `availableInGame` is
+        // not restored: `loadAvailability()` derives it per selected game and it is one cheap GET.
+        if !quiet, state != .ready, let species = await snapshots.load([Pokemon].self, as: .species) {
+            sections = Self.group(species)
+            if let status = await snapshots.load(DexStatus.self, as: .dex) {
+                notInYourGames = Set(status.notInYourGames)
+                lockedEverywhere = Set(status.lockedEverywhere)
+            }
+            state = .ready
+        }
         do {
             // Three independent GETs; the species list is the big one (1,025 rows) and there is
             // no reason for the other two to wait behind it.
@@ -144,8 +159,13 @@ final class DexModel {
             lockedEverywhere = Set(status?.lockedEverywhere ?? [])
             await loadAvailability()
             state = .ready
+            await snapshots.save(species, as: .species)
+            // Only when it actually arrived: `status` is the one GET allowed to fail here, and
+            // overwriting a good snapshot with "nothing is blocked" would cache the degradation.
+            if let status { await snapshots.save(status, as: .dex) }
         } catch {
-            if quiet {
+            if quiet || state == .ready {
+                // A snapshot is on screen — warn inline rather than replacing it with an error.
                 syncError = "Couldn't refresh the dex. \(userFacingMessage(for: error))"
             } else {
                 state = .failed(userFacingMessage(for: error))

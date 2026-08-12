@@ -650,3 +650,27 @@ private let runDetailJSON = """
     #expect(try #require(String(data: encoder.encode(lowering), encoding: .utf8))
         .contains("\"allow_decrease\":true"))
 }
+
+/// The response types are `Codable`, not `Decodable`, only because ``SnapshotStore`` writes them
+/// back out to disk. Nothing else in the app ever encodes one, so this is the only place that
+/// would notice if the synthesised `encode` stopped agreeing with the synthesised `init(from:)`.
+/// It would fail silently if it did: a snapshot that cannot be re-read is a permanent cache miss,
+/// and a cache miss is indistinguishable from "nothing cached yet".
+///
+/// Both payloads here carry the shapes most likely to break — `Date`, a `[String: ParamValue]`
+/// holding an `.unrecognized`, and a run detail's three nested lists.
+@Test func snapshotsRoundTripTheRealResponseTypes() async throws {
+    let hunts = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))
+    let detail = try apiDecoder().decode(NuzlockeRunDetail.self, from: Data(runDetailJSON.utf8))
+    let store = SnapshotStore(
+        userID: UUID(),
+        containerDirectory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("snapshot-roundtrip-\(UUID().uuidString)")
+    )
+
+    await store.save(hunts, as: .hunts)
+    await store.save(detail, as: .run(detail.id))
+
+    #expect(await store.load([HuntDetail].self, as: .hunts) == hunts)
+    #expect(await store.load(NuzlockeRunDetail.self, as: .run(detail.id)) == detail)
+}

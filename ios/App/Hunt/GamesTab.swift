@@ -21,11 +21,15 @@ final class GameLibraryModel {
     private(set) var syncError: String?
 
     private let client: APIClient
+    private let store: SnapshotStore
     /// `GET /api/user/{id}/games` 403s unless the id is the caller's own, and this screen has no
     /// `AuthSession` — the preview harness has no session at all. `/api/me` is the id's source.
     private var userID: UUID?
 
-    init(client: APIClient) { self.client = client }
+    init(client: APIClient, store: SnapshotStore) {
+        self.client = client
+        self.store = store
+    }
 
     func load() async { await load(quiet: false) }
 
@@ -39,6 +43,13 @@ final class GameLibraryModel {
     private func load(quiet: Bool) async {
         if !quiet { state = .loading }
         syncError = nil
+        // Draw the last-known library immediately rather than a spinner. `owned` is deliberately
+        // not cached — it is keyed by a user id this model only resolves at load time — so every
+        // row renders un-owned for the moment before the refresh below lands and fills it in.
+        if !quiet, state != .ready, let cached = await store.load([Game].self, as: .games) {
+            games = cached                              // already generation-sorted when saved
+            state = .ready
+        }
         do {
             let id = try await resolveUserID()
             async let all = client.games()
@@ -51,8 +62,10 @@ final class GameLibraryModel {
                 try await mine.map { ($0.gameID, $0.hasShinyCharm) }, uniquingKeysWith: { _, b in b }
             )
             state = .ready
+            await store.save(games, as: .games)
         } catch {
-            if quiet {
+            if quiet || state == .ready {
+                // A snapshot is on screen — warn inline rather than replacing it with an error.
                 syncError = "Couldn't refresh your games. \(userFacingMessage(for: error))"
             } else {
                 state = .failed(userFacingMessage(for: error))

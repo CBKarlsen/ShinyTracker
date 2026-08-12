@@ -132,29 +132,37 @@ struct AppShell: View {
     /// Every model shares one client — and the new-hunt sheet shares the *library* model with
     /// the Games tab, so a charm toggled there moves the odds in the method step immediately.
     init(client: APIClient, mode: AppMode = .hunt, userID: UUID? = nil) {
-        let library = GameLibraryModel(client: client)
+        // Exactly one store for the whole session, four keys. Two stores over the same key would
+        // race on the temp file an atomic write moves into place — the loser is only a cache miss,
+        // but there is no reason to have two when the keys never overlap.
+        let snapshots = SnapshotStore(userID: userID)
+        let library = GameLibraryModel(client: client, store: snapshots)
         _mode = State(initialValue: mode)
-        _hunts = State(initialValue: HuntListModel(client: client))
+        _hunts = State(initialValue: HuntListModel(client: client, store: snapshots))
         _library = State(initialValue: library)
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
-        _dex = State(initialValue: DexModel(client: client, store: .userDefaults(userID: userID)))
-        _nuzlocke = State(initialValue: NuzlockeModel(client: client))
+        _dex = State(
+            initialValue: DexModel(
+                client: client, store: .userDefaults(userID: userID), snapshots: snapshots))
+        _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
     }
 
     #if DEBUG
     /// A preview-harness client, whose Dex must not write its living-dex ticks into the
-    /// simulator's real `UserDefaults`.
+    /// simulator's real `UserDefaults` — and whose canned fixtures must not land in a real
+    /// account's snapshot directory, hence the anonymous store.
     init(preview client: APIClient, mode: AppMode) {
-        let dex = DexModel(client: client, store: .ephemeral())
+        let snapshots = SnapshotStore(userID: nil)
+        let dex = DexModel(client: client, store: .ephemeral(), snapshots: snapshots)
         dex.view = DexPreview.initialView ?? .browse
         dex.selectedGameID = DexPreview.initialGameID
-        let library = GameLibraryModel(client: client)
+        let library = GameLibraryModel(client: client, store: snapshots)
         _mode = State(initialValue: mode)
-        _hunts = State(initialValue: HuntListModel(client: client))
+        _hunts = State(initialValue: HuntListModel(client: client, store: snapshots))
         _library = State(initialValue: library)
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: dex)
-        _nuzlocke = State(initialValue: NuzlockeModel(client: client))
+        _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
     }
     #endif
 

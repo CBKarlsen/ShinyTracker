@@ -53,14 +53,37 @@ final class NuzlockeModel {
     private var loadedSpeciesTypes = false
 
     let client: APIClient
+    private let store: SnapshotStore
 
-    init(client: APIClient) { self.client = client }
+    init(client: APIClient, store: SnapshotStore) {
+        self.client = client
+        self.store = store
+    }
 
     // MARK: Loading
 
     func load() async {
         state = .loading
+        await restoreSnapshot()
         await reload(quiet: false, reopen: true)
+    }
+
+    /// Draws the last-known run immediately rather than a spinner. The reload that follows always
+    /// runs, so this is never shown without being corrected in the same breath — the trade is that
+    /// a cold launch briefly shows stale data, which is what "opens instantly" costs.
+    ///
+    /// Only on the cold path, and only when both halves are on disk: a runs list with no open run
+    /// renders the "start a run" empty state, which is a worse lie than a spinner.
+    private func restoreSnapshot() async {
+        guard let cached = await store.load([NuzlockeRun].self, as: .runs) else { return }
+        // Same choice `reload` makes, and for the same reason: `runs` is newest-first, so this is
+        // the most recently started active run, falling back to an archived one only if all ended.
+        guard let wanted = cached.first(where: \.isActive) ?? cached.first,
+            let detail = await store.load(NuzlockeRunDetail.self, as: .run(wanted.id))
+        else { return }
+        runs = cached
+        apply(detail, for: wanted)
+        state = .ready
     }
 
     /// Pull-to-refresh: the user asked for the server's version of everything, detail included.
@@ -102,8 +125,10 @@ final class NuzlockeModel {
                 clearOpenRun()
             }
             state = .ready
+            await store.save(runs, as: .runs)
         } catch {
-            if quiet {
+            if quiet || state == .ready {
+                // A snapshot is on screen — warn inline rather than replacing it with an error.
                 syncError = "Couldn't refresh your runs. \(userFacingMessage(for: error))"
             } else {
                 state = .failed(userFacingMessage(for: error))
@@ -127,6 +152,16 @@ final class NuzlockeModel {
 
     private func open(_ candidate: NuzlockeRun) async throws {
         let detail = try await client.run(id: candidate.id)
+        apply(detail, for: candidate)
+        await store.save(detail, as: .run(candidate.id))
+    }
+
+    /// Unpacks a run detail into the mutable state this model keeps, derived rows included.
+    ///
+    /// Split out of ``open(_:)`` so the snapshot restore goes through the same path: the screen
+    /// renders from `logsBySlug`/`currentSlug`/`coverage`, so assigning the three stores without
+    /// the trailing `rebuild()` draws a run with an empty timeline and no coverage warning.
+    private func apply(_ detail: NuzlockeRunDetail, for candidate: NuzlockeRun) {
         run = candidate
         timeline = detail.timeline.sorted { $0.sortOrder < $1.sortOrder }
         encounters = detail.encounters
