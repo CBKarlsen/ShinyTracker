@@ -11,9 +11,10 @@ struct HuntCard: View {
     let model: HuntListModel
     /// The prototype's `h.live` — the card you are actually counting on.
     let isLive: Bool
+    /// Opens the confirm sheet. The card does not complete the hunt itself.
+    let onFound: () -> Void
 
     private var step: Int { model.step(for: row.id) }
-    private var isArmed: Bool { model.armedFoundID == row.id }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -221,25 +222,16 @@ struct HuntCard: View {
                     )
             )
 
-            // ✦ found. Two taps: the first arms it, the second completes the hunt. The
-            // prototype uses a confirm sheet, which is out of scope — but "tap it twice" is
-            // already the design's own guard (it is how End run works in Nuzlocke).
-            controlButton(
-                label: isArmed
-                    ? "Confirm: mark \(row.name) as found"
-                    : "Mark \(row.name) as found"
-            ) {
-                model.tapFound(row.id)
+            // ✦ found — opens the confirm sheet, which is also where the hunt can be abandoned.
+            controlButton(label: "Mark \(row.name) as found") {
+                Haptics.impact(.light)
+                onFound()
             } content: {
                 Image(systemName: "sparkles")
                     .font(.system(size: 17))
-                    .foregroundStyle((isArmed ? Palette.onAccent : Palette.hunt).color)
+                    .foregroundStyle(Palette.hunt.color)
             }
             .frame(width: Metrics.controlNarrow)
-            .background(
-                isArmed ? Palette.hunt.color : .clear,
-                in: .rect(cornerRadius: Radii.control)
-            )
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.control)
                     .strokeBorder(Palette.hunt.alpha(0x55), lineWidth: 1)
