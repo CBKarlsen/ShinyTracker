@@ -32,6 +32,11 @@ final class NuzlockeModel {
     /// True while the open run is being swapped for another one.
     private(set) var loadingRun = false
 
+    /// `pokemon_id -> types`, for the coverage matchup. A logged encounter carries no types and
+    /// neither does the encounter pool, so the species table is the only source.
+    private(set) var speciesTypes: [Int: [PokemonType]] = [:]
+    private var loadedSpeciesTypes = false
+
     let client: APIClient
 
     init(client: APIClient) { self.client = client }
@@ -98,6 +103,29 @@ final class NuzlockeModel {
         timeline = []
         encounters = []
         beaten = []
+    }
+
+    /// Loads the species table once, for the coverage matchup only.
+    ///
+    /// One `GET /api/pokemon?limit=all` rather than a `pokemonDetail` per party member: a party
+    /// turns over constantly, so per-member fetches would run on every catch and every death,
+    /// and each one carries locations, stats, abilities and movesets this screen never reads.
+    /// Failure is silent by design — a coverage warning that cannot be computed is simply not
+    /// shown, and it is not worth an error banner over a run you can still play.
+    func loadSpeciesTypes() async {
+        guard !loadedSpeciesTypes else { return }
+        do {
+            let all = try await client.pokemon(all: true)
+            // Not `uniqueKeysWithValues`: that traps on a duplicate id. Same reasoning as
+            // `GameLibraryModel.load` — a crash is the wrong way to find out the table has one.
+            speciesTypes = Dictionary(
+                all.map { ($0.id, ($0.types ?? []).compactMap(PokemonType.init(slug:))) },
+                uniquingKeysWith: { _, second in second }
+            )
+            loadedSpeciesTypes = true
+        } catch {
+            // Deliberately swallowed — see above.
+        }
     }
 
     // MARK: Reading the timeline
@@ -182,6 +210,64 @@ final class NuzlockeModel {
     /// The server is still the authority: it re-derives this on every write.
     var caughtSpeciesIDs: Set<Int> {
         Set(encounters.filter { $0.status == "caught" }.compactMap(\.pokemonID))
+    }
+
+    // MARK: Coverage
+
+    /// A damage type the next checkpoint deals that nothing alive in your party resists.
+    struct CoverageGap: Identifiable {
+        let type: PokemonType
+        /// Boxed Pokémon that *do* resist it — "Gastly (box) and Staravia both do."
+        let benchResisters: [NuzlockeEncounterLog]
+
+        var id: String { type.rawValue }
+    }
+
+    /// "Nothing in your party resists Fighting."
+    ///
+    /// The threat is read off the boss's **moves**, not its species types, for two reasons: the
+    /// API sends the squad's movesets and not their types, and what actually hurts you is the
+    /// damage you will be hit with. Status moves are seeded with `power: 0` and are excluded —
+    /// a Growl threatens nothing.
+    ///
+    /// Returns empty rather than guessing whenever the answer would be unsound: no checkpoint, an
+    /// empty party, or any living member whose types have not loaded. That last guard matters —
+    /// an unknown member resists nothing as far as ``resists(_:_:)`` can tell, so without it a
+    /// half-loaded species table would invent warnings about a party that covers itself fine.
+    var coverageGaps: [CoverageGap] {
+        guard let boss = nextCheckpoint, let squad = boss.squad else { return [] }
+        let alive = party
+        guard !alive.isEmpty else { return [] }
+        guard alive.allSatisfy({ log in log.pokemonID.map { speciesTypes[$0] != nil } ?? false })
+        else { return [] }
+
+        let threats = Set(
+            squad.flatMap { $0.moves ?? [] }
+                .filter { $0.power > 0 }
+                .compactMap { PokemonType(slug: $0.type) }
+        )
+
+        return threats
+            .filter { threat in !alive.contains { resists($0, threat) } }
+            .map { threat in
+                CoverageGap(
+                    type: threat,
+                    benchResisters: boxed.filter { resists($0, threat) }
+                )
+            }
+            // Stable order: a set iterates arbitrarily, and a warning card that reshuffles
+            // itself between redraws reads as a glitch.
+            .sorted { $0.type.rawValue < $1.type.rawValue }
+    }
+
+    /// Whether one logged Pokémon takes less than neutral damage from an attacking type.
+    /// ``TypeChart/resistances(_:)`` folds immunities in, which is right here: a ×0 is the
+    /// strongest resistance there is.
+    private func resists(_ log: NuzlockeEncounterLog, _ threat: PokemonType) -> Bool {
+        guard let id = log.pokemonID, let types = speciesTypes[id], !types.isEmpty else {
+            return false
+        }
+        return TypeChart.resistances(types).contains { $0.type == threat }
     }
 
     // MARK: Writing

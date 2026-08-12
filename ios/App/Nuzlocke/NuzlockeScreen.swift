@@ -22,6 +22,9 @@ struct NuzlockeScreen: View {
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task { await model.load() }
+        // A second `.task` so the species table — one big request, and only the coverage warning
+        // needs it — loads alongside the run rather than delaying it.
+        .task { await model.loadSpeciesTypes() }
         .sheet(isPresented: $startingRun) {
             NewRunSheet(model: model)
         }
@@ -146,6 +149,7 @@ struct NuzlockeScreen: View {
                 }
 
                 checkpointCard
+                coverageCard
                 partyStrip
 
                 Text("Encounters")
@@ -221,6 +225,62 @@ struct NuzlockeScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(Palette.surface.color, in: .rect(cornerRadius: Radii.card))
         }
+    }
+
+    // MARK: Coverage
+
+    /// "Nothing in your party resists Fighting. Gastly and Staravia do, from the box."
+    ///
+    /// Absent when the party covers everything the next checkpoint throws, which is the common
+    /// case — this is a warning, not a permanent panel, and a row saying "you're fine" every time
+    /// would train you to stop reading it.
+    @ViewBuilder
+    private var coverageCard: some View {
+        let gaps = model.coverageGaps
+        if !gaps.isEmpty {
+            VStack(alignment: .leading, spacing: 9) {
+                Text("Coverage warning")
+                    .font(Typography.blockLabel)
+                    .tracking(Typography.blockLabelTracking)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Palette.danger.color)
+
+                ForEach(gaps) { gap in
+                    HStack(alignment: .top, spacing: 9) {
+                        Text(gap.type.displayName)
+                            .font(Typography.tag)
+                            .foregroundStyle(Palette.textPrimary.color)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                gap.type.swatch.alpha(0x3D),
+                                in: .rect(cornerRadius: Radii.typeChip)
+                            )
+                        Text(sentence(for: gap))
+                            .font(Typography.meta)
+                            .foregroundStyle(Palette.textSecondary.color)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            .padding(Metrics.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: Radii.card)
+                    .strokeBorder(Palette.danger.alpha(0x44), lineWidth: 1)
+            )
+        }
+    }
+
+    /// `ListFormatter` rather than a hand-rolled join: it gets the Oxford comma and the "and"
+    /// right for one, two and many, in the user's locale.
+    private func sentence(for gap: NuzlockeModel.CoverageGap) -> String {
+        let opening = "Nothing in your party resists \(gap.type.displayName)."
+        guard !gap.benchResisters.isEmpty else { return opening }
+        let names = gap.benchResisters.map { $0.nickname ?? model.speciesName(for: $0) }
+        let list = ListFormatter.localizedString(byJoining: names)
+        return "\(opening) \(list) \(names.count == 1 ? "does" : "do"), from the box."
     }
 
     // MARK: Party

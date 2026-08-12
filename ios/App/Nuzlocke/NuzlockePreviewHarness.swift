@@ -55,6 +55,8 @@ private struct NuzlockeStubTransport: HTTPTransport {
         switch (method, path) {
         case (_, "/api/games"):
             return (Data(games.utf8), 200)
+        case (_, "/api/pokemon"):
+            return (Data(species.utf8), 200)
         case (_, "/api/nuzlocke/timeline"):
             return (Data("[\(timelineEntries)]".utf8), 200)
         case ("GET", "/api/runs"):
@@ -75,6 +77,24 @@ private let games = """
 [
   {"id":4,"title":"Platinum","generation":4,"base_odds":8192},
   {"id":31,"title":"Scarlet","generation":9,"base_odds":4096}
+]
+"""
+
+/// Real types for every species this fixture logs — what the coverage matchup reads.
+///
+/// The real endpoint answers with all 1,025; the coverage warning only ever looks up the ids it
+/// has logged, so a fixture that carries those is a faithful stand-in and a 1,025-row blob is
+/// not worth committing.
+private let species = """
+[
+  {"id":74,"name":"geodude","sprite_url":"","types":["rock","ground"],
+   "is_legendary":false,"is_mythical":false},
+  {"id":393,"name":"piplup","sprite_url":"","types":["water"],
+   "is_legendary":false,"is_mythical":false},
+  {"id":396,"name":"starly","sprite_url":"","types":["normal","flying"],
+   "is_legendary":false,"is_mythical":false},
+  {"id":399,"name":"bidoof","sprite_url":"","types":["normal"],
+   "is_legendary":false,"is_mythical":false}
 ]
 """
 
@@ -146,8 +166,13 @@ private let runFields = """
 
 private let run = "{\(runFields)}"
 
-/// Piplup alive, Starly boxed, Bidoof dead, Route 203 run from — and Barry beaten, so Roark is
-/// the next checkpoint and the cap reads 14.
+/// Piplup alive, Starly and Geodude boxed, Bidoof dead, Route 203 run from — and Barry beaten, so
+/// Roark is the next checkpoint and the cap reads 14.
+///
+/// The roster is picked to exercise the coverage warning against Roark's real moveset, whose
+/// damaging moves are Rock, Normal and Dark. Piplup (water) resists none of the three, so all
+/// three are gaps; boxed Geodude (rock/ground) resists Rock and Normal but not Dark, so two gaps
+/// name a bench resister and one has none.
 private let runDetail = """
 {\(runFields),
  "timeline":[\(timelineEntries)],
@@ -171,7 +196,12 @@ private let runDetail = """
     "run_id":"aaaaaaaa-0000-4000-8000-00000000aaaa","location_slug":"r203",
     "pokemon_id":null,"pokemon_name":null,"nickname":null,"status":"ran",
     "nature":null,"is_boxed":false,"is_dupe":false,
-    "created_at":"2026-08-06T11:00:00Z","updated_at":"2026-08-06T11:00:00Z"}
+    "created_at":"2026-08-06T11:00:00Z","updated_at":"2026-08-06T11:00:00Z"},
+   {"id":"11111111-0000-4000-8000-00000000e005",
+    "run_id":"aaaaaaaa-0000-4000-8000-00000000aaaa","location_slug":"gate",
+    "pokemon_id":74,"pokemon_name":"geodude","nickname":"Pebble","status":"caught",
+    "nature":null,"is_boxed":true,"is_dupe":false,
+    "created_at":"2026-08-08T14:00:00Z","updated_at":"2026-08-08T14:00:00Z"}
  ],
  "boss_progress":[{"boss_slug":"rival1","beaten":true}]}
 """
