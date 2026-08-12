@@ -69,3 +69,7 @@ ios/App/Config/Secrets.xcconfig
 # ("GENERATED from dc-runtime/src/*.ts — do not edit"), and HANDOFF.md calls the
 # prototype's runtime scaffolding throwaway. The .dc.html design files ARE committed.
 docs/design/support.js
+
+# Agent worktrees — real git worktrees, not source. Committing them would put a
+# checkout inside the checkout.
+.claude/worktrees/
