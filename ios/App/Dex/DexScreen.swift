@@ -399,7 +399,13 @@ struct DexSprite: View {
         .opacity(dimmed ? 0.6 : 1)
         .task(id: url) {
             guard let url else { return }
-            image = await SpriteCache.shared.image(for: url)
+            let fetched = await SpriteCache.shared.image(for: url)
+            // SpriteCache's fetch is an unstructured Task of its own, so cancelling this
+            // .task(id:) doesn't stop it — a cell recycled onto a new url (same View identity,
+            // e.g. a Browse/Shiny toggle) must not have its now-current image overwritten by a
+            // late-arriving fetch for the url it used to show.
+            guard !Task.isCancelled else { return }
+            image = fetched
         }
         .accessibilityHidden(true)
     }
