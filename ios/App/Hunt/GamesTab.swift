@@ -41,7 +41,6 @@ final class GameLibraryModel {
     }
 
     private func load(quiet: Bool) async {
-        if !quiet { state = .loading }
         syncError = nil
         // Draw the last-known library immediately rather than a spinner. `games` and `owned` are
         // restored together or not at all: a games list without ownership renders every row as
@@ -55,17 +54,28 @@ final class GameLibraryModel {
             owned = cachedOwned
             state = .ready
         }
+        // Only reached still `.loading` (or `.failed`, retried) when the restore above did not
+        // run or found nothing on disk — so this guard is the one actually gating whether the
+        // spinner replaces a screen that already has something to show.
+        if !quiet, state != .ready { state = .loading }
         do {
             let id = try await resolveUserID()
             async let all = client.games()
             async let mine = client.userGames(userID: id)
-            games = try await all.sorted { ($0.generation, $0.id) < ($1.generation, $1.id) }
+            // Awaited into locals, not assigned straight to `games`/`owned`: if `all` succeeds
+            // and `mine` then throws, assigning `games` first would leave a fresh games list
+            // rendering against the still-cached `owned` map, so a game new since the snapshot
+            // would show as not-owned even though it may be owned. Both land together or neither
+            // does — same rule as the restore above.
+            let freshGames = try await all.sorted { ($0.generation, $0.id) < ($1.generation, $1.id) }
             // Not `uniqueKeysWithValues`: that TRAPS on a duplicate key. `user_games` is keyed
             // (user_id, game_id) so duplicates should be impossible, and a crash is the wrong
             // way to find out that they were not.
-            owned = Dictionary(
+            let freshOwned = Dictionary(
                 try await mine.map { ($0.gameID, $0.hasShinyCharm) }, uniquingKeysWith: { _, b in b }
             )
+            games = freshGames
+            owned = freshOwned
             state = .ready
             await store.save(games, as: .games)
             await store.save(owned, as: .userGames)

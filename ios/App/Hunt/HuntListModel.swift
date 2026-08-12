@@ -128,7 +128,6 @@ final class HuntListModel {
     }
 
     private func load(quiet: Bool) async {
-        if !quiet { state = .loading }
         syncError = nil
         // Draw last-known data immediately rather than a spinner. The refresh below always runs,
         // so this is never shown without being corrected in the same breath — the trade is that a
@@ -138,6 +137,10 @@ final class HuntListModel {
             history = cached.filter { $0.status == "completed" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
             state = .ready
         }
+        // Only reached still `.loading` (or `.failed`, retried) when the restore above did not
+        // run or found nothing on disk — so this guard is the one actually gating whether the
+        // spinner replaces a screen that already has something to show.
+        if !quiet, state != .ready { state = .loading }
         do {
             // `status` is a free-form String on purpose (Models.swift), so both tabs are filled
             // by filtering one response rather than trusting the server to send one kind.

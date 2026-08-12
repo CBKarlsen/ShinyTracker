@@ -123,19 +123,31 @@ final class DexModel {
     /// reading. A failure then reports inline instead of replacing the grid with an error page —
     /// the grid on screen is still perfectly good data.
     private func load(quiet: Bool) async {
-        if !quiet { state = .loading }
         syncError = nil
         // Draw last-known data immediately rather than a spinner — 1,025 species is the slowest
         // response in the app, so this is the screen that gains the most. `availableInGame` is
         // not restored: `loadAvailability()` derives it per selected game and it is one cheap GET.
-        if !quiet, state != .ready, let species = await snapshots.load([Pokemon].self, as: .species) {
+        // Species and status restore together or not at all: a grid with sections but no
+        // blocked-state data would say nothing is out-of-library or shiny-locked, which is a
+        // false "obtainable" claim, not merely a stale one.
+        if !quiet, state != .ready,
+            let species = await snapshots.load([Pokemon].self, as: .species),
+            let status = await snapshots.load(DexStatus.self, as: .dex)
+        {
             sections = Self.group(species)
-            if let status = await snapshots.load(DexStatus.self, as: .dex) {
-                notInYourGames = Set(status.notInYourGames)
-                lockedEverywhere = Set(status.lockedEverywhere)
-            }
+            notInYourGames = Set(status.notInYourGames)
+            lockedEverywhere = Set(status.lockedEverywhere)
+            // Without this, huntShinyIDs/manualShinyIDs/huntEncounters stay empty: every shiny
+            // already caught renders "Missing" and Living offers to un-tick species it should
+            // refuse — the one screen whose job is showing what the user owns would flatly deny
+            // owning it.
+            if let hunts = await snapshots.load([HuntDetail].self, as: .hunts) { apply(hunts: hunts) }
             state = .ready
         }
+        // Only reached still `.loading` (or `.failed`, retried) when the restore above did not
+        // run or did not find both halves — so this guard is the one actually gating whether the
+        // spinner replaces a screen that already has something to show.
+        if !quiet, state != .ready { state = .loading }
         do {
             // Three independent GETs; the species list is the big one (1,025 rows) and there is
             // no reason for the other two to wait behind it.
