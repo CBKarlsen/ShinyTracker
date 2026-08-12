@@ -28,7 +28,7 @@ struct DexScreen: View {
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task {
-            await model.load()
+            await model.appear()
             #if DEBUG
             // ponytail: `simctl` cannot tap, so the preview harness names the species whose
             // sheet to open. Debug-only, and inert unless -dexSpecies is passed.
@@ -275,7 +275,7 @@ struct DexScreen: View {
             // `padding-bottom:104px` on top of that leaves a dead gap under the last row.
         }
         .scrollIndicators(.hidden)
-        .refreshable { await model.load() }
+        .refreshable { await model.refresh() }
     }
 
     private func tile(_ species: Pokemon) -> some View {

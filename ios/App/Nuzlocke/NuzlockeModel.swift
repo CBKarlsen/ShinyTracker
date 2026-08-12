@@ -51,6 +51,13 @@ final class NuzlockeModel {
     /// After starting a run, where blanking the screen behind the closing sheet reads as a bug.
     func refresh() async { await reload(quiet: true) }
 
+    /// What a screen's `.task` calls. Reloading from scratch every time a tab is shown throws
+    /// away a screen that is already correct: `AppShell` holds these models as `@State`, so the
+    /// data survives the switch even though the view does not. Only a cold model shows a spinner.
+    func appear() async {
+        state == .ready ? await refresh() : await load()
+    }
+
     private func reload(quiet: Bool) async {
         syncError = nil
         do {

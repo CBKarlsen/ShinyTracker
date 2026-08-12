@@ -21,7 +21,7 @@ struct NuzlockeScreen: View {
         .padding(.horizontal, Metrics.screenPadding)
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .task { await model.load() }
+        .task { await model.appear() }
         // A second `.task` so the species table — one big request, and only the coverage warning
         // needs it — loads alongside the run rather than delaying it.
         .task { await model.loadSpeciesTypes() }

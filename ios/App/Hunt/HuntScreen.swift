@@ -32,10 +32,10 @@ struct HuntScreen: View {
         .padding(.horizontal, Metrics.screenPadding)
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .task { await model.load() }
+        .task { await model.appear() }
         // The library is what makes the + button work at all (no owned games, no methods), and
         // the Games tab reads the same model, so it loads with the screen rather than on demand.
-        .task { await library.load() }
+        .task { await library.appear() }
         .sheet(isPresented: $newHuntOpen) {
             NewHuntSheet(model: newHunt) {
                 newHuntOpen = false
@@ -248,7 +248,7 @@ struct HuntScreen: View {
                 }
             }
             .scrollIndicators(.hidden)
-            .refreshable { await model.load() }
+            .refreshable { await model.refresh() }
         }
     }
 
@@ -286,7 +286,7 @@ struct HuntScreen: View {
                 }
             }
             .scrollIndicators(.hidden)
-            .refreshable { await model.load() }
+            .refreshable { await model.refresh() }
         }
     }
 

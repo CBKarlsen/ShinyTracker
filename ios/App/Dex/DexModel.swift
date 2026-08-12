@@ -106,8 +106,20 @@ final class DexModel {
 
     // MARK: Loading
 
-    func load() async {
-        state = .loading
+    func load() async { await load(quiet: false) }
+
+    func refresh() async { await load(quiet: true) }
+
+    /// See `HuntListModel.appear()`.
+    func appear() async {
+        state == .ready ? await refresh() : await load()
+    }
+
+    /// `quiet` skips the loading state, for a reload behind a screen the user is already
+    /// reading. A failure then reports inline instead of replacing the grid with an error page —
+    /// the grid on screen is still perfectly good data.
+    private func load(quiet: Bool) async {
+        if !quiet { state = .loading }
         syncError = nil
         do {
             // Three independent GETs; the species list is the big one (1,025 rows) and there is
@@ -133,7 +145,11 @@ final class DexModel {
             await loadAvailability()
             state = .ready
         } catch {
-            state = .failed(userFacingMessage(for: error))
+            if quiet {
+                syncError = "Couldn't refresh the dex. \(userFacingMessage(for: error))"
+            } else {
+                state = .failed(userFacingMessage(for: error))
+            }
         }
     }
 

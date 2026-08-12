@@ -27,8 +27,17 @@ final class GameLibraryModel {
 
     init(client: APIClient) { self.client = client }
 
-    func load() async {
-        state = .loading
+    func load() async { await load(quiet: false) }
+
+    func refresh() async { await load(quiet: true) }
+
+    /// See `HuntListModel.appear()`.
+    func appear() async {
+        state == .ready ? await refresh() : await load()
+    }
+
+    private func load(quiet: Bool) async {
+        if !quiet { state = .loading }
         syncError = nil
         do {
             let id = try await resolveUserID()
@@ -43,7 +52,11 @@ final class GameLibraryModel {
             )
             state = .ready
         } catch {
-            state = .failed(userFacingMessage(for: error))
+            if quiet {
+                syncError = "Couldn't refresh your games. \(userFacingMessage(for: error))"
+            } else {
+                state = .failed(userFacingMessage(for: error))
+            }
         }
     }
 
@@ -170,7 +183,7 @@ struct GamesTab: View {
                 .padding(.bottom, 8)
             }
             .scrollIndicators(.hidden)
-            .refreshable { await library.load() }
+            .refreshable { await library.refresh() }
         }
     }
 
