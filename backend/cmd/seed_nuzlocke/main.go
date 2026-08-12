@@ -211,6 +211,14 @@ func main() {
 // a route for the first time can encounter. Time-of-day rows ARE included — a
 // route's night table is still that route's table.
 //
+// Three of those condition families are PAIRS, where one member is the default
+// state and only the other is special: `slot2-none`, `backlot-not-mentioned`
+// (Trophy Garden before the story flag) and `story-progress-before-national-dex`
+// are the baseline and must survive the filter. Sweeping a whole family out with
+// a bare LIKE drops real encounters and leaves a *non-empty* pool, so the
+// empty-pool guard below never fires and the loss is invisible — the exact
+// silent-hole failure this tool is built to make impossible.
+//
 // Verified against the three stops whose hand-made pools were known to be
 // right: Route 202, Oreburgh Gate and Oreburgh Mine come back exact.
 func derivePool(ctx context.Context, gameID int, version string, areas []string) []int {
@@ -225,8 +233,10 @@ func derivePool(ctx context.Context, gameID int, version string, areas []string)
 		       SELECT 1 FROM unnest(l.conditions) c
 		       WHERE c = 'radar-on' OR c = 'swarm-yes'
 		          OR c LIKE 'honey-tree-%' OR c LIKE 'great-marsh-daily-slot-%'
-		          OR c LIKE 'backlot-%' OR c LIKE 'story-progress-%national-dex%'
 		          OR (c LIKE 'slot2-%' AND c <> 'slot2-none')
+		          OR (c LIKE 'backlot-%' AND c <> 'backlot-not-mentioned')
+		          OR (c LIKE 'story-progress-%national-dex%'
+		              AND c <> 'story-progress-before-national-dex')
 		   )
 		 ORDER BY l.pokemon_id`, gameID, version, areas)
 	if err != nil {
