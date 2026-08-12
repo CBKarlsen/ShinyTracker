@@ -87,8 +87,89 @@ public struct PokemonLocation: Decodable, Sendable, Equatable {
     }
 }
 
-/// `GET /api/pokemon/{id}` — `api.PokemonDetail`. The three list fields are explicitly
-/// nil-guarded to `[]` by the handler before encoding, so they are never null.
+/// Six base stats — `api.PokemonStats`. Absent (not zero) for a species `cmd/seed_moves` has
+/// not been through, which is why the handler declares it `omitempty`.
+public struct PokemonStats: Decodable, Sendable, Equatable {
+    public let hp: Int
+    public let attack: Int
+    public let defense: Int
+    public let specialAttack: Int
+    public let specialDefense: Int
+    public let speed: Int
+
+    public var total: Int { hp + attack + defense + specialAttack + specialDefense + speed }
+
+    /// In the order every stat block in the game prints them.
+    public var ordered: [(label: String, value: Int)] {
+        [
+            ("HP", hp), ("Atk", attack), ("Def", defense),
+            ("SpA", specialAttack), ("SpD", specialDefense), ("Spe", speed),
+        ]
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case hp, attack, defense, speed
+        case specialAttack = "special_attack"
+        case specialDefense = "special_defense"
+    }
+}
+
+/// One ability slot — `api.PokemonAbilityDetail`.
+public struct PokemonAbility: Decodable, Sendable, Equatable, Identifiable {
+    public let slug: String
+    public let name: String
+    public let effect: String
+    public let slot: Int
+    public let isHidden: Bool
+
+    public var id: String { slug }
+
+    enum CodingKeys: String, CodingKey {
+        case slug, name, effect, slot
+        case isHidden = "is_hidden"
+    }
+}
+
+/// One moveset entry for one game — `api.PokemonMoveDetail`.
+///
+/// `power` and `accuracy` are genuinely null for status and always-hit moves, and `level` is
+/// non-null only for `method == "level-up"`; none of the three may be flattened to 0, which
+/// would read as "0 power" rather than "not applicable".
+public struct PokemonMove: Decodable, Sendable, Equatable, Identifiable {
+    public let slug: String
+    public let name: String
+    /// A PokeAPI type slug — `"ground"`. `PokemonType(slug:)` in `ShinyTrackerUI` parses it.
+    public let type: String
+    public let damageClass: String
+    public let power: Int?
+    public let accuracy: Int?
+    public let pp: Int
+    public let effect: String
+    /// `level-up` | `tm` | `egg` | `tutor`.
+    public let method: String
+    public let level: Int?
+
+    /// The same move can arrive twice for one game — learned by level-up *and* on a TM — so the
+    /// slug alone is not unique and would collapse the two rows in a `ForEach`.
+    public var id: String { "\(method)-\(slug)" }
+
+    enum CodingKeys: String, CodingKey {
+        case slug, name, type, power, accuracy, pp, effect, method, level
+        case damageClass = "damage_class"
+    }
+}
+
+/// `GET /api/pokemon/{id}` — `api.PokemonDetail`. `evolves_from`, `evolves_to` and `locations`
+/// are explicitly nil-guarded to `[]` by the handler before encoding, so they are never null.
+///
+/// ``stats``, ``abilities`` and ``moves`` were added for the Dex species sheet and are all
+/// optional *for compatibility, not only for nullability*: a client built against the older
+/// handler must keep decoding a response that has none of the three keys, and Swift's
+/// synthesised decoder treats a missing key as nil only for `Optional` properties.
+/// - ``stats`` is absent for a species without seeded base stats.
+/// - ``abilities`` is always present from the current handler (`[]` at worst).
+/// - ``moves`` is `null` when the request carried no `game_id`, and `[]` when it did but that
+///   game has no seeded moveset — the handler keeps those two cases distinct on purpose.
 public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let name: String
@@ -103,9 +184,12 @@ public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
     /// Direct evolutions.
     public let evolvesTo: [EvolutionLink]
     public let locations: [PokemonLocation]
+    public let stats: PokemonStats?
+    public let abilities: [PokemonAbility]?
+    public let moves: [PokemonMove]?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, types, locations
+        case id, name, types, locations, stats, abilities, moves
         case spriteURL = "sprite_url"
         case canBreed = "can_breed"
         case isLegendary = "is_legendary"
@@ -113,6 +197,22 @@ public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
         case evolvesFromID = "evolves_from_id"
         case evolvesFrom = "evolves_from"
         case evolvesTo = "evolves_to"
+    }
+}
+
+/// `GET /api/dex/status` — `api.DexStatusResponse`.
+///
+/// Note what this does and does not say. `notInYourGames` is "available somewhere, but in none
+/// of the games *you own*" — it is not per-game, and there is no endpoint that is.
+/// `lockedEverywhere` is shiny-locked in every game it appears in, i.e. it can never be caught
+/// shiny by anyone. Both lists are nil-guarded to `[]` by the handler.
+public struct DexStatus: Decodable, Sendable, Equatable {
+    public let notInYourGames: [Int]
+    public let lockedEverywhere: [Int]
+
+    enum CodingKeys: String, CodingKey {
+        case notInYourGames = "not_in_your_games"
+        case lockedEverywhere = "locked_everywhere"
     }
 }
 
@@ -377,6 +477,20 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         case encounterCount = "encounter_count"
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
+    }
+}
+
+/// `POST /api/hunts/manual` — registers a shiny you already own as a completed hunt with
+/// `acquisition_type = 'MANUAL_OVERRIDE'`. That type is exactly what
+/// `DELETE /api/hunts/manual/{pokemonId}` filters on, so a hunt you actually finished in Hunt
+/// (`HUNTED` / `PHASE`) cannot be deleted through this pair at all.
+public struct ManualCatchRequest: Codable, Sendable, Equatable {
+    public let pokemonID: Int
+
+    public init(pokemonID: Int) { self.pokemonID = pokemonID }
+
+    enum CodingKeys: String, CodingKey {
+        case pokemonID = "pokemon_id"
     }
 }
 

@@ -258,6 +258,103 @@ private let huntListJSON = """
     #expect(detail.locations[0].maxLevel == 5)
 }
 
+/// The compatibility guarantee, stated as a test: the fixture above is a response from the
+/// handler *before* stats, abilities and moves existed, and it must keep decoding into the
+/// widened model. `decodesPokemonDetail` above already exercises that payload; this pins the
+/// three new fields to nil so a later "tidy-up" that makes any of them non-optional — which
+/// would throw `keyNotFound` on every pre-existing response — fails here instead of in the app.
+@Test func pokemonDetailStaysBackwardCompatible() throws {
+    let legacy = """
+        {
+          "id": 134, "name": "vaporeon", "sprite_url": "https://example.invalid/134.png",
+          "types": ["water"], "can_breed": true, "is_legendary": false, "is_mythical": false,
+          "evolves_from_id": 133, "evolves_from": [], "evolves_to": [], "locations": []
+        }
+        """
+    let detail = try apiDecoder().decode(PokemonDetail.self, from: Data(legacy.utf8))
+    #expect(detail.stats == nil)
+    #expect(detail.abilities == nil)
+    #expect(detail.moves == nil)
+    #expect(detail.name == "vaporeon")
+}
+
+/// The current handler, with `?game_id=`: stats present, abilities populated, moves scoped to
+/// that game. Null `power`/`accuracy`/`level` are the normal case for status and TM moves.
+@Test func decodesPokemonDetailWithStatsAbilitiesAndMoves() throws {
+    let json = """
+        {
+          "id": 443, "name": "gible", "sprite_url": "https://example.invalid/443.png",
+          "types": ["dragon", "ground"], "can_breed": true,
+          "is_legendary": false, "is_mythical": false,
+          "evolves_from_id": null, "evolves_from": [],
+          "evolves_to": [{"pokemon_id": 444, "name": "gabite"}],
+          "locations": [
+            {"game_id": 4, "area": "wayward-cave", "version": "platinum", "terrain": "cave",
+             "min_level": 15, "max_level": 18, "chance": 4, "conditions": []}
+          ],
+          "stats": {"hp": 58, "attack": 70, "defense": 45,
+                    "special_attack": 40, "special_defense": 45, "speed": 42},
+          "abilities": [
+            {"slug": "sand-veil", "name": "Sand Veil", "effect": "Evasion up in a sandstorm.",
+             "slot": 1, "is_hidden": false},
+            {"slug": "rough-skin", "name": "Rough Skin", "effect": "", "slot": 3,
+             "is_hidden": true}
+          ],
+          "moves": [
+            {"slug": "tackle", "name": "Tackle", "type": "normal", "damage_class": "physical",
+             "power": 40, "accuracy": 100, "pp": 35, "effect": "", "method": "level-up",
+             "level": 1},
+            {"slug": "sandstorm", "name": "Sandstorm", "type": "rock", "damage_class": "status",
+             "power": null, "accuracy": null, "pp": 10, "effect": "", "method": "tm",
+             "level": null}
+          ]
+        }
+        """
+    let detail = try apiDecoder().decode(PokemonDetail.self, from: Data(json.utf8))
+
+    let stats = try #require(detail.stats)
+    #expect(stats.specialAttack == 40)
+    #expect(stats.total == 300)                       // the prototype's "Base stats · 300 total"
+    #expect(stats.ordered.map(\.label) == ["HP", "Atk", "Def", "SpA", "SpD", "Spe"])
+
+    #expect(detail.abilities?.last?.isHidden == true)
+
+    let moves = try #require(detail.moves)
+    #expect(moves[0].level == 1)
+    #expect(moves[1].power == nil)                    // a status move, not a 0-power one
+    #expect(moves[1].accuracy == nil)
+    #expect(moves[1].level == nil)
+    // Same species, same game, same slug on two methods must stay two rows.
+    #expect(moves[0].id != moves[1].id)
+}
+
+/// `moves: null` (no `game_id` asked) and `moves: []` (asked, nothing seeded) mean different
+/// things to the sheet — "pick a game" vs "this game has no moveset seeded".
+@Test func movesDistinguishesNullFromEmpty() throws {
+    let base = """
+        "id": 1, "name": "bulbasaur", "sprite_url": "", "types": [], "can_breed": true,
+        "is_legendary": false, "is_mythical": false, "evolves_from_id": null,
+        "evolves_from": [], "evolves_to": [], "locations": [], "abilities": []
+        """
+    let notAsked = try apiDecoder().decode(
+        PokemonDetail.self, from: Data("{\(base), \"moves\": null}".utf8))
+    let askedButEmpty = try apiDecoder().decode(
+        PokemonDetail.self, from: Data("{\(base), \"moves\": []}".utf8))
+
+    #expect(notAsked.moves == nil)
+    #expect(askedButEmpty.moves == [])
+}
+
+@Test func decodesDexStatus() throws {
+    let status = try apiDecoder().decode(
+        DexStatus.self,
+        from: Data("""
+            {"not_in_your_games": [151, 251], "locked_everywhere": [385]}
+            """.utf8))
+    #expect(status.notInYourGames == [151, 251])
+    #expect(status.lockedEverywhere == [385])
+}
+
 // MARK: - Request encoding
 
 /// D1: sending `total_time_seconds` latches `client_owns_time`, so it must be *absent*, not

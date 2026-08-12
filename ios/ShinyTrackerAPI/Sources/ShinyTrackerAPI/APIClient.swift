@@ -114,7 +114,8 @@ public enum APIError: Error, CustomStringConvertible {
 
 /// Talks to the ShinyTracker Go API. One actor, `URLSession`, no networking dependency.
 ///
-/// Scope is the v1 endpoint set in `docs/handoff/IOS_API_CLIENT_SCOPE.md`. `/dex/*`, `/stats`,
+/// Scope is the v1 endpoint set in `docs/handoff/IOS_API_CLIENT_SCOPE.md`, plus `/dex/status`
+/// and the manual-catch pair, which the Dex mode needs. `/dex/suggestions`, `/stats`,
 /// `/export`, `/odds` and `/admin/*` are deliberately absent — odds are computed on device by
 /// `ShinyTrackerKit`, which offline display needs anyway.
 public actor APIClient {
@@ -157,6 +158,12 @@ public actor APIClient {
 
     public func pokemonDetail(id: Int, gameID: Int? = nil) async throws -> PokemonDetail {
         try await get("api/pokemon/\(id)", query: intQuery("game_id", gameID))
+    }
+
+    /// Every species obtainable in one game — `pokemon_availability.pokemon_id`, and the Dex's
+    /// per-game denominator. A game with no availability rows returns empty rather than 404.
+    public func gamePokemon(gameID: Int) async throws -> [Int] {
+        try await getList("api/games/\(gameID)/pokemon")
     }
 
     /// Every curated method, optionally narrowed to one game.
@@ -207,6 +214,26 @@ public actor APIClient {
     /// the refreshed hunt.
     public func logPhase(huntID: UUID, _ body: LogPhaseRequest) async throws -> HuntDetail {
         try await send("POST", "api/hunts/\(id(huntID))/phases", body: body)
+    }
+
+    // MARK: Dex
+
+    /// What the Dex may not tick: species outside your library, and species that are shiny
+    /// locked in every game they appear in.
+    public func dexStatus() async throws -> DexStatus {
+        try await get("api/dex/status")
+    }
+
+    /// Registers a shiny the user already owns — a completed `MANUAL_OVERRIDE` hunt.
+    public func markManualCatch(pokemonID: Int) async throws -> Hunt {
+        try await send("POST", "api/hunts/manual", body: ManualCatchRequest(pokemonID: pokemonID))
+    }
+
+    /// Un-registers one. The handler deletes only `acquisition_type = 'MANUAL_OVERRIDE'` rows,
+    /// so calling this for a shiny finished in Hunt is a no-op server-side — the Dex enforces
+    /// the same rule up front rather than firing a request it knows will do nothing.
+    public func removeManualCatch(pokemonID: Int) async throws {
+        try await sendDiscardingBody("DELETE", "api/hunts/manual/\(pokemonID)", body: noBody)
     }
 
     // MARK: - Plumbing
