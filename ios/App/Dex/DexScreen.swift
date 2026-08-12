@@ -374,15 +374,33 @@ struct DexSprite: View {
         SpriteSource.url(id: pokemonID, shiny: shiny, served: served)
     }
 
+    @State private var image: UIImage?
+
     var body: some View {
-        AsyncImage(url: url) { image in
-            image.resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
-        } placeholder: {
-            Color.clear
+        ZStack {
+            // The sprite plate, always. `Color.clear` left a hole while loading, which is what
+            // makes a list look like it is still working after the text has arrived.
+            RoundedRectangle(cornerRadius: Radii.sprite(size))
+                .fill(
+                    RadialGradient(
+                        colors: [Palette.spriteTileInner.color, Palette.spriteTileOuter.color],
+                        center: UnitPoint(x: 0.5, y: 0.42),
+                        startRadius: 0,
+                        endRadius: size * 0.72
+                    )
+                )
+            if let image {
+                Image(uiImage: image)
+                    .resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
+            }
         }
         .frame(width: size, height: size)
         .grayscale(dimmed ? 1 : 0)
         .opacity(dimmed ? 0.6 : 1)
+        .task(id: url) {
+            guard let url else { return }
+            image = await SpriteCache.shared.image(for: url)
+        }
         .accessibilityHidden(true)
     }
 }

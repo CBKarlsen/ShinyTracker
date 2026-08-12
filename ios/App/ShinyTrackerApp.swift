@@ -8,6 +8,14 @@ import SwiftUI
 struct ShinyTrackerApp: App {
     @State private var auth = AuthSession()
 
+    init() {
+        // The default shared URLCache is small enough that a full dex scroll evicts its own
+        // sprites. These are tiny immutable PNGs on a CDN, so the disk copy is the cheap win and
+        // ``SpriteCache`` sits in front of it holding the decoded images.
+        URLCache.shared = URLCache(
+            memoryCapacity: 32 * 1024 * 1024, diskCapacity: 256 * 1024 * 1024)
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView(auth: auth)
