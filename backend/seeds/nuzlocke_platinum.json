@@ -22,14 +22,37 @@
       "level_cap": 5,
       "squad": [
         {
+          "species": "chimchar",
+          "level": 5,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 1,
+          "moves": [
+            "Scratch",
+            "Leer"
+          ]
+        },
+        {
+          "species": "piplup",
+          "level": 5,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Pound",
+            "Growl"
+          ]
+        },
+        {
           "species": "turtwig",
           "level": 5,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 1,
           "moves": [
             "Tackle",
             "Withdraw"
-          ],
-          "sort_order": 1
+          ]
         }
       ],
       "sort_order": 2
@@ -64,21 +87,67 @@
           "species": "starly",
           "level": 7,
           "ability": "Keen Eye",
+          "starter": "turtwig",
+          "sort_order": 1,
           "moves": [
             "Quick Attack",
             "Growl"
-          ],
-          "sort_order": 1
+          ]
+        },
+        {
+          "species": "chimchar",
+          "level": 9,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 2,
+          "moves": [
+            "Scratch",
+            "Leer"
+          ]
+        },
+        {
+          "species": "starly",
+          "level": 7,
+          "ability": "Keen Eye",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Quick Attack",
+            "Growl"
+          ]
+        },
+        {
+          "species": "piplup",
+          "level": 9,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 2,
+          "moves": [
+            "Pound",
+            "Growl"
+          ]
+        },
+        {
+          "species": "starly",
+          "level": 7,
+          "ability": "Keen Eye",
+          "starter": "piplup",
+          "sort_order": 1,
+          "moves": [
+            "Quick Attack",
+            "Growl"
+          ]
         },
         {
           "species": "turtwig",
           "level": 9,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 2,
           "moves": [
             "Tackle",
             "Withdraw"
-          ],
-          "sort_order": 2
+          ]
         }
       ],
       "sort_order": 5
@@ -421,49 +490,157 @@
           "species": "staravia",
           "level": 25,
           "ability": "Intimidate",
+          "starter": "turtwig",
+          "sort_order": 1,
           "moves": [
             "Double Team",
             "Wing Attack",
             "Quick Attack",
             "Endeavor"
-          ],
-          "sort_order": 1
+          ]
         },
         {
           "species": "buizel",
           "level": 23,
           "ability": "Swift Swim",
+          "starter": "turtwig",
+          "sort_order": 2,
           "moves": [
             "Water Gun",
             "Quick Attack",
             "Growl",
             "Pursuit"
-          ],
-          "sort_order": 2
+          ]
+        },
+        {
+          "species": "roselia",
+          "level": 23,
+          "ability": "Natural Cure",
+          "starter": "turtwig",
+          "sort_order": 3,
+          "moves": [
+            "Stun Spore",
+            "Mega Drain",
+            "Poison Sting",
+            "Leech Seed"
+          ]
+        },
+        {
+          "species": "monferno",
+          "level": 27,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 4,
+          "moves": [
+            "Mach Punch",
+            "Leer",
+            "Flame Wheel",
+            "Fury Swipes"
+          ]
+        },
+        {
+          "species": "staravia",
+          "level": 25,
+          "ability": "Intimidate",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ]
         },
         {
           "species": "ponyta",
           "level": 23,
           "ability": "Run Away",
+          "starter": "chimchar",
+          "sort_order": 2,
           "moves": [
             "Tackle",
             "Ember",
             "Growl",
             "Tail Whip"
-          ],
-          "sort_order": 3
+          ]
+        },
+        {
+          "species": "roselia",
+          "level": 23,
+          "ability": "Natural Cure",
+          "starter": "chimchar",
+          "sort_order": 3,
+          "moves": [
+            "Stun Spore",
+            "Mega Drain",
+            "Poison Sting",
+            "Leech Seed"
+          ]
+        },
+        {
+          "species": "prinplup",
+          "level": 27,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 4,
+          "moves": [
+            "Growl",
+            "Peck",
+            "BubbleBeam",
+            "Metal Claw"
+          ]
+        },
+        {
+          "species": "staravia",
+          "level": 25,
+          "ability": "Intimidate",
+          "starter": "piplup",
+          "sort_order": 1,
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ]
+        },
+        {
+          "species": "buizel",
+          "level": 23,
+          "ability": "Swift Swim",
+          "starter": "piplup",
+          "sort_order": 2,
+          "moves": [
+            "Water Gun",
+            "Quick Attack",
+            "Growl",
+            "Pursuit"
+          ]
+        },
+        {
+          "species": "ponyta",
+          "level": 23,
+          "ability": "Run Away",
+          "starter": "piplup",
+          "sort_order": 3,
+          "moves": [
+            "Tackle",
+            "Ember",
+            "Growl",
+            "Tail Whip"
+          ]
         },
         {
           "species": "grotle",
           "level": 27,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 4,
           "moves": [
             "Tackle",
             "Razor Leaf",
             "Absorb",
             "Withdraw"
-          ],
-          "sort_order": 4
+          ]
         }
       ],
       "sort_order": 24
@@ -581,49 +758,157 @@
           "species": "staravia",
           "level": 34,
           "ability": "Intimidate",
+          "starter": "turtwig",
+          "sort_order": 1,
           "moves": [
             "Double Team",
             "Wing Attack",
             "Quick Attack",
             "Endeavor"
-          ],
-          "sort_order": 1
+          ]
         },
         {
           "species": "buizel",
           "level": 32,
           "ability": "Swift Swim",
+          "starter": "turtwig",
+          "sort_order": 2,
           "moves": [
             "Aqua Jet",
             "Quick Attack",
             "Growl",
             "Pursuit"
-          ],
-          "sort_order": 2
+          ]
+        },
+        {
+          "species": "roselia",
+          "level": 32,
+          "ability": "Natural Cure",
+          "starter": "turtwig",
+          "sort_order": 3,
+          "moves": [
+            "Magical Leaf",
+            "Mega Drain",
+            "Poison Sting",
+            "Leech Seed"
+          ]
+        },
+        {
+          "species": "monferno",
+          "level": 36,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 4,
+          "moves": [
+            "Mach Punch",
+            "Leer",
+            "Flame Wheel",
+            "Fury Swipes"
+          ]
+        },
+        {
+          "species": "staravia",
+          "level": 34,
+          "ability": "Intimidate",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ]
         },
         {
           "species": "ponyta",
           "level": 32,
           "ability": "Run Away",
+          "starter": "chimchar",
+          "sort_order": 2,
           "moves": [
             "Stomp",
             "Ember",
             "Growl",
             "Tail Whip"
-          ],
-          "sort_order": 3
+          ]
+        },
+        {
+          "species": "roselia",
+          "level": 32,
+          "ability": "Natural Cure",
+          "starter": "chimchar",
+          "sort_order": 3,
+          "moves": [
+            "Magical Leaf",
+            "Mega Drain",
+            "Poison Sting",
+            "Leech Seed"
+          ]
+        },
+        {
+          "species": "prinplup",
+          "level": 36,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 4,
+          "moves": [
+            "Growl",
+            "Peck",
+            "BubbleBeam",
+            "Metal Claw"
+          ]
+        },
+        {
+          "species": "staravia",
+          "level": 34,
+          "ability": "Intimidate",
+          "starter": "piplup",
+          "sort_order": 1,
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ]
+        },
+        {
+          "species": "buizel",
+          "level": 32,
+          "ability": "Swift Swim",
+          "starter": "piplup",
+          "sort_order": 2,
+          "moves": [
+            "Aqua Jet",
+            "Quick Attack",
+            "Growl",
+            "Pursuit"
+          ]
+        },
+        {
+          "species": "ponyta",
+          "level": 32,
+          "ability": "Run Away",
+          "starter": "piplup",
+          "sort_order": 3,
+          "moves": [
+            "Stomp",
+            "Ember",
+            "Growl",
+            "Tail Whip"
+          ]
         },
         {
           "species": "grotle",
           "level": 36,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 4,
           "moves": [
             "Bite",
             "Razor Leaf",
             "Mega Drain",
             "Withdraw"
-          ],
-          "sort_order": 4
+          ]
         }
       ],
       "sort_order": 32
@@ -762,61 +1047,196 @@
           "species": "staraptor",
           "level": 36,
           "ability": "Intimidate",
+          "starter": "turtwig",
+          "sort_order": 1,
           "moves": [
             "Aerial Ace",
             "Take Down",
             "Quick Attack",
             "Double Team"
-          ],
-          "sort_order": 1
+          ]
         },
         {
           "species": "heracross",
           "level": 37,
           "ability": "Swarm",
+          "starter": "turtwig",
+          "sort_order": 2,
           "moves": [
             "Brick Break",
             "Aerial Ace",
             "Night Slash",
             "Horn Attack"
-          ],
-          "sort_order": 2
+          ]
         },
         {
           "species": "floatzel",
           "level": 35,
           "ability": "Swift Swim",
+          "starter": "turtwig",
+          "sort_order": 3,
           "moves": [
             "Aqua Jet",
             "Pursuit",
             "Quick Attack",
             "Swift"
-          ],
-          "sort_order": 3
+          ]
+        },
+        {
+          "species": "roserade",
+          "level": 35,
+          "ability": "Natural Cure",
+          "starter": "turtwig",
+          "sort_order": 4,
+          "moves": [
+            "Giga Drain",
+            "Toxic Spikes",
+            "Leech Seed",
+            "GrassWhistle"
+          ]
+        },
+        {
+          "species": "infernape",
+          "level": 38,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 5,
+          "moves": [
+            "Brick Break",
+            "Flame Wheel",
+            "Mach Punch",
+            "Aerial Ace"
+          ]
+        },
+        {
+          "species": "staraptor",
+          "level": 36,
+          "ability": "Intimidate",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Aerial Ace",
+            "Take Down",
+            "Quick Attack",
+            "Double Team"
+          ]
+        },
+        {
+          "species": "heracross",
+          "level": 37,
+          "ability": "Swarm",
+          "starter": "chimchar",
+          "sort_order": 2,
+          "moves": [
+            "Brick Break",
+            "Aerial Ace",
+            "Night Slash",
+            "Horn Attack"
+          ]
         },
         {
           "species": "rapidash",
           "level": 35,
           "ability": "Run Away",
+          "starter": "chimchar",
+          "sort_order": 3,
           "moves": [
             "Fire Spin",
             "Take Down",
             "Stomp",
             "Tail Whip"
-          ],
-          "sort_order": 4
+          ]
+        },
+        {
+          "species": "roserade",
+          "level": 35,
+          "ability": "Natural Cure",
+          "starter": "chimchar",
+          "sort_order": 4,
+          "moves": [
+            "Giga Drain",
+            "Toxic Spikes",
+            "Leech Seed",
+            "GrassWhistle"
+          ]
+        },
+        {
+          "species": "empoleon",
+          "level": 38,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 5,
+          "moves": [
+            "BubbleBeam",
+            "Aerial Ace",
+            "Metal Claw",
+            "Fury Attack"
+          ]
+        },
+        {
+          "species": "staraptor",
+          "level": 36,
+          "ability": "Intimidate",
+          "starter": "piplup",
+          "sort_order": 1,
+          "moves": [
+            "Aerial Ace",
+            "Take Down",
+            "Quick Attack",
+            "Double Team"
+          ]
+        },
+        {
+          "species": "heracross",
+          "level": 37,
+          "ability": "Swarm",
+          "starter": "piplup",
+          "sort_order": 2,
+          "moves": [
+            "Brick Break",
+            "Aerial Ace",
+            "Night Slash",
+            "Horn Attack"
+          ]
+        },
+        {
+          "species": "floatzel",
+          "level": 35,
+          "ability": "Swift Swim",
+          "starter": "piplup",
+          "sort_order": 3,
+          "moves": [
+            "Aqua Jet",
+            "Pursuit",
+            "Quick Attack",
+            "Swift"
+          ]
+        },
+        {
+          "species": "rapidash",
+          "level": 35,
+          "ability": "Run Away",
+          "starter": "piplup",
+          "sort_order": 4,
+          "moves": [
+            "Fire Spin",
+            "Take Down",
+            "Stomp",
+            "Tail Whip"
+          ]
         },
         {
           "species": "torterra",
           "level": 38,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 5,
           "moves": [
             "Razor Leaf",
             "Bite",
             "Mega Drain",
             "Leech Seed"
-          ],
-          "sort_order": 5
+          ]
         }
       ],
       "sort_order": 38
@@ -1426,73 +1846,235 @@
           "species": "staraptor",
           "level": 48,
           "ability": "Intimidate",
+          "starter": "turtwig",
+          "sort_order": 1,
           "moves": [
             "Close Combat",
             "Aerial Ace",
             "Steel Wing",
             "U-turn"
-          ],
-          "sort_order": 1
-        },
-        {
-          "species": "rapidash",
-          "level": 47,
-          "ability": "Run Away",
-          "moves": [
-            "Fire Blast",
-            "Sunny Day",
-            "Bounce",
-            "Will-O-Wisp"
-          ],
-          "sort_order": 2
+          ]
         },
         {
           "species": "floatzel",
           "level": 47,
           "ability": "Swift Swim",
+          "starter": "turtwig",
+          "sort_order": 2,
           "moves": [
             "Aqua Jet",
             "Crunch",
             "Ice Fang",
             "Brick Break"
-          ],
-          "sort_order": 3
-        },
-        {
-          "species": "heracross",
-          "level": 48,
-          "ability": "Swarm",
-          "moves": [
-            "Aerial Ace",
-            "Close Combat",
-            "Night Slash",
-            "Rock Slide"
-          ],
-          "sort_order": 4
+          ]
         },
         {
           "species": "snorlax",
           "level": 49,
           "ability": "Immunity",
+          "starter": "turtwig",
+          "sort_order": 3,
           "moves": [
             "Body Slam",
             "Crunch",
             "Earthquake",
             "Rest"
-          ],
-          "sort_order": 5
+          ]
+        },
+        {
+          "species": "heracross",
+          "level": 48,
+          "ability": "Swarm",
+          "starter": "turtwig",
+          "sort_order": 4,
+          "moves": [
+            "Aerial Ace",
+            "Close Combat",
+            "Night Slash",
+            "Rock Slide"
+          ]
+        },
+        {
+          "species": "roserade",
+          "level": 47,
+          "ability": "Natural Cure",
+          "starter": "turtwig",
+          "sort_order": 5,
+          "moves": [
+            "Giga Drain",
+            "GrassWhistle",
+            "Shadow Ball",
+            "Poison Jab"
+          ]
+        },
+        {
+          "species": "infernape",
+          "level": 51,
+          "ability": "Blaze",
+          "starter": "turtwig",
+          "sort_order": 6,
+          "moves": [
+            "Focus Blast",
+            "Shadow Claw",
+            "Flamethrower",
+            "Aerial Ace"
+          ]
+        },
+        {
+          "species": "staraptor",
+          "level": 48,
+          "ability": "Intimidate",
+          "starter": "chimchar",
+          "sort_order": 1,
+          "moves": [
+            "Close Combat",
+            "Aerial Ace",
+            "Steel Wing",
+            "U-turn"
+          ]
+        },
+        {
+          "species": "rapidash",
+          "level": 47,
+          "ability": "Run Away",
+          "starter": "chimchar",
+          "sort_order": 2,
+          "moves": [
+            "Fire Blast",
+            "Sunny Day",
+            "Bounce",
+            "Will-O-Wisp"
+          ]
+        },
+        {
+          "species": "snorlax",
+          "level": 49,
+          "ability": "Immunity",
+          "starter": "chimchar",
+          "sort_order": 3,
+          "moves": [
+            "Body Slam",
+            "Crunch",
+            "Earthquake",
+            "Rest"
+          ]
+        },
+        {
+          "species": "heracross",
+          "level": 48,
+          "ability": "Swarm",
+          "starter": "chimchar",
+          "sort_order": 4,
+          "moves": [
+            "Aerial Ace",
+            "Close Combat",
+            "Night Slash",
+            "Rock Slide"
+          ]
+        },
+        {
+          "species": "roserade",
+          "level": 47,
+          "ability": "Natural Cure",
+          "starter": "chimchar",
+          "sort_order": 5,
+          "moves": [
+            "Giga Drain",
+            "GrassWhistle",
+            "Shadow Ball",
+            "Poison Jab"
+          ]
+        },
+        {
+          "species": "empoleon",
+          "level": 51,
+          "ability": "Torrent",
+          "starter": "chimchar",
+          "sort_order": 6,
+          "moves": [
+            "Brine",
+            "Metal Claw",
+            "Aerial Ace",
+            "Shadow Claw"
+          ]
+        },
+        {
+          "species": "staraptor",
+          "level": 48,
+          "ability": "Intimidate",
+          "starter": "piplup",
+          "sort_order": 1,
+          "moves": [
+            "Close Combat",
+            "Aerial Ace",
+            "Steel Wing",
+            "U-turn"
+          ]
+        },
+        {
+          "species": "rapidash",
+          "level": 47,
+          "ability": "Run Away",
+          "starter": "piplup",
+          "sort_order": 2,
+          "moves": [
+            "Fire Blast",
+            "Sunny Day",
+            "Bounce",
+            "Will-O-Wisp"
+          ]
+        },
+        {
+          "species": "floatzel",
+          "level": 47,
+          "ability": "Swift Swim",
+          "starter": "piplup",
+          "sort_order": 3,
+          "moves": [
+            "Aqua Jet",
+            "Crunch",
+            "Ice Fang",
+            "Brick Break"
+          ]
+        },
+        {
+          "species": "heracross",
+          "level": 48,
+          "ability": "Swarm",
+          "starter": "piplup",
+          "sort_order": 4,
+          "moves": [
+            "Aerial Ace",
+            "Close Combat",
+            "Night Slash",
+            "Rock Slide"
+          ]
+        },
+        {
+          "species": "snorlax",
+          "level": 49,
+          "ability": "Immunity",
+          "starter": "piplup",
+          "sort_order": 5,
+          "moves": [
+            "Body Slam",
+            "Crunch",
+            "Earthquake",
+            "Rest"
+          ]
         },
         {
           "species": "torterra",
           "level": 51,
           "ability": "Overgrow",
+          "starter": "piplup",
+          "sort_order": 6,
           "moves": [
             "Leaf Storm",
             "Earthquake",
             "Crunch",
             "Synthesis"
-          ],
-          "sort_order": 6
+          ]
         }
       ],
       "sort_order": 57

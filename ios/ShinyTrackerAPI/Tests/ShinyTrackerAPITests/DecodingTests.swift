@@ -447,6 +447,7 @@ private let runDetailJSON = """
   "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
   "game_id": 12,
   "version": "platinum",
+  "starter": "piplup",
   "game_title": "Platinum",
   "dupes_clause": true,
   "battle_style": "set",
@@ -525,6 +526,7 @@ private let runDetailJSON = """
 
     #expect(detail.gameTitle == "Platinum")
     #expect(detail.version == "platinum")
+    #expect(detail.starter == "piplup")
     #expect(detail.isActive)
     #expect(detail.endedAt == nil)
     #expect(detail.dupesClause && detail.nicknamesRequired)
@@ -618,8 +620,8 @@ private let runDetailJSON = """
 /// omitted `false` would silently turn a clause the user switched off back on.
 @Test func createRunBodySendsEveryClause() throws {
     let body = CreateRunRequest(
-        gameID: 12, version: "platinum", dupesClause: false, battleStyle: .shift,
-        nicknamesRequired: false)
+        gameID: 12, version: "platinum", starter: "piplup", dupesClause: false,
+        battleStyle: .shift, nicknamesRequired: false)
     let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
     #expect(json.contains("\"dupes_clause\":false"))
     #expect(json.contains("\"nicknames_required\":false"))
@@ -627,4 +629,11 @@ private let runDetailJSON = """
     #expect(json.contains("\"game_id\":12"))
     // Never inferred server-side: one games row covers three versions whose routes differ.
     #expect(json.contains("\"version\":\"platinum\""))
+    #expect(json.contains("\"starter\":\"piplup\""))
+
+    // Omitted, not null, for a game whose rosters do not vary — the server rejects a starter it
+    // has no use for, so sending one unconditionally would break those games.
+    let noStarter = CreateRunRequest(gameID: 12, version: "platinum")
+    #expect(!(try #require(String(data: JSONEncoder().encode(noStarter), encoding: .utf8))
+        .contains("starter")))
 }

@@ -58,7 +58,7 @@ private struct NuzlockeStubTransport: HTTPTransport {
         case (_, "/api/pokemon"):
             return (Data(species.utf8), 200)
         case (_, "/api/nuzlocke/versions"):
-            return (Data("[\"platinum\"]".utf8), 200)
+            return (Data(#"[{"version":"platinum","starters":["chimchar","piplup","turtwig"]}]"#.utf8), 200)
         case (_, "/api/nuzlocke/timeline"):
             return (Data("[\(timelineEntries)]".utf8), 200)
         case ("GET", "/api/runs"):
@@ -160,7 +160,7 @@ private let timelineEntries = """
 private let runFields = """
 "id":"aaaaaaaa-0000-4000-8000-00000000aaaa",
 "user_id":"00000000-0000-0000-0000-0000000000aa",
-"game_id":4,"version":"platinum","game_title":"Platinum",
+"game_id":4,"version":"platinum","starter":"piplup","game_title":"Platinum",
 "dupes_clause":true,"battle_style":"set","nicknames_required":true,
 "status":"active","started_at":"2026-08-05T09:00:00Z","ended_at":null,
 "created_at":"2026-08-05T09:00:00Z","updated_at":"2026-08-11T20:14:00Z"

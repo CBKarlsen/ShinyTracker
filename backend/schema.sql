@@ -318,7 +318,15 @@ CREATE TABLE IF NOT EXISTS nuzlocke_boss_pokemon (
     level              INTEGER NOT NULL,
     ability            TEXT NOT NULL,
     sort_order         INTEGER NOT NULL,
-    UNIQUE (timeline_entry_id, sort_order)
+    -- Which player starter this member applies to, or '' for every starter.
+    -- A rival's roster depends on it: he takes the starter that beats yours,
+    -- and his other slots change with it (migration 018). '' rather than NULL
+    -- because it is part of the UNIQUE key below, and Postgres treats NULLs as
+    -- distinct — which would permit exactly the duplicates the key prevents.
+    starter          TEXT NOT NULL DEFAULT '',
+    -- Unique per starter, not per slot: slot 4 legitimately exists once for
+    -- each of the three starter choices.
+    UNIQUE (timeline_entry_id, sort_order, starter)
 );
 
 CREATE INDEX IF NOT EXISTS idx_nuzlocke_boss_pokemon_entry
@@ -354,6 +362,9 @@ CREATE TABLE IF NOT EXISTS nuzlocke_runs (
     -- Which version's timeline this run follows. Fixed at creation: switching
     -- would strand its logged encounters on entries no longer in its route.
     version             TEXT NOT NULL,
+    -- Which starter this player picked, or '' when the timeline's rosters do
+    -- not depend on one. Rival squads are filtered by it server-side.
+    starter             TEXT NOT NULL DEFAULT '',
     dupes_clause        BOOLEAN NOT NULL DEFAULT TRUE,
     battle_style        TEXT NOT NULL DEFAULT 'set' CHECK (battle_style IN ('set', 'shift')),
     nicknames_required  BOOLEAN NOT NULL DEFAULT TRUE,
