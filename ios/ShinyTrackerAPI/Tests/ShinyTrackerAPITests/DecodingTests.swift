@@ -637,3 +637,16 @@ private let runDetailJSON = """
     #expect(!(try #require(String(data: JSONEncoder().encode(noStarter), encoding: .utf8))
         .contains("starter")))
 }
+
+/// Omitted means "no" on the wire, which is what makes the guard safe by default: every caller
+/// that is not the "−" button gets monotonic behaviour without opting into it.
+@Test func updateHuntBodyOmitsAllowDecreaseUnlessAsked() throws {
+    let encoder = JSONEncoder()
+    let plain = UpdateHuntRequest(encounterCount: 12, status: .active)
+    #expect(!(try #require(String(data: encoder.encode(plain), encoding: .utf8))
+        .contains("allow_decrease")))
+
+    let lowering = UpdateHuntRequest(encounterCount: 11, status: .active, allowDecrease: true)
+    #expect(try #require(String(data: encoder.encode(lowering), encoding: .utf8))
+        .contains("\"allow_decrease\":true"))
+}

@@ -274,6 +274,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		// is the way to clear one, which the UPDATE folds back to NULL so the
 		// column never holds an empty string.
 		Nickname *string `json:"nickname"`
+		// The "−" control's explicit permission to lower the count. Absent means
+		// no: a sync or a replayed offline burst can only ever raise it. See
+		// calc.DecideEncounterCount.
+		AllowDecrease bool `json:"allow_decrease"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -301,9 +305,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	var currentTotalTime int
 	var clientOwnsTime bool
 	var huntParameters json.RawMessage
+	var storedCount int
 	err := database.DB.QueryRow(context.Background(),
-		`SELECT updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &clientOwnsTime, &huntParameters)
+		`SELECT updated_at, total_time_seconds, client_owns_time, hunt_parameters, encounter_count FROM user_hunts WHERE id = $1 AND user_id = $2`,
+		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &clientOwnsTime, &huntParameters, &storedCount)
 	if err != nil {
 		http.Error(w, "Hunt not found", http.StatusNotFound)
 		return
@@ -317,6 +322,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	newEncounterCount := calc.DecideEncounterCount(storedCount, req.EncounterCount, req.AllowDecrease)
 	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
 		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)
 	}
@@ -331,7 +337,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
 		 WHERE id = $7 AND user_id = $8
 		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at, nickname`,
-		req.EncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, req.Nickname, huntID, userID).
+		newEncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, req.Nickname, huntID, userID).
 		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt, &hunt.Nickname)
 
 	if err != nil {

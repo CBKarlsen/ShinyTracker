@@ -497,17 +497,22 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
     public let status: HuntStatus
     public let huntParameters: [String: ParamValue]?
     public let totalTimeSeconds: Int?
+    /// Explicit permission to lower the count, set only by the "−" control. Omitted everywhere
+    /// else, so a sync or a replayed offline burst can only ever raise it — `calc.DecideEncounterCount`.
+    public let allowDecrease: Bool?
 
     public init(
         encounterCount: Int,
         status: HuntStatus,
         huntParameters: [String: ParamValue]? = nil,
-        totalTimeSeconds: Int? = nil
+        totalTimeSeconds: Int? = nil,
+        allowDecrease: Bool? = nil
     ) {
         self.encounterCount = encounterCount
         self.status = status
         self.huntParameters = huntParameters
         self.totalTimeSeconds = totalTimeSeconds
+        self.allowDecrease = allowDecrease
     }
 
     enum CodingKeys: String, CodingKey {
@@ -515,6 +520,7 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         case encounterCount = "encounter_count"
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
+        case allowDecrease = "allow_decrease"
     }
 }
 
