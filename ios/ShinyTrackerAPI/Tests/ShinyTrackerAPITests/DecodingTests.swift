@@ -446,6 +446,7 @@ private let runDetailJSON = """
   "id": "5c1f0f7e-2b3a-4c5d-8e9f-0a1b2c3d4e5f",
   "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
   "game_id": 12,
+  "version": "platinum",
   "game_title": "Platinum",
   "dupes_clause": true,
   "battle_style": "set",
@@ -483,7 +484,8 @@ private let runDetailJSON = """
           "sprite_url": "https://img.example/95.png",
           "level": 12,
           "ability": "Rock Head",
-          "moves": [{"name": "Stealth Rock", "type": "rock", "power": 0}]
+          "moves": [{"name": "Stealth Rock", "type": "rock", "power": 0, "damage_class": "status"},
+                    {"name": "Grass Knot", "type": "grass", "power": 0, "damage_class": "special"}]
         },
         {
           "pokemon_id": 408,
@@ -522,6 +524,7 @@ private let runDetailJSON = """
     let detail = try apiDecoder().decode(NuzlockeRunDetail.self, from: Data(runDetailJSON.utf8))
 
     #expect(detail.gameTitle == "Platinum")
+    #expect(detail.version == "platinum")
     #expect(detail.isActive)
     #expect(detail.endedAt == nil)
     #expect(detail.dupesClause && detail.nicknamesRequired)
@@ -541,6 +544,10 @@ private let runDetailJSON = """
     // nil, not []. The fixture spells the null out because that is what the server really writes.
     #expect(boss.squad?.last?.moves == nil)
     #expect(boss.squad?.first?.moves?.first?.power == 0)
+    // Both moves have power 0; only one of them is actually harmless. A `power > 0` test would
+    // call Gardenia's Grass Knot a non-threat, which is what damage_class exists to prevent.
+    #expect(boss.squad?.first?.moves?.first?.isDamaging == false)      // Stealth Rock, status
+    #expect(boss.squad?.first?.moves?.last?.isDamaging == true)        // Grass Knot, special
 
     let logged = try #require(detail.encounters.first)
     #expect(logged.locationSlug == "r201")
@@ -611,10 +618,13 @@ private let runDetailJSON = """
 /// omitted `false` would silently turn a clause the user switched off back on.
 @Test func createRunBodySendsEveryClause() throws {
     let body = CreateRunRequest(
-        gameID: 12, dupesClause: false, battleStyle: .shift, nicknamesRequired: false)
+        gameID: 12, version: "platinum", dupesClause: false, battleStyle: .shift,
+        nicknamesRequired: false)
     let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
     #expect(json.contains("\"dupes_clause\":false"))
     #expect(json.contains("\"nicknames_required\":false"))
     #expect(json.contains("\"battle_style\":\"shift\""))
     #expect(json.contains("\"game_id\":12"))
+    // Never inferred server-side: one games row covers three versions whose routes differ.
+    #expect(json.contains("\"version\":\"platinum\""))
 }

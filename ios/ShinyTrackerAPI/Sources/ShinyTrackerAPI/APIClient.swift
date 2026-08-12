@@ -241,8 +241,20 @@ public actor APIClient {
     /// The seeded route timeline for one game — pure reference data, not scoped to a user, and
     /// empty for a game with no seeded route (which is all of them but Platinum today). That
     /// emptiness is the only way to tell in advance what ``createRun(_:)`` would reject.
-    public func nuzlockeTimeline(gameID: Int) async throws -> [NuzlockeTimelineEntry] {
-        try await getList("api/nuzlocke/timeline", query: intQuery("game_id", gameID))
+    public func nuzlockeTimeline(
+        gameID: Int, version: String
+    ) async throws -> [NuzlockeTimelineEntry] {
+        try await getList(
+            "api/nuzlocke/timeline",
+            query: intQuery("game_id", gameID) + [URLQueryItem(name: "version", value: version)])
+    }
+
+    /// Which versions of a game have a seeded timeline. Empty means the game cannot be
+    /// Nuzlocked yet — the normal case, since routes are seeded one version at a time. This is
+    /// what a start-a-run screen asks first: it answers "is this seeded" and "which version am
+    /// I playing" in one request.
+    public func nuzlockeVersions(gameID: Int) async throws -> [String] {
+        try await getList("api/nuzlocke/versions", query: intQuery("game_id", gameID))
     }
 
     /// Every run the caller owns, newest first, active and ended together — the handler orders by

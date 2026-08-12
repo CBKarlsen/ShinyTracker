@@ -85,6 +85,7 @@ func NewRouter() *chi.Mux {
 			r.Patch("/runs/{id}/party/{memberId}", PatchPartyMemberHandler)
 			r.Put("/runs/{id}/bosses/{bossSlug}", PutBossProgressHandler)
 			r.Get("/nuzlocke/timeline", GetNuzlockeTimelineHandler)
+			r.Get("/nuzlocke/versions", GetNuzlockeVersionsHandler)
 
 			r.Group(func(r chi.Router) {
 				r.Use(AdminMiddleware)

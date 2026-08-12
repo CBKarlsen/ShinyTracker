@@ -1,361 +1,1868 @@
 {
   "game": "Diamond/Pearl/Platinum",
+  "version": "platinum",
   "entries": [
     {
       "slug": "starter",
       "kind": "location",
-      "sort_order": 1,
       "name": "Lake Verity",
       "encounters": [
-        387,
-        390,
-        393
-      ]
-    },
-    {
-      "slug": "r201",
-      "kind": "location",
-      "sort_order": 2,
-      "name": "Route 201",
-      "encounters": [
-        396,
-        399
-      ]
-    },
-    {
-      "slug": "r202",
-      "kind": "location",
-      "sort_order": 3,
-      "name": "Route 202",
-      "encounters": [
-        403,
-        396,
-        399,
-        401
-      ]
+        "turtwig",
+        "chimchar",
+        "piplup"
+      ],
+      "sort_order": 1
     },
     {
       "slug": "rival1",
       "kind": "boss",
-      "sort_order": 4,
       "name": "Barry",
+      "place": "Route 201",
       "boss_title": "Rival",
+      "level_cap": 5,
+      "squad": [
+        {
+          "species": "turtwig",
+          "level": 5,
+          "ability": "Overgrow",
+          "moves": [
+            "Tackle",
+            "Withdraw"
+          ],
+          "sort_order": 1
+        }
+      ],
+      "sort_order": 2
+    },
+    {
+      "slug": "r201",
+      "kind": "location",
+      "name": "Route 201",
+      "areas": [
+        "sinnoh-route-201-area"
+      ],
+      "sort_order": 3
+    },
+    {
+      "slug": "r202",
+      "kind": "location",
+      "name": "Route 202",
+      "areas": [
+        "sinnoh-route-202-area"
+      ],
+      "sort_order": 4
+    },
+    {
+      "slug": "rival2",
+      "kind": "boss",
+      "name": "Barry",
       "place": "Route 203",
+      "boss_title": "Rival",
       "level_cap": 9,
       "squad": [
         {
-          "pokemon_id": 396,
+          "species": "starly",
           "level": 7,
           "ability": "Keen Eye",
-          "sort_order": 1,
           "moves": [
-            {
-              "name": "Quick Attack",
-              "type": "Normal",
-              "power": 40,
-              "sort_order": 1
-            },
-            {
-              "name": "Growl",
-              "type": "Normal",
-              "power": 0,
-              "sort_order": 2
-            },
-            {
-              "name": "Wing Attack",
-              "type": "Flying",
-              "power": 60,
-              "sort_order": 3
-            }
-          ]
+            "Quick Attack",
+            "Growl"
+          ],
+          "sort_order": 1
         },
         {
-          "pokemon_id": 390,
+          "species": "turtwig",
           "level": 9,
-          "ability": "Blaze",
-          "sort_order": 2,
+          "ability": "Overgrow",
           "moves": [
-            {
-              "name": "Scratch",
-              "type": "Normal",
-              "power": 40,
-              "sort_order": 1
-            },
-            {
-              "name": "Ember",
-              "type": "Fire",
-              "power": 40,
-              "sort_order": 2
-            },
-            {
-              "name": "Taunt",
-              "type": "Dark",
-              "power": 0,
-              "sort_order": 3
-            }
-          ]
+            "Tackle",
+            "Withdraw"
+          ],
+          "sort_order": 2
         }
-      ]
+      ],
+      "sort_order": 5
     },
     {
       "slug": "r203",
       "kind": "location",
-      "sort_order": 5,
       "name": "Route 203",
-      "encounters": [
-        63,
-        403,
-        396,
-        399,
-        401
-      ]
+      "areas": [
+        "sinnoh-route-203-area"
+      ],
+      "sort_order": 6
     },
     {
       "slug": "gate",
       "kind": "location",
-      "sort_order": 6,
       "name": "Oreburgh Gate",
-      "encounters": [
-        41,
-        74,
-        54
-      ]
+      "areas": [
+        "oreburgh-gate-1f"
+      ],
+      "sort_order": 7
     },
     {
       "slug": "mine",
       "kind": "location",
-      "sort_order": 7,
       "name": "Oreburgh Mine",
-      "encounters": [
-        74,
-        95,
-        41
-      ]
+      "areas": [
+        "oreburgh-mine-1f",
+        "oreburgh-mine-b1f"
+      ],
+      "sort_order": 8
     },
     {
       "slug": "gym1",
       "kind": "boss",
-      "sort_order": 8,
       "name": "Roark",
-      "boss_title": "Gym Leader · Rock",
       "place": "Oreburgh Gym",
+      "boss_title": "Gym Leader · Rock",
       "level_cap": 14,
       "squad": [
         {
-          "pokemon_id": 74,
+          "species": "geodude",
           "level": 12,
           "ability": "Rock Head",
-          "sort_order": 1,
           "moves": [
-            {
-              "name": "Stealth Rock",
-              "type": "Rock",
-              "power": 0,
-              "sort_order": 1
-            },
-            {
-              "name": "Rock Throw",
-              "type": "Rock",
-              "power": 50,
-              "sort_order": 2
-            },
-            {
-              "name": "Tackle",
-              "type": "Normal",
-              "power": 35,
-              "sort_order": 3
-            }
-          ]
+            "Rock Throw",
+            "Stealth Rock"
+          ],
+          "sort_order": 1
         },
         {
-          "pokemon_id": 95,
+          "species": "onix",
           "level": 12,
-          "ability": "Sturdy",
-          "sort_order": 2,
+          "ability": "Rock Head",
           "moves": [
-            {
-              "name": "Rock Throw",
-              "type": "Rock",
-              "power": 50,
-              "sort_order": 1
-            },
-            {
-              "name": "Bind",
-              "type": "Normal",
-              "power": 15,
-              "sort_order": 2
-            },
-            {
-              "name": "Screech",
-              "type": "Normal",
-              "power": 0,
-              "sort_order": 3
-            }
-          ]
+            "Rock Throw",
+            "Screech",
+            "Stealth Rock"
+          ],
+          "sort_order": 2
         },
         {
-          "pokemon_id": 408,
+          "species": "cranidos",
           "level": 14,
           "ability": "Mold Breaker",
-          "sort_order": 3,
           "moves": [
-            {
-              "name": "Headbutt",
-              "type": "Normal",
-              "power": 70,
-              "sort_order": 1
-            },
-            {
-              "name": "Pursuit",
-              "type": "Dark",
-              "power": 40,
-              "sort_order": 2
-            },
-            {
-              "name": "Leer",
-              "type": "Normal",
-              "power": 0,
-              "sort_order": 3
-            }
-          ]
+            "Headbutt",
+            "Pursuit",
+            "Leer"
+          ],
+          "sort_order": 3
         }
-      ]
+      ],
+      "sort_order": 9
     },
     {
       "slug": "r204",
       "kind": "location",
-      "sort_order": 9,
       "name": "Route 204",
-      "encounters": [
-        406,
-        265,
-        396,
-        399
-      ]
+      "areas": [
+        "sinnoh-route-204-south-towards-jubilife-city",
+        "sinnoh-route-204-north-towards-floaroma-town"
+      ],
+      "sort_order": 10
     },
     {
       "slug": "ravaged",
       "kind": "location",
-      "sort_order": 10,
       "name": "Ravaged Path",
-      "encounters": [
-        41,
-        54,
-        74
-      ]
+      "areas": [
+        "ravaged-path-area"
+      ],
+      "sort_order": 11
+    },
+    {
+      "slug": "r205-south",
+      "kind": "location",
+      "name": "Route 205 (south)",
+      "areas": [
+        "sinnoh-route-205-south-towards-floaroma-town"
+      ],
+      "sort_order": 12
     },
     {
       "slug": "wind",
       "kind": "location",
-      "sort_order": 11,
       "name": "Valley Windworks",
+      "areas": [
+        "valley-windworks-area"
+      ],
       "encounters": [
-        417,
-        422,
-        418,
-        425
-      ]
+        "drifloon"
+      ],
+      "sort_order": 13
+    },
+    {
+      "slug": "galactic-windworks",
+      "kind": "boss",
+      "name": "Mars",
+      "place": "Valley Windworks",
+      "boss_title": "Team Galactic Commander",
+      "level_cap": 17,
+      "squad": [
+        {
+          "species": "zubat",
+          "level": 15,
+          "ability": "Inner Focus",
+          "moves": [
+            "Bite",
+            "Leech Life",
+            "Toxic"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "purugly",
+          "level": 17,
+          "ability": "Thick Fat",
+          "moves": [
+            "Faint Attack",
+            "Scratch",
+            "Fake Out"
+          ],
+          "sort_order": 2
+        }
+      ],
+      "sort_order": 14
+    },
+    {
+      "slug": "r205-east",
+      "kind": "location",
+      "name": "Route 205 (east)",
+      "areas": [
+        "sinnoh-route-205-east-towards-eterna-city"
+      ],
+      "sort_order": 15
     },
     {
       "slug": "forest",
       "kind": "location",
-      "sort_order": 12,
       "name": "Eterna Forest",
-      "encounters": [
-        427,
-        198,
-        92,
-        265
-      ]
+      "areas": [
+        "eterna-forest-area"
+      ],
+      "sort_order": 16
     },
     {
       "slug": "gym2",
       "kind": "boss",
-      "sort_order": 13,
       "name": "Gardenia",
-      "boss_title": "Gym Leader · Grass",
       "place": "Eterna Gym",
+      "boss_title": "Gym Leader · Grass",
       "level_cap": 22,
       "squad": [
         {
-          "pokemon_id": 387,
-          "level": 19,
+          "species": "turtwig",
+          "level": 20,
           "ability": "Overgrow",
-          "sort_order": 1,
           "moves": [
-            {
-              "name": "Razor Leaf",
-              "type": "Grass",
-              "power": 55,
-              "sort_order": 1
-            },
-            {
-              "name": "Reflect",
-              "type": "Psychic",
-              "power": 0,
-              "sort_order": 2
-            },
-            {
-              "name": "Tackle",
-              "type": "Normal",
-              "power": 35,
-              "sort_order": 3
-            }
-          ]
+            "Grass Knot",
+            "Razor Leaf",
+            "Sunny Day",
+            "Reflect"
+          ],
+          "sort_order": 1
         },
         {
-          "pokemon_id": 421,
-          "level": 19,
+          "species": "cherrim",
+          "level": 20,
           "ability": "Flower Gift",
-          "sort_order": 2,
           "moves": [
-            {
-              "name": "Magical Leaf",
-              "type": "Grass",
-              "power": 60,
-              "sort_order": 1
-            },
-            {
-              "name": "Leech Seed",
-              "type": "Grass",
-              "power": 0,
-              "sort_order": 2
-            },
-            {
-              "name": "Growth",
-              "type": "Normal",
-              "power": 0,
-              "sort_order": 3
-            }
-          ]
+            "Grass Knot",
+            "Magical Leaf",
+            "Leech Seed",
+            "Safeguard"
+          ],
+          "sort_order": 2
         },
         {
-          "pokemon_id": 407,
+          "species": "roserade",
           "level": 22,
           "ability": "Natural Cure",
-          "sort_order": 3,
           "moves": [
-            {
-              "name": "Magical Leaf",
-              "type": "Grass",
-              "power": 60,
-              "sort_order": 1
-            },
-            {
-              "name": "Stun Spore",
-              "type": "Grass",
-              "power": 0,
-              "sort_order": 2
-            },
-            {
-              "name": "Poison Sting",
-              "type": "Poison",
-              "power": 15,
-              "sort_order": 3
-            }
-          ]
+            "Grass Knot",
+            "Magical Leaf",
+            "Poison Sting",
+            "Stun Spore"
+          ],
+          "sort_order": 3
         }
-      ]
+      ],
+      "sort_order": 17
+    },
+    {
+      "slug": "galactic-eterna",
+      "kind": "boss",
+      "name": "Jupiter",
+      "place": "Team Galactic Eterna Building",
+      "boss_title": "Team Galactic Commander",
+      "level_cap": 23,
+      "squad": [
+        {
+          "species": "zubat",
+          "level": 21,
+          "ability": "Inner Focus",
+          "moves": [
+            "Giga Drain",
+            "Wing Attack",
+            "Bite"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "skuntank",
+          "level": 23,
+          "ability": "Stench",
+          "moves": [
+            "Night Slash",
+            "Poison Gas",
+            "Screech",
+            "SmokeScreen"
+          ],
+          "sort_order": 2
+        }
+      ],
+      "sort_order": 18
+    },
+    {
+      "slug": "r206",
+      "kind": "location",
+      "name": "Route 206",
+      "areas": [
+        "sinnoh-route-206-area"
+      ],
+      "sort_order": 19
+    },
+    {
+      "slug": "r207",
+      "kind": "location",
+      "name": "Route 207",
+      "areas": [
+        "sinnoh-route-207-area"
+      ],
+      "sort_order": 20
+    },
+    {
+      "slug": "coronet-south",
+      "kind": "location",
+      "name": "Mt. Coronet (south)",
+      "areas": [
+        "mt-coronet-1f-route-207"
+      ],
+      "sort_order": 21
+    },
+    {
+      "slug": "r208",
+      "kind": "location",
+      "name": "Route 208",
+      "areas": [
+        "sinnoh-route-208-area"
+      ],
+      "sort_order": 22
+    },
+    {
+      "slug": "gym3",
+      "kind": "boss",
+      "name": "Fantina",
+      "place": "Hearthome Gym",
+      "boss_title": "Gym Leader · Ghost",
+      "level_cap": 26,
+      "squad": [
+        {
+          "species": "duskull",
+          "level": 24,
+          "ability": "Levitate",
+          "moves": [
+            "Will-O-Wisp",
+            "Future Sight",
+            "Shadow Sneak",
+            "Pursuit"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "haunter",
+          "level": 24,
+          "ability": "Levitate",
+          "moves": [
+            "Shadow Claw",
+            "Sucker Punch",
+            "Confuse Ray",
+            "Hypnosis"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "mismagius",
+          "level": 26,
+          "ability": "Levitate",
+          "moves": [
+            "Shadow Ball",
+            "Psybeam",
+            "Magical Leaf",
+            "Confuse Ray"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 23
+    },
+    {
+      "slug": "rival3",
+      "kind": "boss",
+      "name": "Barry",
+      "place": "Route 209 gate",
+      "boss_title": "Rival",
+      "level_cap": 27,
+      "squad": [
+        {
+          "species": "staravia",
+          "level": 25,
+          "ability": "Intimidate",
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "buizel",
+          "level": 23,
+          "ability": "Swift Swim",
+          "moves": [
+            "Water Gun",
+            "Quick Attack",
+            "Growl",
+            "Pursuit"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "ponyta",
+          "level": 23,
+          "ability": "Run Away",
+          "moves": [
+            "Tackle",
+            "Ember",
+            "Growl",
+            "Tail Whip"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "grotle",
+          "level": 27,
+          "ability": "Overgrow",
+          "moves": [
+            "Tackle",
+            "Razor Leaf",
+            "Absorb",
+            "Withdraw"
+          ],
+          "sort_order": 4
+        }
+      ],
+      "sort_order": 24
+    },
+    {
+      "slug": "r209",
+      "kind": "location",
+      "name": "Route 209",
+      "areas": [
+        "sinnoh-route-209-area"
+      ],
+      "sort_order": 25
+    },
+    {
+      "slug": "r210-south",
+      "kind": "location",
+      "name": "Route 210 (south)",
+      "areas": [
+        "sinnoh-route-210-south-towards-solaceon-town"
+      ],
+      "sort_order": 26
+    },
+    {
+      "slug": "r215",
+      "kind": "location",
+      "name": "Route 215",
+      "areas": [
+        "sinnoh-route-215-area"
+      ],
+      "sort_order": 27
+    },
+    {
+      "slug": "gym4",
+      "kind": "boss",
+      "name": "Maylene",
+      "place": "Veilstone Gym",
+      "boss_title": "Gym Leader · Fighting",
+      "level_cap": 32,
+      "squad": [
+        {
+          "species": "meditite",
+          "level": 28,
+          "ability": "Pure Power",
+          "moves": [
+            "Drain Punch",
+            "Confusion",
+            "Fake Out",
+            "Rock Tomb"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "machoke",
+          "level": 29,
+          "ability": "Guts",
+          "moves": [
+            "Karate Chop",
+            "Strength",
+            "Focus Energy",
+            "Rock Tomb"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "lucario",
+          "level": 32,
+          "ability": "Steadfast",
+          "moves": [
+            "Drain Punch",
+            "Metal Claw",
+            "Bone Rush",
+            "Force Palm"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 28
+    },
+    {
+      "slug": "r214",
+      "kind": "location",
+      "name": "Route 214",
+      "areas": [
+        "sinnoh-route-214-area"
+      ],
+      "sort_order": 29
+    },
+    {
+      "slug": "valor-lakefront",
+      "kind": "location",
+      "name": "Valor Lakefront",
+      "areas": [
+        "valor-lakefront-area"
+      ],
+      "sort_order": 30
+    },
+    {
+      "slug": "r213",
+      "kind": "location",
+      "name": "Route 213",
+      "areas": [
+        "sinnoh-route-213-area"
+      ],
+      "sort_order": 31
+    },
+    {
+      "slug": "rival4",
+      "kind": "boss",
+      "name": "Barry",
+      "place": "Pastoria City",
+      "boss_title": "Rival",
+      "level_cap": 36,
+      "squad": [
+        {
+          "species": "staravia",
+          "level": 34,
+          "ability": "Intimidate",
+          "moves": [
+            "Double Team",
+            "Wing Attack",
+            "Quick Attack",
+            "Endeavor"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "buizel",
+          "level": 32,
+          "ability": "Swift Swim",
+          "moves": [
+            "Aqua Jet",
+            "Quick Attack",
+            "Growl",
+            "Pursuit"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "ponyta",
+          "level": 32,
+          "ability": "Run Away",
+          "moves": [
+            "Stomp",
+            "Ember",
+            "Growl",
+            "Tail Whip"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "grotle",
+          "level": 36,
+          "ability": "Overgrow",
+          "moves": [
+            "Bite",
+            "Razor Leaf",
+            "Mega Drain",
+            "Withdraw"
+          ],
+          "sort_order": 4
+        }
+      ],
+      "sort_order": 32
+    },
+    {
+      "slug": "gym5",
+      "kind": "boss",
+      "name": "Crasher Wake",
+      "place": "Pastoria Gym",
+      "boss_title": "Gym Leader · Water",
+      "level_cap": 37,
+      "squad": [
+        {
+          "species": "gyarados",
+          "level": 33,
+          "ability": "Intimidate",
+          "moves": [
+            "Brine",
+            "Waterfall",
+            "Bite",
+            "Twister"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "quagsire",
+          "level": 34,
+          "ability": "Damp",
+          "moves": [
+            "Water Pulse",
+            "Mud Shot",
+            "Rock Tomb",
+            "Yawn"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "floatzel",
+          "level": 37,
+          "ability": "Swift Swim",
+          "moves": [
+            "Brine",
+            "Crunch",
+            "Ice Fang",
+            "Aqua Jet"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 33
+    },
+    {
+      "slug": "r212",
+      "kind": "location",
+      "name": "Route 212",
+      "areas": [
+        "sinnoh-route-212-east-towards-pastoria-city",
+        "sinnoh-route-212-north-towards-hearthome-city"
+      ],
+      "sort_order": 34
+    },
+    {
+      "slug": "r210-west",
+      "kind": "location",
+      "name": "Route 210 (west)",
+      "areas": [
+        "sinnoh-route-210-west-towards-celestic-town"
+      ],
+      "sort_order": 35
+    },
+    {
+      "slug": "cyrus1",
+      "kind": "boss",
+      "name": "Cyrus",
+      "place": "Celestic Town ruins",
+      "boss_title": "Team Galactic Boss",
+      "level_cap": 36,
+      "squad": [
+        {
+          "species": "sneasel",
+          "level": 34,
+          "ability": "Inner Focus",
+          "moves": [
+            "Screech",
+            "Ice Punch",
+            "Slash",
+            "Quick Attack"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "golbat",
+          "level": 34,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Poison Fang",
+            "Confuse Ray",
+            "Bite"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "murkrow",
+          "level": 36,
+          "ability": "Insomnia",
+          "moves": [
+            "Night Shade",
+            "Faint Attack",
+            "Drill Peck",
+            "Astonish"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 36
+    },
+    {
+      "slug": "r218",
+      "kind": "location",
+      "name": "Route 218",
+      "areas": [
+        "sinnoh-route-218-area"
+      ],
+      "sort_order": 37
+    },
+    {
+      "slug": "rival5",
+      "kind": "boss",
+      "name": "Barry",
+      "place": "Canalave City",
+      "boss_title": "Rival",
+      "level_cap": 38,
+      "squad": [
+        {
+          "species": "staraptor",
+          "level": 36,
+          "ability": "Intimidate",
+          "moves": [
+            "Aerial Ace",
+            "Take Down",
+            "Quick Attack",
+            "Double Team"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "heracross",
+          "level": 37,
+          "ability": "Swarm",
+          "moves": [
+            "Brick Break",
+            "Aerial Ace",
+            "Night Slash",
+            "Horn Attack"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "floatzel",
+          "level": 35,
+          "ability": "Swift Swim",
+          "moves": [
+            "Aqua Jet",
+            "Pursuit",
+            "Quick Attack",
+            "Swift"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "rapidash",
+          "level": 35,
+          "ability": "Run Away",
+          "moves": [
+            "Fire Spin",
+            "Take Down",
+            "Stomp",
+            "Tail Whip"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "torterra",
+          "level": 38,
+          "ability": "Overgrow",
+          "moves": [
+            "Razor Leaf",
+            "Bite",
+            "Mega Drain",
+            "Leech Seed"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 38
+    },
+    {
+      "slug": "gym6",
+      "kind": "boss",
+      "name": "Byron",
+      "place": "Canalave Gym",
+      "boss_title": "Gym Leader · Steel",
+      "level_cap": 41,
+      "squad": [
+        {
+          "species": "magneton",
+          "level": 37,
+          "ability": "Magnet Pull",
+          "moves": [
+            "Flash Cannon",
+            "Thunderbolt",
+            "Tri Attack",
+            "Metal Sound"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "steelix",
+          "level": 38,
+          "ability": "Rock Head",
+          "moves": [
+            "Flash Cannon",
+            "Earthquake",
+            "Ice Fang",
+            "Sandstorm"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "bastiodon",
+          "level": 41,
+          "ability": "Sturdy",
+          "moves": [
+            "Metal Burst",
+            "Stone Edge",
+            "Iron Defense",
+            "Taunt"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 39
+    },
+    {
+      "slug": "galactic-valor",
+      "kind": "boss",
+      "name": "Saturn",
+      "place": "Valor Cavern",
+      "boss_title": "Team Galactic Commander",
+      "level_cap": 40,
+      "squad": [
+        {
+          "species": "golbat",
+          "level": 38,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Bite",
+            "Toxic",
+            "Supersonic"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "bronzor",
+          "level": 38,
+          "ability": "Levitate",
+          "moves": [
+            "Gyro Ball",
+            "Shadow Ball",
+            "Rock Tomb",
+            "Iron Defense"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "toxicroak",
+          "level": 40,
+          "ability": "Anticipation",
+          "moves": [
+            "Poison Jab",
+            "Revenge",
+            "Mud Bomb",
+            "Faint Attack"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 40
+    },
+    {
+      "slug": "galactic-verity",
+      "kind": "boss",
+      "name": "Mars",
+      "place": "Lake Verity",
+      "boss_title": "Team Galactic Commander",
+      "level_cap": 40,
+      "squad": [
+        {
+          "species": "golbat",
+          "level": 38,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Bite",
+            "Toxic",
+            "Supersonic"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "bronzor",
+          "level": 38,
+          "ability": "Levitate",
+          "moves": [
+            "Gyro Ball",
+            "Extrasensory",
+            "Iron Defense",
+            "Confuse Ray"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "purugly",
+          "level": 40,
+          "ability": "Thick Fat",
+          "moves": [
+            "Slash",
+            "Faint Attack",
+            "Hypnosis",
+            "Fake Out"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 41
+    },
+    {
+      "slug": "r211",
+      "kind": "location",
+      "name": "Route 211",
+      "areas": [
+        "sinnoh-route-211-east-towards-celestic-town",
+        "sinnoh-route-211-west-towards-eterna-city"
+      ],
+      "sort_order": 42
+    },
+    {
+      "slug": "coronet-north",
+      "kind": "location",
+      "name": "Mt. Coronet (north)",
+      "areas": [
+        "mt-coronet-1f-route-216"
+      ],
+      "sort_order": 43
+    },
+    {
+      "slug": "r216",
+      "kind": "location",
+      "name": "Route 216",
+      "areas": [
+        "sinnoh-route-216-area"
+      ],
+      "sort_order": 44
+    },
+    {
+      "slug": "r217",
+      "kind": "location",
+      "name": "Route 217",
+      "areas": [
+        "sinnoh-route-217-area"
+      ],
+      "sort_order": 45
+    },
+    {
+      "slug": "acuity-lakefront",
+      "kind": "location",
+      "name": "Acuity Lakefront",
+      "areas": [
+        "acuity-lakefront-area"
+      ],
+      "sort_order": 46
+    },
+    {
+      "slug": "gym7",
+      "kind": "boss",
+      "name": "Candice",
+      "place": "Snowpoint Gym",
+      "boss_title": "Gym Leader · Ice",
+      "level_cap": 44,
+      "squad": [
+        {
+          "species": "sneasel",
+          "level": 40,
+          "ability": "Keen Eye",
+          "moves": [
+            "Faint Attack",
+            "Ice Shard",
+            "Slash",
+            "Aerial Ace"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "piloswine",
+          "level": 40,
+          "ability": "Oblivious",
+          "moves": [
+            "Hail",
+            "Earthquake",
+            "Stone Edge",
+            "Avalanche"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "abomasnow",
+          "level": 42,
+          "ability": "Snow Warning",
+          "moves": [
+            "Wood Hammer",
+            "Focus Blast",
+            "Water Pulse",
+            "Avalanche"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "froslass",
+          "level": 44,
+          "ability": "Snow Cloak",
+          "moves": [
+            "Shadow Ball",
+            "Double Team",
+            "Psychic",
+            "Blizzard"
+          ],
+          "sort_order": 4
+        }
+      ],
+      "sort_order": 47
+    },
+    {
+      "slug": "lake-acuity",
+      "kind": "location",
+      "name": "Lake Acuity",
+      "areas": [
+        "lake-acuity-area"
+      ],
+      "sort_order": 48
+    },
+    {
+      "slug": "cyrus2",
+      "kind": "boss",
+      "name": "Cyrus",
+      "place": "Team Galactic HQ, Veilstone",
+      "boss_title": "Team Galactic Boss",
+      "level_cap": 46,
+      "squad": [
+        {
+          "species": "sneasel",
+          "level": 44,
+          "ability": "Inner Focus",
+          "moves": [
+            "Screech",
+            "Ice Punch",
+            "Slash",
+            "Quick Attack"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "crobat",
+          "level": 44,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Poison Fang",
+            "Supersonic",
+            "Bite"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "honchkrow",
+          "level": 46,
+          "ability": "Insomnia",
+          "moves": [
+            "Night Shade",
+            "Faint Attack",
+            "Drill Peck",
+            "Astonish"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 49
+    },
+    {
+      "slug": "galactic-hq-saturn",
+      "kind": "boss",
+      "name": "Saturn",
+      "place": "Team Galactic HQ, Veilstone",
+      "boss_title": "Team Galactic Commander",
+      "level_cap": 44,
+      "squad": [
+        {
+          "species": "golbat",
+          "level": 42,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Bite",
+            "Poison Fang",
+            "Confuse Ray"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "bronzor",
+          "level": 42,
+          "ability": "Levitate",
+          "moves": [
+            "Gyro Ball",
+            "Extrasensory",
+            "Shadow Ball",
+            "Confuse Ray"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "toxicroak",
+          "level": 44,
+          "ability": "Anticipation",
+          "moves": [
+            "Poison Jab",
+            "Brick Break",
+            "X-Scissor",
+            "Faint Attack"
+          ],
+          "sort_order": 3
+        }
+      ],
+      "sort_order": 50
+    },
+    {
+      "slug": "coronet-climb",
+      "kind": "location",
+      "name": "Mt. Coronet (ascent)",
+      "areas": [
+        "mt-coronet-4f",
+        "mt-coronet-5f",
+        "mt-coronet-6f"
+      ],
+      "sort_order": 51
+    },
+    {
+      "slug": "spear-pillar",
+      "kind": "boss",
+      "name": "Mars & Jupiter",
+      "place": "Spear Pillar",
+      "boss_title": "Team Galactic Commanders",
+      "level_cap": 46,
+      "squad": [
+        {
+          "species": "bronzor",
+          "level": 44,
+          "ability": "Levitate",
+          "moves": [
+            "Gyro Ball",
+            "Extrasensory",
+            "Light Screen",
+            "Confuse Ray"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "golbat",
+          "level": 44,
+          "ability": "Inner Focus",
+          "moves": [
+            "Air Cutter",
+            "Bite",
+            "Poison Fang",
+            "Confuse Ray"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "purugly",
+          "level": 46,
+          "ability": "Thick Fat",
+          "moves": [
+            "Slash",
+            "Shadow Claw",
+            "Aerial Ace",
+            "Hypnosis"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "bronzor",
+          "level": 44,
+          "ability": "Levitate",
+          "moves": [
+            "Gyro Ball",
+            "Extrasensory",
+            "Rock Slide",
+            "Reflect"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "golbat",
+          "level": 44,
+          "ability": "Inner Focus",
+          "moves": [
+            "Sludge Bomb",
+            "Air Cutter",
+            "Giga Drain",
+            "Mean Look"
+          ],
+          "sort_order": 5
+        },
+        {
+          "species": "skuntank",
+          "level": 46,
+          "ability": "Stench",
+          "moves": [
+            "Night Slash",
+            "Poison Jab",
+            "Flamethrower",
+            "SmokeScreen"
+          ],
+          "sort_order": 6
+        }
+      ],
+      "sort_order": 52
+    },
+    {
+      "slug": "cyrus3",
+      "kind": "boss",
+      "name": "Cyrus",
+      "place": "Distortion World",
+      "boss_title": "Team Galactic Boss",
+      "level_cap": 48,
+      "squad": [
+        {
+          "species": "houndoom",
+          "level": 45,
+          "ability": "Early Bird",
+          "moves": [
+            "Flamethrower",
+            "Dark Pulse",
+            "Will-O-Wisp",
+            "Thunder Fang"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "honchkrow",
+          "level": 47,
+          "ability": "Insomnia",
+          "moves": [
+            "Drill Peck",
+            "Night Slash",
+            "Heat Wave",
+            "Psychic"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "crobat",
+          "level": 46,
+          "ability": "Inner Focus",
+          "moves": [
+            "Cross Poison",
+            "Air Slash",
+            "Toxic",
+            "Confuse Ray"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "gyarados",
+          "level": 46,
+          "ability": "Intimidate",
+          "moves": [
+            "Waterfall",
+            "Ice Fang",
+            "Earthquake",
+            "Giga Impact"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "weavile",
+          "level": 48,
+          "ability": "Pressure",
+          "moves": [
+            "Night Slash",
+            "Ice Punch",
+            "X-Scissor",
+            "Fake Out"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 53
+    },
+    {
+      "slug": "r222",
+      "kind": "location",
+      "name": "Route 222",
+      "areas": [
+        "sinnoh-route-222-area"
+      ],
+      "sort_order": 54
+    },
+    {
+      "slug": "gym8",
+      "kind": "boss",
+      "name": "Volkner",
+      "place": "Sunyshore Gym",
+      "boss_title": "Gym Leader · Electric",
+      "level_cap": 50,
+      "squad": [
+        {
+          "species": "jolteon",
+          "level": 46,
+          "ability": "Volt Absorb",
+          "moves": [
+            "Charge Beam",
+            "Thunder Wave",
+            "Iron Tail",
+            "Quick Attack"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "raichu",
+          "level": 46,
+          "ability": "Static",
+          "moves": [
+            "Charge Beam",
+            "Signal Beam",
+            "Focus Blast",
+            "Quick Attack"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "luxray",
+          "level": 48,
+          "ability": "Rivalry",
+          "moves": [
+            "Thunder Fang",
+            "Ice Fang",
+            "Fire Fang",
+            "Crunch"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "electivire",
+          "level": 50,
+          "ability": "Motor Drive",
+          "moves": [
+            "ThunderPunch",
+            "Fire Punch",
+            "Giga Impact",
+            "Quick Attack"
+          ],
+          "sort_order": 4
+        }
+      ],
+      "sort_order": 55
+    },
+    {
+      "slug": "victory-road",
+      "kind": "location",
+      "name": "Victory Road",
+      "areas": [
+        "sinnoh-victory-road-1f",
+        "sinnoh-victory-road-2f",
+        "sinnoh-victory-road-b1f"
+      ],
+      "sort_order": 56
+    },
+    {
+      "slug": "rival6",
+      "kind": "boss",
+      "name": "Barry",
+      "place": "Pokémon League",
+      "boss_title": "Rival",
+      "level_cap": 51,
+      "squad": [
+        {
+          "species": "staraptor",
+          "level": 48,
+          "ability": "Intimidate",
+          "moves": [
+            "Close Combat",
+            "Aerial Ace",
+            "Steel Wing",
+            "U-turn"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "rapidash",
+          "level": 47,
+          "ability": "Run Away",
+          "moves": [
+            "Fire Blast",
+            "Sunny Day",
+            "Bounce",
+            "Will-O-Wisp"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "floatzel",
+          "level": 47,
+          "ability": "Swift Swim",
+          "moves": [
+            "Aqua Jet",
+            "Crunch",
+            "Ice Fang",
+            "Brick Break"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "heracross",
+          "level": 48,
+          "ability": "Swarm",
+          "moves": [
+            "Aerial Ace",
+            "Close Combat",
+            "Night Slash",
+            "Rock Slide"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "snorlax",
+          "level": 49,
+          "ability": "Immunity",
+          "moves": [
+            "Body Slam",
+            "Crunch",
+            "Earthquake",
+            "Rest"
+          ],
+          "sort_order": 5
+        },
+        {
+          "species": "torterra",
+          "level": 51,
+          "ability": "Overgrow",
+          "moves": [
+            "Leaf Storm",
+            "Earthquake",
+            "Crunch",
+            "Synthesis"
+          ],
+          "sort_order": 6
+        }
+      ],
+      "sort_order": 57
+    },
+    {
+      "slug": "e4-aaron",
+      "kind": "boss",
+      "name": "Aaron",
+      "place": "Pokémon League",
+      "boss_title": "Elite Four · Bug",
+      "level_cap": 53,
+      "squad": [
+        {
+          "species": "yanmega",
+          "level": 49,
+          "ability": "Speed Boost",
+          "moves": [
+            "Bug Buzz",
+            "Air Slash",
+            "U-turn",
+            "Double Team"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "scizor",
+          "level": 49,
+          "ability": "Swarm",
+          "moves": [
+            "X-Scissor",
+            "Iron Head",
+            "Night Slash",
+            "Quick Attack"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "vespiquen",
+          "level": 50,
+          "ability": "Pressure",
+          "moves": [
+            "Attack Order",
+            "Defend Order",
+            "Heal Order",
+            "Power Gem"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "heracross",
+          "level": 51,
+          "ability": "Swarm",
+          "moves": [
+            "Megahorn",
+            "Close Combat",
+            "Night Slash",
+            "Stone Edge"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "drapion",
+          "level": 53,
+          "ability": "Battle Armor",
+          "moves": [
+            "X-Scissor",
+            "Cross Poison",
+            "Ice Fang",
+            "Aerial Ace"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 58
+    },
+    {
+      "slug": "e4-bertha",
+      "kind": "boss",
+      "name": "Bertha",
+      "place": "Pokémon League",
+      "boss_title": "Elite Four · Ground",
+      "level_cap": 55,
+      "squad": [
+        {
+          "species": "whiscash",
+          "level": 50,
+          "ability": "Oblivious",
+          "moves": [
+            "Earth Power",
+            "Aqua Tail",
+            "Zen Headbutt",
+            "Sandstorm"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "gliscor",
+          "level": 53,
+          "ability": "Hyper Cutter",
+          "moves": [
+            "Earthquake",
+            "Ice Fang",
+            "Fire Fang",
+            "Thunder Fang"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "hippowdon",
+          "level": 52,
+          "ability": "Sand Stream",
+          "moves": [
+            "Earthquake",
+            "Stone Edge",
+            "Crunch",
+            "Yawn"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "golem",
+          "level": 52,
+          "ability": "Rock Head",
+          "moves": [
+            "Earthquake",
+            "Fire Punch",
+            "ThunderPunch",
+            "Sandstorm"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "rhyperior",
+          "level": 55,
+          "ability": "Lightningrod",
+          "moves": [
+            "Earthquake",
+            "Rock Wrecker",
+            "Megahorn",
+            "Avalanche"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 59
+    },
+    {
+      "slug": "e4-flint",
+      "kind": "boss",
+      "name": "Flint",
+      "place": "Pokémon League",
+      "boss_title": "Elite Four · Fire",
+      "level_cap": 57,
+      "squad": [
+        {
+          "species": "houndoom",
+          "level": 52,
+          "ability": "Early Bird",
+          "moves": [
+            "Flamethrower",
+            "Sludge Bomb",
+            "Dark Pulse",
+            "Sunny Day"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "flareon",
+          "level": 55,
+          "ability": "Flash Fire",
+          "moves": [
+            "Overheat",
+            "Giga Impact",
+            "Quick Attack",
+            "Will-O-Wisp"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "rapidash",
+          "level": 53,
+          "ability": "Run Away",
+          "moves": [
+            "Flare Blitz",
+            "SolarBeam",
+            "Bounce",
+            "Sunny Day"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "infernape",
+          "level": 55,
+          "ability": "Blaze",
+          "moves": [
+            "Flare Blitz",
+            "ThunderPunch",
+            "Mach Punch",
+            "Earthquake"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "magmortar",
+          "level": 57,
+          "ability": "Flame Body",
+          "moves": [
+            "Flamethrower",
+            "Thunderbolt",
+            "SolarBeam",
+            "Hyper Beam"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 60
+    },
+    {
+      "slug": "e4-lucian",
+      "kind": "boss",
+      "name": "Lucian",
+      "place": "Pokémon League",
+      "boss_title": "Elite Four · Psychic",
+      "level_cap": 59,
+      "squad": [
+        {
+          "species": "mr-mime",
+          "level": 53,
+          "ability": "Soundproof",
+          "moves": [
+            "Psychic",
+            "Thunderbolt",
+            "Reflect",
+            "Light Screen"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "espeon",
+          "level": 55,
+          "ability": "Synchronize",
+          "moves": [
+            "Psychic",
+            "Shadow Ball",
+            "Quick Attack",
+            "Signal Beam"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "bronzong",
+          "level": 54,
+          "ability": "Levitate",
+          "moves": [
+            "Psychic",
+            "Gyro Ball",
+            "Earthquake",
+            "Calm Mind"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "alakazam",
+          "level": 56,
+          "ability": "Synchronize",
+          "moves": [
+            "Psychic",
+            "Energy Ball",
+            "Focus Blast",
+            "Recover"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "gallade",
+          "level": 59,
+          "ability": "Steadfast",
+          "moves": [
+            "Drain Punch",
+            "Psycho Cut",
+            "Leaf Blade",
+            "Stone Edge"
+          ],
+          "sort_order": 5
+        }
+      ],
+      "sort_order": 61
+    },
+    {
+      "slug": "champion-cynthia",
+      "kind": "boss",
+      "name": "Cynthia",
+      "place": "Pokémon League",
+      "boss_title": "Champion",
+      "level_cap": 62,
+      "squad": [
+        {
+          "species": "spiritomb",
+          "level": 58,
+          "ability": "Pressure",
+          "moves": [
+            "Dark Pulse",
+            "Psychic",
+            "Silver Wind",
+            "Shadow Ball"
+          ],
+          "sort_order": 1
+        },
+        {
+          "species": "roserade",
+          "level": 58,
+          "ability": "Natural Cure",
+          "moves": [
+            "Energy Ball",
+            "Sludge Bomb",
+            "Toxic",
+            "Extrasensory"
+          ],
+          "sort_order": 2
+        },
+        {
+          "species": "togekiss",
+          "level": 60,
+          "ability": "Hustle",
+          "moves": [
+            "Air Slash",
+            "Aura Sphere",
+            "Water Pulse",
+            "Shock Wave"
+          ],
+          "sort_order": 3
+        },
+        {
+          "species": "lucario",
+          "level": 60,
+          "ability": "Steadfast",
+          "moves": [
+            "Aura Sphere",
+            "ExtremeSpeed",
+            "Shadow Ball",
+            "Stone Edge"
+          ],
+          "sort_order": 4
+        },
+        {
+          "species": "milotic",
+          "level": 58,
+          "ability": "Marvel Scale",
+          "moves": [
+            "Surf",
+            "Ice Beam",
+            "Mirror Coat",
+            "Dragon Pulse"
+          ],
+          "sort_order": 5
+        },
+        {
+          "species": "garchomp",
+          "level": 62,
+          "ability": "Sand Veil",
+          "moves": [
+            "Dragon Rush",
+            "Earthquake",
+            "Flamethrower",
+            "Giga Impact"
+          ],
+          "sort_order": 6
+        }
+      ],
+      "sort_order": 62
     }
   ]
 }

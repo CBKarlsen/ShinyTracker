@@ -90,10 +90,16 @@ type NuzlockeEncounterOption struct {
 }
 
 // NuzlockeBossMove is one move in a boss squad member's set.
+//
+// DamageClass ('physical' | 'special' | 'status') is what the client's
+// party-coverage warning keys off, NOT Power: moves.power is NULL for every
+// variable-power damaging move (Grass Knot, Metal Burst, Dragon Rage…), so a
+// power test reads a Grass gym's main attack as harmless. See migration 017.
 type NuzlockeBossMove struct {
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Power int    `json:"power"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Power       int    `json:"power"`
+	DamageClass string `json:"damage_class"`
 }
 
 // NuzlockeBossMon is one member of a boss's squad.
@@ -124,9 +130,14 @@ type NuzlockeTimelineEntry struct {
 
 // NuzlockeRun is one user's playthrough of the seeded timeline.
 type NuzlockeRun struct {
-	ID                string     `json:"id"`
-	UserID            string     `json:"user_id"`
-	GameID            *int       `json:"game_id"`
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
+	GameID *int   `json:"game_id"`
+	// Which version's timeline this run follows — 'platinum', 'diamond', …,
+	// the same vocabulary pokemon_locations.version uses. Fixed at creation:
+	// games.id 5 is "Diamond/Pearl/Platinum" and the three disagree about both
+	// encounter tables and trainers (migration 017).
+	Version           string     `json:"version"`
 	GameTitle         *string    `json:"game_title,omitempty"`
 	DupesClause       bool       `json:"dupes_clause"`
 	BattleStyle       string     `json:"battle_style"`

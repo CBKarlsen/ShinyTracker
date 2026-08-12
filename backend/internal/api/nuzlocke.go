@@ -17,13 +17,19 @@ import (
 // Reference: the seeded route timeline
 // ─────────────────────────────────────────────────────────────────────────
 
-// loadTimelineForGame loads the full seeded Nuzlocke timeline for one game,
-// in order, with each location's encounter pool and each boss's squad and
-// movesets attached. Pure reference data — never scoped by user.
-func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTimelineEntry, error) {
+// loadTimelineForGame loads the full seeded Nuzlocke timeline for one game and
+// version, in order, with each location's encounter pool and each boss's squad
+// and movesets attached. Pure reference data — never scoped by user.
+//
+// version is required, not optional: games.id 5 covers Diamond, Pearl AND
+// Platinum, whose routes and trainers genuinely differ (Fantina is the third
+// gym in Platinum and the fifth in D/P), so a timeline without one would be
+// three games' data interleaved by sort_order.
+func loadTimelineForGame(ctx context.Context, gameID int, version string) ([]models.NuzlockeTimelineEntry, error) {
 	rows, err := database.DB.Query(ctx,
 		`SELECT id, slug, kind, name, sort_order, place, boss_title, level_cap
-		 FROM nuzlocke_timeline_entries WHERE game_id = $1 ORDER BY sort_order ASC`, gameID)
+		 FROM nuzlocke_timeline_entries WHERE game_id = $1 AND version = $2
+		 ORDER BY sort_order ASC`, gameID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +56,8 @@ func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTime
 		 FROM nuzlocke_encounter_pool ep
 		 JOIN pokemon p ON p.id = ep.pokemon_id
 		 JOIN nuzlocke_timeline_entries te ON te.id = ep.timeline_entry_id
-		 WHERE te.game_id = $1
-		 ORDER BY ep.timeline_entry_id, ep.sort_order`, gameID)
+		 WHERE te.game_id = $1 AND te.version = $2
+		 ORDER BY ep.timeline_entry_id, ep.sort_order`, gameID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +81,8 @@ func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTime
 		 FROM nuzlocke_boss_pokemon bp
 		 JOIN pokemon p ON p.id = bp.pokemon_id
 		 JOIN nuzlocke_timeline_entries te ON te.id = bp.timeline_entry_id
-		 WHERE te.game_id = $1
-		 ORDER BY bp.timeline_entry_id, bp.sort_order`, gameID)
+		 WHERE te.game_id = $1 AND te.version = $2
+		 ORDER BY bp.timeline_entry_id, bp.sort_order`, gameID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +106,12 @@ func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTime
 	}
 
 	moveRows, err := database.DB.Query(ctx,
-		`SELECT bm.boss_pokemon_id, bm.name, bm.type, bm.power
+		`SELECT bm.boss_pokemon_id, bm.name, bm.type, bm.power, bm.damage_class
 		 FROM nuzlocke_boss_moves bm
 		 JOIN nuzlocke_boss_pokemon bp ON bp.id = bm.boss_pokemon_id
 		 JOIN nuzlocke_timeline_entries te ON te.id = bp.timeline_entry_id
-		 WHERE te.game_id = $1
-		 ORDER BY bm.boss_pokemon_id, bm.sort_order`, gameID)
+		 WHERE te.game_id = $1 AND te.version = $2
+		 ORDER BY bm.boss_pokemon_id, bm.sort_order`, gameID, version)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +120,7 @@ func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTime
 	for moveRows.Next() {
 		var bossPokemonID int
 		var mv models.NuzlockeBossMove
-		if err := moveRows.Scan(&bossPokemonID, &mv.Name, &mv.Type, &mv.Power); err != nil {
+		if err := moveRows.Scan(&bossPokemonID, &mv.Name, &mv.Type, &mv.Power, &mv.DamageClass); err != nil {
 			moveRows.Close()
 			return nil, err
 		}
@@ -133,8 +139,43 @@ func loadTimelineForGame(ctx context.Context, gameID int) ([]models.NuzlockeTime
 	return entries, nil
 }
 
-// GetNuzlockeTimelineHandler returns the seeded reference timeline for a
-// game. Reference data — not scoped by user.
+// GetNuzlockeVersionsHandler lists the versions of one game that have a seeded
+// timeline. An empty list means the game cannot be Nuzlocked yet, which is the
+// normal case — routes are seeded per version, one at a time.
+//
+// This is what a "start a run" screen asks first: it answers both "is this game
+// seeded" and "which version am I playing" in one request.
+func GetNuzlockeVersionsHandler(w http.ResponseWriter, r *http.Request) {
+	gameID, err := strconv.Atoi(r.URL.Query().Get("game_id"))
+	if err != nil || gameID <= 0 {
+		http.Error(w, "game_id is required and must be a positive integer", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := database.DB.Query(context.Background(),
+		`SELECT DISTINCT version FROM nuzlocke_timeline_entries WHERE game_id = $1
+		 ORDER BY version`, gameID)
+	if err != nil {
+		log.Printf("GetNuzlockeVersions error: %v", err)
+		http.Error(w, "Failed to fetch versions", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	versions := []string{}
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err == nil {
+			versions = append(versions, v)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(versions)
+}
+
+// GetNuzlockeTimelineHandler returns the seeded reference timeline for one game
+// and version. Reference data — not scoped by user.
 func GetNuzlockeTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	gameIDStr := r.URL.Query().Get("game_id")
 	gameID, err := strconv.Atoi(gameIDStr)
@@ -142,8 +183,13 @@ func GetNuzlockeTimelineHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "game_id is required and must be a positive integer", http.StatusBadRequest)
 		return
 	}
+	version := strings.TrimSpace(r.URL.Query().Get("version"))
+	if version == "" {
+		http.Error(w, "version is required — see GET /api/nuzlocke/versions", http.StatusBadRequest)
+		return
+	}
 
-	timeline, err := loadTimelineForGame(context.Background(), gameID)
+	timeline, err := loadTimelineForGame(context.Background(), gameID, version)
 	if err != nil {
 		log.Printf("GetNuzlockeTimeline error: %v", err)
 		http.Error(w, "Failed to fetch timeline", http.StatusInternalServerError)
@@ -164,12 +210,12 @@ func scanRun(row interface {
 	Scan(dest ...any) error
 }) (models.NuzlockeRun, error) {
 	var run models.NuzlockeRun
-	err := row.Scan(&run.ID, &run.UserID, &run.GameID, &run.GameTitle, &run.DupesClause, &run.BattleStyle,
+	err := row.Scan(&run.ID, &run.UserID, &run.GameID, &run.Version, &run.GameTitle, &run.DupesClause, &run.BattleStyle,
 		&run.NicknamesRequired, &run.Status, &run.StartedAt, &run.EndedAt, &run.CreatedAt, &run.UpdatedAt)
 	return run, err
 }
 
-const runSelectColumns = `r.id, r.user_id, r.game_id, g.title, r.dupes_clause, r.battle_style, r.nicknames_required, r.status, r.started_at, r.ended_at, r.created_at, r.updated_at`
+const runSelectColumns = `r.id, r.user_id, r.game_id, r.version, g.title, r.dupes_clause, r.battle_style, r.nicknames_required, r.status, r.started_at, r.ended_at, r.created_at, r.updated_at`
 
 // GetRunsHandler lists every run owned by the caller.
 func GetRunsHandler(w http.ResponseWriter, r *http.Request) {
@@ -209,6 +255,7 @@ func CreateRunHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		GameID            int    `json:"game_id"`
+		Version           string `json:"version"`
 		DupesClause       *bool  `json:"dupes_clause"`
 		BattleStyle       string `json:"battle_style"`
 		NicknamesRequired *bool  `json:"nicknames_required"`
@@ -219,6 +266,11 @@ func CreateRunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.GameID <= 0 {
 		http.Error(w, "game_id is required", http.StatusBadRequest)
+		return
+	}
+	req.Version = strings.TrimSpace(req.Version)
+	if req.Version == "" {
+		http.Error(w, "version is required — see GET /api/nuzlocke/versions", http.StatusBadRequest)
 		return
 	}
 	if req.BattleStyle == "" {
@@ -239,22 +291,25 @@ func CreateRunHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 
+	// Validated against (game, version), not the game alone: Platinum being
+	// seeded says nothing about whether Diamond is.
 	var hasTimeline bool
 	if err := database.DB.QueryRow(ctx,
-		`SELECT EXISTS(SELECT 1 FROM nuzlocke_timeline_entries WHERE game_id = $1)`, req.GameID).Scan(&hasTimeline); err != nil {
+		`SELECT EXISTS(SELECT 1 FROM nuzlocke_timeline_entries WHERE game_id = $1 AND version = $2)`,
+		req.GameID, req.Version).Scan(&hasTimeline); err != nil {
 		http.Error(w, "Failed to validate game", http.StatusInternalServerError)
 		return
 	}
 	if !hasTimeline {
-		http.Error(w, "No Nuzlocke timeline is seeded for this game", http.StatusBadRequest)
+		http.Error(w, "No Nuzlocke timeline is seeded for this game version", http.StatusBadRequest)
 		return
 	}
 
 	var runID string
 	if err := database.DB.QueryRow(ctx,
-		`INSERT INTO nuzlocke_runs (user_id, game_id, dupes_clause, battle_style, nicknames_required)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-		userID, req.GameID, dupesClause, req.BattleStyle, nicknamesRequired).Scan(&runID); err != nil {
+		`INSERT INTO nuzlocke_runs (user_id, game_id, version, dupes_clause, battle_style, nicknames_required)
+		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+		userID, req.GameID, req.Version, dupesClause, req.BattleStyle, nicknamesRequired).Scan(&runID); err != nil {
 		log.Printf("CreateRun error: %v", err)
 		http.Error(w, "Failed to create run", http.StatusInternalServerError)
 		return
@@ -276,10 +331,10 @@ func CreateRunHandler(w http.ResponseWriter, r *http.Request) {
 // to (id, user_id). Every error — no row, malformed uuid, or a real DB error
 // — is reported to the caller as "not found": a request for another user's
 // run must not distinguish "doesn't exist" from "not yours".
-func loadOwnedRun(ctx context.Context, runID, userID string) (gameID *int, dupesClause, nicknamesRequired bool, err error) {
+func loadOwnedRun(ctx context.Context, runID, userID string) (gameID *int, version string, dupesClause, nicknamesRequired bool, err error) {
 	err = database.DB.QueryRow(ctx,
-		`SELECT game_id, dupes_clause, nicknames_required FROM nuzlocke_runs WHERE id = $1 AND user_id = $2`,
-		runID, userID).Scan(&gameID, &dupesClause, &nicknamesRequired)
+		`SELECT game_id, version, dupes_clause, nicknames_required FROM nuzlocke_runs WHERE id = $1 AND user_id = $2`,
+		runID, userID).Scan(&gameID, &version, &dupesClause, &nicknamesRequired)
 	return
 }
 
@@ -302,7 +357,7 @@ func GetRunHandler(w http.ResponseWriter, r *http.Request) {
 	detail := models.NuzlockeRunDetail{NuzlockeRun: run, Timeline: []models.NuzlockeTimelineEntry{}, Encounters: []models.NuzlockeEncounterLog{}, BossProgress: []models.NuzlockeBossProgress{}}
 
 	if run.GameID != nil {
-		timeline, err := loadTimelineForGame(ctx, *run.GameID)
+		timeline, err := loadTimelineForGame(ctx, *run.GameID, run.Version)
 		if err != nil {
 			log.Printf("GetRun timeline error: %v", err)
 			http.Error(w, "Failed to load timeline", http.StatusInternalServerError)
@@ -471,7 +526,7 @@ func PutRunEncounterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gameID, dupesClause, nicknamesRequired, err := loadOwnedRun(ctx, runID, userID)
+	gameID, version, dupesClause, nicknamesRequired, err := loadOwnedRun(ctx, runID, userID)
 	if err != nil {
 		http.Error(w, "Run not found", http.StatusNotFound)
 		return
@@ -496,8 +551,9 @@ func PutRunEncounterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var timelineEntryID int
 	if err := database.DB.QueryRow(ctx,
-		`SELECT id FROM nuzlocke_timeline_entries WHERE game_id = $1 AND slug = $2 AND kind = 'location'`,
-		*gameID, locationSlug).Scan(&timelineEntryID); err != nil {
+		`SELECT id FROM nuzlocke_timeline_entries
+		 WHERE game_id = $1 AND version = $2 AND slug = $3 AND kind = 'location'`,
+		*gameID, version, locationSlug).Scan(&timelineEntryID); err != nil {
 		http.Error(w, "Location not found", http.StatusNotFound)
 		return
 	}
@@ -601,7 +657,7 @@ func PatchPartyMemberHandler(w http.ResponseWriter, r *http.Request) {
 	// Ownership is verified through the run, then the update itself is
 	// additionally scoped by run_id so the write can never touch a row
 	// outside that run — same two-step pattern LogPhaseHandler uses.
-	if _, _, _, err := loadOwnedRun(ctx, runID, userID); err != nil {
+	if _, _, _, _, err := loadOwnedRun(ctx, runID, userID); err != nil {
 		http.Error(w, "Run not found", http.StatusNotFound)
 		return
 	}
@@ -653,7 +709,7 @@ func PutBossProgressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gameID, _, _, err := loadOwnedRun(ctx, runID, userID)
+	gameID, version, _, _, err := loadOwnedRun(ctx, runID, userID)
 	if err != nil {
 		http.Error(w, "Run not found", http.StatusNotFound)
 		return
@@ -665,8 +721,9 @@ func PutBossProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 	var timelineEntryID int
 	if err := database.DB.QueryRow(ctx,
-		`SELECT id FROM nuzlocke_timeline_entries WHERE game_id = $1 AND slug = $2 AND kind = 'boss'`,
-		*gameID, bossSlug).Scan(&timelineEntryID); err != nil {
+		`SELECT id FROM nuzlocke_timeline_entries
+		 WHERE game_id = $1 AND version = $2 AND slug = $3 AND kind = 'boss'`,
+		*gameID, version, bossSlug).Scan(&timelineEntryID); err != nil {
 		http.Error(w, "Boss not found", http.StatusNotFound)
 		return
 	}
