@@ -44,6 +44,8 @@ private let huntListJSON = """
     "base_odds": 4096,
     "has_shiny_charm": true,
     "formula_type": "masuda",
+    "sprite_url": "https://img.example/25.png",
+    "nickname": "Sparky",
     "phases": [
       {
         "id": "1c9f0b2a-3d4e-4f50-a617-283940516273",
@@ -84,6 +86,31 @@ private let huntListJSON = """
   }
 ]
 """
+
+/// `sprite_url` and `nickname` are newer than the shipped app, so the second hunt in the
+/// fixture omits both — a server that predates them must still decode, not blow up the list.
+@Test func huntSpriteAndNicknameTolerateAnOlderServer() throws {
+    let hunts = try apiDecoder().decode([HuntDetail].self, from: Data(huntListJSON.utf8))
+
+    #expect(hunts[0].spriteURL == "https://img.example/25.png")
+    #expect(hunts[0].nickname == "Sparky")
+
+    #expect(hunts[1].spriteURL == nil)
+    #expect(hunts[1].nickname == nil)
+}
+
+/// An omitted nickname must not reach the wire as `"nickname": null` — the update handler
+/// treats a nil pointer as "leave it alone", so a stray null would be indistinguishable from
+/// a deliberate one.
+@Test func createHuntBodyOmitsAnAbsentNickname() throws {
+    let encoder = JSONEncoder()
+    let without = try encoder.encode(CreateHuntRequest(pokemonID: 25, customMethodName: "Radar"))
+    #expect(!String(decoding: without, as: UTF8.self).contains("nickname"))
+
+    let with = try encoder.encode(
+        CreateHuntRequest(pokemonID: 25, customMethodName: "Radar", nickname: "Sparky"))
+    #expect(String(decoding: with, as: UTF8.self).contains("\"nickname\":\"Sparky\""))
+}
 
 /// The killer case: a custom-method hunt has no game and no method row. If `gameID` or
 /// `huntMethodID` were non-optional, every such hunt would fail to decode.

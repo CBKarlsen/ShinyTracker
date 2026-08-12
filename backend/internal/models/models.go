@@ -58,8 +58,12 @@ type UserHunt struct {
 	Status          string          `json:"status"`
 	AcquisitionType string          `json:"acquisition_type"`
 	HuntParameters  json.RawMessage `json:"hunt_parameters"`
-	CreatedAt       time.Time       `json:"created_at"`
-	UpdatedAt       time.Time       `json:"updated_at"`
+	// Nickname is an optional, user-supplied name for the catch. Nullable:
+	// absent stays absent (nil), and the column never holds "" — PATCHing an
+	// empty string clears it back to NULL.
+	Nickname  *string   `json:"nickname"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type HuntPhase struct {
@@ -166,6 +170,7 @@ type NuzlockeRunDetail struct {
 type UserHuntDetail struct {
 	UserHunt
 	PokemonName      string      `json:"pokemon_name"`
+	SpriteURL        string      `json:"sprite_url"`
 	MethodName       *string     `json:"method_name"`
 	CustomMethodName *string     `json:"custom_method_name"`
 	GameTitle        *string     `json:"game_title"`

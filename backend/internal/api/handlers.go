@@ -218,7 +218,10 @@ func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("q")
-	query := "SELECT id, name, sprite_url, types, is_legendary, is_mythical FROM pokemon"
+	// COALESCE because sprite_url is nullable and the row scans into a plain
+	// string: a species seeded without a sprite would otherwise drop out of the
+	// list mid-scan rather than come back without a picture.
+	query := "SELECT id, name, COALESCE(sprite_url, ''), types, is_legendary, is_mythical FROM pokemon"
 	args := []interface{}{}
 
 	limit := r.URL.Query().Get("limit")

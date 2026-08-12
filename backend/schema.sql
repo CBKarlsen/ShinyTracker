@@ -245,6 +245,10 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     -- database actually enforces.
     hunt_method_id INTEGER REFERENCES hunt_methods(id) ON DELETE SET NULL,
     custom_method_name TEXT,
+    -- Optional, user-supplied name for the catch (migrations/015). NULL means
+    -- "no nickname set" — the API layer never coerces this to "": PATCHing an
+    -- empty string is how a nickname is cleared, and the UPDATE folds it to NULL.
+    nickname TEXT,
     acquisition_type VARCHAR NOT NULL DEFAULT 'HUNTED' CHECK (acquisition_type IN ('HUNTED', 'EVOLVED', 'MANUAL_OVERRIDE', 'TRADED', 'PHASE')),
     encounter_count INTEGER NOT NULL DEFAULT 0,
     phase_count INTEGER NOT NULL DEFAULT 0,

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"unicode/utf8"
 
 	"github.com/casper/shinytracker/internal/calc"
 	"github.com/casper/shinytracker/internal/database"
@@ -14,6 +15,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// maxNicknameLength bounds the user_hunts.nickname free-text field at the
+// write boundary, same reasoning as custom_method_name (also unbounded TEXT
+// in the DB): plain user input, no server-side use beyond display.
+//
+// Counted in runes, not bytes: this is a character limit shown to a user, and
+// len() would silently cut a Japanese or emoji nickname off at a third of it.
+const maxNicknameLength = 100
 
 // loadPhasesForHunts fetches all phases for the given hunt IDs and groups them by hunt ID.
 func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]models.HuntPhase, error) {
@@ -53,9 +62,9 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 // when these were two copy-pasted queries they were free to drift apart silently.
 const huntDetailQuery = `
 	SELECT h.id, h.user_id, h.pokemon_id, h.game_id, h.hunt_method_id, h.encounter_count, h.phase_count, h.status, h.acquisition_type, h.hunt_parameters, h.created_at, h.updated_at,
-	       p.name AS pokemon_name, e.method_name, h.custom_method_name, g.title AS game_title,
+	       p.name AS pokemon_name, COALESCE(p.sprite_url, '') AS sprite_url, e.method_name, h.custom_method_name, g.title AS game_title,
 	       h.total_time_seconds, e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, ug.has_shiny_charm,
-	       COALESCE(e.formula_type, 'static') AS formula_type
+	       COALESCE(e.formula_type, 'static') AS formula_type, h.nickname
 	  FROM user_hunts h
 	  JOIN pokemon p ON h.pokemon_id = p.id
 	  LEFT JOIN hunt_methods e ON h.hunt_method_id = e.id
@@ -73,8 +82,8 @@ type rowScanner interface {
 func scanHuntDetail(row rowScanner, h *models.UserHuntDetail) error {
 	return row.Scan(
 		&h.ID, &h.UserID, &h.PokemonID, &h.GameID, &h.HuntMethodID, &h.EncounterCount, &h.PhaseCount, &h.Status, &h.AcquisitionType, &h.HuntParameters, &h.CreatedAt, &h.UpdatedAt,
-		&h.PokemonName, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
-		&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType,
+		&h.PokemonName, &h.SpriteURL, &h.MethodName, &h.CustomMethodName, &h.GameTitle,
+		&h.TotalTimeSeconds, &h.BaseRolls, &h.CharmRolls, &h.AvgTimeSeconds, &h.BaseOdds, &h.HasShinyCharm, &h.FormulaType, &h.Nickname,
 	)
 }
 
@@ -164,6 +173,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		MethodName       string          `json:"method_name"`
 		CustomMethodName string          `json:"custom_method_name"`
 		HuntParameters   json.RawMessage `json:"hunt_parameters"`
+		Nickname         *string         `json:"nickname"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -176,6 +186,10 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	if (hasCurated && hasCustom) || (hasCurated && hasSynthetic) || (hasCustom && hasSynthetic) {
 		http.Error(w, "Provide hunt_method_id or custom_method_name, not both", http.StatusBadRequest)
+		return
+	}
+	if req.Nickname != nil && utf8.RuneCountInString(*req.Nickname) > maxNicknameLength {
+		http.Error(w, "nickname is too long", http.StatusBadRequest)
 		return
 	}
 
@@ -221,11 +235,11 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	var hunt models.UserHunt
 	err := database.DB.QueryRow(context.Background(),
-		`INSERT INTO user_hunts (user_id, pokemon_id, game_id, hunt_method_id, custom_method_name, acquisition_type, hunt_parameters)
-		 VALUES ($1, $2, $3, $4, $5, 'HUNTED', $6)
-		 RETURNING id, user_id, pokemon_id, game_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		userID, pokemonID, gameID, huntMethodID, customMethodName, huntParameters).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		`INSERT INTO user_hunts (user_id, pokemon_id, game_id, hunt_method_id, custom_method_name, acquisition_type, hunt_parameters, nickname)
+		 VALUES ($1, $2, $3, $4, $5, 'HUNTED', $6, NULLIF($7, ''))
+		 RETURNING id, user_id, pokemon_id, game_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at, nickname`,
+		userID, pokemonID, gameID, huntMethodID, customMethodName, huntParameters, req.Nickname).
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.GameID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt, &hunt.Nickname)
 
 	if err != nil {
 		log.Printf("CreateHunt error: %v", err)
@@ -248,6 +262,12 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		// Pointer so "absent" (pre-D1 web frontend, keep deriving server-side)
 		// is distinguishable from "zero". See calc.DecideTotalTime.
 		TotalTimeSeconds *int `json:"total_time_seconds"`
+		// Pointer so an omitted nickname leaves the stored value untouched,
+		// same optional-field convention as HuntParameters below. JSON null
+		// decodes to nil too and so also means "leave it alone"; sending ""
+		// is the way to clear one, which the UPDATE folds back to NULL so the
+		// column never holds an empty string.
+		Nickname *string `json:"nickname"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -264,6 +284,10 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.EncounterCount < 0 {
 		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
+		return
+	}
+	if req.Nickname != nil && utf8.RuneCountInString(*req.Nickname) > maxNicknameLength {
+		http.Error(w, "nickname is too long", http.StatusBadRequest)
 		return
 	}
 
@@ -298,11 +322,11 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	var hunt models.UserHunt
 	err = database.DB.QueryRow(context.Background(),
 		`UPDATE user_hunts
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5
-		 WHERE id = $6 AND user_id = $7
-		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at`,
-		req.EncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, huntID, userID).
-		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt)
+		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
+		 WHERE id = $7 AND user_id = $8
+		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at, nickname`,
+		req.EncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, req.Nickname, huntID, userID).
+		Scan(&hunt.ID, &hunt.UserID, &hunt.PokemonID, &hunt.HuntMethodID, &hunt.EncounterCount, &hunt.PhaseCount, &hunt.Status, &hunt.AcquisitionType, &hunt.HuntParameters, &hunt.CreatedAt, &hunt.UpdatedAt, &hunt.Nickname)
 
 	if err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)

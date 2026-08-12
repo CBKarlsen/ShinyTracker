@@ -22,6 +22,10 @@ export interface Hunt {
 	updated_at: string;
 	pokemon_id: number;
 	pokemon_name: string;
+	/** The species' non-shiny sprite. Optional: older servers don't send it. */
+	sprite_url?: string;
+	/** Optional user-given name for the catch; null when unset, never "". */
+	nickname?: string | null;
 	method_name: string | null;
 	custom_method_name: string | null;
 	game_title: string | null;

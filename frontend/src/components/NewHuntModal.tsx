@@ -67,7 +67,7 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 			signal: controller.signal,
 		})
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
-			.then((hunts: Array<{ pokemon_id: number; pokemon_name: string; updated_at?: string; created_at?: string }>) => {
+			.then((hunts: Array<{ pokemon_id: number; pokemon_name: string; sprite_url?: string; updated_at?: string; created_at?: string }>) => {
 				const seen = new Set<number>();
 				const recent: Pokemon[] = [];
 				// Sort by most-recent first (updated_at preferred, fallback created_at).
@@ -79,8 +79,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 				for (const h of sorted) {
 					if (seen.has(h.pokemon_id)) continue;
 					seen.add(h.pokemon_id);
-					// /api/hunts has no sprite_url on the row; PokemonSearchStep falls back.
-					recent.push({ id: h.pokemon_id, name: h.pokemon_name, sprite_url: "" });
+					// /api/hunts now carries the species' sprite, so the recent list shows
+					// one instead of leaving PokemonSearchStep to fall back to a blank.
+					recent.push({
+						id: h.pokemon_id,
+						name: h.pokemon_name,
+						sprite_url: h.sprite_url ?? "",
+					});
 					if (recent.length >= 6) break;
 				}
 				setRecentPokemon(recent);

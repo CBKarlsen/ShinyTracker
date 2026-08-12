@@ -379,10 +379,21 @@ public struct HuntDetail: Decodable, Sendable, Equatable, Identifiable {
     public let baseOdds: Int?
     public let hasShinyCharm: Bool?
     public let formulaType: String?
+    /// `pokemon.sprite_url` — the **non-shiny** sprite, `""` when the species has none. There is
+    /// no shiny sprite in the database, so a shiny hunt's own sprite still has to be derived
+    /// client-side; see ``SpriteTile``.
+    ///
+    /// Optional where ``Pokemon/spriteURL`` is not, on purpose: this field is newer than the
+    /// shipped app, and the app updates on its own schedule. Requiring it would turn an older
+    /// server into a hunts list that fails to decode at all rather than one without sprites.
+    public let spriteURL: String?
+    /// Optional name the user gave this catch. Absent stays absent — the server never coerces
+    /// it to `""`, and omitting it from a PATCH leaves the stored value untouched.
+    public let nickname: String?
     public let phases: [HuntPhase]
 
     enum CodingKeys: String, CodingKey {
-        case id, status, phases
+        case id, status, phases, nickname
         case userID = "user_id"
         case pokemonID = "pokemon_id"
         case gameID = "game_id"
@@ -404,6 +415,7 @@ public struct HuntDetail: Decodable, Sendable, Equatable, Identifiable {
         case baseOdds = "base_odds"
         case hasShinyCharm = "has_shiny_charm"
         case formulaType = "formula_type"
+        case spriteURL = "sprite_url"
     }
 }
 
@@ -422,19 +434,24 @@ public struct CreateHuntRequest: Codable, Sendable, Equatable {
     public let huntMethodID: Int?
     public let customMethodName: String?
     public let huntParameters: [String: ParamValue]?
+    /// Optional name for the catch. The server rejects anything over 100 characters with a 400,
+    /// so a field bound to this wants the same cap on its input.
+    public let nickname: String?
 
     public init(
         pokemonID: Int,
         gameID: Int? = nil,
         huntMethodID: Int? = nil,
         customMethodName: String? = nil,
-        huntParameters: [String: ParamValue]? = nil
+        huntParameters: [String: ParamValue]? = nil,
+        nickname: String? = nil
     ) {
         self.pokemonID = pokemonID
         self.gameID = gameID
         self.huntMethodID = huntMethodID
         self.customMethodName = customMethodName
         self.huntParameters = huntParameters
+        self.nickname = nickname
     }
 
     enum CodingKeys: String, CodingKey {
@@ -443,6 +460,7 @@ public struct CreateHuntRequest: Codable, Sendable, Equatable {
         case huntMethodID = "hunt_method_id"
         case customMethodName = "custom_method_name"
         case huntParameters = "hunt_parameters"
+        case nickname
     }
 }
 

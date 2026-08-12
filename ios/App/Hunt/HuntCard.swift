@@ -287,10 +287,11 @@ struct SpriteTile: View {
     let pokemonID: Int
     let size: CGFloat
 
-    // ponytail: the prototype's SPRITE_BASE, unchanged. `GET /api/hunts` returns no sprite URL
-    // for the hunted species (`HuntDetail` has pokemon_id and pokemon_name only), so the URL is
-    // built client-side. IOS_HANDOVER.md wants this mirrored or bundled before ship — one
-    // constant to change when it is.
+    // ponytail: the prototype's SPRITE_BASE, unchanged. `GET /api/hunts` now returns
+    // `sprite_url`, but that column is the *non-shiny* sprite and this is a shiny tracker, so
+    // the shiny URL is still built client-side. Dropping this constant needs a shiny sprite in
+    // the database (`services/pokeapi.go` seeds `front_default` only), not just the field.
+    // IOS_HANDOVER.md wants the host mirrored or bundled before ship either way.
     private static let base =
         "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/"
 
