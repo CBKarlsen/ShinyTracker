@@ -236,7 +236,7 @@ struct NuzlockeScreen: View {
     /// would train you to stop reading it.
     @ViewBuilder
     private var coverageCard: some View {
-        let gaps = model.coverageGaps
+        let gaps = model.coverage
         if !gaps.isEmpty {
             VStack(alignment: .leading, spacing: 9) {
                 Text("Coverage warning")
@@ -366,7 +366,7 @@ struct NuzlockeScreen: View {
     /// One route. Unlogged and current is the call to action; logged shows what came of it.
     private func locationRow(_ entry: NuzlockeTimelineEntry) -> some View {
         let logged = model.log(at: entry.slug)
-        let isCurrent = model.currentLocationSlug == entry.slug
+        let isCurrent = model.currentSlug == entry.slug
         return Button { loggingAt = entry } label: {
             HStack(spacing: 12) {
                 if let logged, let option = model.option(for: logged) {

@@ -27,6 +27,21 @@ final class NuzlockeModel {
     /// read is a membership test and every write flips one slug.
     private(set) var beaten: Set<String> = []
 
+    // MARK: Derived row state
+    //
+    // Built once per data change by `rebuild()` rather than computed per access. These were
+    // computed properties, and `NuzlockeScreen` read `currentLocationSlug` inside the row builder
+    // — so every redraw scanned the whole timeline, and for each entry scanned the encounters,
+    // once for each of 62 rows. That was invisible at the 13 stops the prototype seeded and
+    // became the dominant cost the day the timeline reached 62.
+
+    private(set) var logsBySlug: [String: NuzlockeEncounterLog] = [:]
+    /// `location slug -> pokemon id -> pool entry`, for the sprite and name of a logged catch.
+    private(set) var optionsBySlug: [String: [Int: NuzlockeEncounterOption]] = [:]
+    /// "you're here" — the first location with nothing logged against it.
+    private(set) var currentSlug: String?
+    private(set) var coverage: [CoverageGap] = []
+
     /// A failed write, surfaced after the optimistic change has been rolled back.
     private(set) var syncError: String?
     /// True while the open run is being swapped for another one.
@@ -103,6 +118,7 @@ final class NuzlockeModel {
         timeline = detail.timeline.sorted { $0.sortOrder < $1.sortOrder }
         encounters = detail.encounters
         beaten = Set(detail.bossProgress.filter(\.beaten).map(\.bossSlug))
+        rebuild()
     }
 
     private func clearOpenRun() {
@@ -110,6 +126,7 @@ final class NuzlockeModel {
         timeline = []
         encounters = []
         beaten = []
+        rebuild()
     }
 
     /// Loads the species table once, for the coverage matchup only.
@@ -130,6 +147,7 @@ final class NuzlockeModel {
                 uniquingKeysWith: { _, second in second }
             )
             loadedSpeciesTypes = true
+            rebuild()
         } catch {
             // Deliberately swallowed — see above.
         }
@@ -137,9 +155,25 @@ final class NuzlockeModel {
 
     // MARK: Reading the timeline
 
-    func log(at locationSlug: String) -> NuzlockeEncounterLog? {
-        encounters.first { $0.locationSlug == locationSlug }
+    /// Recomputes every derived value. Called from each of the four seams that can change what it
+    /// depends on — see the call sites. Cheap enough to run whole: the timeline is ~62 entries.
+    private func rebuild() {
+        // Not `uniqueKeysWithValues`: it traps on a duplicate key, and the server's one-row-per-
+        // (run, location) guarantee is not worth a crash to re-verify.
+        logsBySlug = Dictionary(
+            encounters.map { ($0.locationSlug, $0) }, uniquingKeysWith: { _, second in second })
+        optionsBySlug = Dictionary(
+            timeline.map { entry in
+                (entry.slug,
+                 Dictionary((entry.encounters ?? []).map { ($0.pokemonID, $0) },
+                            uniquingKeysWith: { _, second in second }))
+            },
+            uniquingKeysWith: { _, second in second })
+        currentSlug = timeline.first { !$0.isBoss && logsBySlug[$0.slug] == nil }?.slug
+        coverage = computeCoverage()
     }
+
+    func log(at locationSlug: String) -> NuzlockeEncounterLog? { logsBySlug[locationSlug] }
 
     func isBeaten(_ bossSlug: String) -> Bool { beaten.contains(bossSlug) }
 
@@ -152,13 +186,6 @@ final class NuzlockeModel {
     /// "CAP 33" — the next checkpoint's cap. Every seeded boss has one, but the column is
     /// nullable, so this can be nil even mid-run.
     var levelCap: Int? { nextCheckpoint?.levelCap }
-
-    /// "you're here": the first location with nothing logged against it. Locations are logged in
-    /// route order in practice, but this deliberately finds the first *gap* rather than the
-    /// furthest point, so skipping one and coming back still points at the one you owe.
-    var currentLocationSlug: String? {
-        timeline.first { !$0.isBoss && log(at: $0.slug) == nil }?.slug
-    }
 
     /// Alive and in the party: caught, not boxed. The API imposes no party size — six is a game
     /// rule the server does not model — so this is however many you have.
@@ -191,10 +218,7 @@ final class NuzlockeModel {
     /// `GET /api/runs/{id}` alone, and absent from every write response).
     func option(for log: NuzlockeEncounterLog) -> NuzlockeEncounterOption? {
         guard let pokemonID = log.pokemonID else { return nil }
-        return timeline
-            .first { $0.slug == log.locationSlug }?
-            .encounters?
-            .first { $0.pokemonID == pokemonID }
+        return optionsBySlug[log.locationSlug]?[pokemonID]
     }
 
     /// Display name for a logged catch, from whichever source has it.
@@ -245,7 +269,7 @@ final class NuzlockeModel {
     /// empty party, or any living member whose types have not loaded. That last guard matters —
     /// an unknown member resists nothing as far as ``resists(_:_:)`` can tell, so without it a
     /// half-loaded species table would invent warnings about a party that covers itself fine.
-    var coverageGaps: [CoverageGap] {
+    private func computeCoverage() -> [CoverageGap] {
         guard let boss = nextCheckpoint, let squad = boss.squad else { return [] }
         let alive = party
         guard !alive.isEmpty else { return [] }
@@ -338,6 +362,7 @@ final class NuzlockeModel {
         if isBeaten { beaten.insert(bossSlug) } else { beaten.remove(bossSlug) }
         syncError = nil
         Haptics.impact(.light)
+        rebuild()
         do {
             try await client.setBossBeaten(
                 runID: run.id, bossSlug: bossSlug, BossProgressRequest(beaten: isBeaten))
@@ -348,6 +373,7 @@ final class NuzlockeModel {
             // counter and the game library follow: a rollback touches only the row that failed.
             if isBeaten { beaten.remove(bossSlug) } else { beaten.insert(bossSlug) }
             syncError = "Couldn't save that checkpoint. \(userFacingMessage(for: error))"
+            rebuild()
         }
     }
 
@@ -378,6 +404,7 @@ final class NuzlockeModel {
         } else {
             encounters.append(saved)
         }
+        rebuild()
     }
 }
 
