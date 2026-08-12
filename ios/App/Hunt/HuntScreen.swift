@@ -4,11 +4,17 @@ import SwiftUI
 
 /// The Hunt mode. Layout, spacing and colour come from `docs/design/hunt-prototype.dc.html`.
 ///
-/// Only the **Active** segment is built. History and Games are placeholders, as are the header's
-/// search button (it opens the Reference sheet, which is not built) and the + button.
+/// All three segments are built. The header's search button is still inert: Reference "is the
+/// search button in every header, not a tab", and that pillar is out of scope.
 struct HuntScreen: View {
     @State var model: HuntListModel
+    let library: GameLibraryModel
+    @State var newHunt: NewHuntModel
+
     @State private var segment: Segment = .active
+    @State private var newHuntOpen = false
+    /// A snapshot of the hunt whose ✦ was tapped; non-nil presents the confirm sheet.
+    @State private var founding: HuntRow?
 
     /// `tabs: [{label:'Active'}, {label:'History'}, {label:'Games'}]`.
     enum Segment: String, CaseIterable, Identifiable {
@@ -27,7 +33,65 @@ struct HuntScreen: View {
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task { await model.load() }
+        // The library is what makes the + button work at all (no owned games, no methods), and
+        // the Games tab reads the same model, so it loads with the screen rather than on demand.
+        .task { await library.load() }
+        .sheet(isPresented: $newHuntOpen) {
+            NewHuntSheet(model: newHunt) {
+                newHuntOpen = false
+                segment = .active
+                Task { await model.refresh() }
+            }
+        }
+        .sheet(item: $founding) { row in
+            FoundSheet(row: row, model: model) { founding = nil }
+        }
+        #if DEBUG
+        .task { await openPreviewRoute() }
+        #endif
     }
+
+    #if DEBUG
+    /// Walks the screen to wherever `-huntPreviewOpen` points, so every tab and every step of the
+    /// sheet can be screenshotted from `simctl` alone. Debug-only, and inert without the argument.
+    private func openPreviewRoute() async {
+        guard let route = HuntPreview.route else { return }
+
+        /// The stub transport answers after a beat; poll rather than guess a sleep.
+        func settle(until ready: @escaping () -> Bool) async {
+            for _ in 0..<40 where !ready() {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+
+        switch route {
+        case .history:
+            segment = .history
+        case .games:
+            segment = .games
+        case .found:
+            await settle { !model.rows.isEmpty }
+            founding = model.rows.first
+        case .species, .game, .method, .ready:
+            newHunt.open()
+            newHuntOpen = true
+            guard route != .species else { return }
+
+            await settle { !newHunt.results.isEmpty }
+            guard let species = newHunt.results.first else { return }
+            newHunt.pick(species: species)
+            guard route != .game else { return }
+
+            await settle { !newHunt.gameOptions.isEmpty }
+            guard let game = newHunt.gameOptions.first?.game else { return }
+            newHunt.pick(gameID: game.id)
+            guard route != .method else { return }
+
+            guard let method = newHunt.methodOptions.first else { return }
+            newHunt.pick(method: method)
+        }
+    }
+    #endif
 
     // MARK: Header
 
@@ -62,11 +126,14 @@ struct HuntScreen: View {
                         .strokeBorder(Palette.hairline.color, lineWidth: 1)
                 )
 
-            // The gold +. The new-hunt flow is out of scope, so it is inert too.
-            headerButton(symbol: "plus", label: "Start a new hunt") {}
-                .fontWeight(.bold)
-                .foregroundStyle(Palette.onAccent.color)
-                .background(Palette.hunt.color, in: .rect(cornerRadius: Radii.headerButton))
+            // The gold +.
+            headerButton(symbol: "plus", label: "Start a new hunt") {
+                newHunt.open()
+                newHuntOpen = true
+            }
+            .fontWeight(.bold)
+            .foregroundStyle(Palette.onAccent.color)
+            .background(Palette.hunt.color, in: .rect(cornerRadius: Radii.headerButton))
         }
     }
 
@@ -123,8 +190,8 @@ struct HuntScreen: View {
     private var content: some View {
         switch segment {
         case .active: activeList
-        case .history: placeholder("History", "Finished hunts land here. Not built yet.")
-        case .games: placeholder("Games", "Your library and the Shiny Charm. Not built yet.")
+        case .history: historyList
+        case .games: GamesTab(library: library)
         }
     }
 
@@ -138,7 +205,7 @@ struct HuntScreen: View {
 
         case .failed(let reason):
             centered {
-                stateBlock(
+                StateBlock(
                     symbol: "exclamationmark.triangle",
                     title: "Couldn't load your hunts",
                     body: reason
@@ -173,7 +240,47 @@ struct HuntScreen: View {
                             .padding(.top, 2)
 
                         ForEach(model.rows) { row in
-                            HuntCard(row: row, model: model, isLive: row.id == model.liveHuntID)
+                            HuntCard(row: row, model: model, isLive: row.id == model.liveHuntID) {
+                                founding = row
+                            }
+                        }
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+            .refreshable { await model.load() }
+        }
+    }
+
+    /// Completed hunts. Same fetch as the Active list, filtered the other way.
+    @ViewBuilder
+    private var historyList: some View {
+        switch model.state {
+        case .loading:
+            centered { ProgressView().tint(Palette.textMuted.color) }
+
+        case .failed(let reason):
+            centered {
+                StateBlock(
+                    symbol: "exclamationmark.triangle",
+                    title: "Couldn't load your hunts",
+                    body: reason
+                )
+            }
+
+        case .ready:
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    if model.history.isEmpty {
+                        StateBlock(
+                            symbol: "sparkles",
+                            title: "No shinies yet",
+                            body: "Hunts you mark found land here, with the count they took."
+                        )
+                        .padding(.top, 6)
+                    } else {
+                        ForEach(model.history) { row in
+                            HistoryRow(row: row)
                         }
                     }
                 }
@@ -185,7 +292,7 @@ struct HuntScreen: View {
 
     /// The owner has zero hunts, so this is the first thing they will see.
     private var emptyState: some View {
-        stateBlock(
+        StateBlock(
             symbol: "sparkles",
             title: "No active hunts",
             body: "Every shiny you've caught is in History. Start the next one whenever you're ready."
@@ -193,18 +300,97 @@ struct HuntScreen: View {
         .padding(.top, 6)
     }
 
-    private func placeholder(_ title: String, _ body: String) -> some View {
-        centered { stateBlock(symbol: "square.dashed", title: title, body: body) }
+    private func centered(@ViewBuilder content: () -> some View) -> some View {
+        ScrollView {
+            content().padding(.top, 6)
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize)
+    }
+}
+
+// MARK: - History
+
+/// `padding:11px 14px;border-radius:15px` — sprite, name, meta, then the final count over the
+/// time it took.
+struct HistoryRow: View {
+    let row: HuntRow
+
+    var body: some View {
+        HStack(spacing: 13) {
+            SpriteTile(pokemonID: row.detail.pokemonID, size: 44)
+
+            VStack(alignment: .leading, spacing: 7) {
+                Text(row.name)
+                    .font(Typography.listTitle)
+                    .foregroundStyle(Palette.textPrimary.color)
+                Text(meta)
+                    .font(Typography.stat)
+                    .foregroundStyle(Palette.textMuted.color)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 6) {
+                Text(row.count.formatted(.number))
+                    .font(Typography.rowValue)
+                    .foregroundStyle(Palette.hunt.color)
+                // `font:400 12px/1` — the quietest line on the row.
+                Text(formatElapsed(row.detail.totalTimeSeconds))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Palette.textFaint.color)
+            }
+        }
+        .padding(.vertical, 11)
+        .padding(.horizontal, 14)
+        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radii.row)
+                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            """
+            \(row.name), \(meta), \(row.count.formatted(.number)) encounters over \
+            \(formatElapsed(row.detail.totalTimeSeconds))
+            """
+        )
     }
 
-    /// `padding:52px 24px` panel with a 64pt icon tile — the prototype's empty state, reused for
-    /// the error and placeholder states because it is the same shape.
-    private func stateBlock(
+    /// `${r.game} · ${r.method} · found ${r.date}`. The nickname the prototype puts first has
+    /// nowhere to come from — hunts have no nickname column.
+    private var meta: String {
+        let found = row.detail.updatedAt.formatted(
+            .relative(presentation: .named, unitsStyle: .wide))
+        return ([row.detail.gameTitle, row.detail.customMethodName ?? row.detail.methodName]
+            .compactMap { $0 } + ["found \(found)"]).joined(separator: " · ")
+    }
+}
+
+// MARK: - Shared blocks
+
+/// `padding:52px 24px` panel with a 64pt icon tile — the prototype's empty state, reused for the
+/// error and empty states of all three tabs because it is the same shape in each.
+struct StateBlock<Accessory: View>: View {
+    let symbol: String
+    let title: String
+    /// Not named `body`: that is the `View` requirement, and a stored property would shadow it.
+    let message: String
+    @ViewBuilder var accessory: () -> Accessory
+
+    init(
         symbol: String,
         title: String,
         body: String,
-        @ViewBuilder accessory: () -> some View = { EmptyView() }
-    ) -> some View {
+        @ViewBuilder accessory: @escaping () -> Accessory = { EmptyView() }
+    ) {
+        self.symbol = symbol
+        self.title = title
+        self.message = body
+        self.accessory = accessory
+    }
+
+    var body: some View {
         VStack(spacing: 0) {
             Image(systemName: symbol)
                 .font(.system(size: 26))
@@ -223,7 +409,7 @@ struct HuntScreen: View {
                 .foregroundStyle(Palette.textPrimary.color)
                 .padding(.bottom, 10)
 
-            Text(body)
+            Text(message)
                 .font(Typography.emptyBody)
                 .lineSpacing(4)
                 .foregroundStyle(Palette.textMuted.color)
@@ -240,14 +426,6 @@ struct HuntScreen: View {
             RoundedRectangle(cornerRadius: Radii.panel)
                 .strokeBorder(Palette.hairline.color, lineWidth: 1)
         )
-    }
-
-    private func centered(@ViewBuilder content: () -> some View) -> some View {
-        ScrollView {
-            content().padding(.top, 6)
-        }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
     }
 }
 

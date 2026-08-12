@@ -68,6 +68,17 @@ struct DesignTokensTests {
         #expect(Palette.hunt.alpha(0x55) == Palette.hunt.color.opacity(85.0 / 255))
     }
 
+    @Test("Sheet surfaces match the prototype")
+    func sheetSurfaces() {
+        // Every `sc-if`-gated sheet in the prototype opens with these literals.
+        #expect(Palette.sheet.hex == 0x141419)
+        #expect(Palette.field.hex == 0x0D0D12)
+        #expect(Palette.detailPanel.hex == 0x0F0F15)
+        #expect(Palette.confirmCard.hex == 0x15131A)
+        // `abandonStyle` — the only red in the file, and only once armed.
+        #expect(Palette.danger.hex == 0xFF7373)
+    }
+
     @Test("Card radii match the prototype")
     func radii() {
         #expect(Radii.card == 20)
@@ -77,5 +88,11 @@ struct DesignTokensTests {
         // sprite() mirrors `Math.round(size / 4)` — 62 -> 16 (15.5 rounds up), 44 -> 11.
         #expect(Radii.sprite(62) == 16)
         #expect(Radii.sprite(44) == 11)
+
+        // `border-radius:26px 26px 0 0` on the sheet, 16 on the cards it holds, 15 on rows.
+        #expect(Radii.sheet == 26)
+        #expect(Radii.listCard == 16)
+        #expect(Radii.row == 15)
+        #expect(Radii.tag == 8)
     }
 }

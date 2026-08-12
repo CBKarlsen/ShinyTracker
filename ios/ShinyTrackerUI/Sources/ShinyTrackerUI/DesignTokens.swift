@@ -100,6 +100,16 @@ public enum Palette {
         value >= 90 ? team : value >= 60 ? hunt : statLow
     }
 
+    // --- sheets --- (the sheet background itself is ``sheet``, above)
+    /// The search field inside a sheet: `background:#0d0d12`.
+    public static let field = Swatch(0x0D0D12)
+    /// The key/value panel on the Ready and confirm sheets: `background:#0f0f15`.
+    public static let detailPanel = Swatch(0x0F0F15)
+    /// The gold-glowing summary card on the Ready step: `background:#15131a`.
+    public static let confirmCard = Swatch(0x15131A)
+    /// The armed "this deletes the hunt" state: `color:#ff7373`.
+    public static let danger = Swatch(0xFF7373)
+
     // --- sprite tile ---
     // `radial-gradient(circle at 50% 42%,#23232f 0%,#14141c 72%)` — the layer behind every
     // sprite, so a row never renders as an empty hole while the image loads or 404s.
@@ -131,8 +141,16 @@ public enum Radii {
     public static let segment: CGFloat = 12
     /// Selected segment: `border-radius:9px`.
     public static let segmentItem: CGFloat = 9
-    /// Timer badge: `border-radius:11px`.
+    /// Timer badge, and a sheet's close button: `border-radius:11px`.
     public static let badge: CGFloat = 11
+    /// Bottom sheet: `border-radius:26px 26px 0 0`.
+    public static let sheet: CGFloat = 26
+    /// Game / method cards and the key-value panel inside a sheet: `border-radius:16px`.
+    public static let listCard: CGFloat = 16
+    /// Search results, history rows, secondary sheet buttons: `border-radius:15px`.
+    public static let row: CGFloat = 15
+    /// The Shiny Charm tag on a game row: `border-radius:8px`.
+    public static let tag: CGFloat = 8
     // No `bar` radius token: the progress bar is drawn with `Capsule()`, which
     // self-rounds. The prototype's `border-radius:3px` on a 6px-tall bar is the
     // same shape, so a token would only be a second way to say it.
@@ -141,8 +159,6 @@ public enum Radii {
     public static let tile: CGFloat = 14
     /// A block inside the species sheet: `border-radius:16px`.
     public static let block: CGFloat = 16
-    /// The species sheet's top corners: `border-radius:26px 26px 0 0`.
-    public static let sheet: CGFloat = 26
     /// A type chip: `border-radius:7px`.
     public static let typeChip: CGFloat = 7
     /// Tab-bar pill: `border-radius:19px`.
@@ -216,6 +232,23 @@ public enum Typography {
     public static let primaryButton = Font.system(size: 18, weight: .semibold)
     /// `font:600 15px/1` — the ×N chip.
     public static let chip = Font.system(size: 15, weight: .semibold)
+
+    /// `font:700 24px/1;letter-spacing:-.03em` — the species on the Ready card, and "Found X?"
+    /// on the confirm sheet. The two are the same type at the same size in the prototype.
+    public static let sheetHeadline = Font.system(size: 24, weight: .bold)
+    public static let sheetHeadlineTracking: CGFloat = -0.03 * 24
+
+    /// `font:600 17px/1` — a row's headline inside a sheet or the History list: species,
+    /// game title, method name.
+    public static let listTitle = Font.system(size: 17, weight: .semibold)
+    /// `font:600 17px/1;font-variant-numeric:tabular-nums` — the gold odds on a method card.
+    public static let oddsValue = Font.system(size: 17, weight: .semibold).monospacedDigit()
+    /// `font:400 15px/1` — the left-hand label of a key/value row.
+    public static let rowLabel = Font.system(size: 15, weight: .regular)
+    /// `font:600 15px/1;font-variant-numeric:tabular-nums` — its right-hand value.
+    public static let rowValue = Font.system(size: 15, weight: .semibold).monospacedDigit()
+    /// `font:600 13px/1` — the Shiny Charm tag on a game row.
+    public static let tag = Font.system(size: 13, weight: .semibold)
 }
 
 // MARK: - Metrics

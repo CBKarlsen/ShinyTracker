@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>
+body{margin:0;background:#0e0e12;font-family:-apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif}
+a{color:#7b9bff;text-decoration:none}a:hover{color:#a8bcff}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.07);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.dv-tid{font:600 10px -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;padding:3px 7px;background:#f5c661;color:#060608;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 15px/1.2 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec}
+.dv-sub{font:400 13px/1.5 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin:0 0 26px;max-width:70ch}
+.dv-rowhd{font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#44444e;margin:34px 0 16px;display:flex;align-items:center;gap:12px}
+.dv-rowhd::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.07)}
+.dv-opts{display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;padding:3px 7px;background:rgba(255,255,255,.09);color:#f4f2ec;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 13px/1.3 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#8b8a95}
+.dv-opt:target .dv-oid{background:#7b9bff;color:#060608}
+.dv-next{margin:28px 0 0;font:12px/1.6 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78}
+.ph{width:390px;height:844px;background:#060608;border-radius:46px;position:relative;overflow:hidden;border:1px solid #25252f;box-shadow:0 0 0 8px #101016,0 22px 60px -20px rgba(0,0,0,.9);display:flex;flex-direction:column}
+</style></helmet>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Two new pillars — Team and Reference</span></div>
+<p class="dv-sub"><strong style="color:#6ee7a2;font-weight:600">Green = Team</strong> — a roster with coverage and holes computed live, a fourth mode alongside Hunt, Nuzlocke and Dex. It is entered from the run: the party sheet's coverage block opens it, and a gym checkpoint opens the matchup with that leader loaded. <strong style="color:#f4f2ec;font-weight:600">Reference is not a mode.</strong> It is a search sheet over whatever you were doing, reachable from every header — lookups happen mid-task, so a tab would cost you your place and strand the "your team can learn" line in <a class="dv-oid" href="#3d">3d</a>. That keeps the nav at four labelled slots.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Team — roster of six, coverage computed live</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 260px at 78% -6%,#0f1a15 0%,transparent 62%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font-size:17px;font-weight:600;line-height:1;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px;position:relative">
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+<div style="min-width:0">
+<div style="font-size:13px;line-height:1;color:#6ee7a2;margin-bottom:9px">‹ Platinum · party</div>
+<div style="font-size:30px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.035em">Sinnoh Run</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:9px">6 of 6 · avg Lv 32 · follows the run</div>
+</div>
+<button style="width:40px;height:40px;border-radius:14px;background:#111118;border:1px solid #1a1a22;display:grid;place-items:center;flex:none"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></button>
+</div>
+
+<div style="background:#111118;border-radius:18px;padding:15px 16px;box-shadow:0 0 0 1px #6ee7a240">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px">
+<span style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Offensive coverage</span>
+<span style="font-size:13px;line-height:1;color:#6ee7a2">15 of 18 hit hard</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px">
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">NOR</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">FIR</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">WAT</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">ELE</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">GRA</span>
+<span style="height:26px;border-radius:6px;background:#1a1a22;display:grid;place-items:center;font-size:11px;font-weight:600;color:#44444e">ICE</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">FIG</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">POI</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">GRO</span>
+<span style="height:26px;border-radius:6px;background:#1a1a22;display:grid;place-items:center;font-size:11px;font-weight:600;color:#44444e">FLY</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">PSY</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">BUG</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">ROC</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">GHO</span>
+<span style="height:26px;border-radius:6px;background:#1a1a22;display:grid;place-items:center;font-size:11px;font-weight:600;color:#44444e">DRA</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">DAR</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">STE</span>
+<span style="height:26px;border-radius:6px;background:#6ee7a226;display:grid;place-items:center;font-size:11px;font-weight:600;color:#6ee7a2">FAI</span>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:13px;border-top:1px solid #1a1a22">
+<span style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#ff7373">Shared weakness</span>
+<span style="font-size:13px;line-height:1;color:#b6b5c0">Ground hits 3 of 6</span>
+</div>
+<button style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:12px;height:42px;border-radius:13px;background:#6ee7a214;border:1px solid #6ee7a240;padding:0 14px">
+<span style="font-size:15px;font-weight:600;line-height:1;color:#6ee7a2">Check a matchup</span>
+<span style="font-size:15px;line-height:1;color:#6ee7a2">›</span>
+</button>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:40px;height:40px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Empoleon <span style="font-size:13px;font-weight:400;color:#6e6d78">Lv 34</span></div>
+<div style="display:flex;gap:5px;margin-top:8px">
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#7b9bff;background:#7b9bff1a">Water</span>
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Steel</span>
+</div>
+</div>
+<span style="font-size:13px;line-height:1;color:#6ee7a2">4 moves</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png" alt="" style="width:40px;height:40px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Lucario <span style="font-size:13px;font-weight:400;color:#6e6d78">Lv 33</span></div>
+<div style="display:flex;gap:5px;margin-top:8px">
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Steel</span>
+</div>
+</div>
+<span style="font-size:13px;line-height:1;color:#f5c661">3 moves</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/389.png" alt="" style="width:40px;height:40px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Torterra <span style="font-size:13px;font-weight:400;color:#6e6d78">Lv 31</span></div>
+<div style="display:flex;gap:5px;margin-top:8px">
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6ee7a2;background:#6ee7a21a">Grass</span>
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#c9a06a;background:#c9a06a1a">Ground</span>
+</div>
+</div>
+<span style="font-size:13px;line-height:1;color:#6ee7a2">4 moves</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#0b0b10;border:1px dashed #25252f;border-radius:15px;padding:11px 13px">
+<div style="width:40px;height:40px;border-radius:12px;border:1px dashed #2a2a36;display:grid;place-items:center"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="#6ee7a2" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg></div>
+<div style="flex:1;font-size:15px;line-height:1;color:#6e6d78">Add from box, dex or search</div>
+</div>
+</div>
+</div>
+
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:grid;place-items:center;width:42px;height:40px;border-radius:19px"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain;opacity:.6"/></div>
+<div style="display:grid;place-items:center;width:42px;height:40px;border-radius:19px"><svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg></div>
+<div style="display:grid;place-items:center;width:42px;height:40px;border-radius:19px"><svg width="19" height="19" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg></div>
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border-radius:19px;background:#6ee7a2"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#060608" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M2 8h12"/></svg><span style="font-size:15px;font-weight:600;line-height:1;color:#060608">Team</span></div>
+<div style="width:34px;height:34px;margin:0 3px 0 1px;border-radius:12px;background:linear-gradient(135deg,#1e2a26,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font-size:13px;font-weight:500;line-height:1;color:#6ee7a2">S</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Team · matchup check — your six against one opponent</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 260px at 78% -6%,#0f1a15 0%,transparent 62%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font-size:17px;font-weight:600;line-height:1;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px;position:relative">
+
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:19px;line-height:1;color:#6e6d78">‹</span>
+<div style="flex:1">
+<div style="font-size:22px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.025em">Matchup</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:8px">Sinnoh Run vs. Gym 4</div>
+</div>
+<button style="width:38px;height:38px;border-radius:13px;background:#111118;border:1px solid #1a1a22;display:grid;place-items:center;flex:none"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg></button>
+</div>
+
+<div style="background:#111118;border-radius:18px;padding:15px 16px;display:flex;align-items:center;gap:14px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png" alt="" style="width:56px;height:56px;image-rendering:pixelated"/>
+<div style="flex:1">
+<div style="font-size:20px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.02em">Lucario <span style="font-size:14px;font-weight:400;color:#6e6d78">Lv 32</span></div>
+<div style="display:flex;gap:5px;margin-top:9px">
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Steel</span>
+<span style="padding:3px 6px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6e6d78;background:#6e6d781a">Maylene</span>
+</div>
+</div>
+<span style="font-size:13px;line-height:1;color:#6ee7a2">Change</span>
+</div>
+
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Your best rolls</div>
+
+<div style="display:flex;flex-direction:column;gap:8px;overflow:hidden">
+<div style="background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:12px 13px">
+<div style="display:flex;align-items:center;gap:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/389.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Torterra · Earthquake</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">2× · 78–92% · 2HKO guaranteed</div>
+</div>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6ee7a2">Lead</span>
+</div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;margin-top:11px;overflow:hidden"><span style="display:block;width:85%;height:100%;background:#6ee7a2;border-radius:3px"></span></div>
+</div>
+<div style="background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:12px 13px">
+<div style="display:flex;align-items:center;gap:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Empoleon · Surf</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">1× · 41–49% · 3HKO</div>
+</div>
+</div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;margin-top:11px;overflow:hidden"><span style="display:block;width:45%;height:100%;background:#f5c661;border-radius:3px"></span></div>
+</div>
+<div style="background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:12px 13px">
+<div style="display:flex;align-items:center;gap:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Geodude · Rock Throw</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">0.5× · 12–15% · never in range</div>
+</div>
+<span style="padding:4px 8px;border-radius:6px;background:#ff73731a;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#ff7373">Risk</span>
+</div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;margin-top:11px;overflow:hidden"><span style="display:block;width:14%;height:100%;background:#ff7373;border-radius:3px"></span></div>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:13px 15px">
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:10px">Incoming</div>
+<div style="font-size:15px;line-height:1.5;color:#b6b5c0">Close Combat 2HKOs Geodude and Empoleon. Torterra survives at 31% worst case.</div>
+</div>
+</div>
+
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;width:calc(100% - 36px)">
+<button style="flex:1;height:50px;border-radius:16px;background:rgba(18,18,26,.92);border:1px solid #2a2a36;backdrop-filter:blur(24px);color:#f4f2ec;font-size:17px;font-weight:600">Change target</button>
+<button style="flex:none;height:50px;padding:0 18px;border-radius:16px;background:transparent;color:#6ee7a2;font-size:15px;font-weight:600">Save lead</button>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="3c">
+<div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Reference — one search across moves, abilities, items, TMs</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font-size:17px;font-weight:600;line-height:1;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px;position:relative;filter:blur(2px)">
+<div style="display:flex;align-items:center;gap:9px"><img src="shiny-charm.png" alt="" style="width:17px;height:17px;object-fit:contain"/><span style="font-size:30px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.035em">Hunt</span></div>
+<div style="height:190px;border-radius:20px;background:#111118;box-shadow:0 0 0 1px #f5c66155"></div>
+<div style="height:62px;border-radius:16px;background:#111118;border:1px solid #1a1a22"></div>
+<div style="height:62px;border-radius:16px;background:#111118;border:1px solid #1a1a22"></div>
+</div>
+<div style="position:absolute;left:0;right:0;top:54px;bottom:0;background:rgba(4,4,6,.7);z-index:6"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:7;background:#141419;border-radius:26px 26px 0 0;box-shadow:0 -20px 50px -20px rgba(0,0,0,.9),inset 0 1px 0 #2a2a36;display:flex;flex-direction:column;gap:13px;padding:10px 18px 34px">
+<div style="width:38px;height:4px;border-radius:2px;background:#2a2a36;margin:0 auto 4px;flex:none"></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;flex:none">
+<span style="font-size:22px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.025em">Reference</span>
+<button style="font-size:15px;font-weight:600;line-height:1;color:#6e6d78;background:transparent;border:0">Close</button>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;height:46px;border-radius:14px;background:#0d0d12;border:1px solid #25252f;padding:0 14px">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+<span style="font-size:17px;line-height:1;color:#f4f2ec">earth</span>
+<span style="width:1.5px;height:19px;background:#f4f2ec;opacity:.7"></span>
+</div>
+
+<div style="display:flex;gap:6px;flex-wrap:wrap">
+<span style="padding:6px 11px;border-radius:9px;background:#f4f2ec;color:#060608;font-size:13px;font-weight:600;line-height:1">All</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;color:#b6b5c0;font-size:13px;font-weight:500;line-height:1">Moves</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;color:#b6b5c0;font-size:13px;font-weight:500;line-height:1">Abilities</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;color:#b6b5c0;font-size:13px;font-weight:500;line-height:1">Items</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;color:#b6b5c0;font-size:13px;font-weight:500;line-height:1">TMs</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:14px;overflow:hidden">
+<div>
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#44444e;margin-bottom:9px">Moves</div>
+<div style="display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:center;gap:11px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<span style="width:36px;height:36px;border-radius:11px;background:#c9a06a1a;display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:.05em;color:#c9a06a">GRO</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Earthquake</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">Physical · 100 BP · 100% · hits all adjacent</div>
+</div>
+<span style="font-size:17px;line-height:1;color:#44444e">›</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<span style="width:36px;height:36px;border-radius:11px;background:#c9a06a1a;display:grid;place-items:center;font-size:11px;font-weight:700;letter-spacing:.05em;color:#c9a06a">GRO</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Earth Power</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">Special · 90 BP · 100% · 10% Sp. Def drop</div>
+</div>
+<span style="font-size:17px;line-height:1;color:#44444e">›</span>
+</div>
+</div>
+</div>
+<div>
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#44444e;margin-bottom:9px">Items</div>
+<div style="display:flex;align-items:center;gap:11px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<span style="width:36px;height:36px;border-radius:11px;background:#1a1a22;display:grid;place-items:center;font-size:11px;font-weight:700;color:#b6b5c0">IT</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Soft Sand</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">Held · Ground moves ×1.2 · Route 228</div>
+</div>
+<span style="font-size:17px;line-height:1;color:#44444e">›</span>
+</div>
+</div>
+<div>
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#44444e;margin-bottom:9px">Abilities</div>
+<div style="display:flex;align-items:center;gap:11px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<span style="width:36px;height:36px;border-radius:11px;background:#1a1a22;display:grid;place-items:center;font-size:11px;font-weight:700;color:#b6b5c0">AB</span>
+<div style="flex:1;min-width:0">
+<div style="font-size:16px;font-weight:600;line-height:1;color:#f4f2ec">Arena Trap</div>
+<div style="font-size:13px;line-height:1;color:#6e6d78;margin-top:7px">Grounded foes cannot flee or switch</div>
+</div>
+<span style="font-size:17px;line-height:1;color:#44444e">›</span>
+</div>
+</div>
+</div>
+</div>
+
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32;z-index:8"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="3d">
+<div class="dv-olabel"><a class="dv-oid" href="#3d">3d</a>Reference · move detail — data, learnset, where to get it</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font-size:17px;font-weight:600;line-height:1;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:14px;position:relative">
+
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:19px;line-height:1;color:#6e6d78">‹</span>
+<div style="flex:1">
+<div style="font-size:26px;font-weight:700;line-height:1;color:#f4f2ec;letter-spacing:-.03em">Earthquake</div>
+<div style="display:flex;gap:5px;margin-top:10px">
+<span style="padding:3px 7px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#c9a06a;background:#c9a06a1a">Ground</span>
+<span style="padding:3px 7px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Physical</span>
+<span style="padding:3px 7px;border-radius:5px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6e6d78;background:#6e6d781a">TM 26</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:8px">
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:13px 12px;text-align:center">
+<div style="font-size:24px;font-weight:600;line-height:1;color:#f4f2ec;font-variant-numeric:tabular-nums">100</div>
+<div style="font-size:11px;font-weight:500;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78;margin-top:9px">Power</div>
+</div>
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:13px 12px;text-align:center">
+<div style="font-size:24px;font-weight:600;line-height:1;color:#f4f2ec;font-variant-numeric:tabular-nums">100</div>
+<div style="font-size:11px;font-weight:500;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78;margin-top:9px">Acc</div>
+</div>
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:13px 12px;text-align:center">
+<div style="font-size:24px;font-weight:600;line-height:1;color:#f4f2ec;font-variant-numeric:tabular-nums">10</div>
+<div style="font-size:11px;font-weight:500;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78;margin-top:9px">PP</div>
+</div>
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:13px 12px;text-align:center">
+<div style="font-size:24px;font-weight:600;line-height:1;color:#f4f2ec">—</div>
+<div style="font-size:11px;font-weight:500;line-height:1;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78;margin-top:9px">Prio</div>
+</div>
+</div>
+
+<div style="font-size:15px;line-height:1.55;color:#b6b5c0">Hits every adjacent Pokémon. Damage is halved against targets that are not grounded; doubled against a target in the middle of Dig.</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 15px">
+<div style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:12px">Where to get it · Platinum</div>
+<div style="display:flex;flex-direction:column;gap:11px">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="width:6px;height:6px;border-radius:3px;background:#f4f2ec;flex:none"></span><span style="flex:1;font-size:15px;line-height:1.4;color:#f4f2ec">Wayward Cave — hidden basement, west wall</span></div>
+<div style="display:flex;align-items:baseline;gap:10px"><span style="width:6px;height:6px;border-radius:3px;background:#44444e;flex:none"></span><span style="flex:1;font-size:15px;line-height:1.4;color:#b6b5c0">Battle Frontier — 80 BP</span></div>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 15px;flex:none">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font-size:12px;font-weight:500;line-height:1;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Your team can learn</span>
+<span style="font-size:13px;line-height:1;color:#6ee7a2">2 of 6</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/389.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<span style="flex:1;font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Torterra</span>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#6ee7a2">Knows it</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<span style="flex:1;font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Geodude</span>
+<span style="padding:4px 8px;border-radius:6px;background:#f5c6611a;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#f5c661">TM</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;opacity:.45">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<span style="flex:1;font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Empoleon</span>
+<span style="font-size:13px;line-height:1;color:#6e6d78">Cannot</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;opacity:.45">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<span style="flex:1;font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Lucario</span>
+<span style="font-size:13px;line-height:1;color:#6e6d78">Cannot</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;opacity:.45">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<span style="flex:1;font-size:15px;font-weight:600;line-height:1;color:#f4f2ec">Gastly</span>
+<span style="font-size:13px;line-height:1;color:#6e6d78">Cannot</span>
+</div>
+</div>
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Still to place: where Team lives when no run is active. Everything here assumes a party to read from — a saved-teams list, or a blank roster you fill by hand, is the missing first screen.</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Separating Nuzlocke from shiny — mode is the container, colour is the signal</span></div>
+<p class="dv-sub">The glass bar from <a class="dv-oid" href="#1c">1c</a> becomes the mode switch, and each mode owns its accent: <strong style="color:#f5c661;font-weight:600">gold = shiny only</strong> (your existing One Sparkle Rule), <strong style="color:#7b9bff;font-weight:600">blue = Nuzlocke</strong>, <strong style="color:#f4f2ec;font-weight:600">parchment = Dex</strong>. So a run screen never shows gold and a hunt screen never shows a level cap — you can tell which mode you're in from the corner of your eye. Two dexes sit behind one Dex tab: Living Dex counts species you own in any form, Shiny Dex counts shinies only and is the one wired to hunts.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Hunt mode — gold, shiny only, no run data</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 260px at 78% -6%,#1d1a12 0%,transparent 62%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:14px;position:relative">
+
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:9px">
+<img src="shiny-charm.png" alt="" style="width:17px;height:17px;object-fit:contain"/>
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Hunt</span>
+</div>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">1 active · 2 paused</span>
+</div>
+
+<div style="background:#111118;border-radius:20px;padding:18px;box-shadow:0 0 0 1px #f5c66155,0 0 34px -12px #f5c661;position:relative;overflow:hidden">
+<div style="position:absolute;right:-24px;top:-20px;width:170px;height:170px;background:radial-gradient(circle,#f5c66118,transparent 68%)"></div>
+<div style="display:flex;gap:14px;align-items:flex-start;position:relative">
+<div style="flex:1;min-width:0">
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#f5c661;border:1px solid #f5c66155">Charm</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#b299ff;border:1px solid #b299ff40">Phase 3</span>
+</div>
+<div style="font:700 26px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.03em">Gible</div>
+<div style="font:400 15px/1.4 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:5px">Platinum · Wayward Cave</div>
+</div>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/443.png" alt="Gible" style="width:84px;height:84px;image-rendering:pixelated;flex:none;margin-top:-6px"/>
+</div>
+<div style="display:flex;align-items:baseline;gap:9px;margin-top:14px;position:relative">
+<span style="font:600 42px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.04em;font-variant-numeric:tabular-nums">{{ enc }}</span>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">encounters</span>
+<span style="margin-left:auto;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">◉ 01:42:08</span>
+</div>
+<div style="height:4px;border-radius:2px;background:#1a1a22;margin-top:14px;overflow:hidden"><span style="display:block;width:69%;height:100%;background:linear-gradient(90deg,#f5c66155,#f5c661);border-radius:2px"></span></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px;font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">
+<span>about average · 50.4%</span><span>~1,249 to expected</span>
+</div>
+<button onClick="{{ inc }}" style="width:100%;height:48px;border-radius:14px;background:#f5c661;color:#060608;font:600 18px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;border:0;display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>+1 encounter</button>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:16px;padding:12px 14px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/133.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Eevee — Masuda</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Sword · 412 eggs · paused</div></div>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">›</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:16px;padding:12px 14px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/447.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Riolu — Egg hatch</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">BDSP · 218 eggs · paused</div></div>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">›</span>
+</div>
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:18px;padding:14px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Recent finds</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">Latest</span>
+</div>
+<div style="display:flex;gap:10px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/94.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/212.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/130.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/59.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/392.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:16px;background:#0f0f15;border:1px solid #1a1a22;border-radius:18px;padding:15px 17px">
+<div style="position:relative;width:58px;height:58px;flex:none">
+<svg width="58" height="58" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="#1a1a22" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="#f5c661" stroke-width="6" stroke-linecap="round" stroke-dasharray="8 170" transform="rotate(-90 32 32)"/></svg>
+<div style="position:absolute;inset:0;display:grid;place-items:center;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">5%</div>
+</div>
+<div style="flex:1">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Shiny Dex</div>
+<div style="font:400 13px/1.5 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">47 of 1025 · 12 this month</div>
+</div>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">›</span>
+</div>
+</div>
+
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border-radius:19px;background:#f5c661"><img src="shiny-charm.png" alt="" style="width:14px;height:14px;object-fit:contain"/><span style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Hunt</span></div>
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg></div>
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg></div>
+<div style="width:34px;height:34px;margin:0 3px 0 1px;border-radius:12px;background:linear-gradient(135deg,#2a2030,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">S</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Nuzlocke mode — blue, no shiny anywhere, normal sprites</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 260px at 78% -6%,#121623 0%,transparent 62%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px;position:relative">
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between">
+<div>
+<div style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Platinum</div>
+<div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:9px">Hardcore · day 6 · 11 encounters</div>
+</div>
+<span style="padding:6px 10px;border-radius:8px;background:#7b9bff1a;border:1px solid #7b9bff55;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">CAP 33</span>
+</div>
+
+<div style="background:#111118;border-radius:18px;padding:16px;box-shadow:0 0 0 1px #7b9bff55,0 0 30px -14px #7b9bff">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7b9bff">Next checkpoint</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Veilstone City</span>
+</div>
+<div style="font:700 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:11px;letter-spacing:-.02em">Gym 4 — Maylene</div>
+<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+<span style="padding:4px 8px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+<span style="padding:4px 8px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#ff7373;background:#ff73731a">No resist in party</span>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:18px;padding:14px 15px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Party</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#ff7373">3 in graveyard</span>
+</div>
+<div style="display:flex;gap:8px">
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:6px">31</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/396.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:6px">30</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/436.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff;margin-top:6px">33</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:6px">28</div></div>
+<div style="flex:1;text-align:center"><div style="width:40px;height:40px;border-radius:11px;border:1px dashed #25252f;margin:0 auto"></div><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:6px">—</div></div>
+<div style="flex:1;text-align:center"><div style="width:40px;height:40px;border-radius:11px;border:1px dashed #25252f;margin:0 auto"></div><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:6px">—</div></div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border-radius:16px;padding:12px 14px;box-shadow:0 0 0 1px #7b9bff40">
+<div style="width:38px;height:38px;border-radius:12px;border:1px dashed #7b9bff55;display:grid;place-items:center"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="#7b9bff" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg></div>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Route 210</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff;margin-top:6px">Log your encounter · dupes clause on</div></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/436.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Bronzor <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Tinpot"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Route 206 · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#6ee7a2">Party</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Gastly <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Fumes"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Old Chateau · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#7b9bff1a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#7b9bff">Box</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Geodude <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Pebble"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Oreburgh Gate · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#6ee7a2">Party</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#0d0d12;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/399.png" alt="" style="width:38px;height:38px;image-rendering:pixelated;filter:grayscale(1);opacity:.45"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Bidoof <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">"Chomper"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:6px">Route 201 · fell to Roark, Lv 14</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#ff73731a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#ff7373">Dead</span>
+</div>
+</div>
+</div>
+
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain;opacity:.5"/></div>
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border-radius:19px;background:#7b9bff"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#060608" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg><span style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Nuzlocke</span></div>
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg></div>
+<div style="width:34px;height:34px;margin:0 3px 0 1px;border-radius:12px;background:linear-gradient(135deg,#20263a,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">S</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Dex mode · Living Dex — any form counts, gold dot = you own it shiny</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Dex</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Sinnoh · gen 4</span>
+</div>
+<div style="display:flex;gap:2px;background:#111118;border:1px solid #1a1a22;border-radius:12px;padding:3px">
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:9px;background:#f4f2ec;font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Living Dex</div>
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:500 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Shiny Dex</div>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-bottom:8px"><span>Registered in any form</span><span style="color:#f4f2ec;font-weight:600">318 / 1025</span></div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:31%;height:100%;background:#f4f2ec;border-radius:3px;opacity:.85"></span></div>
+</div>
+<div style="display:flex;gap:7px">
+<span style="padding:7px 12px;border-radius:9px;background:#181822;box-shadow:inset 0 0 0 1px #25252f;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">All</span>
+<span style="padding:7px 12px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Missing</span>
+<span style="padding:7px 12px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Box view</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+<sc-for list="{{ living }}" as="d" hint-placeholder-count="30">
+<div onClick="{{ d.toggle }}" style="{{ d.style }}"><span style="{{ d.mark }}"></span></div>
+</sc-for>
+</div>
+</div>
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain;opacity:.5"/></div>
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg></div>
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border-radius:19px;background:#f4f2ec"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#060608" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg><span style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Dex</span></div>
+<div style="width:34px;height:34px;margin:0 3px 0 1px;border-radius:12px;background:linear-gradient(135deg,#26262e,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">S</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="2d">
+<div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Dex mode · Shiny Dex — shinies only, each tile carries its hunt record</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 240px at 78% -6%,#1d1a12 0%,transparent 62%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:8px 18px 0;display:flex;flex-direction:column;gap:13px;position:relative">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Dex</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">47 shiny</span>
+</div>
+<div style="display:flex;gap:2px;background:#111118;border:1px solid #1a1a22;border-radius:12px;padding:3px">
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:9px;font:500 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Living Dex</div>
+<div style="flex:1;text-align:center;padding:8px 0;border-radius:9px;background:#f5c661;font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Shiny Dex</div>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-bottom:8px"><span>Caught shiny · 1,284,902 encounters</span><span style="color:#f5c661;font-weight:600">47 / 1025</span></div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:5%;height:100%;background:#f5c661;border-radius:3px"></span></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+<sc-for list="{{ shinyDex }}" as="s" hint-placeholder-count="12">
+<div style="{{ s.card }}"><div style="{{ s.tile }}"></div><div style="{{ s.nameStyle }}">{{ s.name }}</div><div style="{{ s.metaStyle }}">{{ s.meta }}</div></div>
+</sc-for>
+</div>
+</div>
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain;opacity:.5"/></div>
+<div style="display:grid;place-items:center;width:46px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg></div>
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 15px;border-radius:19px;background:#f4f2ec"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="#060608" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg><span style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Dex</span></div>
+<div style="width:34px;height:34px;margin:0 3px 0 1px;border-radius:12px;background:linear-gradient(135deg,#2a2030,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">S</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "swap the Dex segmented control for a long-press mode switch" · "show what a shiny caught mid-Nuzlocke looks like in both dexes" · "build the Nuzlocke gym-checkpoint timeline"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Three pillars on iOS — nav directions + the core flow</span></div>
+<p class="dv-sub">Same design language as the web app (void black, Sparkle Gold, SF Pro throughout), rebuilt for one-handed phone use. Wordmark "Tracker" is a placeholder. Three home/nav directions first; the six core screens below are drawn in direction <a class="dv-oid" href="#1a">1a</a>'s structure and drop into any of them.</p>
+
+<div class="dv-rowhd">Home &amp; navigation — pick one</div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>By the book — 4 tabs, hunt hero on home</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:18px">
+
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:9px">
+<div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1a1a24,#0f0f18);border:1px solid #25252f;display:grid;place-items:center"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain"/></div>
+<span style="font:600 18px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.02em">Tracker</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="width:32px;height:32px;border-radius:10px;background:#111118;border:1px solid #1a1a22;display:grid;place-items:center"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg></div>
+<div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#2a2030,#1a1a24);border:1px solid #25252f;display:grid;place-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">S</div>
+</div>
+</div>
+
+<div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Active hunt</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">2 running</span>
+</div>
+<div style="background:#111118;border-radius:18px;padding:18px;box-shadow:0 0 0 1px #f5c66155,0 0 34px -12px #f5c661;position:relative;overflow:hidden">
+<div style="position:absolute;right:-24px;top:-20px;width:170px;height:170px;background:radial-gradient(circle,#f5c66118,transparent 68%)"></div>
+<div style="display:flex;gap:14px;align-items:flex-start;position:relative">
+<div style="flex:1;min-width:0">
+<div style="display:flex;gap:6px;margin-bottom:8px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#f5c661;border:1px solid #f5c66155">Charm</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#b299ff;border:1px solid #b299ff40">Phase 3</span>
+</div>
+<div style="font:700 26px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.03em">Gible</div>
+<div style="font:400 13px/1.4 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:5px">Platinum · Wayward Cave</div>
+</div>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/443.png" alt="Gible" style="width:84px;height:84px;image-rendering:pixelated;flex:none;margin-top:-6px"/>
+</div>
+<div style="display:flex;align-items:baseline;gap:9px;margin-top:14px;position:relative">
+<span style="font:600 42px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.04em;font-variant-numeric:tabular-nums">{{ enc }}</span>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">encounters</span>
+<span style="margin-left:auto;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">◉ 01:42:08</span>
+</div>
+<div style="height:4px;border-radius:2px;background:#1a1a22;margin-top:14px;overflow:hidden"><span style="display:block;width:69%;height:100%;background:linear-gradient(90deg,#f5c66155,#f5c661);border-radius:2px"></span></div>
+<div style="display:flex;justify-content:space-between;margin-top:8px;font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">
+<span>about average · 50.4% cumulative</span><span>~1,249 to expected</span>
+</div>
+<div style="display:flex;gap:8px;margin-top:16px">
+<button onClick="{{ inc }}" style="flex:1;height:46px;border-radius:13px;background:#f5c661;color:#060608;font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;display:flex;align-items:center;justify-content:center;gap:7px;border:0"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>+1 encounter</button>
+<div style="width:46px;height:46px;border-radius:13px;background:#181822;border:1px solid #25252f;display:grid;place-items:center"><img src="shiny-charm.png" alt="" style="width:15px;height:15px;object-fit:contain"/></div>
+<div style="width:46px;height:46px;border-radius:13px;background:#181822;border:1px solid #25252f;display:grid;place-items:center"><span style="font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span></div>
+</div>
+</div>
+</div>
+
+<div>
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:9px">Nuzlocke run</div>
+<div style="background:#111118;border:1px solid #1a1a22;border-radius:18px;padding:16px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<div>
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Platinum — Hardcore</div>
+<div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Day 6 · 11 encounters · 3 lost</div>
+</div>
+<span style="padding:5px 9px;border-radius:7px;background:#7b9bff1a;border:1px solid #7b9bff55;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">CAP 33</span>
+</div>
+<div style="display:flex;gap:5px;margin-top:14px;padding-top:14px;border-top:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/396.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/436.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="width:36px;height:36px;border-radius:9px;border:1px dashed #25252f;display:grid;place-items:center;font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">+</div>
+<div style="margin-left:auto;align-self:center;font:400 13px/1.3 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;text-align:right">Next<br/><span style="color:#f4f2ec;font-weight:600">Route 210</span></div>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:10px">
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:13px 14px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#6e6d78">Living dex</div>
+<div style="font:600 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:8px">318<span style="font-size:14px;color:#44444e">/1025</span></div>
+</div>
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:13px 14px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#6e6d78">Shinies</div>
+<div style="font:600 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661;margin-top:8px">47</div>
+</div>
+</div>
+
+</div>
+
+<div style="flex:none;height:82px;background:rgba(11,11,16,.94);border-top:1px solid #1a1a22;backdrop-filter:blur(20px);display:flex;padding:10px 8px 0">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#7b9bff" stroke-width="1.5"><rect x="2" y="2" width="5" height="6" rx="1"/><rect x="9" y="2" width="5" height="3" rx="1"/><rect x="9" y="7" width="5" height="7" rx="1"/><rect x="2" y="10" width="5" height="4" rx="1"/></svg><span style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">Home</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/><circle cx="5" cy="4.5" r=".7" fill="#6e6d78"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Dex</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Nuzlocke</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M3 13c0-2.76 2.24-4 5-4s5 1.24 5 4"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">You</span></div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Runs carousel — every active run is a full card you swipe</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:16px;padding-top:6px">
+<div style="padding:0 18px;display:flex;align-items:baseline;justify-content:space-between">
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Runs</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">3 active</span>
+</div>
+
+<div style="padding:0 18px;display:flex;gap:2px;background:transparent">
+<div style="display:flex;gap:2px;background:#111118;border:1px solid #1a1a22;border-radius:11px;padding:3px;width:100%">
+<div style="flex:1;text-align:center;padding:7px 0;border-radius:8px;background:#181822;box-shadow:inset 0 0 0 1px #25252f;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">All</div>
+<div style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Hunts</div>
+<div style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Nuzlocke</div>
+</div>
+</div>
+
+<div style="display:flex;gap:12px;padding:0 18px;overflow:hidden">
+<div style="flex:none;width:296px;border-radius:22px;background:linear-gradient(165deg,#15131a,#0c0c11);box-shadow:0 0 0 1px #f5c66155,0 0 40px -14px #f5c661;padding:20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#f5c661">Shiny hunt</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">1/4096 ×3</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/443.png" alt="Gible" style="width:72px;height:72px;image-rendering:pixelated"/>
+<div>
+<div style="font:700 24px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.03em">Gible</div>
+<div style="font:400 13px/1.4 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:5px">Platinum<br/>Wayward Cave</div>
+</div>
+</div>
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font:600 38px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.04em">2,847</span>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">enc</span>
+</div>
+<div style="height:4px;border-radius:2px;background:#1a1a22;overflow:hidden"><span style="display:block;width:69%;height:100%;background:#f5c661;border-radius:2px"></span></div>
+<button style="height:48px;border-radius:14px;background:#f5c661;color:#060608;font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;border:0;display:flex;align-items:center;justify-content:center;gap:7px"><svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>+1 encounter</button>
+</div>
+<div style="flex:none;width:296px;border-radius:22px;background:#0f0f15;border:1px solid #1a1a22;padding:20px;display:flex;flex-direction:column;gap:14px;opacity:.85">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7b9bff">Nuzlocke</span>
+<div style="font:700 24px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.03em">Platinum</div>
+</div>
+</div>
+<div style="display:flex;gap:5px;justify-content:center"><span style="width:16px;height:4px;border-radius:2px;background:#f5c661;display:block"></span><span style="width:4px;height:4px;border-radius:2px;background:#33333f;display:block"></span><span style="width:4px;height:4px;border-radius:2px;background:#33333f;display:block"></span></div>
+
+<div style="padding:0 18px;display:flex;flex-direction:column;gap:9px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Jump back in</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Route 210 encounter</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Platinum — Hardcore · unlogged</div></div>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">›</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/133.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Eevee — Masuda</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Sword · 412 eggs · paused</div></div>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">›</span>
+</div>
+</div>
+</div>
+
+<div style="flex:none;height:82px;background:rgba(11,11,16,.94);border-top:1px solid #1a1a22;display:flex;align-items:flex-start;padding:10px 20px 0;position:relative">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#f5c661" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1.5l2.4 4.3 2.6.6-1.8 2 .4 2.6L8 9.8 4.4 11l.4-2.6L3 6.4l2.6-.6L8 1.5z"/></svg><span style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">Runs</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Dex</span></div>
+<div style="width:62px"></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><path d="M2 13h12M4 11V7M7 11V4M10 11V8M13 11V6"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Stats</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M3 13c0-2.76 2.24-4 5-4s5 1.24 5 4"/></svg><span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">You</span></div>
+<div style="position:absolute;top:-24px;left:50%;transform:translateX(-50%);width:58px;height:58px;border-radius:20px;background:#f5c661;display:grid;place-items:center;box-shadow:0 8px 26px -6px #f5c66188"><svg viewBox="0 0 16 16" width="24" height="24" fill="none" stroke="#060608" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg></div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Search-first — floating glass nav, edge-to-edge feed</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;inset:0;background:radial-gradient(420px 260px at 78% -6%,#1a1622 0%,transparent 62%),radial-gradient(360px 240px at 6% 104%,#101820 0%,transparent 60%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+
+<div style="flex:1;overflow:hidden;padding:14px 18px 0;display:flex;flex-direction:column;gap:16px;position:relative">
+<div style="display:flex;align-items:center;gap:10px;height:48px;border-radius:16px;background:rgba(24,24,34,.72);border:1px solid #25252f;padding:0 15px;backdrop-filter:blur(18px)">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+<span style="font:400 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Pokémon, route, or move</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:16px;background:#0f0f15;border:1px solid #1a1a22;border-radius:20px;padding:16px 18px">
+<div style="position:relative;width:64px;height:64px;flex:none">
+<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="#1a1a22" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="#f5c661" stroke-width="6" stroke-linecap="round" stroke-dasharray="53 170" transform="rotate(-90 32 32)"/></svg>
+<div style="position:absolute;inset:0;display:grid;place-items:center;font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">31%</div>
+</div>
+<div style="flex:1">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Living Dex</div>
+<div style="font:400 13px/1.5 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">318 of 1025 registered<br/>47 shiny · 12 this month</div>
+</div>
+</div>
+
+<div style="border-radius:20px;padding:16px 18px;background:linear-gradient(150deg,#16131b,#0c0c11);box-shadow:0 0 0 1px #f5c66144,0 0 34px -14px #f5c661;display:flex;align-items:center;gap:14px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/443.png" alt="Gible" style="width:58px;height:58px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#f5c661">Hunting</div>
+<div style="font:700 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:7px;letter-spacing:-.03em">Gible</div>
+<div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">2,847 enc · 01:42 session</div>
+</div>
+<div style="width:52px;height:52px;border-radius:17px;background:#f5c661;display:grid;place-items:center;color:#060608"><svg viewBox="0 0 16 16" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg></div>
+</div>
+
+<div style="border-radius:20px;padding:16px 18px;background:#0f0f15;border:1px solid #1a1a22">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7b9bff">Next checkpoint</span>
+<span style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff;padding:4px 8px;border-radius:6px;border:1px solid #7b9bff55">CAP 33</span>
+</div>
+<div style="font:600 18px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:11px">Gym 4 — Maylene</div>
+<div style="display:flex;gap:6px;margin-top:11px">
+<span style="padding:4px 8px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+<span style="padding:4px 8px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#ff7373;background:#ff73731a">No resist in party</span>
+</div>
+</div>
+
+<div style="border-radius:20px;padding:16px 18px;background:#0f0f15;border:1px solid #1a1a22">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:12px">Recently viewed</div>
+<div style="display:flex;gap:10px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/94.png" alt="" style="width:42px;height:42px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png" alt="" style="width:42px;height:42px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/212.png" alt="" style="width:42px;height:42px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/130.png" alt="" style="width:42px;height:42px;image-rendering:pixelated"/>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/197.png" alt="" style="width:42px;height:42px;image-rendering:pixelated"/>
+</div>
+</div>
+<div style="border-radius:20px;padding:16px 18px;background:#0f0f15;border:1px solid #1a1a22">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:12px">Pinned routes</div>
+<div style="display:flex;align-items:center;gap:12px;padding-bottom:11px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/443.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Wayward Cave B1F</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Gible · 4% · Lv 15–18</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding-top:11px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/446.png" alt="" style="width:34px;height:34px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Route 210</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Munchlax · honey · 1%</div></div>
+</div>
+</div>
+</div>
+
+<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;backdrop-filter:blur(24px);box-shadow:0 12px 34px -10px rgba(0,0,0,.9)">
+<div style="display:flex;align-items:center;gap:7px;height:40px;padding:0 16px;border-radius:19px;background:#f5c661"><span style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Hunt</span></div>
+<div style="display:grid;place-items:center;width:44px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 7h12"/></svg></div>
+<div style="display:grid;place-items:center;width:44px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><path d="M3 2h8a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M5 5h6M5 8h6"/></svg></div>
+<div style="display:grid;place-items:center;width:44px;height:40px;border-radius:19px"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="#b6b5c0" stroke-width="1.5"><circle cx="8" cy="6" r="2.5"/><path d="M3 13c0-2.76 2.24-4 5-4s5 1.24 5 4"/></svg></div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+</div>
+
+<div class="dv-rowhd">Core flow — one direction, drops into any nav above</div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Pokédex — search &amp; filter</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding:8px 18px 0">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Pokédex</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">1025 entries</span>
+</div>
+<div style="display:flex;align-items:center;gap:10px;height:42px;border-radius:13px;background:#111118;border:1px solid #1a1a22;padding:0 14px">
+<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6e6d78" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+<span style="font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Search 1025 Pokémon</span>
+</div>
+<div style="display:flex;gap:7px">
+<span style="padding:7px 12px;border-radius:9px;background:#7b9bff1a;border:1px solid #7b9bff55;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">Sinnoh</span>
+<span style="padding:7px 12px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Type</span>
+<span style="padding:7px 12px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Caught</span>
+<span style="padding:7px 12px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Shiny</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#443</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/443.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Gible</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#8a9cf0;background:#8a9cf01a">Dragon</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#d9b98a;background:#d9b98a1a">Ground</span>
+</div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661;display:flex;align-items:center;gap:4px"><img src="shiny-charm.png" alt="" style="width:11px;height:11px;object-fit:contain"/>hunting</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#448</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/448.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Lucario</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#a9b4c4;background:#a9b4c41a">Steel</span>
+</div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#392</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/392.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Infernape</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#ff9b6a;background:#ff9b6a1a">Fire</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#e08a7a;background:#e08a7a1a">Fighting</span>
+</div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span>
+</div>
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#405</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/405.png" alt="" style="width:44px;height:44px;image-rendering:pixelated;filter:brightness(.55)"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Luxray</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#f5c661;background:#f5c6611a">Electric</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#437</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/437.png" alt="" style="width:44px;height:44px;image-rendering:pixelated;filter:brightness(.55)"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Bronzong</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#ff8fb0;background:#ff8fb01a">Psychic</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#a9b4c4;background:#a9b4c41a">Steel</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#212</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/212.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Scizor</div>
+<div style="display:flex;gap:5px;margin-top:7px">
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#b2c96a;background:#b2c96a1a">Bug</span>
+<span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#a9b4c4;background:#a9b4c41a">Steel</span>
+</div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span>
+</div>
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#387</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/387.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Turtwig</div>
+<div style="display:flex;gap:5px;margin-top:7px"><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#7fc98a;background:#7fc98a1a">Grass</span></div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span>
+</div>
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#447</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png" alt="" style="width:44px;height:44px;image-rendering:pixelated;filter:brightness(.55)"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Riolu</div>
+<div style="display:flex;gap:5px;margin-top:7px"><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#e08a7a;background:#e08a7a1a">Fighting</span></div>
+</div>
+
+</div>
+<div style="display:flex;align-items:center;gap:13px;background:#111118;border:1px solid #1a1a22;border-radius:15px;padding:11px 14px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;width:32px">#441</span>
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/441.png" alt="" style="width:44px;height:44px;image-rendering:pixelated"/>
+<div style="flex:1;min-width:0">
+<div style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Chatot</div>
+<div style="display:flex;gap:5px;margin-top:7px"><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#b6b5c0;background:#b6b5c01a">Normal</span><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#b8b0ff;background:#b8b0ff1a">Flying</span></div>
+</div>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6ee7a2">✓</span>
+</div>
+
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Pokémon detail — stats, matchups, evolution, locations</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="position:absolute;top:0;left:0;right:0;height:300px;background:radial-gradient(300px 200px at 70% 20%,#8a9cf022,transparent 70%)"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none;position:relative">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:12px;position:relative">
+
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:400 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">‹</span>
+<div style="display:flex;gap:8px">
+<span style="height:30px;padding:0 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;display:flex;align-items:center;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661;gap:5px"><img src="shiny-charm.png" alt="" style="width:12px;height:12px;object-fit:contain"/>Shiny</span>
+<span style="width:30px;height:30px;border-radius:9px;background:#111118;border:1px solid #1a1a22;display:grid;place-items:center;font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">♡</span>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:14px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/443.png" alt="Gible" style="width:96px;height:96px;image-rendering:pixelated"/>
+<div>
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;letter-spacing:.1em">#0443</div>
+<div style="font:700 32px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em;margin-top:8px">Gible</div>
+<div style="display:flex;gap:6px;margin-top:10px">
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#8a9cf0;background:#8a9cf01a">Dragon</span>
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#d9b98a;background:#d9b98a1a">Ground</span>
+</div>
+</div>
+</div>
+
+<div style="display:flex;gap:2px;background:#111118;border:1px solid #1a1a22;border-radius:11px;padding:3px">
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;background:#181822;box-shadow:inset 0 0 0 1px #25252f;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Info</div>
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Where</div>
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Moves</div>
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Hunt</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 16px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:12px">Base stats · 300 total</div>
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">HP</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">58</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:32%;height:100%;background:#6ee7a2;border-radius:3px"></span></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">ATK</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">70</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:39%;height:100%;background:#f5c661;border-radius:3px"></span></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">DEF</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">45</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:25%;height:100%;background:#7b9bff;border-radius:3px"></span></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">SPA</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">40</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:22%;height:100%;background:#b299ff;border-radius:3px"></span></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">SPD</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">45</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:25%;height:100%;background:#7b9bff;border-radius:3px"></span></span></div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">SPE</span><span style="width:26px;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;text-align:right">42</span><span style="flex:1;height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:23%;height:100%;background:#ff9b6a;border-radius:3px"></span></span></div>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 16px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:11px">Takes damage from</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#8fdce8;background:#8fdce826;border:1px solid #8fdce855">Ice ×4</span>
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#8a9cf0;background:#8a9cf01a">Dragon ×2</span>
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#f2a2c8;background:#f2a2c81a">Fairy ×2</span>
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#7bb6ff;background:#7bb6ff1a">Water ×2</span>
+<span style="padding:4px 9px;border-radius:6px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#f5c661;background:#f5c66114;opacity:.6">Electric ×0</span>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 16px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78;margin-bottom:12px">Evolution</div>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="text-align:center;flex:1"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/443.png" alt="" style="width:46px;height:46px;image-rendering:pixelated;margin:0 auto"/><div style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:5px">Gible</div></div>
+<div style="text-align:center"><div style="font:400 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Lv 24</div><div style="font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:3px">→</div></div>
+<div style="text-align:center;flex:1"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/444.png" alt="" style="width:46px;height:46px;image-rendering:pixelated;margin:0 auto"/><div style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:5px">Gabite</div></div>
+<div style="text-align:center"><div style="font:400 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Lv 48</div><div style="font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:3px">→</div></div>
+<div style="text-align:center;flex:1"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/445.png" alt="" style="width:46px;height:46px;image-rendering:pixelated;margin:0 auto"/><div style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:5px">Garchomp</div></div>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 16px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Where to find</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">All 9 games</span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #1a1a22">
+<div><div style="font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Wayward Cave (B1F)</div><div style="font:400 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Platinum · walk · Lv 15–18</div></div>
+<span style="font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">4%</span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px">
+<div><div style="font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Route 211 · Space-time</div><div style="font:400 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">BDSP · underground · Lv 12</div></div>
+<span style="font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">18%</span>
+</div>
+</div>
+
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Route detail — encounter table, in-run context</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:400 22px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">‹</span>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78">Platinum</span>
+<span style="font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">♡</span>
+</div>
+<div>
+<div style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Route 210</div>
+<div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:9px">Sinnoh · 12 species · Lv 16–20</div>
+</div>
+
+<div style="background:#111118;border-radius:15px;padding:13px 15px;box-shadow:0 0 0 1px #7b9bff55;display:flex;align-items:center;gap:12px">
+<div style="width:34px;height:34px;border-radius:11px;background:#7b9bff1a;display:grid;place-items:center;font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">!</div>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Encounter not logged</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Platinum — Hardcore · dupes clause on</div></div>
+<span style="height:32px;padding:0 13px;border-radius:10px;background:#7b9bff;display:flex;align-items:center;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#060608">Log</span>
+</div>
+
+<div style="display:flex;gap:7px">
+<span style="padding:6px 11px;border-radius:9px;background:#181822;box-shadow:inset 0 0 0 1px #25252f;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Grass</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Surf</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Fish</span>
+<span style="padding:6px 11px;border-radius:9px;background:#111118;border:1px solid #1a1a22;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Honey</span>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;overflow:hidden">
+<div style="display:flex;align-items:center;padding:10px 15px;border-bottom:1px solid #1a1a22;font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#44444e">
+<span style="flex:1">Species</span><span style="width:52px;text-align:right">Lv</span><span style="width:48px;text-align:right">Rate</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/396.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Staravia</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Normal</span><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#b8b0ff;background:#b8b0ff1a">Flying</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">17-19</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">30%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/427.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Buneary</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Normal</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">16-18</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">20%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22;background:#f5c6610a">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/446.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Munchlax <span style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661;letter-spacing:.06em">HONEY</span></div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Normal</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">5-15</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">1%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/418.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Buizel</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#7bb6ff;background:#7bb6ff1a">Water</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">16-18</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">15%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/187.png" alt="" style="width:36px;height:36px;image-rendering:pixelated;filter:brightness(.5)"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Hoppip <span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">DUPE</span></div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#7fc98a;background:#7fc98a14">Grass</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">16-18</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">10%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/77.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Ponyta</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#ff9b6a;background:#ff9b6a1a">Fire</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">16-18</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">10%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid #1a1a22">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/400.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Bibarel</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#b6b5c0;background:#b6b5c01a">Normal</span><span style="padding:2px 6px;border-radius:4px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;color:#7bb6ff;background:#7bb6ff1a">Water</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">16-18</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">5%</span>
+</div>
+<div style="display:flex;align-items:center;gap:11px;padding:10px 15px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/113.png" alt="" style="width:36px;height:36px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Chansey</div><div style="display:flex;gap:4px;margin-top:6px"><span style="padding:3px 7px;border-radius:5px;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.06em;color:#b6b5c0;background:#b6b5c01a">Normal</span></div></div>
+<span style="width:52px;text-align:right;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">17</span>
+<span style="width:48px;text-align:right;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">1%</span>
+</div>
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1g">
+<div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Nuzlocke setup — game, ruleset, clauses</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:400 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0">Cancel</span>
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#6e6d78">New run · 2 of 3</span>
+<span style="width:38px"></span>
+</div>
+<div>
+<div style="font:700 27px/1.1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Set your rules</div>
+<div style="font:400 13px/1.5 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:8px">Pokémon Platinum · Sinnoh</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Preset</div>
+<div style="display:flex;gap:9px">
+<div style="flex:1;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:12px 13px"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Classic</div><div style="font:400 13px/1.4 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Faint = death, one per route</div></div>
+<div style="flex:1;background:#15131a;border-radius:14px;padding:12px 13px;box-shadow:0 0 0 1px #f5c66155,0 0 24px -10px #f5c661"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">Hardcore</div><div style="font:400 13px/1.4 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:6px">Level caps, set mode, no items</div></div>
+</div>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;overflow:hidden">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1a1a22">
+<div><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Level caps</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Capped at next gym leader's ace</div></div>
+<span style="width:46px;height:28px;border-radius:14px;background:#f5c661;position:relative;flex:none"><span style="position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:12px;background:#060608;display:block"></span></span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1a1a22">
+<div><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Dupes clause</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Re-roll species you already own</div></div>
+<span style="width:46px;height:28px;border-radius:14px;background:#f5c661;position:relative;flex:none"><span style="position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:12px;background:#060608;display:block"></span></span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1a1a22">
+<div><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Shiny clause</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Shinies are always catchable</div></div>
+<span style="width:46px;height:28px;border-radius:14px;background:#f5c661;position:relative;flex:none"><span style="position:absolute;top:2px;right:2px;width:24px;height:24px;border-radius:12px;background:#060608;display:block"></span></span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #1a1a22">
+<div><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Set battle mode</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">No free switch on KO</div></div>
+<span style="width:46px;height:28px;border-radius:14px;background:#25252f;position:relative;flex:none"><span style="position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:12px;background:#6e6d78;display:block"></span></span>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px">
+<div><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Nickname everything</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Prompt on every catch</div></div>
+<span style="width:46px;height:28px;border-radius:14px;background:#25252f;position:relative;flex:none"><span style="position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:12px;background:#6e6d78;display:block"></span></span>
+</div>
+</div>
+
+<div style="display:flex;align-items:center;gap:10px;padding:13px 15px;border:1px dashed #25252f;border-radius:14px">
+<span style="font:400 18px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">+</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Add a custom rule</span>
+</div>
+
+<button style="height:50px;border-radius:15px;background:#f5c661;color:#060608;font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;border:0;margin-top:auto;margin-bottom:26px">Continue — pick your starter</button>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1h">
+<div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Nuzlocke run — encounters, party, caps, graveyard</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between">
+<div>
+<div style="font:700 26px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Platinum</div>
+<div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:8px">Hardcore · day 6 · 11 encounters</div>
+</div>
+<span style="padding:6px 10px;border-radius:8px;background:#7b9bff1a;border:1px solid #7b9bff55;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">CAP 33</span>
+</div>
+
+<div style="background:#0f0f15;border:1px solid #1a1a22;border-radius:16px;padding:14px 15px">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Party</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#ff7373">3 in graveyard</span>
+</div>
+<div style="display:flex;gap:8px">
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/393.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:5px">31</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/396.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:5px">30</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/436.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661;margin-top:5px">33</div></div>
+<div style="flex:1;text-align:center"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:40px;height:40px;image-rendering:pixelated;margin:0 auto"/><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;margin-top:5px">28</div></div>
+<div style="flex:1;text-align:center"><div style="width:40px;height:40px;border-radius:11px;border:1px dashed #25252f;margin:0 auto"></div><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:5px">—</div></div>
+<div style="flex:1;text-align:center"><div style="width:40px;height:40px;border-radius:11px;border:1px dashed #25252f;margin:0 auto"></div><div style="font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:5px">—</div></div>
+</div>
+</div>
+
+<div style="background:#111118;border-radius:16px;padding:14px 15px;box-shadow:0 0 0 1px #ff737344">
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#ff7373">Coverage warning</span>
+<span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Gym 4 · Maylene</span>
+</div>
+<div style="font:400 13px/1.5 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#b6b5c0;margin-top:9px">Nothing in your party resists <span style="color:#e08a7a;font-weight:600">Fighting</span>. Gastly (box) and Staravia both do.</div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span style="font:500 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#6e6d78">Encounters</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">By route ▾</span>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border-radius:14px;padding:11px 13px;box-shadow:0 0 0 1px #7b9bff40">
+<div style="width:38px;height:38px;border-radius:11px;border:1px dashed #7b9bff55;display:grid;place-items:center;font:400 18px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff">+</div>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Route 210</div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#7b9bff;margin-top:5px">Unlogged · you're here</div></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/436.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Bronzor <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Tinpot"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Route 206 · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#6ee7a2">Party</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Gastly <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Fumes"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:5px">Old Chateau · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#7b9bff1a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#7b9bff">Box</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/74.png" alt="" style="width:38px;height:38px;image-rendering:pixelated"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Geodude <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">"Pebble"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-top:6px">Oreburgh Gate · caught</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#6ee7a21a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#6ee7a2">Party</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#0d0d12;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/399.png" alt="" style="width:38px;height:38px;image-rendering:pixelated;filter:grayscale(1);opacity:.45"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Bidoof <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">"Chomper"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:5px">Route 201 · fell to Roark, Lv 14</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#ff73731a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#ff7373">Dead</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px;background:#0d0d12;border:1px solid #1a1a22;border-radius:14px;padding:11px 13px">
+<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/415.png" alt="" style="width:38px;height:38px;image-rendering:pixelated;filter:grayscale(1);opacity:.45"/>
+<div style="flex:1"><div style="font:600 15px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Combee <span style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e">"Buzzsaw"</span></div><div style="font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#44444e;margin-top:5px">Route 205 · fell to Gardenia, Lv 19</div></div>
+<span style="padding:4px 8px;border-radius:6px;background:#ff73731a;font:600 12px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#ff7373">Dead</span>
+</div>
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+<div class="dv-opt" id="1i">
+<div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Living Dex — tap a tile to register</div>
+<div class="ph">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:33px;background:#000;border-radius:20px;z-index:5"></div>
+<div style="height:54px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 7px;flex:none">
+<span style="font:600 17px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">9:41</span>
+<div style="display:flex;align-items:center;gap:6px">
+<div style="display:flex;align-items:flex-end;gap:2px"><span style="width:3px;height:5px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:7px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:9px;background:#f4f2ec;border-radius:1px;display:block"></span><span style="width:3px;height:11px;background:#f4f2ec;border-radius:1px;display:block"></span></div>
+<span style="width:24px;height:12px;border:1px solid #f4f2ec;border-radius:3.5px;padding:1.5px;display:block"><span style="display:block;width:72%;height:100%;background:#f4f2ec;border-radius:1.5px"></span></span>
+</div>
+</div>
+<div style="flex:1;overflow:hidden;padding:6px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<span style="font:700 30px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec;letter-spacing:-.035em">Living Dex</span>
+<span style="font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f5c661">47 shiny</span>
+</div>
+<div>
+<div style="display:flex;justify-content:space-between;font:400 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78;margin-bottom:8px"><span>Sinnoh · gen 4</span><span>63 / 107</span></div>
+<div style="height:5px;border-radius:3px;background:#1a1a22;overflow:hidden"><span style="display:block;width:59%;height:100%;background:linear-gradient(90deg,#f5c66155,#f5c661);border-radius:3px"></span></div>
+</div>
+<div style="display:flex;gap:2px;background:#111118;border:1px solid #1a1a22;border-radius:11px;padding:3px">
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;background:#181822;box-shadow:inset 0 0 0 1px #25252f;font:600 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#f4f2ec">Shiny</div>
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Normal</div>
+<div style="flex:1;text-align:center;padding:6px 0;border-radius:8px;font:500 13px/1 -apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif;color:#6e6d78">Missing</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+<sc-for list="{{ dex }}" as="d" hint-placeholder-count="25">
+<div onClick="{{ d.toggle }}" style="{{ d.style }}"></div>
+</sc-for>
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#f4f2ec;opacity:.32"></div>
+</div>
+</div>
+
+</div>
+
+<p class="dv-next">Try next: "build out <a class="dv-oid" href="#1b">1b</a>'s carousel as the real home" · "add gym checkpoint + level-cap screens to the Nuzlocke flow" · "show <a class="dv-oid" href="#1e">1e</a>'s Where and Hunt tabs"</p>
+</section>
+
+
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><rect width="200" height="200" fill="#0e0e12"/><rect x="66" y="34" width="68" height="132" rx="14" fill="none" stroke="#f5c661" stroke-width="7"/><path d="M90 46h20" stroke="#f5c661" stroke-width="6" stroke-linecap="round"/><circle cx="100" cy="106" r="17" fill="none" stroke="#f5c661" stroke-width="6"/></svg>
+</template></x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:1100}}">
+const DEX = [443,444,445,448,392,393,395,396,399,403,405,415,418,427,436,446,447,449,451,453,459,461,470,471,475,387,390,401,404,406,408,410,412,417,422,425,429,433,434,441,442,450,452,454,468];
+const CAUGHT = new Set([443,445,448,392,393,396,399,405,415,427,436,446,449,459,470,475,453,387,401,404,406,410,417,422,425,433,441,442,450,454]);
+
+const SF = `-apple-system,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,sans-serif`;
+const LIVING = [387,388,389,390,391,392,393,394,395,396,397,398,399,400,401,402,403,404,405,406,407,408,410,412,415,417,418,422,425,427,429,433,434,436,441,442,443,444,445,446,447,448,449,450,451];
+const OWNED = new Set([387,388,389,390,392,393,395,396,399,400,401,403,405,406,410,417,418,425,427,436,441,443,444,445,447,448,450]);
+const SHINY_OWNED = new Set([443,445,448,392,405,427]);
+const SHINY_DEX = [
+  {id:443,name:'Gible',enc:'2,847 · hunting',live:true},
+  {id:445,name:'Garchomp',enc:'evolved'},
+  {id:448,name:'Lucario',enc:'1,455 enc'},
+  {id:133,name:'Eevee',enc:'412 eggs'},
+  {id:94,name:'Gengar',enc:'812 enc'},
+  {id:212,name:'Scizor',enc:'2,203 enc'},
+  {id:130,name:'Gyarados',enc:'96 enc'},
+  {id:197,name:'Umbreon',enc:'1,904 enc'},
+  {id:392,name:'Infernape',enc:'638 enc'},
+  {id:405,name:'Luxray',enc:null},
+  {id:149,name:'Dragonite',enc:null},
+  {id:359,name:'Absol',enc:null},
+  {id:447,name:'Riolu',enc:'218 eggs · hunting',live:true},
+  {id:143,name:'Snorlax',enc:'3,101 enc'},
+  {id:59,name:'Arcanine',enc:'1,022 enc'},
+  {id:376,name:'Metagross',enc:null},
+  {id:334,name:'Altaria',enc:'744 enc'},
+  {id:282,name:'Gardevoir',enc:null},
+];
+
+class Component extends DCLogic {
+  state = { enc: 2847, off: new Set(), livingOff: new Set() };
+  renderVals() {
+    const caught = (id) => CAUGHT.has(id) !== this.state.off.has(id);
+    const owned = (id) => OWNED.has(id) !== this.state.livingOff.has(id);
+    return {
+      living: LIVING.map(id => {
+        const on = owned(id), sh = on && SHINY_OWNED.has(id);
+        return {
+          style: `position:relative;aspect-ratio:1;border-radius:12px;cursor:pointer;image-rendering:pixelated;background-repeat:no-repeat;background-position:center;background-size:40px 40px;background-image:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png);background-color:${on ? '#15151c' : '#0d0d12'};opacity:${on ? 1 : 0.32};box-shadow:inset 0 0 0 1px ${on ? '#25252f' : '#1a1a22'}`,
+          mark: `position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:4px;background:#f5c661;display:${sh ? 'block' : 'none'}`,
+          toggle: () => this.setState(s => {
+            const livingOff = new Set(s.livingOff);
+            livingOff.has(id) ? livingOff.delete(id) : livingOff.add(id);
+            return { livingOff };
+          }),
+        };
+      }),
+      shinyDex: SHINY_DEX.map(p => ({
+        name: p.name,
+        meta: p.enc || 'not hunted',
+        card: `border-radius:14px;padding:11px 8px 10px;text-align:center;background:${p.enc ? '#15131a' : '#0d0d12'};box-shadow:${p.live ? '0 0 0 1px #f5c66188, 0 0 20px -8px #f5c661' : p.enc ? 'inset 0 0 0 1px #f5c66133' : 'inset 0 0 0 1px #1a1a22'}`,
+        tile: `height:46px;margin:0 auto;image-rendering:pixelated;background-repeat:no-repeat;background-position:center;background-size:44px 44px;background-image:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${p.id}.png);opacity:${p.enc ? 1 : 0.22}`,
+        nameStyle: `font:600 13px/1 ${SF};color:${p.enc ? '#f4f2ec' : '#6e6d78'};margin-top:7px`,
+        metaStyle: `font:400 12px/1 ${SF};color:${p.live ? '#f5c661' : p.enc ? '#6e6d78' : '#44444e'};margin-top:5px`,
+      })),
+      enc: this.state.enc.toLocaleString("en-US"),
+      inc: () => this.setState(s => ({ enc: s.enc + 1 })),
+      dex: DEX.map(id => {
+        const on = caught(id);
+        return {
+          style: `aspect-ratio:1;border-radius:12px;cursor:pointer;image-rendering:pixelated;background-repeat:no-repeat;background-position:center;background-size:40px 40px;background-image:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${on ? "shiny/" : ""}${id}.png);background-color:${on ? "#15131a" : "#0d0d12"};opacity:${on ? 1 : 0.34};box-shadow:${on ? "0 0 0 1px #f5c66144" : "inset 0 0 0 1px #1a1a22"}`,
+          toggle: () => this.setState(s => {
+            const off = new Set(s.off);
+            off.has(id) ? off.delete(id) : off.add(id);
+            return { off };
+          }),
+        };
+      }),
+    };
+  }
+}
+</script>
+</body>
+</html>
