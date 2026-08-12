@@ -22,6 +22,9 @@ public struct SnapshotKey: Hashable, Sendable {
     /// games list restored without it renders every row as not-in-your-library — a falsehood
     /// rather than merely stale, and the Games tab is exactly where a user would act on it.
     public static let userGames = SnapshotKey("user-games")
+    /// Per-hunt client-owned elapsed time (`HuntClock`). Persisted so time survives a relaunch;
+    /// the server only learns it on the next flush.
+    public static let clocks = SnapshotKey("clocks")
 
     /// `uuidString.lowercased()` is `[0-9a-f-]` only, so this cannot produce a traversing path.
     public static func run(_ id: UUID) -> SnapshotKey {

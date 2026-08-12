@@ -2,6 +2,7 @@ import Foundation
 import Testing
 
 @testable import ShinyTrackerAPI
+import ShinyTrackerKit
 
 /// A throwaway directory per test, so nothing touches the real Application Support.
 private func tempDirectory() -> URL {
@@ -89,4 +90,19 @@ private let sample = Fixture(name: "gible", count: 2847, when: Date(timeInterval
     let anonymous = SnapshotStore(userID: nil, containerDirectory: dir)
     await anonymous.save(sample, as: .hunts)
     #expect(await real.load(Fixture.self, as: .hunts) == nil)
+}
+
+/// The clocks snapshot is `[UUID: HuntClock]`, and `JSONEncoder` writes a dictionary with
+/// non-`String` keys as a flat array of alternating keys and values rather than an object. That is
+/// fine — but only because it round-trips, which is what this pins. Accumulated time is the one
+/// thing in the store the server cannot rebuild.
+@Test func clocksRoundTripDespiteUUIDKeys() async {
+    let store = SnapshotStore(userID: UUID(), containerDirectory: tempDirectory())
+    var clock = HuntClock(totalSeconds: 900, lastEncounterAt: Date(timeIntervalSince1970: 1_760_000_000))
+    // A fractional gap, so the sub-second `carry` is non-zero and has to survive the file too:
+    // a carry silently reset to 0 on every relaunch is the rounding drift it exists to prevent.
+    clock.record(at: Date(timeIntervalSince1970: 1_760_000_006.6), idleThreshold: 140)
+    let clocks = [UUID(): clock, UUID(): HuntClock()]
+    await store.save(clocks, as: .clocks)
+    #expect(await store.load([UUID: HuntClock].self, as: .clocks) == clocks)
 }
