@@ -237,8 +237,12 @@ final class HuntListModel {
         clock.record(at: Date(), idleThreshold: threshold)
         clocks[id] = clock
         // Only "−" can get here with a negative delta (HuntCard), and this is the sole source of
-        // allow_decrease.
-        if delta < 0 { loweredByUser.insert(id) }
+        // allow_decrease. The provenance gate is at press time, not send time: what the permission
+        // has to be true of is the number the user was looking at when they pressed, and a refresh
+        // landing inside the 400ms debounce flips `countsFromServer` without correcting this row —
+        // `load` deliberately keeps the local count for anything in `preBurstCount`. Gating at send
+        // time would hand a stale count the permission it was denied at the press.
+        if delta < 0, countsFromServer { loweredByUser.insert(id) }
         Haptics.impact(delta > 0 ? .light : .rigid)
         scheduleSync(id, rollbackTo: before, clockRollbackTo: clockBefore)
     }
@@ -289,9 +293,7 @@ final class HuntListModel {
             if let index = rows.firstIndex(where: { $0.id == id }) {
                 rows[index].count = max(rows[index].count, saved.encounterCount)
             }
-            preBurstCount[id] = nil
-            preBurstClock[id] = nil
-            loweredByUser.remove(id)
+            forgetPendingBurst(id)
         } catch {
             if let rollback, let index = rows.firstIndex(where: { $0.id == id }) {
                 rows[index].count = rollback
@@ -302,11 +304,9 @@ final class HuntListModel {
                 clocks[id] = clock
                 await store.save(clocks, as: .clocks)
             }
-            preBurstCount[id] = nil
-            preBurstClock[id] = nil
             // The count went back up with the rollback, so the permission to lower it no longer
             // describes anything the user asked for.
-            loweredByUser.remove(id)
+            forgetPendingBurst(id)
             syncError = "Couldn't save that count. \(message(for: error))"
         }
     }
@@ -364,7 +364,7 @@ final class HuntListModel {
             await refresh()
             return true
         } catch {
-            loweredByUser.remove(id)
+            forgetPendingBurst(id)
             syncError = "Couldn't mark that hunt found. \(message(for: error))"
             return false
         }
@@ -381,9 +381,22 @@ final class HuntListModel {
             Haptics.notify(.warning)
             return true
         } catch {
+            forgetPendingBurst(id)
             syncError = "Couldn't abandon that hunt. \(message(for: error))"
             return false
         }
+    }
+
+    /// Forgets a burst that will now never be flushed: `markFound` and `abandon` both cancel the
+    /// debounced write, so on their failure paths nothing else is left to clear this state. Leaving
+    /// it arms two separate mistakes on a hunt that is still on screen — `loweredByUser` would hand
+    /// the decrease permission to the next ordinary `+`, and `preBurstCount` would keep `load`'s
+    /// carve-out treating the row as locally authoritative for the rest of the launch, which is
+    /// exactly the stale-count-meets-fresh-permission pairing the gate in `bump` exists to stop.
+    private func forgetPendingBurst(_ id: UUID) {
+        loweredByUser.remove(id)
+        preBurstCount[id] = nil
+        preBurstClock[id] = nil
     }
 
     private func drop(_ id: UUID) async {
@@ -392,9 +405,7 @@ final class HuntListModel {
         // The hunt is finished or gone, so its clock is dead weight that would otherwise be
         // restored on every launch for the rest of the account's life.
         clocks[id] = nil
-        loweredByUser.remove(id)
-        preBurstCount[id] = nil
-        preBurstClock[id] = nil
+        forgetPendingBurst(id)
         await store.save(clocks, as: .clocks)
     }
 
