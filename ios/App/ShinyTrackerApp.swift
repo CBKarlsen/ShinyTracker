@@ -31,6 +31,9 @@ struct RootView: View {
             } else if let fixture = DexPreview.requested {
                 // Same, for the Dex. See DexPreviewHarness.swift.
                 AppShell(preview: DexPreview.client(fixture), mode: .dex)
+            } else if let fixture = NuzlockePreview.requested {
+                // Same, for a run. See NuzlockePreviewHarness.swift.
+                AppShell(preview: NuzlockePreview.client(fixture), mode: .nuzlocke)
             } else if auth.isSignedIn {
                 AppShell(auth: auth)
             } else {
@@ -106,6 +109,7 @@ struct AppShell: View {
     @State private var library: GameLibraryModel
     @State private var newHunt: NewHuntModel
     @State private var dex: DexModel
+    @State private var nuzlocke: NuzlockeModel
 
     init(auth: AuthSession) {
         // One client for the session, shared by every mode. `APIConfig.fromBundle()`
@@ -126,6 +130,7 @@ struct AppShell: View {
         _library = State(initialValue: library)
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: DexModel(client: client, store: .userDefaults(userID: userID)))
+        _nuzlocke = State(initialValue: NuzlockeModel(client: client))
     }
 
     #if DEBUG
@@ -141,6 +146,7 @@ struct AppShell: View {
         _library = State(initialValue: library)
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: dex)
+        _nuzlocke = State(initialValue: NuzlockeModel(client: client))
     }
     #endif
 
@@ -156,7 +162,9 @@ struct AppShell: View {
                 HuntScreen(model: hunts, library: library, newHunt: newHunt)
             case .dex:
                 DexScreen(model: dex)
-            case .nuzlocke, .team:
+            case .nuzlocke:
+                NuzlockeScreen(model: nuzlocke)
+            case .team:
                 ModePlaceholder(mode: mode)
             }
         }
