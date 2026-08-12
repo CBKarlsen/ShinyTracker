@@ -102,7 +102,9 @@ enum AppMode: String, CaseIterable, Identifiable {
 
 struct AppShell: View {
     @State private var mode: AppMode
-    @State private var model: HuntListModel
+    @State private var hunts: HuntListModel
+    @State private var library: GameLibraryModel
+    @State private var newHunt: NewHuntModel
     @State private var dex: DexModel
 
     init(auth: AuthSession) {
@@ -115,9 +117,14 @@ struct AppShell: View {
         self.init(client: APIClient(auth: .session(auth)), userID: auth.userID)
     }
 
+    /// Every model shares one client — and the new-hunt sheet shares the *library* model with
+    /// the Games tab, so a charm toggled there moves the odds in the method step immediately.
     init(client: APIClient, mode: AppMode = .hunt, userID: UUID? = nil) {
+        let library = GameLibraryModel(client: client)
         _mode = State(initialValue: mode)
-        _model = State(initialValue: HuntListModel(client: client))
+        _hunts = State(initialValue: HuntListModel(client: client))
+        _library = State(initialValue: library)
+        _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: DexModel(client: client, store: .userDefaults(userID: userID)))
     }
 
@@ -128,8 +135,11 @@ struct AppShell: View {
         let dex = DexModel(client: client, store: .ephemeral())
         dex.view = DexPreview.initialView ?? .browse
         dex.selectedGameID = DexPreview.initialGameID
+        let library = GameLibraryModel(client: client)
         _mode = State(initialValue: mode)
-        _model = State(initialValue: HuntListModel(client: client))
+        _hunts = State(initialValue: HuntListModel(client: client))
+        _library = State(initialValue: library)
+        _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: dex)
     }
     #endif
@@ -143,7 +153,7 @@ struct AppShell: View {
         Group {
             switch mode {
             case .hunt:
-                HuntScreen(model: model)
+                HuntScreen(model: hunts, library: library, newHunt: newHunt)
             case .dex:
                 DexScreen(model: dex)
             case .nuzlocke, .team:

@@ -84,6 +84,53 @@ public enum ShinyOdds {
     ///   - encounters: the live encounter counter, used as the LAST fallback for
     ///     chain/combo/defeat counts on legacy hunts stored without params.
     ///     Precedence is always `chain_length` > `count` > `encounters`.
+    /// Best-realistic-case parameters for a formula, mirroring `calc.DefaultParams`
+    /// in `backend/internal/calc/methods.go`.
+    ///
+    /// This is for COMPARING methods, not for describing a hunt in progress. A chain
+    /// method evaluated with no params sits at chain zero, where Poké Radar reads
+    /// 1/8192 — identical to full odds — which tells a chooser nothing and makes the
+    /// method look pointless. The design's own method picker quotes the radar at its
+    /// cap ("1/200, at chain 40") for exactly this reason. Present the annotation
+    /// alongside the number so the best case is never mistaken for the current one.
+    ///
+    /// `dexnav_gen6`'s search level is a typical mid/late-game 200, not the
+    /// theoretical cap, which would push DexNav near 1/1 and dominate any ranking.
+    public static func defaultParams(for formulaType: String?) -> [String: ParamValue] {
+        switch formulaType {
+        case "brilliant_swsh": return ["number_battled": .number(500)]
+        case "outbreak_defeats_sv": return ["defeated_count": .number(60), "sparkling_power": .number(3)]
+        case "sandwich_power_sv": return ["sparkling_power": .number(3)]
+        case "sos_chain_gen7": return ["chain_length": .number(31)]
+        case "radar_chain_gen4", "radar_chain_xy", "radar_chain_bdsp": return ["chain_length": .number(40)]
+        case "dexnav_gen6": return ["search_level": .number(200), "chain_length": .number(100)]
+        case "catch_combo_lgpe": return ["count": .number(31)]
+        case "chain_fishing_gen6": return ["count": .number(20)]
+        case "pla_research", "pla_mass_outbreak", "pla_massive_outbreak":
+            return ["research_level": .number(10), "dex_perfect": .bool(true)]
+        case "ultra_wormhole": return ["wormhole_ring_type": .number(4), "wormhole_distance_ly": .number(5000)]
+        default: return [:]  // static, dynamax_adventures_gen8 — no params
+        }
+    }
+
+    /// A short qualifier for the number ``defaultParams(for:)`` produces, or nil when
+    /// the method has no parameters and the odds are unconditional.
+    public static func bestCaseNote(for formulaType: String?) -> String? {
+        switch formulaType {
+        case "radar_chain_gen4", "radar_chain_xy", "radar_chain_bdsp": return "at chain 40"
+        case "chain_fishing_gen6": return "at chain 20"
+        case "sos_chain_gen7": return "at chain 31"
+        case "catch_combo_lgpe": return "at combo 31"
+        case "brilliant_swsh": return "at 500 battled"
+        case "outbreak_defeats_sv": return "60 defeats, Sparkling 3"
+        case "sandwich_power_sv": return "Sparkling 3"
+        case "dexnav_gen6": return "at search level 200"
+        case "pla_research", "pla_mass_outbreak", "pla_massive_outbreak": return "Perfect research"
+        case "ultra_wormhole": return "ring 4, 5000 ly"
+        default: return nil
+        }
+    }
+
     public static func effectiveOdds(
         formulaType: String?,
         params: [String: ParamValue] = [:],
