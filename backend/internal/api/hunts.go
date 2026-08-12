@@ -24,6 +24,12 @@ import (
 // len() would silently cut a Japanese or emoji nickname off at a third of it.
 const maxNicknameLength = 100
 
+// nicknameTooLong reports whether a supplied nickname exceeds the cap. An absent
+// nickname is never too long -- omitting the field is how a caller says "leave it".
+func nicknameTooLong(nickname *string) bool {
+	return nickname != nil && utf8.RuneCountInString(*nickname) > maxNicknameLength
+}
+
 // loadPhasesForHunts fetches all phases for the given hunt IDs and groups them by hunt ID.
 func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]models.HuntPhase, error) {
 	result := make(map[string][]models.HuntPhase)
@@ -188,7 +194,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Provide hunt_method_id or custom_method_name, not both", http.StatusBadRequest)
 		return
 	}
-	if req.Nickname != nil && utf8.RuneCountInString(*req.Nickname) > maxNicknameLength {
+	if nicknameTooLong(req.Nickname) {
 		http.Error(w, "nickname is too long", http.StatusBadRequest)
 		return
 	}
@@ -286,7 +292,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
 		return
 	}
-	if req.Nickname != nil && utf8.RuneCountInString(*req.Nickname) > maxNicknameLength {
+	if nicknameTooLong(req.Nickname) {
 		http.Error(w, "nickname is too long", http.StatusBadRequest)
 		return
 	}

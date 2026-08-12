@@ -64,6 +64,20 @@ final class NewHuntModel {
     private(set) var methods: [HuntMethodDetail] = []
     private(set) var loadingMethods = false
 
+    /// Optional name for the catch, sent with `POST /api/hunts`.
+    ///
+    /// Capped as it is typed: the server rejects anything over 100 characters with a 400, and
+    /// finding that out after tapping Start would lose the whole sheet's worth of picks. Counted
+    /// in Characters, matching the runes the Go side counts, so an emoji costs one either way.
+    var nickname = "" {
+        didSet {
+            if nickname.count > Self.nicknameLimit {
+                nickname = String(nickname.prefix(Self.nicknameLimit))
+            }
+        }
+    }
+    static let nicknameLimit = 100
+
     private(set) var starting = false
     private(set) var error: String?
 
@@ -82,6 +96,7 @@ final class NewHuntModel {
     func open() {
         step = .species
         query = ""
+        nickname = ""
         species = nil
         gameID = nil
         method = nil
@@ -210,8 +225,16 @@ final class NewHuntModel {
         error = nil
         defer { starting = false }
         do {
+            let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
             _ = try await client.createHunt(
-                CreateHuntRequest(pokemonID: species.id, gameID: gameID, huntMethodID: method.id)
+                CreateHuntRequest(
+                    pokemonID: species.id,
+                    gameID: gameID,
+                    huntMethodID: method.id,
+                    // Absent, not "": the column holds a real name or NULL, and the update path
+                    // reads an empty string as "clear this".
+                    nickname: trimmed.isEmpty ? nil : trimmed
+                )
             )
             Haptics.notify(.success)
             return true
@@ -546,6 +569,8 @@ struct NewHuntSheet: View {
 
                 DetailPanel(rows: readyRows(game: game, method: method))
 
+                nicknameField(for: species)
+
                 if let error = model.error {
                     Text(error)
                         .font(Typography.hint)
@@ -572,6 +597,32 @@ struct NewHuntSheet: View {
             }
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    /// Optional, and says so — a hunt with no nickname is the normal case, so the field must not
+    /// read as one more thing to fill in before the gold button will work.
+    private func nicknameField(for species: Pokemon) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("NICKNAME · OPTIONAL")
+                .font(Typography.overline)
+                .tracking(Typography.overlineTracking)
+                .foregroundStyle(Palette.textMuted.color)
+
+            TextField("Name your \(species.name.capitalized)", text: $model.nickname)
+                .font(.system(size: 17))
+                .foregroundStyle(Palette.textPrimary.color)
+                .tint(Palette.hunt.color)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .padding(.horizontal, 14)
+                .frame(height: 46)
+                .background(Palette.field.color, in: .rect(cornerRadius: Radii.headerButton))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radii.headerButton)
+                        .strokeBorder(Palette.border.color, lineWidth: 1)
+                )
+                .accessibilityLabel("Nickname, optional")
         }
     }
 

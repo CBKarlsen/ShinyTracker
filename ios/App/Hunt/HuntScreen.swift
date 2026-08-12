@@ -357,12 +357,16 @@ struct HistoryRow: View {
         )
     }
 
-    /// `${r.game} · ${r.method} · found ${r.date}`. The nickname the prototype puts first has
-    /// nowhere to come from — hunts have no nickname column.
+    /// `${r.nick} · ${r.game} · ${r.method} · found ${r.date}`, the nickname first as the
+    /// prototype has it. Most hunts have none — it is optional at every layer — so it is dropped
+    /// from the line rather than leaving a stray separator.
     private var meta: String {
         let found = row.detail.updatedAt.formatted(
             .relative(presentation: .named, unitsStyle: .wide))
-        return ([row.detail.gameTitle, row.detail.customMethodName ?? row.detail.methodName]
+        let nickname = row.detail.nickname?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ([nickname?.isEmpty == false ? nickname : nil,
+                 row.detail.gameTitle,
+                 row.detail.customMethodName ?? row.detail.methodName]
             .compactMap { $0 } + ["found \(found)"]).joined(separator: " · ")
     }
 }
