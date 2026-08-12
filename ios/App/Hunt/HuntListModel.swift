@@ -282,13 +282,22 @@ final class HuntListModel {
         pendingWrites[id]?.cancel()
         do {
             // Sends the clock for the same reason `flush` does, so a completed hunt records the
-            // time it actually took. No `allowDecrease`: completing is not the "−" control.
+            // time it actually took.
+            //
+            // It carries `allowDecrease` for the same reason too: the cancel above means this
+            // PATCH inherits whatever the debounced one was going to send, including a "−"
+            // pressed inside the 400ms window. Without the permission the monotonic guard
+            // (`calc.DecideEncounterCount`) clamps that decrement away silently — no error, and a
+            // History row showing a count the user did not choose. `drop` clears the flag on the
+            // way out; the failure path deliberately keeps it, since nothing is rolled back here
+            // and a retry has to carry the same permission.
             _ = try await client.updateHunt(
                 huntID: id,
                 UpdateHuntRequest(
                     encounterCount: row.count,
                     status: .completed,
-                    totalTimeSeconds: clocks[id]?.totalSeconds
+                    totalTimeSeconds: clocks[id]?.totalSeconds,
+                    allowDecrease: loweredByUser.contains(id) ? true : nil
                 )
             )
             await drop(id)
