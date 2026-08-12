@@ -57,6 +57,8 @@ private struct NuzlockeStubTransport: HTTPTransport {
             return (Data(games.utf8), 200)
         case (_, "/api/pokemon"):
             return (Data(species.utf8), 200)
+        case (_, "/api/nuzlocke/versions"):
+            return (Data("[\"platinum\"]".utf8), 200)
         case (_, "/api/nuzlocke/timeline"):
             return (Data("[\(timelineEntries)]".utf8), 200)
         case ("GET", "/api/runs"):
@@ -116,13 +118,13 @@ private let timelineEntries = """
  "boss_title":"Rival","place":"Route 203","level_cap":9,
  "squad":[{"pokemon_id":396,"pokemon_name":"starly","sprite_url":"","level":7,
            "ability":"Keen Eye",
-           "moves":[{"name":"Quick Attack","type":"Normal","power":40},
-                    {"name":"Growl","type":"Normal","power":0},
-                    {"name":"Wing Attack","type":"Flying","power":60}]},
+           "moves":[{"name":"Quick Attack","type":"Normal","power":40,"damage_class":"physical"},
+                    {"name":"Growl","type":"Normal","power":0,"damage_class":"status"},
+                    {"name":"Wing Attack","type":"Flying","power":60,"damage_class":"physical"}]},
           {"pokemon_id":390,"pokemon_name":"chimchar","sprite_url":"","level":9,
            "ability":"Blaze",
-           "moves":[{"name":"Scratch","type":"Normal","power":40},
-                    {"name":"Ember","type":"Fire","power":40}]}]},
+           "moves":[{"name":"Scratch","type":"Normal","power":40,"damage_class":"physical"},
+                    {"name":"Ember","type":"Fire","power":40,"damage_class":"special"}]}]},
 {"id":5,"slug":"r203","kind":"location","name":"Route 203","sort_order":5,
  "encounters":[{"pokemon_id":396,"pokemon_name":"starly","sprite_url":""},
                {"pokemon_id":403,"pokemon_name":"shinx","sprite_url":""},
@@ -141,24 +143,24 @@ private let timelineEntries = """
  "boss_title":"Gym Leader · Rock","place":"Oreburgh Gym","level_cap":14,
  "squad":[{"pokemon_id":74,"pokemon_name":"geodude","sprite_url":"","level":12,
            "ability":"Sturdy",
-           "moves":[{"name":"Stealth Rock","type":"Rock","power":0},
-                    {"name":"Rock Throw","type":"Rock","power":50}]},
+           "moves":[{"name":"Stealth Rock","type":"Rock","power":0,"damage_class":"status"},
+                    {"name":"Rock Throw","type":"Rock","power":50,"damage_class":"physical"}]},
           {"pokemon_id":95,"pokemon_name":"onix","sprite_url":"","level":12,
            "ability":"Rock Head",
-           "moves":[{"name":"Rock Throw","type":"Rock","power":50},
-                    {"name":"Screech","type":"Normal","power":0}]},
+           "moves":[{"name":"Rock Throw","type":"Rock","power":50,"damage_class":"physical"},
+                    {"name":"Screech","type":"Normal","power":0,"damage_class":"status"}]},
           {"pokemon_id":408,"pokemon_name":"cranidos","sprite_url":"","level":14,
            "ability":"Mold Breaker",
-           "moves":[{"name":"Headbutt","type":"Normal","power":70},
-                    {"name":"Leer","type":"Normal","power":0},
-                    {"name":"Focus Energy","type":"Normal","power":0},
-                    {"name":"Pursuit","type":"Dark","power":40}]}]}
+           "moves":[{"name":"Headbutt","type":"Normal","power":70,"damage_class":"physical"},
+                    {"name":"Leer","type":"Normal","power":0,"damage_class":"status"},
+                    {"name":"Focus Energy","type":"Normal","power":0,"damage_class":"status"},
+                    {"name":"Pursuit","type":"Dark","power":40,"damage_class":"special"}]}]}
 """
 
 private let runFields = """
 "id":"aaaaaaaa-0000-4000-8000-00000000aaaa",
 "user_id":"00000000-0000-0000-0000-0000000000aa",
-"game_id":4,"game_title":"Platinum",
+"game_id":4,"version":"platinum","game_title":"Platinum",
 "dupes_clause":true,"battle_style":"set","nicknames_required":true,
 "status":"active","started_at":"2026-08-05T09:00:00Z","ended_at":null,
 "created_at":"2026-08-05T09:00:00Z","updated_at":"2026-08-11T20:14:00Z"

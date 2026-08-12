@@ -14,8 +14,11 @@ struct NewRunSheet: View {
 
     @State private var games: [Game] = []
     @State private var gameID: Int?
-    /// How many timeline stops the picked game has seeded — nil while unknown.
-    @State private var seededStops: Int?
+    /// Versions of the picked game that have a seeded timeline — nil while unknown, empty when
+    /// the game cannot be Nuzlocked at all. One `games` row can cover three versions whose
+    /// routes and trainers differ, so this is a real choice, not a formality.
+    @State private var versions: [String]?
+    @State private var version: String?
     @State private var checking = false
     @State private var dupesClause = true
     @State private var battleStyle: BattleStyle = .set
@@ -24,7 +27,7 @@ struct NewRunSheet: View {
     @State private var failure: String?
 
     private var canStart: Bool {
-        gameID != nil && !starting && !checking && (seededStops ?? 0) > 0
+        gameID != nil && version != nil && !starting && !checking
     }
 
     var body: some View {
@@ -36,6 +39,7 @@ struct NewRunSheet: View {
                     .foregroundStyle(Palette.textPrimary.color)
 
                 gamePicker
+                versionPicker
                 presets
                 clauses
 
@@ -98,30 +102,71 @@ struct NewRunSheet: View {
                 )
             }
 
-            // Routes are seeded per game (`backend/seeds/nuzlocke_*.json`) and today only
-            // Platinum has any. `CreateRunHandler` rejects a game with no timeline, so the pick
-            // is checked here instead of letting the user fill the form and then be refused.
-            if let stops = seededStops, gameID != nil {
-                Text(
-                    stops > 0
-                        ? "\(stops) stops seeded — routes and checkpoints in order"
-                        : "No Nuzlocke route is seeded for this game yet."
+            // Routes are seeded per game AND version (`backend/seeds/nuzlocke_*.json`).
+            // `CreateRunHandler` rejects an unseeded pair, so it is checked here rather than
+            // letting the user fill the whole form and then be refused.
+            if let versions, versions.isEmpty, gameID != nil {
+                Text("No Nuzlocke route is seeded for this game yet.")
+                    .font(Typography.hint)
+                    .foregroundStyle(Palette.danger.color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// Only shown when there is a choice to make. A single seeded version is picked silently —
+    /// asking "which version?" of a one-option list is a question with no information in it.
+    @ViewBuilder
+    private var versionPicker: some View {
+        if let versions, versions.count > 1 {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Version")
+                    .font(Typography.blockLabel)
+                    .tracking(Typography.blockLabelTracking)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Palette.textMuted.color)
+                HStack(spacing: 2) {
+                    ForEach(versions, id: \.self) { candidate in
+                        let on = candidate == version
+                        Button { version = candidate } label: {
+                            Text(candidate.capitalized)
+                                .font(on ? Typography.segmentOn : Typography.segmentOff)
+                                .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(
+                                    on ? Palette.nuzlocke.color : .clear,
+                                    in: .rect(cornerRadius: Radii.segmentItem)
+                                )
+                                .contentShape(.rect)
+                        }
+                        .accessibilityAddTraits(on ? [.isSelected] : [])
+                    }
+                }
+                .padding(3)
+                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.segment))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radii.segment)
+                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
                 )
-                .font(Typography.hint)
-                .foregroundStyle((stops > 0 ? Palette.textMuted : Palette.danger).color)
-                .fixedSize(horizontal: false, vertical: true)
+                Text("Routes and trainers differ between versions.")
+                    .font(Typography.hint)
+                    .foregroundStyle(Palette.textFaint.color)
             }
         }
     }
 
     private func pick(_ id: Int) {
         gameID = id
-        seededStops = nil
+        versions = nil
+        version = nil
         failure = nil
         checking = true
         Task {
             do {
-                seededStops = try await model.client.nuzlockeTimeline(gameID: id).count
+                let found = try await model.client.nuzlockeVersions(gameID: id)
+                versions = found
+                version = found.first          // silently correct when there is only one
             } catch {
                 failure = userFacingMessage(for: error)
             }
@@ -226,13 +271,14 @@ struct NewRunSheet: View {
     }
 
     private func start() {
-        guard let gameID else { return }
+        guard let gameID, let version else { return }
         starting = true
         failure = nil
         Task {
             failure = await model.startRun(
                 CreateRunRequest(
                     gameID: gameID,
+                    version: version,
                     dupesClause: dupesClause,
                     battleStyle: battleStyle,
                     nicknamesRequired: nicknamesRequired

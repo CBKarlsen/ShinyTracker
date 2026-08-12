@@ -227,8 +227,12 @@ final class NuzlockeModel {
     ///
     /// The threat is read off the boss's **moves**, not its species types, for two reasons: the
     /// API sends the squad's movesets and not their types, and what actually hurts you is the
-    /// damage you will be hit with. Status moves are seeded with `power: 0` and are excluded —
-    /// a Growl threatens nothing.
+    /// damage you will be hit with. Status moves are excluded — a Growl threatens nothing.
+    ///
+    /// The test is ``NuzlockeBossMove/isDamaging`` (damage class), **not** `power > 0`. Power is
+    /// 0 for every variable-power move, and fifteen of Platinum's seeded boss moves are in that
+    /// state — including all three of Gardenia's Grass Knots, which would otherwise make the
+    /// Grass gym look like it threatened nothing at all.
     ///
     /// Returns empty rather than guessing whenever the answer would be unsound: no checkpoint, an
     /// empty party, or any living member whose types have not loaded. That last guard matters —
@@ -243,7 +247,7 @@ final class NuzlockeModel {
 
         let threats = Set(
             squad.flatMap { $0.moves ?? [] }
-                .filter { $0.power > 0 }
+                .filter(\.isDamaging)
                 .compactMap { PokemonType(slug: $0.type) }
         )
 

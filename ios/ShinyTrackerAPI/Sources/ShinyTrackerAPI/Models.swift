@@ -578,7 +578,21 @@ public struct NuzlockeEncounterOption: Decodable, Sendable, Equatable, Identifia
 public struct NuzlockeBossMove: Decodable, Sendable, Equatable {
     public let name: String
     public let type: String
+    /// Base power, or **0 for a variable-power move** — Grass Knot, Metal Burst, Gyro Ball,
+    /// Endeavor, Night Shade. Zero here does not mean harmless; use ``isDamaging``.
     public let power: Int
+    /// `physical` | `special` | `status`. The honest test for "will this hurt me", because
+    /// `moves.power` is NULL for every variable-power damaging move and seeds as 0 (migration
+    /// 017). Fifteen of Platinum's seeded boss moves are in exactly that state.
+    public let damageClass: String
+
+    /// Whether this move deals damage at all.
+    public var isDamaging: Bool { damageClass != "status" }
+
+    enum CodingKeys: String, CodingKey {
+        case name, type, power
+        case damageClass = "damage_class"
+    }
 }
 
 /// One member of a boss's squad — `models.NuzlockeBossMon`.
@@ -642,6 +656,10 @@ public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let userID: UUID
     public let gameID: Int?
+    /// Which version's timeline this run follows — `platinum`, `diamond`, … Fixed at creation:
+    /// one `games` row covers all three Sinnoh versions and they disagree about both routes and
+    /// trainers (Fantina is gym 3 in Platinum, gym 5 in D/P).
+    public let version: String
     public let gameTitle: String?
     public let dupesClause: Bool
     /// `"set"` or `"shift"`. ``BattleStyle`` types the write side.
@@ -657,7 +675,7 @@ public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
     public var isActive: Bool { status == "active" }
 
     enum CodingKeys: String, CodingKey {
-        case id, status
+        case id, status, version
         case userID = "user_id"
         case gameID = "game_id"
         case gameTitle = "game_title"
@@ -732,6 +750,7 @@ public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let userID: UUID
     public let gameID: Int?
+    public let version: String
     public let gameTitle: String?
     public let dupesClause: Bool
     public let battleStyle: String
@@ -750,7 +769,7 @@ public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
     public var isActive: Bool { status == "active" }
 
     enum CodingKeys: String, CodingKey {
-        case id, status, timeline, encounters
+        case id, status, timeline, encounters, version
         case userID = "user_id"
         case gameID = "game_id"
         case gameTitle = "game_title"
@@ -800,23 +819,29 @@ public enum PartyStatus: String, Codable, Sendable {
 /// are non-optional here and always sent explicitly.
 public struct CreateRunRequest: Codable, Sendable, Equatable {
     public let gameID: Int
+    /// Required by the server: it validates the timeline per (game, version), so Platinum being
+    /// seeded says nothing about whether Diamond is.
+    public let version: String
     public let dupesClause: Bool
     public let battleStyle: BattleStyle
     public let nicknamesRequired: Bool
 
     public init(
         gameID: Int,
+        version: String,
         dupesClause: Bool = true,
         battleStyle: BattleStyle = .set,
         nicknamesRequired: Bool = true
     ) {
         self.gameID = gameID
+        self.version = version
         self.dupesClause = dupesClause
         self.battleStyle = battleStyle
         self.nicknamesRequired = nicknamesRequired
     }
 
     enum CodingKeys: String, CodingKey {
+        case version
         case gameID = "game_id"
         case dupesClause = "dupes_clause"
         case battleStyle = "battle_style"

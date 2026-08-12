@@ -282,6 +282,11 @@ CREATE TABLE IF NOT EXISTS user_hunts (
 CREATE TABLE IF NOT EXISTS nuzlocke_timeline_entries (
     id          SERIAL PRIMARY KEY,
     game_id     INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    -- Which version of a multi-version games row this stop belongs to
+    -- ('platinum', 'diamond', …), same vocabulary as pokemon_locations.version.
+    -- games.id 5 is "Diamond/Pearl/Platinum" and the three disagree about both
+    -- encounter tables and trainers — see migration 017.
+    version     TEXT NOT NULL,
     slug        TEXT NOT NULL,
     kind        TEXT NOT NULL CHECK (kind IN ('location', 'boss')),
     name        TEXT NOT NULL,
@@ -289,11 +294,11 @@ CREATE TABLE IF NOT EXISTS nuzlocke_timeline_entries (
     place       TEXT,
     boss_title  TEXT,
     level_cap   INTEGER,
-    UNIQUE (game_id, slug)
+    UNIQUE (game_id, version, slug)
 );
 
 CREATE INDEX IF NOT EXISTS idx_nuzlocke_timeline_entries_game_order
-    ON nuzlocke_timeline_entries (game_id, sort_order);
+    ON nuzlocke_timeline_entries (game_id, version, sort_order);
 
 CREATE TABLE IF NOT EXISTS nuzlocke_encounter_pool (
     id                 SERIAL PRIMARY KEY,
@@ -324,7 +329,12 @@ CREATE TABLE IF NOT EXISTS nuzlocke_boss_moves (
     boss_pokemon_id  INTEGER NOT NULL REFERENCES nuzlocke_boss_pokemon(id) ON DELETE CASCADE,
     name             TEXT NOT NULL,
     type             TEXT NOT NULL,
+    -- 0 also means "variable power" (Grass Knot, Metal Burst, Gyro Ball):
+    -- moves.power is NULL for those. damage_class, not power, is the test for
+    -- whether a move threatens anything — see migration 017.
     power            INTEGER NOT NULL DEFAULT 0,
+    damage_class     TEXT NOT NULL DEFAULT 'status'
+                     CHECK (damage_class IN ('physical', 'special', 'status')),
     sort_order       INTEGER NOT NULL,
     UNIQUE (boss_pokemon_id, sort_order)
 );
@@ -341,6 +351,9 @@ CREATE TABLE IF NOT EXISTS nuzlocke_runs (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id             UUID NOT NULL,
     game_id             INTEGER REFERENCES games(id) ON DELETE SET NULL,
+    -- Which version's timeline this run follows. Fixed at creation: switching
+    -- would strand its logged encounters on entries no longer in its route.
+    version             TEXT NOT NULL,
     dupes_clause        BOOLEAN NOT NULL DEFAULT TRUE,
     battle_style        TEXT NOT NULL DEFAULT 'set' CHECK (battle_style IN ('set', 'shift')),
     nicknames_required  BOOLEAN NOT NULL DEFAULT TRUE,
