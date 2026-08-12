@@ -6,8 +6,9 @@ import { useNotification } from "../context/NotificationContext";
 import RouteList from "../features/routes/RouteList";
 import { startRouteHunt } from "../features/routes/startHunt";
 import { usePokemonRoute } from "../features/routes/usePokemonRoute";
-import { defaultParamsFor, routeNeedsParams } from "../utils/odds";
 import type { Pokemon, PokemonRoute } from "../types/models";
+import { defaultParamsFor, routeNeedsParams } from "../utils/odds";
+import { getSpriteUrl } from "../utils/pokemon";
 
 interface Props {
 	pokemon: Pokemon;
@@ -98,8 +99,14 @@ const DexDrawer: React.FC<Props> = ({
 		if (startingRef.current) return;
 		startingRef.current = true;
 		try {
-			const res = await startRouteHunt(route, pokemon, defaultParamsFor(route.formula_type), token);
-			if (!res.ok) throw new Error((await res.text()) || "Failed to start hunt.");
+			const res = await startRouteHunt(
+				route,
+				pokemon,
+				defaultParamsFor(route.formula_type),
+				token,
+			);
+			if (!res.ok)
+				throw new Error((await res.text()) || "Failed to start hunt.");
 			showSuccess(`Started hunt · ${route.method_name}`);
 			onHuntStarted?.();
 			onClose();
@@ -118,7 +125,11 @@ const DexDrawer: React.FC<Props> = ({
 			>
 				<div className="dex-drawer-head">
 					<img
-						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${pokemon.id}.png`}
+						src={getSpriteUrl(
+							pokemon.id,
+							caught,
+							caught ? pokemon.shiny_sprite_url : pokemon.sprite_url,
+						)}
 						alt={pokemon.name}
 						width={60}
 						height={60}

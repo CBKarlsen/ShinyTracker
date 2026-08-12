@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { IcClose } from "../../components/ui/icons";
-import type { Hunt, PokemonOption } from "../../types/models";
 import { API_BASE } from "../../config";
 import { useNotification } from "../../context/NotificationContext";
+import type { Hunt, PokemonOption } from "../../types/models";
+import { getSpriteUrl } from "../../utils/pokemon";
 
 function fmtNum(n: number) {
 	return n.toLocaleString("en-US");
 }
 
-export function PhaseModal({ hunt, token, onClose, onSuccess }: {
+export function PhaseModal({
+	hunt,
+	token,
+	onClose,
+	onSuccess,
+}: {
 	hunt: Hunt;
 	token: string;
 	onClose: () => void;
@@ -24,7 +30,9 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 			try {
 				const res = await fetch(`${API_BASE}/api/pokemon?q=${search}`);
 				if (res.ok) setOptions((await res.json()) || []);
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}, 300);
 		return () => clearTimeout(timer);
 	}, [search]);
@@ -34,7 +42,10 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 		try {
 			const res = await fetch(`${API_BASE}/api/hunts/${hunt.id}/phases`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: `Bearer ${token}`,
+				},
 				body: JSON.stringify({ pokemon_id: pokemon.id }),
 			});
 			if (res.ok) {
@@ -53,7 +64,11 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 
 	return (
 		<div className="scrim" onClick={onClose}>
-			<div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 420 }}>
+			<div
+				className="drawer"
+				onClick={(e) => e.stopPropagation()}
+				style={{ width: 420 }}
+			>
 				<div className="drawer-head">
 					<h2>Log phase</h2>
 					<button className="close" onClick={onClose}>
@@ -61,11 +76,20 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 					</button>
 				</div>
 				<div className="drawer-body">
-					<div style={{ color: "var(--ink-3)", fontSize: 12.5, marginBottom: 16, lineHeight: 1.55 }}>
-						Hunting <b style={{ color: "var(--ink-1)" }}>{hunt.pokemon_name}</b> — which shiny did you
-						encounter? Your count of{" "}
-						<b style={{ color: "var(--gold)" }}>{fmtNum(hunt.encounter_count)}</b> will be saved as a
-						phase and reset to 0.
+					<div
+						style={{
+							color: "var(--ink-3)",
+							fontSize: 12.5,
+							marginBottom: 16,
+							lineHeight: 1.55,
+						}}
+					>
+						Hunting <b style={{ color: "var(--ink-1)" }}>{hunt.pokemon_name}</b>{" "}
+						— which shiny did you encounter? Your count of{" "}
+						<b style={{ color: "var(--gold)" }}>
+							{fmtNum(hunt.encounter_count)}
+						</b>{" "}
+						will be saved as a phase and reset to 0.
 					</div>
 					<div className="field">
 						<label>Phase Pokémon</label>
@@ -85,7 +109,10 @@ export function PhaseModal({ hunt, token, onClose, onSuccess }: {
 								onClick={() => !submitting && handleSelect(p)}
 								style={{ opacity: submitting ? 0.5 : 1 }}
 							>
-								<img src={p.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`} alt={p.name} />
+								<img
+									src={getSpriteUrl(p.id, false, p.sprite_url)}
+									alt={p.name}
+								/>
 								<div className="nm">{p.name}</div>
 								<div className="id">#{String(p.id).padStart(4, "0")}</div>
 							</div>

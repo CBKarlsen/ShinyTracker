@@ -25,8 +25,15 @@ ALTER TABLE pokemon ADD COLUMN IF NOT EXISTS shiny_sprite_url TEXT;
 -- risks real user hunts. Populate here; leave cmd/sync for a deliberate,
 -- backed-up full catalog refresh.
 --
--- Idempotent: only touches rows that have no shiny URL yet.
+-- Anchored to the trailing /pokemon/{id}.png rather than a bare replace() of
+-- '/pokemon/': a host that repeats that segment would otherwise have the wrong
+-- occurrence rewritten. The WHERE tests the same pattern on purpose --
+-- regexp_replace returns its input untouched when nothing matches, so a laxer
+-- filter here would quietly store the *non-shiny* URL as the shiny one.
+--
+-- Idempotent: only touches rows that have no shiny URL yet, so it never
+-- overwrites a real front_shiny that SyncPokemonData has already written.
 UPDATE pokemon
-   SET shiny_sprite_url = replace(sprite_url, '/pokemon/', '/pokemon/shiny/')
+   SET shiny_sprite_url = regexp_replace(sprite_url, '/pokemon/([0-9]+\.png)$', '/pokemon/shiny/\1')
  WHERE shiny_sprite_url IS NULL
-   AND sprite_url LIKE '%/pokemon/%';
+   AND sprite_url ~ '/pokemon/[0-9]+\.png$';

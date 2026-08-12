@@ -4,9 +4,10 @@ import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
+import { getSpriteUrl } from "../utils/pokemon";
 import DexDrawer from "./DexDrawer";
-import HuntNextPanel from "./HuntNextPanel";
 import type { HuntDetail } from "./HistoricHunts";
+import HuntNextPanel from "./HuntNextPanel";
 
 const GEN_RANGES: [number, number, number][] = [
 	[1, 1, 151],
@@ -278,7 +279,11 @@ const Collection: React.FC<{
 										title={p.name}
 									>
 										<img
-											src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${caught ? "shiny/" : ""}${p.id}.png`}
+											src={getSpriteUrl(
+												p.id,
+												caught,
+												caught ? p.shiny_sprite_url : p.sprite_url,
+											)}
 											alt={p.name}
 											loading="lazy"
 										/>
