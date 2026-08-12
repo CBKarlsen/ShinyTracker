@@ -160,6 +160,12 @@ public actor APIClient {
         try await get("api/pokemon/\(id)", query: intQuery("game_id", gameID))
     }
 
+    /// Every species obtainable in one game — `pokemon_availability.pokemon_id`, and the Dex's
+    /// per-game denominator. A game with no availability rows returns empty rather than 404.
+    public func gamePokemon(gameID: Int) async throws -> [Int] {
+        try await getList("api/games/\(gameID)/pokemon")
+    }
+
     /// Every curated method, optionally narrowed to one game.
     public func methods(gameID: Int? = nil) async throws -> [MethodDetail] {
         try await getList("api/methods", query: intQuery("game_id", gameID))

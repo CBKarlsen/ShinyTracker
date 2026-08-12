@@ -24,7 +24,7 @@ struct DexTileState: Equatable {
     /// Ticked and not un-tickable — a shiny finished in Hunt, or (in Living) one covered by a
     /// shiny you own. Tapping does nothing on purpose.
     var locked = false
-    /// Outside the counted set: not in any game you own, or shiny locked everywhere.
+    /// Outside the counted set: not obtainable in the current scope, or shiny locked everywhere.
     var unavailable = false
     /// The line under the name.
     var sub = ""
@@ -57,9 +57,20 @@ final class DexModel {
     private(set) var sections: [DexSection] = []
     private(set) var games: [Game] = []
 
-    /// nil = "All your games" — the only scope `/api/dex/status` can actually answer for.
-    var selectedGameID: Int?
+    /// nil = "All your games", which is the scope `/api/dex/status` answers for. Picking one
+    /// game narrows the counted set to that game's availability list.
+    var selectedGameID: Int? {
+        didSet {
+            guard selectedGameID != oldValue else { return }
+            availableInGame = nil
+            Task { await loadAvailability() }
+        }
+    }
     var view: DexView = .browse
+
+    /// The selected game's obtainable species. nil means no game is picked — or its list has
+    /// not arrived — and the count falls back to the whole library.
+    private(set) var availableInGame: Set<Int>?
 
     /// Shinies finished in Hunt. Read-only here, by design.
     private(set) var huntShinyIDs: Set<Int> = []
@@ -119,10 +130,22 @@ final class DexModel {
             apply(hunts: hunts)
             notInYourGames = Set(status?.notInYourGames ?? [])
             lockedEverywhere = Set(status?.lockedEverywhere ?? [])
+            await loadAvailability()
             state = .ready
         } catch {
             state = .failed(userFacingMessage(for: error))
         }
+    }
+
+    /// Narrows the counted set to the picked game. Like `/api/dex/status`, a failure degrades to
+    /// the library-wide count rather than failing the screen — and ``scopeNote`` says which one
+    /// the bar just used, so a silent fallback is never read as a per-game number.
+    private func loadAvailability() async {
+        guard let gameID = selectedGameID else { return }
+        guard let ids = try? await client.gamePokemon(gameID: gameID) else { return }
+        // A game picked while this was in flight wins; a late reply must not overwrite it.
+        guard selectedGameID == gameID else { return }
+        availableInGame = Set(ids)
     }
 
     private func apply(hunts: [HuntDetail]) {
@@ -180,27 +203,33 @@ final class DexModel {
     var livingIDs: Set<Int> { livingOnlyIDs.union(shinyIDs) }
 
     // MARK: Obtainability
-    //
-    // ponytail: the qualifier the design puts on the bar — "counts only what is obtainable in
-    // the selected game" — needs a per-game availability set, and the API has no endpoint that
-    // returns one. `/api/dex/status` answers a *library-wide* question ("in none of the games
-    // you own"), `/api/pokemon/{id}` answers a per-species one, and `/api/admin/availability`
-    // is admin-only and also per-species. So the counted set here is "obtainable in your
-    // library", and ``scopeNote`` says so on screen rather than letting the bar imply more
-    // than it knows. One bulk endpoint — `GET /api/games/{id}/pokemon` returning
-    // `pokemon_availability.pokemon_id` for a game — makes this exact.
 
     /// Not in any game the user owns.
     func isOutOfLibrary(_ id: Int) -> Bool { notInYourGames.contains(id) }
 
     /// Shiny locked in every game it appears in — it can never be caught shiny, so it is not
     /// part of the Shiny Dex's denominator.
+    ///
+    /// ponytail: still the *library-wide* answer even when one game is picked, because
+    /// `/api/dex/status` is the only shiny-lock source and it has no per-game mode. So a species
+    /// locked in the selected game but catchable elsewhere is still counted here. Needs a lock
+    /// flag on the availability row to fix; the denominator is right, this one flag isn't.
     func isShinyLocked(_ id: Int) -> Bool { lockedEverywhere.contains(id) }
 
-    /// Counted for the current view.
+    /// Counted for the current view. A picked game replaces the library-wide test rather than
+    /// narrowing it: its availability list is already the exact obtainable set.
     func isCounted(_ id: Int) -> Bool {
-        if isOutOfLibrary(id) { return false }
+        if let availableInGame {
+            guard availableInGame.contains(id) else { return false }
+        } else if isOutOfLibrary(id) {
+            return false
+        }
         return view == .shiny ? !isShinyLocked(id) : true
+    }
+
+    /// Why a tile is outside the counted set, in the scope the bar is actually using.
+    var outOfScopeNote: String {
+        availableInGame != nil ? "not in this game" : "not in your games"
     }
 
     var countedTotal: Int {
@@ -231,15 +260,18 @@ final class DexModel {
     var scopeNote: String? {
         guard view != .browse else { return nil }
         if countedTotal == 0 {
+            // Only blame the game's dataset when its list is the one that was actually counted;
+            // during the nil fallback an empty count is the library's fault, not the game's.
+            if availableInGame != nil, let game = selectedGame {
+                return "No availability data for \(game.title) yet, so nothing counts."
+            }
             return "No games in your library, so nothing counts yet — add the games you own, "
                 + "and the bar starts counting what they can catch."
         }
-        if let game = selectedGame {
-            return "Counted across every game in your library. \(game.title) scopes the "
-                + "locations and moveset on a species, but per-game availability is not in the "
-                + "API yet, so it does not change this count."
-        }
-        return "Counted across every game in your library."
+        guard let game = selectedGame else { return "Counted across every game in your library." }
+        return availableInGame != nil
+            ? "Counted across what \(game.title) can catch."
+            : "Counted across every game in your library — \(game.title)'s own list didn't load."
     }
 
     // MARK: Tiles
@@ -252,7 +284,7 @@ final class DexModel {
         switch view {
         case .browse:
             tile.sub = tile.unavailable
-                ? (isShinyLocked(id) ? "shiny locked" : "not in your games")
+                ? (isShinyLocked(id) ? "shiny locked" : outOfScopeNote)
                 : "#" + String(format: "%03d", id)
             tile.subColour = tile.unavailable
                 ? Palette.textMuted.color : Palette.textFaint.color
@@ -262,7 +294,7 @@ final class DexModel {
             tile.goldDot = shinyIDs.contains(id) && !tile.unavailable
             tile.locked = shinyIDs.contains(id)
             if tile.unavailable {
-                tile.sub = "not in your games"
+                tile.sub = outOfScopeNote
             } else if tile.locked && !livingOnlyIDs.contains(id) {
                 tile.sub = "Shiny — counts"
                 tile.subColour = Palette.hunt.color
@@ -276,7 +308,7 @@ final class DexModel {
             tile.registered = shinyIDs.contains(id)
             tile.locked = huntShinyIDs.contains(id)
             if tile.unavailable {
-                tile.sub = isShinyLocked(id) ? "shiny locked" : "not in your games"
+                tile.sub = isShinyLocked(id) ? "shiny locked" : outOfScopeNote
             } else if let encounters = huntEncounters[id], tile.locked {
                 tile.sub = "\(encounters.formatted(.number)) enc"
                 tile.subColour = Palette.hunt.color
@@ -311,9 +343,14 @@ final class DexModel {
         syncError = nil
 
         guard isCounted(id) else {
-            refusal = view == .shiny && isShinyLocked(id)
-                ? "\(species.name.capitalized) is shiny locked in every game it appears in."
-                : "\(species.name.capitalized) is not in any game in your library."
+            let name = species.name.capitalized
+            if view == .shiny, isShinyLocked(id) {
+                refusal = "\(name) is shiny locked in every game it appears in."
+            } else if availableInGame != nil, let game = selectedGame {
+                refusal = "\(name) can't be caught in \(game.title)."
+            } else {
+                refusal = "\(name) is not in any game in your library."
+            }
             Haptics.notify(.warning)
             return
         }

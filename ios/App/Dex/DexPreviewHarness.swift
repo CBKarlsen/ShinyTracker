@@ -35,7 +35,8 @@ enum DexPreview {
         argument(after: "-dexSpecies").flatMap(Int.init)
     }
 
-    /// `-dexGame 4` — start with a game picked, which is what scopes locations and movesets.
+    /// `-dexGame 4` — start with a game picked, which scopes the completion bar's denominator as
+    /// well as locations and movesets.
     static var initialGameID: Int? {
         argument(after: "-dexGame").flatMap(Int.init)
     }
@@ -114,6 +115,9 @@ private struct DexStubTransport: HTTPTransport {
             return (Data(#"{"message":"Catch removed successfully"}"#.utf8), 200)
         case (_, "/api/games"):
             return (Data(games.utf8), 200)
+        case (_, let gamePath) where gamePath.hasPrefix("/api/games/")
+            && gamePath.hasSuffix("/pokemon"):
+            return (Data(gameAvailability(fixture).utf8), 200)
         case (_, "/api/hunts"):
             return (Data(hunts.utf8), 200)
         case (_, "/api/dex/status"):
@@ -127,6 +131,14 @@ private struct DexStubTransport: HTTPTransport {
             return (Data(detail(id: id, withMoves: asked).utf8), 200)
         }
     }
+}
+
+/// `pokemon_availability` for whichever game `-dexGame` picked. Gen 1–4 only, and Jirachi
+/// dropped from it: the fixture needs one species that is in your library but *not* in this
+/// game, or the "not in this game" tile and its refusal never render in a preview.
+private func gameAvailability(_ fixture: DexPreview.Fixture) -> String {
+    let ids = fixture == .full ? Array(1...1025) : seededSpecies.map(\.id)
+    return "[\(ids.filter { $0 <= 493 && $0 != 385 }.map(String.init).joined(separator: ","))]"
 }
 
 private func speciesList(_ fixture: DexPreview.Fixture) -> String {
