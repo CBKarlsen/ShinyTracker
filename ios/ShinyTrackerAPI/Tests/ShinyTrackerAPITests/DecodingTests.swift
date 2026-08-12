@@ -434,3 +434,187 @@ private func apiDecoder() -> JSONDecoder {
     decoder.dateDecodingStrategy = .custom(decodeGoTimestamp)
     return decoder
 }
+
+// MARK: - Nuzlocke
+
+/// `GET /api/runs/{id}` — `models.NuzlockeRunDetail`. The timeline carries one entry of each
+/// kind, because they are two shapes in one type: the location has `encounters` and no
+/// `boss_title`/`level_cap`/`squad`, the boss has all of those and no `encounters`. Go's
+/// `omitempty` means the other kind's keys are *absent*, not null or empty.
+private let runDetailJSON = """
+{
+  "id": "5c1f0f7e-2b3a-4c5d-8e9f-0a1b2c3d4e5f",
+  "user_id": "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
+  "game_id": 12,
+  "game_title": "Platinum",
+  "dupes_clause": true,
+  "battle_style": "set",
+  "nicknames_required": true,
+  "status": "active",
+  "started_at": "2026-08-01T09:00:00Z",
+  "ended_at": null,
+  "created_at": "2026-08-01T09:00:00.482913Z",
+  "updated_at": "2026-08-06T18:20:00Z",
+  "timeline": [
+    {
+      "id": 41,
+      "slug": "r201",
+      "kind": "location",
+      "name": "Route 201",
+      "sort_order": 2,
+      "encounters": [
+        {"pokemon_id": 396, "pokemon_name": "starly", "sprite_url": "https://img.example/396.png"},
+        {"pokemon_id": 399, "pokemon_name": "bidoof", "sprite_url": ""}
+      ]
+    },
+    {
+      "id": 48,
+      "slug": "gym1",
+      "kind": "boss",
+      "name": "Roark",
+      "sort_order": 9,
+      "place": "Oreburgh City",
+      "boss_title": "Gym Leader",
+      "level_cap": 14,
+      "squad": [
+        {
+          "pokemon_id": 95,
+          "pokemon_name": "onix",
+          "sprite_url": "https://img.example/95.png",
+          "level": 12,
+          "ability": "Rock Head",
+          "moves": [{"name": "Stealth Rock", "type": "rock", "power": 0}]
+        },
+        {
+          "pokemon_id": 408,
+          "pokemon_name": "cranidos",
+          "sprite_url": "",
+          "level": 14,
+          "ability": "Mold Breaker",
+          "moves": null
+        }
+      ]
+    }
+  ],
+  "encounters": [
+    {
+      "id": "9a8b7c6d-5e4f-4a3b-9c8d-7e6f5a4b3c2d",
+      "run_id": "5c1f0f7e-2b3a-4c5d-8e9f-0a1b2c3d4e5f",
+      "location_slug": "r201",
+      "pokemon_id": 399,
+      "pokemon_name": "bidoof",
+      "nickname": "Chomper",
+      "status": "fainted",
+      "nature": null,
+      "is_boxed": false,
+      "is_dupe": false,
+      "created_at": "2026-08-01T09:14:00Z",
+      "updated_at": "2026-08-03T11:02:00Z"
+    }
+  ],
+  "boss_progress": [
+    {"boss_slug": "gym1", "beaten": true}
+  ]
+}
+"""
+
+@Test func decodesRunDetailWithBothTimelineKinds() throws {
+    let detail = try apiDecoder().decode(NuzlockeRunDetail.self, from: Data(runDetailJSON.utf8))
+
+    #expect(detail.gameTitle == "Platinum")
+    #expect(detail.isActive)
+    #expect(detail.endedAt == nil)
+    #expect(detail.dupesClause && detail.nicknamesRequired)
+
+    let location = try #require(detail.timeline.first { !$0.isBoss })
+    #expect(location.encounters?.map(\.pokemonID) == [396, 399])
+    // The absent-vs-empty distinction: a location has no boss keys at all.
+    #expect(location.levelCap == nil)
+    #expect(location.squad == nil)
+
+    let boss = try #require(detail.timeline.first { $0.isBoss })
+    #expect(boss.bossTitle == "Gym Leader")
+    #expect(boss.levelCap == 14)
+    #expect(boss.encounters == nil)
+    #expect(boss.squad?.count == 2)
+    // `Moves` has no `omitempty`, so a squad member with no seeded moves sends `"moves":null` —
+    // nil, not []. The fixture spells the null out because that is what the server really writes.
+    #expect(boss.squad?.last?.moves == nil)
+    #expect(boss.squad?.first?.moves?.first?.power == 0)
+
+    let logged = try #require(detail.encounters.first)
+    #expect(logged.locationSlug == "r201")
+    #expect(logged.nickname == "Chomper")
+    #expect(logged.status == "fainted")
+    #expect(!logged.isDupe)
+
+    #expect(detail.bossProgress == [NuzlockeBossProgress(bossSlug: "gym1", beaten: true)])
+}
+
+/// `PUT /api/runs/{id}/encounters/{slug}` answers from a `RETURNING` clause with no join, so
+/// `pokemon_name` is absent and `location_slug` is filled in by the handler, not the query.
+@Test func decodesEncounterLogFromAWriteResponse() throws {
+    let json = """
+    {
+      "id": "9a8b7c6d-5e4f-4a3b-9c8d-7e6f5a4b3c2d",
+      "run_id": "5c1f0f7e-2b3a-4c5d-8e9f-0a1b2c3d4e5f",
+      "location_slug": "r202",
+      "pokemon_id": 403,
+      "nickname": "Sparks",
+      "status": "caught",
+      "nature": "Adamant",
+      "is_boxed": false,
+      "is_dupe": true,
+      "created_at": "2026-08-04T10:00:00Z",
+      "updated_at": "2026-08-04T10:00:00Z"
+    }
+    """
+    let log = try apiDecoder().decode(NuzlockeEncounterLog.self, from: Data(json.utf8))
+    #expect(log.pokemonName == nil)
+    #expect(log.isDupe)
+    #expect(log.pokemonID == 403)
+}
+
+/// A miss carries no Pokemon, so the body must omit `pokemon_id` rather than send null — and
+/// `is_boxed` must stay out of a request that is not setting it.
+@Test func logEncounterBodyOmitsWhatItIsNotSetting() throws {
+    let missed = LogEncounterRequest(status: .missed)
+    let json = try #require(String(data: JSONEncoder().encode(missed), encoding: .utf8))
+    #expect(json.contains("\"status\":\"missed\""))
+    #expect(!json.contains("pokemon_id"))
+    #expect(!json.contains("nickname"))
+    #expect(!json.contains("is_boxed"))
+    #expect(EncounterStatus.missed.carriesPokemon == false)
+    #expect(EncounterStatus.fainted.carriesPokemon)
+}
+
+/// `PUT .../encounters/{slug}` is an **upsert, not a patch**: `PutRunEncounterHandler` reads an
+/// absent `is_boxed` as `false` and writes it unconditionally. So omitting the field is not
+/// "leave it alone", it is "un-box this Pokémon" — a caller re-saving an existing row has to send
+/// the value it wants kept. This pins that `false` and absent are distinguishable on the wire,
+/// which is the whole reason `isBoxed` is an `Optional<Bool>` rather than a `Bool`.
+@Test func logEncounterBodyDistinguishesUnboxedFromUnspecified() throws {
+    let encoder = JSONEncoder()
+    let boxed = LogEncounterRequest(status: .caught, pokemonID: 74, isBoxed: true)
+    let unboxed = LogEncounterRequest(status: .caught, pokemonID: 74, isBoxed: false)
+    let unspecified = LogEncounterRequest(status: .caught, pokemonID: 74)
+
+    #expect(try #require(String(data: encoder.encode(boxed), encoding: .utf8))
+        .contains("\"is_boxed\":true"))
+    #expect(try #require(String(data: encoder.encode(unboxed), encoding: .utf8))
+        .contains("\"is_boxed\":false"))
+    #expect(!(try #require(String(data: encoder.encode(unspecified), encoding: .utf8))
+        .contains("is_boxed")))
+}
+
+/// The clauses are sent explicitly on every create: the server defaults them to *true*, so an
+/// omitted `false` would silently turn a clause the user switched off back on.
+@Test func createRunBodySendsEveryClause() throws {
+    let body = CreateRunRequest(
+        gameID: 12, dupesClause: false, battleStyle: .shift, nicknamesRequired: false)
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(json.contains("\"dupes_clause\":false"))
+    #expect(json.contains("\"nicknames_required\":false"))
+    #expect(json.contains("\"battle_style\":\"shift\""))
+    #expect(json.contains("\"game_id\":12"))
+}

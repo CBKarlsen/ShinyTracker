@@ -236,6 +236,64 @@ public actor APIClient {
         try await sendDiscardingBody("DELETE", "api/hunts/manual/\(pokemonID)", body: noBody)
     }
 
+    // MARK: Nuzlocke
+
+    /// The seeded route timeline for one game — pure reference data, not scoped to a user, and
+    /// empty for a game with no seeded route (which is all of them but Platinum today). That
+    /// emptiness is the only way to tell in advance what ``createRun(_:)`` would reject.
+    public func nuzlockeTimeline(gameID: Int) async throws -> [NuzlockeTimelineEntry] {
+        try await getList("api/nuzlocke/timeline", query: intQuery("game_id", gameID))
+    }
+
+    /// Every run the caller owns, newest first, active and ended together — the handler orders by
+    /// `created_at DESC` and does not filter by status.
+    public func runs() async throws -> [NuzlockeRun] {
+        try await getList("api/runs")
+    }
+
+    /// Starts a run. 400s for a game with no seeded Nuzlocke timeline, which is most of them —
+    /// only `seeds/nuzlocke_platinum.json` ships one — so the error is a normal outcome here,
+    /// not an exceptional one, and belongs in front of the user verbatim.
+    public func createRun(_ body: CreateRunRequest) async throws -> NuzlockeRun {
+        try await send("POST", "api/runs", body: body)
+    }
+
+    /// One run with its timeline, logged encounters and boss progress. 404s for another user's
+    /// run rather than 403, so existence is never leaked.
+    public func run(id runID: UUID) async throws -> NuzlockeRunDetail {
+        try await get("api/runs/\(id(runID))")
+    }
+
+    /// Ends a run (or reopens it). Runs are archived, never deleted.
+    public func updateRun(id runID: UUID, _ body: UpdateRunRequest) async throws -> NuzlockeRun {
+        try await send("PATCH", "api/runs/\(id(runID))", body: body)
+    }
+
+    /// Logs — or overwrites — the encounter at one location. The response has no `pokemon_name`
+    /// (see ``NuzlockeEncounterLog``), so callers rendering it directly carry the name over from
+    /// the pool entry they picked.
+    public func logEncounter(
+        runID: UUID, locationSlug: String, _ body: LogEncounterRequest
+    ) async throws -> NuzlockeEncounterLog {
+        try await send(
+            "PUT", "api/runs/\(id(runID))/encounters/\(locationSlug)", body: body)
+    }
+
+    /// Moves one catch between alive, boxed and fainted. `memberID` is the *logged encounter's*
+    /// id — a party member is a specific catch, not a location.
+    public func setPartyStatus(
+        runID: UUID, memberID: UUID, _ body: PartyStatusRequest
+    ) async throws -> NuzlockeEncounterLog {
+        try await send("PATCH", "api/runs/\(id(runID))/party/\(id(memberID))", body: body)
+    }
+
+    @discardableResult
+    public func setBossBeaten(
+        runID: UUID, bossSlug: String, _ body: BossProgressRequest
+    ) async throws -> NuzlockeBossProgress {
+        try await send("PUT", "api/runs/\(id(runID))/bosses/\(bossSlug)", body: body)
+    }
+
     // MARK: - Plumbing
 
     private func get<Response: Decodable>(

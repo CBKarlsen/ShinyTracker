@@ -380,17 +380,22 @@ struct StateBlock<Accessory: View>: View {
     let title: String
     /// Not named `body`: that is the `View` requirement, and a stored property would shadow it.
     let message: String
+    /// The icon's tint. Defaults to Hunt's gold, because every caller but Nuzlocke is a Hunt
+    /// screen — and a run screen must never show gold ("each mode owns a colour").
+    let tint: Swatch
     @ViewBuilder var accessory: () -> Accessory
 
     init(
         symbol: String,
         title: String,
         body: String,
+        tint: Swatch = Palette.hunt,
         @ViewBuilder accessory: @escaping () -> Accessory = { EmptyView() }
     ) {
         self.symbol = symbol
         self.title = title
         self.message = body
+        self.tint = tint
         self.accessory = accessory
     }
 
@@ -398,7 +403,7 @@ struct StateBlock<Accessory: View>: View {
         VStack(spacing: 0) {
             Image(systemName: symbol)
                 .font(.system(size: 26))
-                .foregroundStyle(Palette.hunt.color.opacity(0.55))
+                .foregroundStyle(tint.color.opacity(0.55))
                 .frame(width: 64, height: 64)
                 .background(Palette.surface.color, in: .rect(cornerRadius: Radii.iconTile))
                 .overlay(

@@ -553,3 +553,326 @@ public struct SetUserGameRequest: Codable, Sendable, Equatable {
         case hasShinyCharm = "has_shiny_charm"
     }
 }
+
+// MARK: - Nuzlocke
+
+/// One species in a location's seeded wild encounter pool — `models.NuzlockeEncounterOption`.
+///
+/// `PutRunEncounterHandler` validates the logged `pokemon_id` against exactly this pool, so a
+/// picker must offer these and nothing else: anything off-pool is a 400.
+public struct NuzlockeEncounterOption: Decodable, Sendable, Equatable, Identifiable {
+    public let pokemonID: Int
+    public let pokemonName: String
+    public let spriteURL: String
+
+    public var id: Int { pokemonID }
+
+    enum CodingKeys: String, CodingKey {
+        case pokemonID = "pokemon_id"
+        case pokemonName = "pokemon_name"
+        case spriteURL = "sprite_url"
+    }
+}
+
+/// One move on a boss squad member — `models.NuzlockeBossMove`.
+public struct NuzlockeBossMove: Decodable, Sendable, Equatable {
+    public let name: String
+    public let type: String
+    public let power: Int
+}
+
+/// One member of a boss's squad — `models.NuzlockeBossMon`.
+public struct NuzlockeBossMon: Decodable, Sendable, Equatable, Identifiable {
+    public let pokemonID: Int
+    public let pokemonName: String
+    public let spriteURL: String
+    public let level: Int
+    public let ability: String
+    /// Optional because it arrives as literal `null`, not because the key is missing: unlike the
+    /// timeline entry's `encounters`/`squad`, `models.NuzlockeBossMon.Moves` carries **no**
+    /// `omitempty`, and a nil Go slice marshals to `null`. A squad member with no seeded moves
+    /// therefore sends `"moves":null`.
+    public let moves: [NuzlockeBossMove]?
+
+    public var id: Int { pokemonID }
+
+    enum CodingKeys: String, CodingKey {
+        case level, ability, moves
+        case pokemonID = "pokemon_id"
+        case pokemonName = "pokemon_name"
+        case spriteURL = "sprite_url"
+    }
+}
+
+/// One point on the seeded route timeline — `models.NuzlockeTimelineEntry`.
+///
+/// Two shapes in one type, discriminated by ``kind``: a `location` carries ``encounters``, a
+/// `boss` carries ``bossTitle``/``place``/``levelCap``/``squad``. Every one of those is
+/// `omitempty` in Go, so the other kind's fields are simply absent — optional, not empty.
+public struct NuzlockeTimelineEntry: Decodable, Sendable, Equatable, Identifiable {
+    public let id: Int
+    public let slug: String
+    /// `"location"` or `"boss"` — a `CHECK` constraint, but kept a `String` for the same reason
+    /// hunt status is: an added kind must not fail the decode of the whole timeline.
+    public let kind: String
+    public let name: String
+    public let sortOrder: Int
+    public let place: String?
+    public let bossTitle: String?
+    public let levelCap: Int?
+    public let encounters: [NuzlockeEncounterOption]?
+    public let squad: [NuzlockeBossMon]?
+
+    public var isBoss: Bool { kind == "boss" }
+
+    enum CodingKeys: String, CodingKey {
+        case id, slug, kind, name, place, squad, encounters
+        case sortOrder = "sort_order"
+        case bossTitle = "boss_title"
+        case levelCap = "level_cap"
+    }
+}
+
+/// One playthrough — `models.NuzlockeRun`, from `GET/POST /api/runs` and `PATCH /api/runs/{id}`.
+///
+/// `gameID`/`gameTitle` are both nullable: the FK is `ON DELETE SET NULL`, so a run outlives the
+/// game row it was started against. A run in that state can no longer log anything — every write
+/// handler 400s with "This run has no game set".
+public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
+    public let id: UUID
+    public let userID: UUID
+    public let gameID: Int?
+    public let gameTitle: String?
+    public let dupesClause: Bool
+    /// `"set"` or `"shift"`. ``BattleStyle`` types the write side.
+    public let battleStyle: String
+    public let nicknamesRequired: Bool
+    /// `"active"` or `"ended"`. ``RunStatus`` types the write side.
+    public let status: String
+    public let startedAt: Date
+    public let endedAt: Date?
+    public let createdAt: Date
+    public let updatedAt: Date
+
+    public var isActive: Bool { status == "active" }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status
+        case userID = "user_id"
+        case gameID = "game_id"
+        case gameTitle = "game_title"
+        case dupesClause = "dupes_clause"
+        case battleStyle = "battle_style"
+        case nicknamesRequired = "nicknames_required"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// The encounter logged at one location of one run — `models.NuzlockeEncounterLog`.
+///
+/// `pokemonName` is joined in by `GetRunHandler` **only**. The `PUT` and `PATCH` responses come
+/// from a `RETURNING` clause with no join, so they carry `pokemon_id` and no name — a caller
+/// that renders one of those directly must supply the name from the pool it picked out of.
+///
+/// `locationSlug` is likewise empty on nothing: `PutRunEncounterHandler` sets it from the path
+/// and the `PATCH` re-selects it, so it is always populated in practice.
+public struct NuzlockeEncounterLog: Decodable, Sendable, Equatable, Identifiable {
+    public let id: UUID
+    public let runID: UUID
+    public let locationSlug: String
+    public let pokemonID: Int?
+    public let pokemonName: String?
+    public let nickname: String?
+    /// `"caught"`, `"missed"`, `"fainted"` or `"ran"` — see ``EncounterStatus``.
+    public let status: String
+    public let nature: String?
+    public let isBoxed: Bool
+    /// Server-computed, never sent: `PutRunEncounterHandler` sets it when the run's dupes clause
+    /// is on and that species is already caught at another location.
+    public let isDupe: Bool
+    public let createdAt: Date
+    public let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, nickname, status, nature
+        case runID = "run_id"
+        case locationSlug = "location_slug"
+        case pokemonID = "pokemon_id"
+        case pokemonName = "pokemon_name"
+        case isBoxed = "is_boxed"
+        case isDupe = "is_dupe"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// The beaten flag for one boss of one run — `models.NuzlockeBossProgress`.
+public struct NuzlockeBossProgress: Decodable, Sendable, Equatable, Identifiable {
+    public let bossSlug: String
+    public let beaten: Bool
+
+    public var id: String { bossSlug }
+
+    enum CodingKeys: String, CodingKey {
+        case beaten
+        case bossSlug = "boss_slug"
+    }
+}
+
+/// `GET /api/runs/{id}` — `models.NuzlockeRunDetail`.
+///
+/// Go embeds `NuzlockeRun`, which flattens into the same JSON object, so this is a flat struct
+/// for the same reason ``HuntDetail`` is. The three list fields are always present (the handler
+/// initialises them to empty slices), unlike most list responses in this API.
+public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
+    // --- embedded NuzlockeRun ---
+    public let id: UUID
+    public let userID: UUID
+    public let gameID: Int?
+    public let gameTitle: String?
+    public let dupesClause: Bool
+    public let battleStyle: String
+    public let nicknamesRequired: Bool
+    public let status: String
+    public let startedAt: Date
+    public let endedAt: Date?
+    public let createdAt: Date
+    public let updatedAt: Date
+
+    // --- everything logged against it ---
+    public let timeline: [NuzlockeTimelineEntry]
+    public let encounters: [NuzlockeEncounterLog]
+    public let bossProgress: [NuzlockeBossProgress]
+
+    public var isActive: Bool { status == "active" }
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, timeline, encounters
+        case userID = "user_id"
+        case gameID = "game_id"
+        case gameTitle = "game_title"
+        case dupesClause = "dupes_clause"
+        case battleStyle = "battle_style"
+        case nicknamesRequired = "nicknames_required"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case bossProgress = "boss_progress"
+    }
+}
+
+// MARK: - Nuzlocke request bodies
+
+/// The two values `CreateRunHandler` accepts; anything else is a 400.
+public enum BattleStyle: String, Codable, Sendable, CaseIterable {
+    case set, shift
+}
+
+/// The two values `UpdateRunHandler` accepts. A run is never deleted — ending it stamps
+/// `ended_at` and archives it.
+public enum RunStatus: String, Codable, Sendable {
+    case active, ended
+}
+
+/// What happened at a location. `caught` and `fainted` are the two that carry a Pokemon, and
+/// therefore the two that need a `pokemon_id` — and, on a run with nicknames required, a
+/// nickname. `missed`/`ran` take neither.
+public enum EncounterStatus: String, Codable, Sendable, CaseIterable {
+    case caught, missed, fainted, ran
+
+    /// Whether `PutRunEncounterHandler` requires `pokemon_id` for this status.
+    public var carriesPokemon: Bool { self == .caught || self == .fainted }
+}
+
+/// Where a caught Pokemon sits now — `PatchPartyMemberHandler`'s vocabulary, which is *not* the
+/// encounter-status vocabulary: `alive`/`boxed` both store `status = "caught"` and differ only in
+/// `is_boxed`, and `fainted` leaves `is_boxed` untouched.
+public enum PartyStatus: String, Codable, Sendable {
+    case alive, boxed, fainted
+}
+
+/// `POST /api/runs`. Omitting a clause is not the same as sending `false`: the server defaults
+/// `dupes_clause` and `nicknames_required` to **true** and `battle_style` to `"set"`, so these
+/// are non-optional here and always sent explicitly.
+public struct CreateRunRequest: Codable, Sendable, Equatable {
+    public let gameID: Int
+    public let dupesClause: Bool
+    public let battleStyle: BattleStyle
+    public let nicknamesRequired: Bool
+
+    public init(
+        gameID: Int,
+        dupesClause: Bool = true,
+        battleStyle: BattleStyle = .set,
+        nicknamesRequired: Bool = true
+    ) {
+        self.gameID = gameID
+        self.dupesClause = dupesClause
+        self.battleStyle = battleStyle
+        self.nicknamesRequired = nicknamesRequired
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case gameID = "game_id"
+        case dupesClause = "dupes_clause"
+        case battleStyle = "battle_style"
+        case nicknamesRequired = "nicknames_required"
+    }
+}
+
+/// `PATCH /api/runs/{id}` — the only field the handler reads.
+public struct UpdateRunRequest: Codable, Sendable, Equatable {
+    public let status: RunStatus
+
+    public init(status: RunStatus) { self.status = status }
+}
+
+/// `PUT /api/runs/{id}/encounters/{locationSlug}` — upserts the encounter at one location.
+///
+/// `pokemonID` must name a species in that location's seeded pool. The optionals are omitted
+/// rather than sent as `null` when nil, which the handler treats identically.
+public struct LogEncounterRequest: Codable, Sendable, Equatable {
+    public let pokemonID: Int?
+    public let status: EncounterStatus
+    public let nickname: String?
+    public let nature: String?
+    public let isBoxed: Bool?
+
+    public init(
+        status: EncounterStatus,
+        pokemonID: Int? = nil,
+        nickname: String? = nil,
+        nature: String? = nil,
+        isBoxed: Bool? = nil
+    ) {
+        self.status = status
+        self.pokemonID = pokemonID
+        self.nickname = nickname
+        self.nature = nature
+        self.isBoxed = isBoxed
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case status, nickname, nature
+        case pokemonID = "pokemon_id"
+        case isBoxed = "is_boxed"
+    }
+}
+
+/// `PATCH /api/runs/{id}/party/{memberId}` — moves one catch between alive, boxed and fainted.
+public struct PartyStatusRequest: Codable, Sendable, Equatable {
+    public let status: PartyStatus
+
+    public init(status: PartyStatus) { self.status = status }
+}
+
+/// `PUT /api/runs/{id}/bosses/{bossSlug}`.
+public struct BossProgressRequest: Codable, Sendable, Equatable {
+    public let beaten: Bool
+
+    public init(beaten: Bool) { self.beaten = beaten }
+}
