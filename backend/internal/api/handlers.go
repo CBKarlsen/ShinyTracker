@@ -281,6 +281,43 @@ type OddsResponse struct {
 	ETAHours           float64 `json:"eta_hours"`
 }
 
+// GetGamePokemonHandler returns the pokemon_id values obtainable in a given
+// game per pokemon_availability. Public reference data, same as /games and
+// /pokemon — no auth required.
+func GetGamePokemonHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid id", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := database.DB.Query(context.Background(),
+		"SELECT pokemon_id FROM pokemon_availability WHERE game_id = $1 ORDER BY pokemon_id ASC", id)
+	if err != nil {
+		http.Error(w, "Failed to fetch pokemon availability", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	ids := []int{}
+	for rows.Next() {
+		var pokemonID int
+		if err := rows.Scan(&pokemonID); err == nil {
+			ids = append(ids, pokemonID)
+		}
+	}
+	// The Dex uses this list as the exact obtainable set, so a truncated read must not come
+	// back as a 200 — a short list would silently shrink the completion bar's denominator.
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Failed to fetch pokemon availability", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ids)
+}
+
 func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	gameIDStr := r.URL.Query().Get("game_id")
 	gameID := 0

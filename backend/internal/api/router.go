@@ -46,6 +46,7 @@ func NewRouter() *chi.Mux {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/games", GetGamesHandler)
+		r.Get("/games/{id}/pokemon", GetGamePokemonHandler)
 		r.Get("/pokemon", GetPokemonHandler)
 		r.Get("/methods", GetMethodsHandler)
 		r.Get("/odds", GetOddsHandler)
