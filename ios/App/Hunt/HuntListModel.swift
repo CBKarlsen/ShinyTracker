@@ -116,6 +116,13 @@ final class HuntListModel {
     /// they already saw the sheet close, and blanking the list behind it reads as a bug.
     func refresh() async { await load(quiet: true) }
 
+    /// What a screen's `.task` calls. Reloading from scratch every time a tab is shown throws
+    /// away a screen that is already correct: `AppShell` holds these models as `@State`, so the
+    /// data survives the switch even though the view does not. Only a cold model shows a spinner.
+    func appear() async {
+        state == .ready ? await refresh() : await load()
+    }
+
     private func load(quiet: Bool) async {
         if !quiet { state = .loading }
         syncError = nil

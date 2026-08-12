@@ -28,7 +28,7 @@ struct DexScreen: View {
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task {
-            await model.load()
+            await model.appear()
             #if DEBUG
             // ponytail: `simctl` cannot tap, so the preview harness names the species whose
             // sheet to open. Debug-only, and inert unless -dexSpecies is passed.
@@ -230,9 +230,9 @@ struct DexScreen: View {
     /// 1,025 tiles.
     ///
     /// `LazyVStack` + one `LazyVGrid` per generation: SwiftUI builds a section's rows only as
-    /// they approach the viewport, so ~30 tiles exist at a time rather than 1,025. Sprites are
-    /// `AsyncImage`s inside those tiles, so nothing is fetched or decoded until its row is
-    /// built, and `URLSession`'s cache serves it on the way back up.
+    /// they approach the viewport, so ~30 tiles exist at a time rather than 1,025. Each tile's
+    /// ``DexSprite`` fetches in its own `.task`, so nothing is fetched or decoded until its row is
+    /// built, and ``SpriteCache`` hands back the already-decoded image on the way back up.
     private var grid: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
@@ -275,7 +275,7 @@ struct DexScreen: View {
             // `padding-bottom:104px` on top of that leaves a dead gap under the last row.
         }
         .scrollIndicators(.hidden)
-        .refreshable { await model.load() }
+        .refreshable { await model.refresh() }
     }
 
     private func tile(_ species: Pokemon) -> some View {
@@ -356,8 +356,10 @@ struct DexScreen: View {
 
 // MARK: - Sprite
 
-/// A dex sprite. Separate from Hunt's ``SpriteTile`` because that one is shiny-only and has the
-/// card's radial-gradient plate behind it; a dex tile draws the sprite bare on the card.
+/// A dex sprite: the radial-gradient plate with the sprite on top, fetched through
+/// ``SpriteCache``. Still separate from Hunt's ``SpriteTile``, which is shiny-only and still on
+/// `AsyncImage` — the two have converged on the same plate and want merging, but that is a
+/// follow-up, not something this type's existence justifies any more.
 ///
 /// Both variants now come from the API when it has them — `sprite_url` and `shiny_sprite_url`
 /// are separate columns — and ``SpriteSource`` falls back to the id-derived URL for a server
@@ -374,15 +376,44 @@ struct DexSprite: View {
         SpriteSource.url(id: pokemonID, shiny: shiny, served: served)
     }
 
+    @State private var image: UIImage?
+
     var body: some View {
-        AsyncImage(url: url) { image in
-            image.resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
-        } placeholder: {
-            Color.clear
+        ZStack {
+            // The sprite plate, always. `Color.clear` left a hole while loading, which is what
+            // makes a list look like it is still working after the text has arrived.
+            RoundedRectangle(cornerRadius: Radii.sprite(size))
+                .fill(
+                    RadialGradient(
+                        colors: [Palette.spriteTileInner.color, Palette.spriteTileOuter.color],
+                        center: UnitPoint(x: 0.5, y: 0.42),
+                        startRadius: 0,
+                        endRadius: size * 0.72
+                    )
+                )
+            if let image {
+                Image(uiImage: image)
+                    .resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
+            }
         }
         .frame(width: size, height: size)
         .grayscale(dimmed ? 1 : 0)
         .opacity(dimmed ? 0.6 : 1)
+        .task(id: url) {
+            // `@State` survives a url change on the same view identity (the Shiny segment keeps
+            // every tile's identity), so without this the tile shows its *old* sprite until the
+            // new one lands — a non-shiny under a shiny checklist. The plate is the honest
+            // placeholder. No-op on first appearance and on scroll-back: already nil.
+            image = nil
+            guard let url else { return }
+            let fetched = await SpriteCache.shared.image(for: url)
+            // SpriteCache's fetch is an unstructured Task of its own, so cancelling this
+            // .task(id:) doesn't stop it — a cell recycled onto a new url (same View identity,
+            // e.g. a Browse/Shiny toggle) must not have its now-current image overwritten by a
+            // late-arriving fetch for the url it used to show.
+            guard !Task.isCancelled else { return }
+            image = fetched
+        }
         .accessibilityHidden(true)
     }
 }

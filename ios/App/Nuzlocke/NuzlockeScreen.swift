@@ -21,7 +21,7 @@ struct NuzlockeScreen: View {
         .padding(.horizontal, Metrics.screenPadding)
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .task { await model.load() }
+        .task { await model.appear() }
         // A second `.task` so the species table — one big request, and only the coverage warning
         // needs it — loads alongside the run rather than delaying it.
         .task { await model.loadSpeciesTypes() }
@@ -236,7 +236,7 @@ struct NuzlockeScreen: View {
     /// would train you to stop reading it.
     @ViewBuilder
     private var coverageCard: some View {
-        let gaps = model.coverageGaps
+        let gaps = model.coverage
         if !gaps.isEmpty {
             VStack(alignment: .leading, spacing: 9) {
                 Text("Coverage warning")
@@ -366,7 +366,7 @@ struct NuzlockeScreen: View {
     /// One route. Unlogged and current is the call to action; logged shows what came of it.
     private func locationRow(_ entry: NuzlockeTimelineEntry) -> some View {
         let logged = model.log(at: entry.slug)
-        let isCurrent = model.currentLocationSlug == entry.slug
+        let isCurrent = model.currentSlug == entry.slug
         return Button { loggingAt = entry } label: {
             HStack(spacing: 12) {
                 if let logged, let option = model.option(for: logged) {
