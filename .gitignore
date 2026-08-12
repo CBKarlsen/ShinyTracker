@@ -64,3 +64,8 @@ ios/App/Config/Secrets.xcconfig
 /backend/seed_fulldex
 /backend/seed_moves
 /backend/seed_nuzlocke
+
+# dc-runtime shipped alongside the Claude Design exports. Generated
+# ("GENERATED from dc-runtime/src/*.ts — do not edit"), and HANDOFF.md calls the
+# prototype's runtime scaffolding throwaway. The .dc.html design files ARE committed.
+docs/design/support.js
