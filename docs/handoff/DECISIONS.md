@@ -7,7 +7,12 @@ exists; after that they are expensive to change.
 
 ## D1. Time ownership — the client owns elapsed time, the server stores it
 
-**Status:** decided 2026-08-10. Not yet implemented.
+**Status:** decided 2026-08-10. **Time half implemented 2026-08-11** — migration
+`012_add_client_owns_time.sql`, `internal/calc/hunttime.go` (`DecideTotalTime`, with tests), wired
+into `UpdateHuntHandler`. Still outstanding: the monotonic encounter-count guard (the same UPDATE
+is a plain `SET encounter_count = $1`) and the client-side timer that actually sends
+`total_time_seconds`. Both are sub-project A of the offline programme —
+`docs/superpowers/specs/2026-08-12-offline-foundation-design.md`.
 
 `openspec/specs/hunt-active-timer` derives `total_time_seconds` server-side from the gap between
 PATCH requests, discarding gaps ≥600s. This cannot survive offline counting: a session that
