@@ -39,6 +39,45 @@ private let t0 = Date(timeIntervalSince1970: 1_760_000_000)
     #expect(clock.totalSeconds == 0)
 }
 
+/// The backward glitch must not move the anchor either — otherwise the next legitimate
+/// encounter measures against a too-early timestamp and banks the difference as phantom time.
+@Test func aBackwardGlitchDoesNotPoisonTheAnchorForTheNextRecord() {
+    var clock = HuntClock()
+    clock.record(at: t0, idleThreshold: 600)
+    clock.record(at: t0.addingTimeInterval(-590), idleThreshold: 600)
+    #expect(clock.totalSeconds == 0)
+    clock.record(at: t0.addingTimeInterval(1), idleThreshold: 600)
+    #expect(clock.totalSeconds == 1)
+}
+
+/// The `<=` at the threshold boundary is deliberate — pin it so a future swap to `<` fails loudly.
+@Test func aGapExactlyAtTheThresholdCounts() {
+    var clock = HuntClock()
+    clock.record(at: t0, idleThreshold: 600)
+    clock.record(at: t0.addingTimeInterval(600), idleThreshold: 600)
+    #expect(clock.totalSeconds == 600)
+}
+
+@Test func twoRecordsAtTheSameInstantBankNothing() {
+    var clock = HuntClock()
+    clock.record(at: t0, idleThreshold: 600)
+    clock.record(at: t0, idleThreshold: 600)
+    #expect(clock.totalSeconds == 0)
+}
+
+/// Regression guard for per-call rounding drift: rounding each gap independently used to
+/// compound into invented time — at this cadence, an hour of it over 10,000 encounters.
+@Test func fractionalGapsAccumulateWithoutDrift() {
+    var clock = HuntClock()
+    var t = t0
+    clock.record(at: t, idleThreshold: 600)
+    for _ in 0..<1000 {
+        t = t.addingTimeInterval(6.6)
+        clock.record(at: t, idleThreshold: 600)
+    }
+    #expect(abs(clock.totalSeconds - 6600) <= 2)
+}
+
 /// Per-method rather than fixed: a soft-reset hunt's normal cadence is minutes and a wild
 /// encounter's is seconds, so one constant cannot serve both.
 @Test func theIdleThresholdScalesWithTheMethodAndClampsAtBothEnds() {

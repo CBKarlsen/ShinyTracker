@@ -12,10 +12,25 @@ import Foundation
 public struct HuntClock: Codable, Sendable, Equatable {
     public private(set) var totalSeconds: Int
     public private(set) var lastEncounterAt: Date?
+    /// Sub-second remainder. Rounding each gap independently compounds: at a steady 6.6s cadence
+    /// over 10,000 encounters that is an hour of invented time. Whole seconds move to
+    /// `totalSeconds`, the remainder stays here.
+    private var carry: Double
 
     public init(totalSeconds: Int = 0, lastEncounterAt: Date? = nil) {
         self.totalSeconds = totalSeconds
         self.lastEncounterAt = lastEncounterAt
+        self.carry = 0
+    }
+
+    // Nothing has persisted a HuntClock yet (Task 5 wires that up), so this isn't a real
+    // migration — just cheap insurance so an old decoded blob defaults `carry` to 0 instead of
+    // failing to decode once this field exists.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        totalSeconds = try container.decode(Int.self, forKey: .totalSeconds)
+        lastEncounterAt = try container.decodeIfPresent(Date.self, forKey: .lastEncounterAt)
+        carry = try container.decodeIfPresent(Double.self, forKey: .carry) ?? 0
     }
 
     /// Banks the gap since the previous encounter, if it looks like hunting rather than a pause.
@@ -24,12 +39,21 @@ public struct HuntClock: Codable, Sendable, Equatable {
     /// hunter put the phone down, and crediting that time is how a hunt ends up claiming eight
     /// hours it did not have.
     public mutating func record(at now: Date, idleThreshold: TimeInterval) {
-        defer { lastEncounterAt = now }
-        guard let last = lastEncounterAt else { return }
+        guard let last = lastEncounterAt else {
+            lastEncounterAt = now
+            return
+        }
         let gap = now.timeIntervalSince(last)
-        // `gap > 0` guards a backwards clock: a device time change must never bank negative time.
-        guard gap > 0, gap <= idleThreshold else { return }
-        totalSeconds += Int(gap.rounded())
+        // A backwards clock leaves the anchor alone: advancing it here would make the next
+        // legitimate encounter measure against a too-early timestamp and bank the difference as
+        // phantom hunting time.
+        guard gap > 0 else { return }
+        defer { lastEncounterAt = now }
+        guard gap <= idleThreshold else { return }
+        carry += gap
+        let whole = carry.rounded(.down)
+        totalSeconds += Int(whole)
+        carry -= whole
     }
 
     /// How long a pause may be before it stops counting, derived from the method's own cadence.
