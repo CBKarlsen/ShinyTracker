@@ -100,15 +100,26 @@ final class HuntListModel {
     private var pendingWrites: [UUID: Task<Void, Never>] = [:]
     /// The count each hunt had before its current burst of taps — the rollback target.
     private var preBurstCount: [UUID: Int] = [:]
+    /// The clock each hunt had before that same burst. Time and count have to move together: the
+    /// clock banks a gap on every tap and reaches disk before the PATCH, so rolling back only the
+    /// count would credit a failed offline session its hours and one encounter, and every derived
+    /// rate (the web app divides straight by `total_time_seconds`) is then nonsense.
+    private var preBurstClock: [UUID: HuntClock] = [:]
     /// Client-owned elapsed time per hunt (D1). Restored from the store once per launch, then
     /// written back on every flush — a burst of taps is already coalesced there, so this does not
     /// touch the disk once per tap.
     private var clocks: [UUID: HuntClock] = [:]
     private var clocksRestored = false
-    /// Hunts whose count the user lowered with "−" and whose PATCH has not landed yet. This set is
-    /// the only thing that ever sets `allow_decrease`; it is cleared the moment the write resolves,
-    /// either way, so a later sync cannot inherit the permission.
+    /// Hunts whose count the user lowered with "−" and whose PATCH has not landed yet. Cleared the
+    /// moment the write resolves, either way, so a later sync cannot inherit the permission.
     private var loweredByUser: Set<UUID> = []
+    /// Whether the counts in `rows` came from `GET /api/hunts` this launch.
+    ///
+    /// The snapshot is stale by every tap of the previous session by construction — `.hunts` is
+    /// written only by `load`, never by `flush` — so a restored 2,500 can sit in front of a server
+    /// total of 2,847 indefinitely when the refresh behind it fails. `allow_decrease` on an
+    /// absolute count from that state does not remove one encounter, it removes 348.
+    private var countsFromServer = false
 
     init(client: APIClient, store: SnapshotStore) {
         self.client = client
@@ -150,6 +161,9 @@ final class HuntListModel {
         if !quiet, state != .ready, let cached: [HuntDetail] = await store.load([HuntDetail].self, as: .hunts) {
             rows = cached.filter { $0.status == "active" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
             history = cached.filter { $0.status == "completed" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            // Same seeding rule as the loaded path, so a cold offline launch highlights a card
+            // instead of waiting for the first tap to pick one.
+            if liveHuntID == nil { liveHuntID = rows.first?.id }
             state = .ready
         }
         // Only reached still `.loading` (or `.failed`, retried) when the restore above did not
@@ -160,6 +174,14 @@ final class HuntListModel {
             // `status` is a free-form String on purpose (Models.swift), so both tabs are filled
             // by filtering one response rather than trusting the server to send one kind.
             let all = try await client.hunts()
+            countsFromServer = true
+            // The server's total is authoritative when it is ahead of this device: `DecideTotalTime`
+            // keeps the max, so a clock left behind would have every send swallowed until it caught
+            // up on its own. Only existing clocks are raised — `bump` seeds new ones from the same
+            // field. Not persisted here: the value came from the server, which still has it.
+            for detail in all where clocks[detail.id] != nil {
+                clocks[detail.id]?.raise(to: detail.totalTimeSeconds)
+            }
             // A burst of taps that has not been flushed yet is newer than anything this response
             // can contain, so it survives the reload. Without this, pull-to-refresh — or the
             // refresh that follows starting or completing another hunt — silently rolls those
@@ -210,13 +232,15 @@ final class HuntListModel {
         // server's total means a hunt that was being timed server-side does not restart at zero
         // when this client takes over.
         let threshold = HuntClock.idleThreshold(avgTimeSeconds: rows[index].detail.avgTimeSeconds)
-        clocks[id, default: HuntClock(totalSeconds: rows[index].detail.totalTimeSeconds)]
-            .record(at: Date(), idleThreshold: threshold)
+        let clockBefore = clocks[id] ?? HuntClock(totalSeconds: rows[index].detail.totalTimeSeconds)
+        var clock = clockBefore
+        clock.record(at: Date(), idleThreshold: threshold)
+        clocks[id] = clock
         // Only "−" can get here with a negative delta (HuntCard), and this is the sole source of
         // allow_decrease.
         if delta < 0 { loweredByUser.insert(id) }
         Haptics.impact(delta > 0 ? .light : .rigid)
-        scheduleSync(id, rollbackTo: before)
+        scheduleSync(id, rollbackTo: before, clockRollbackTo: clockBefore)
     }
 
     /// Coalesces a burst of taps into one PATCH.
@@ -225,8 +249,11 @@ final class HuntListModel {
     /// request per tap both floods the API and races: two in-flight PATCHes can land out of
     /// order and write a stale count. Debouncing removes the race entirely instead of managing
     /// it, and the value sent is always the current one.
-    private func scheduleSync(_ id: UUID, rollbackTo: Int) {
-        if preBurstCount[id] == nil { preBurstCount[id] = rollbackTo }
+    private func scheduleSync(_ id: UUID, rollbackTo: Int, clockRollbackTo: HuntClock) {
+        if preBurstCount[id] == nil {
+            preBurstCount[id] = rollbackTo
+            preBurstClock[id] = clockRollbackTo
+        }
         pendingWrites[id]?.cancel()
         pendingWrites[id] = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
@@ -246,27 +273,50 @@ final class HuntListModel {
             // (calc.DecideTotalTime). That is correct now that HuntClock actually tracks it: the
             // server cannot see an offline session, and deriving from PATCH gaps would credit it
             // zero.
-            _ = try await client.updateHunt(
+            let saved = try await client.updateHunt(
                 huntID: id,
                 UpdateHuntRequest(
                     encounterCount: row.count,
                     status: .active,
                     totalTimeSeconds: clocks[id]?.totalSeconds,
-                    allowDecrease: loweredByUser.contains(id) ? true : nil
+                    allowDecrease: allowDecrease(for: id)
                 )
             )
+            // The response carries what the server actually stored, so a value that lost
+            // `DecideEncounterCount`'s comparison learns the truth here instead of diverging
+            // silently — this is what heals a screen still showing a stale snapshot count.
+            // `max` because taps made while the request was in flight are newer than both.
+            if let index = rows.firstIndex(where: { $0.id == id }) {
+                rows[index].count = max(rows[index].count, saved.encounterCount)
+            }
             preBurstCount[id] = nil
+            preBurstClock[id] = nil
             loweredByUser.remove(id)
         } catch {
             if let rollback, let index = rows.firstIndex(where: { $0.id == id }) {
                 rows[index].count = rollback
             }
+            // The clock goes back with it, and back to disk: it was persisted above, before the
+            // request, so leaving it advanced would keep time the rolled-back taps never earned.
+            if let clock = preBurstClock[id] {
+                clocks[id] = clock
+                await store.save(clocks, as: .clocks)
+            }
             preBurstCount[id] = nil
+            preBurstClock[id] = nil
             // The count went back up with the rollback, so the permission to lower it no longer
             // describes anything the user asked for.
             loweredByUser.remove(id)
             syncError = "Couldn't save that count. \(message(for: error))"
         }
+    }
+
+    /// The only grant of `allow_decrease`: the user pressed "−" **and** the count it is relative to
+    /// came from the server this launch. The flag makes the server take the number sent verbatim,
+    /// so pairing it with a count restored from the snapshot would not subtract one encounter, it
+    /// would overwrite the real total with a stale one.
+    private func allowDecrease(for id: UUID) -> Bool? {
+        loweredByUser.contains(id) && countsFromServer ? true : nil
     }
 
     // MARK: Found and abandoned
@@ -287,17 +337,23 @@ final class HuntListModel {
             // It carries `allowDecrease` for the same reason too: the cancel above means this
             // PATCH inherits whatever the debounced one was going to send, including a "−"
             // pressed inside the 400ms window. Without the permission the monotonic guard
-            // (`calc.DecideEncounterCount`) clamps that decrement away silently — no error, and a
-            // History row showing a count the user did not choose. `drop` clears the flag on the
-            // way out; the failure path deliberately keeps it, since nothing is rolled back here
-            // and a retry has to carry the same permission.
+            // (`calc.DecideEncounterCount`) clamps that decrement away silently.
+            //
+            // The flag is dropped on **both** exits — `drop` on the way out, the catch below on
+            // failure. Nothing here scopes it to mark-found, so keeping it after a failure would
+            // arm the next ordinary `+` flush to write an absolute count with permission to lower
+            // it, with no "−" pressed. The cost of dropping it is that the "−" inside that 400ms
+            // window is silently clamped on a retry: a no-op instead of lost encounters.
+            // The response is not reconciled into `rows` the way `flush` does it: this row leaves
+            // the list two lines below, and the `refresh` after that re-reads the completed hunt
+            // — with the stored count — straight from the server.
             _ = try await client.updateHunt(
                 huntID: id,
                 UpdateHuntRequest(
                     encounterCount: row.count,
                     status: .completed,
                     totalTimeSeconds: clocks[id]?.totalSeconds,
-                    allowDecrease: loweredByUser.contains(id) ? true : nil
+                    allowDecrease: allowDecrease(for: id)
                 )
             )
             await drop(id)
@@ -308,6 +364,7 @@ final class HuntListModel {
             await refresh()
             return true
         } catch {
+            loweredByUser.remove(id)
             syncError = "Couldn't mark that hunt found. \(message(for: error))"
             return false
         }
@@ -336,6 +393,8 @@ final class HuntListModel {
         // restored on every launch for the rest of the account's life.
         clocks[id] = nil
         loweredByUser.remove(id)
+        preBurstCount[id] = nil
+        preBurstClock[id] = nil
         await store.save(clocks, as: .clocks)
     }
 

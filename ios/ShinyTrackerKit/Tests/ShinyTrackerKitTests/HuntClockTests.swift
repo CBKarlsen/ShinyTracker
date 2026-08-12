@@ -92,6 +92,20 @@ private let t0 = Date(timeIntervalSince1970: 1_760_000_000)
     #expect(HuntClock.idleThreshold(avgTimeSeconds: 0) == 600)
 }
 
+/// Behind the server, the client's sends are swallowed by `DecideTotalTime`'s max() until it
+/// catches up, so it adopts the server total and counts on from there — but never rewinds to a
+/// lower one, which would throw away time this client banked offline.
+@Test func raisingAdoptsAHigherServerTotalAndIgnoresALowerOne() {
+    var clock = HuntClock(totalSeconds: 100)
+    clock.raise(to: 5000)
+    #expect(clock.totalSeconds == 5000)
+    clock.raise(to: 4000)
+    #expect(clock.totalSeconds == 5000)
+    clock.record(at: t0, idleThreshold: 600)
+    clock.record(at: t0.addingTimeInterval(7), idleThreshold: 600)
+    #expect(clock.totalSeconds == 5007)
+}
+
 /// The clock is persisted between launches, so it has to survive a round trip intact.
 @Test func theClockRoundTripsThroughCodable() throws {
     var clock = HuntClock()

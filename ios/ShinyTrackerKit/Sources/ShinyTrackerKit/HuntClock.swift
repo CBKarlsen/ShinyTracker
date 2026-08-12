@@ -56,6 +56,16 @@ public struct HuntClock: Codable, Sendable, Equatable {
         carry -= whole
     }
 
+    /// Lifts the clock to a server total that is ahead of it.
+    ///
+    /// `calc.DecideTotalTime` stores the larger of stored-and-sent, so a client sitting behind the
+    /// server — another device counted, this one's snapshot was lost — has everything it sends
+    /// swallowed until it organically overtakes that total again. Hours of real hunting can be
+    /// credited as nothing. Adopting the server's number on read makes the next flush additive.
+    public mutating func raise(to seconds: Int) {
+        totalSeconds = max(totalSeconds, seconds)
+    }
+
     /// How long a pause may be before it stops counting, derived from the method's own cadence.
     ///
     /// `hunt_methods.avg_time_seconds` is how long one encounter takes — about 7s for a wild
