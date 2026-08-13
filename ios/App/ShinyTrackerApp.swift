@@ -112,6 +112,7 @@ enum AppMode: String, CaseIterable, Identifiable {
 }
 
 struct AppShell: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var mode: AppMode
     @State private var hunts: HuntListModel
     @State private var library: GameLibraryModel
@@ -186,6 +187,14 @@ struct AppShell: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             ModeTabBar(mode: $mode)
+        }
+        // Counting is offline-first: a tap only reaches a queue on disk. Coming back to the app is
+        // the moment most likely to have a network behind it, and it costs one no-op call when the
+        // queue is empty. Deliberately the only trigger besides a load — a failed drain waits for
+        // the next foreground rather than needing a timer or a reachability observer to watch.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await hunts.drain() }
         }
     }
 }

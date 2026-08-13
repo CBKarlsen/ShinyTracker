@@ -271,6 +271,26 @@ CREATE TABLE IF NOT EXISTS user_hunts (
     CONSTRAINT chk_method_xor CHECK (NOT (hunt_method_id IS NOT NULL AND custom_method_name IS NOT NULL))
 );
 
+-- Idempotency keys for relative encounter-count writes (migrations/019).
+--
+-- A delta is the only write model in which two offline sessions on one hunt
+-- both survive, but it is not naturally idempotent: an offline queue retries
+-- by definition, and a "+500" that lands twice invents 500 encounters. The
+-- client generates a UUID per write and the server records the ones it has
+-- applied, in the SAME transaction as the count update — two transactions
+-- leave a window where a crash either double-applies the delta or loses it.
+CREATE TABLE IF NOT EXISTS hunt_writes (
+    write_id   UUID PRIMARY KEY,
+    user_id    UUID NOT NULL,
+    -- CASCADE, unlike the reference-data tables: these rows are meaningless
+    -- once the hunt is gone, and a replayed write for a deleted hunt should
+    -- fail on the hunt's own absence rather than dedupe against a ghost.
+    hunt_id    UUID NOT NULL REFERENCES user_hunts(id) ON DELETE CASCADE,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_hunt_writes_hunt ON hunt_writes (hunt_id);
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Nuzlocke mode (migrations/013_add_nuzlocke.sql)
 --
@@ -431,6 +451,7 @@ ALTER TABLE profiles                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_games              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_hunts              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hunt_phases             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hunt_writes             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE abilities               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pokemon_abilities       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE moves                   ENABLE ROW LEVEL SECURITY;

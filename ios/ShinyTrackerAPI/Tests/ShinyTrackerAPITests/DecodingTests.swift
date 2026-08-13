@@ -674,3 +674,39 @@ private let runDetailJSON = """
     #expect(await store.load([HuntDetail].self, as: .hunts) == hunts)
     #expect(await store.load(NuzlockeRunDetail.self, as: .run(detail.id)) == detail)
 }
+
+/// A delta write must carry its idempotency key and must NOT carry an absolute count — the
+/// server ignores `encounter_count` when a delta is present, and sending a stale one anyway
+/// would be a lie in the payload.
+@Test func deltaWriteCarriesItsKeyAndOmitsTheAbsoluteCount() throws {
+    let key = UUID()
+    let body = UpdateHuntRequest(
+        status: .active, encounterDelta: 500, writeID: key, totalTimeSeconds: 4200)
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(json.contains("\"encounter_delta\":500"))
+    // Plain `Codable` synthesis, so this is UUID's own `uuidString` — uppercase — not a
+    // lowercased form. No caller compares `write_id` as a string; it lands in a Postgres `uuid`
+    // column, which parses either case into the same bytes.
+    #expect(json.contains("\"write_id\":\"\(key.uuidString)\""))
+    #expect(!json.contains("encounter_count"))
+    #expect(json.contains("\"total_time_seconds\":4200"))
+}
+
+/// The absolute path is unchanged, and a delta write never leaks into it.
+@Test func absoluteWriteStillOmitsTheDeltaFields() throws {
+    let body = UpdateHuntRequest(encounterCount: 12, status: .active)
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(json.contains("\"encounter_count\":12"))
+    #expect(!json.contains("encounter_delta"))
+    #expect(!json.contains("write_id"))
+}
+
+/// The whole reason `status` widened to optional: a count-only queued write (Task 4's drain,
+/// flushing a plain `.incrementEncounter`) has no status to send. Absent, not `null` — the server
+/// tells "leave the column alone" from "set the column" by whether the key is present at all
+/// (`COALESCE($2, status)`), so `null` would not do the same job as omitting the key.
+@Test func deltaWriteWithoutAStatusOmitsTheKeyEntirely() throws {
+    let body = UpdateHuntRequest(encounterDelta: 3, writeID: UUID())
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(!json.contains("\"status\""))
+}

@@ -26,6 +26,12 @@ struct HuntScreen: View {
         // `gap:13px;padding:8px 18px 0`
         VStack(alignment: .leading, spacing: Metrics.screenGap) {
             header
+            // Above the segmented control, not inside the Active list: a failed completion's hunt
+            // has already left Active for History by the time it can fail, so a banner scoped to
+            // one tab could name a hunt the user is not looking at.
+            if !model.failedWrites.isEmpty {
+                failedWritesBanner
+            }
             segmentedControl
             content
         }
@@ -288,6 +294,25 @@ struct HuntScreen: View {
             .scrollIndicators(.hidden)
             .refreshable { await model.refresh() }
         }
+    }
+
+    /// Writes that will never land, named one per line. Unlike `syncError` above it, this is not
+    /// noise a retry will clear on its own — the encounters are really gone — so it says so in
+    /// the danger colour and waits for the user to dismiss it rather than fading on its own.
+    private var failedWritesBanner: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // By position, not by the string: two writes for the same hunt dropped in one drain
+            // produce the same sentence twice, and duplicate ids in a `ForEach` are undefined.
+            ForEach(Array(model.failedWrites.enumerated()), id: \.offset) { _, message in
+                Text(message)
+                    .font(Typography.hint)
+                    .foregroundStyle(Palette.danger.color)
+            }
+            Button("Dismiss") { model.dismissFailedWrites() }
+                .font(Typography.hint)
+                .foregroundStyle(Palette.textMuted.color)
+        }
+        .padding(.horizontal, 2)
     }
 
     /// The owner has zero hunts, so this is the first thing they will see.

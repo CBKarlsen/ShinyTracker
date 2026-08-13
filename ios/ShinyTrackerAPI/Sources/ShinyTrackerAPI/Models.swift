@@ -498,14 +498,25 @@ public struct CreateHuntRequest: Codable, Sendable, Equatable {
 /// client-time-authoritative from then on (decision D1, `docs/handoff/DECISIONS.md`, see
 /// `calc.DecideTotalTime`). Omitting `huntParameters` likewise leaves the stored JSONB alone.
 public struct UpdateHuntRequest: Codable, Sendable, Equatable {
-    public let encounterCount: Int
-    public let status: HuntStatus
+    public let encounterCount: Int?
+    public let encounterDelta: Int?
+    /// The server's idempotency key for the delta path: a retried queued write that already
+    /// landed must not apply twice. Required whenever `encounterDelta` is present (and rejected
+    /// as a 400 otherwise).
+    public let writeID: UUID?
+    /// Optional so the delta initialiser can omit it: a count-only queued write has no status to
+    /// send, and the server's `COALESCE($2, status)` leaves the row alone rather than the client
+    /// inventing `.active` and reopening a hunt completed on another device.
+    public let status: HuntStatus?
     public let huntParameters: [String: ParamValue]?
     public let totalTimeSeconds: Int?
     /// Explicit permission to lower the count, set only by the "−" control. Omitted everywhere
     /// else, so a sync or a replayed offline burst can only ever raise it — `calc.DecideEncounterCount`.
+    /// Absolute-path only: a delta is relative by construction, so "lower" is just a negative delta.
     public let allowDecrease: Bool?
 
+    /// The absolute path, still used by the web client's shape and by any caller that knows the
+    /// true count. Guarded server-side by `calc.DecideEncounterCount`.
     public init(
         encounterCount: Int,
         status: HuntStatus,
@@ -514,15 +525,39 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         allowDecrease: Bool? = nil
     ) {
         self.encounterCount = encounterCount
+        self.encounterDelta = nil
+        self.writeID = nil
         self.status = status
         self.huntParameters = huntParameters
         self.totalTimeSeconds = totalTimeSeconds
         self.allowDecrease = allowDecrease
     }
 
+    /// The relative path, for queued writes. `writeID` is the idempotency key: a retried delta
+    /// that already landed must not apply twice. Two initialisers rather than one with everything
+    /// optional, so a caller cannot express "both an absolute count and a delta" or "neither" —
+    /// states the server would otherwise have to reject at runtime.
+    public init(
+        status: HuntStatus? = nil,
+        encounterDelta: Int,
+        writeID: UUID,
+        huntParameters: [String: ParamValue]? = nil,
+        totalTimeSeconds: Int? = nil
+    ) {
+        self.encounterCount = nil
+        self.encounterDelta = encounterDelta
+        self.writeID = writeID
+        self.status = status
+        self.huntParameters = huntParameters
+        self.totalTimeSeconds = totalTimeSeconds
+        self.allowDecrease = nil
+    }
+
     enum CodingKeys: String, CodingKey {
         case status
         case encounterCount = "encounter_count"
+        case encounterDelta = "encounter_delta"
+        case writeID = "write_id"
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
         case allowDecrease = "allow_decrease"
