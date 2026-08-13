@@ -198,9 +198,21 @@ final class HuntListModel {
             let unflushed = preBurstCount
             let current = rows
             rows = all.filter { $0.status == "active" }.map { detail in
-                let local = unflushed[detail.id] != nil
-                    ? current.first(where: { $0.id == detail.id })?.count : nil
-                return HuntRow(detail: detail, count: local ?? detail.encounterCount)
+                let onScreen = current.first(where: { $0.id == detail.id })?.count
+                // Carved out: the local number wins in either direction, because the burst may be
+                // a decrease the user has made and not yet sent, and reverting that mid-burst would
+                // have the screen fight them.
+                //
+                // Otherwise the count never moves down. Four call sites can have a `load` in flight
+                // at once (`appear`, pull-to-refresh, the new-hunt sheet, `markFound`) with no
+                // dedupe between them, so a slow first GET can land after a successful flush and
+                // carry an older count. Taking it would leave the row lower than the server *and*
+                // marked server-backed by the insert below — which is precisely the pairing that
+                // arms a destructive "−".
+                let count = unflushed[detail.id] != nil
+                    ? (onScreen ?? detail.encounterCount)
+                    : max(detail.encounterCount, onScreen ?? 0)
+                return HuntRow(detail: detail, count: count)
             }
             // Exactly the rows that took the server's number — read off the same `unflushed`
             // snapshot as the rebuild above, so the two can never disagree about which those are.
@@ -314,14 +326,19 @@ final class HuntListModel {
             serverBacked.insert(id)
             forgetPendingBurst(id)
         } catch {
+            // The row still being here gates both halves. A mark-found or abandon that landed
+            // while this request was in flight has already dropped the hunt, and restoring its
+            // clock then would write the entry back to disk to be restored on every launch for the
+            // rest of the account's life — the dead weight `drop` deletes it to avoid. Count and
+            // clock move together or not at all, which is I2's whole point.
             if let rollback, let index = rows.firstIndex(where: { $0.id == id }) {
                 rows[index].count = rollback
-            }
-            // The clock goes back with it, and back to disk: it was persisted above, before the
-            // request, so leaving it advanced would keep time the rolled-back taps never earned.
-            if let clock = rollbackClock {
-                clocks[id] = clock
-                await store.save(clocks, as: .clocks)
+                // The clock goes back with it, and back to disk: it was persisted above, before
+                // the request, so leaving it advanced would keep time the taps never earned.
+                if let rollbackClock {
+                    clocks[id] = rollbackClock
+                    await store.save(clocks, as: .clocks)
+                }
             }
             // The count went back up with the rollback, so the permission to lower it no longer
             // describes anything the user asked for.
