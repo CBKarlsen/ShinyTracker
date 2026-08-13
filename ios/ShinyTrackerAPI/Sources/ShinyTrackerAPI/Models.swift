@@ -510,19 +510,14 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
     public let status: HuntStatus?
     public let huntParameters: [String: ParamValue]?
     public let totalTimeSeconds: Int?
-    /// Explicit permission to lower the count, set only by the "−" control. Omitted everywhere
-    /// else, so a sync or a replayed offline burst can only ever raise it — `calc.DecideEncounterCount`.
-    /// Absolute-path only: a delta is relative by construction, so "lower" is just a negative delta.
-    public let allowDecrease: Bool?
-
-    /// The absolute path, still used by the web client's shape and by any caller that knows the
-    /// true count. Guarded server-side by `calc.DecideEncounterCount`.
+    /// The absolute path: the count is stored as submitted. No iOS caller counts through this —
+    /// counting goes through the delta initialiser below — so it is reachable only from a caller
+    /// that knows the true count outright.
     public init(
         encounterCount: Int,
         status: HuntStatus,
         huntParameters: [String: ParamValue]? = nil,
-        totalTimeSeconds: Int? = nil,
-        allowDecrease: Bool? = nil
+        totalTimeSeconds: Int? = nil
     ) {
         self.encounterCount = encounterCount
         self.encounterDelta = nil
@@ -530,7 +525,6 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         self.status = status
         self.huntParameters = huntParameters
         self.totalTimeSeconds = totalTimeSeconds
-        self.allowDecrease = allowDecrease
     }
 
     /// The relative path, for queued writes. `writeID` is the idempotency key: a retried delta
@@ -550,7 +544,6 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         self.status = status
         self.huntParameters = huntParameters
         self.totalTimeSeconds = totalTimeSeconds
-        self.allowDecrease = nil
     }
 
     enum CodingKeys: String, CodingKey {
@@ -560,7 +553,6 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         case writeID = "write_id"
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
-        case allowDecrease = "allow_decrease"
     }
 }
 

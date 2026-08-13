@@ -7,12 +7,17 @@ exists; after that they are expensive to change.
 
 ## D1. Time ownership — the client owns elapsed time, the server stores it
 
-**Status:** decided 2026-08-10. **Time half implemented 2026-08-11** — migration
-`012_add_client_owns_time.sql`, `internal/calc/hunttime.go` (`DecideTotalTime`, with tests), wired
-into `UpdateHuntHandler`. Still outstanding: the monotonic encounter-count guard (the same UPDATE
-is a plain `SET encounter_count = $1`) and the client-side timer that actually sends
-`total_time_seconds`. Both are sub-project A of the offline programme —
-`docs/superpowers/specs/2026-08-12-offline-foundation-design.md`.
+**Status:** decided 2026-08-10, **fully implemented 2026-08-13.**
+
+- *Time:* migration `012_add_client_owns_time.sql`, `internal/calc/hunttime.go` (`DecideTotalTime`,
+  with tests), wired into `UpdateHuntHandler`; `HuntClock` in `ShinyTrackerKit` is the client-side
+  timer that sends `total_time_seconds` (sub-project A).
+- *Count:* the monotonic half landed 2026-08-11 as a server-side clamp with an `allow_decrease`
+  escape hatch, and was **retired 2026-08-13** in favour of deltas (sub-project B). The guarantee
+  now holds by construction rather than by comparison: iOS sends *relative* changes, which cannot
+  be stale and compose correctly across devices, deduped by `hunt_writes` and floored at zero by
+  `calc.ApplyEncounterDelta`. The absolute path that remains is the web client's and is stored as
+  submitted — see the note under the invariant below.
 
 `openspec/specs/hunt-active-timer` derives `total_time_seconds` server-side from the gap between
 PATCH requests, discarding gaps ≥600s. This cannot survive offline counting: a session that
@@ -38,6 +43,14 @@ same model. Reconcile with phase logging and `updated_at`, which also key off PA
 local one without an explicit user decision. Plain last-write-wins is wrong the moment two devices
 count the same hunt (phone + Apple Watch is an explicitly planned configuration). Losing a long
 hunt is the one unforgivable failure in this app.
+
+*Where this is enforced, since 2026-08-13:* in the **write model**, not in a comparison. A delta
+carries no opinion about the current count, so there is no stale value to defend against. The
+server-side clamp that used to defend the absolute path was removed once iOS stopped using it —
+by then its only remaining effect was on the web client, whose lowering writes (the miscount undo)
+are precisely the "explicit user decision" the invariant exempts, and which it was silently
+discarding. Two web tabs on one hunt can once again clobber each other; that is last-write-wins
+between two deliberate human actions, which is the case this invariant was never about.
 
 ---
 

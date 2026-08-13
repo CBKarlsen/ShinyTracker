@@ -71,32 +71,11 @@ import Testing
     #expect(decision.isServerBacked)
 }
 
-// MARK: - Arming: may this press lower the stored count?
-
-/// The original data-loss path: offline cold launch showing a stale 2,500 against a server holding
-/// 2,847. Permission here would send 2,499 as an absolute value and destroy 347 encounters.
-@Test func aPressAgainstAnUnconfirmedCountNeverArms() {
-    #expect(HuntCountPolicy.armsDecreasePermission(delta: -1, isServerBacked: false) == false)
-}
-
-@Test func aPressAgainstAConfirmedCountArms() {
-    #expect(HuntCountPolicy.armsDecreasePermission(delta: -1, isServerBacked: true))
-}
-
-/// Increments never arm anything — the guard only exists to police downward writes.
-@Test func incrementsNeverArm() {
-    #expect(HuntCountPolicy.armsDecreasePermission(delta: 1, isServerBacked: true) == false)
-    #expect(HuntCountPolicy.armsDecreasePermission(delta: 10, isServerBacked: true) == false)
-    #expect(HuntCountPolicy.armsDecreasePermission(delta: 0, isServerBacked: true) == false)
-}
-
-// MARK: - Sending: both gates must agree
-
-@Test func permissionRequiresBothTheUserAndTheBacking() {
-    #expect(HuntCountPolicy.sendsDecreasePermission(userLowered: true, isServerBacked: true))
-    #expect(HuntCountPolicy.sendsDecreasePermission(userLowered: true, isServerBacked: false) == false)
-    #expect(HuntCountPolicy.sendsDecreasePermission(userLowered: false, isServerBacked: true) == false)
-}
+// The arming/sending tests that stood here covered `allow_decrease`, retired with the
+// absolute-count write path: counting goes through deltas, where "lower" is a negative delta and
+// needs no permission. The original data-loss path they guarded — a stale local 2,500 sent as an
+// absolute value against a server holding 2,847 — is now unreachable, because iOS never sends an
+// absolute count.
 
 // MARK: - Reconciling with what the server stored
 

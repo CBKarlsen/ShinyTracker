@@ -154,8 +154,10 @@ final class HuntListModel {
     ///
     /// The snapshot is stale by every tap of the previous session by construction — `.hunts` is
     /// written only by `load`, never by a drain — so a restored 2,500 can sit in front of a server
-    /// total of 2,847 indefinitely when the refresh behind it fails. `allow_decrease` on an
-    /// absolute count from that state does not remove one encounter, it removes 348.
+    /// total of 2,847 indefinitely when the refresh behind it fails. That gap used to be a
+    /// data-loss hazard, when a "−" press from that state sent an absolute count; counting is
+    /// deltas now, so what is left is a display question — see `HuntCountPolicy.rebuild`, which
+    /// only lets a local number outrank a fetched one for a row this launch confirmed.
     ///
     /// Per row, not one flag for the session, because provenance genuinely is per row: `load`'s
     /// carve-out keeps the local count for any hunt with a queued write, so a refresh can make
@@ -620,9 +622,9 @@ final class HuntListModel {
     private func drop(_ id: UUID) {
         rows.removeAll { $0.id == id }
         if liveHuntID == id { liveHuntID = rows.first?.id }
-        // The only removal from `serverBacked`: the hunt itself is gone, so nothing can be pressed
-        // against a stale copy of it. Anything less than that and the set could shrink under a row
-        // still on screen, which is how the press-time and send-time gates would come to disagree.
+        // The only removal from `serverBacked`: the hunt itself is gone, so there is no row left
+        // to resolve against a fetched count. Anything less than that and the set could shrink
+        // under a row still on screen, which would silently demote a number this launch confirmed.
         serverBacked.remove(id)
     }
 
