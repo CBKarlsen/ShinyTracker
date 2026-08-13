@@ -684,7 +684,10 @@ private let runDetailJSON = """
         status: .active, encounterDelta: 500, writeID: key, totalTimeSeconds: 4200)
     let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
     #expect(json.contains("\"encounter_delta\":500"))
-    #expect(json.contains("\"write_id\":\"\(key.uuidString.lowercased())\""))
+    // Plain `Codable` synthesis, so this is UUID's own `uuidString` — uppercase — not a
+    // lowercased form. No caller compares `write_id` as a string; it lands in a Postgres `uuid`
+    // column, which parses either case into the same bytes.
+    #expect(json.contains("\"write_id\":\"\(key.uuidString)\""))
     #expect(!json.contains("encounter_count"))
     #expect(json.contains("\"total_time_seconds\":4200"))
 }
@@ -696,4 +699,14 @@ private let runDetailJSON = """
     #expect(json.contains("\"encounter_count\":12"))
     #expect(!json.contains("encounter_delta"))
     #expect(!json.contains("write_id"))
+}
+
+/// The whole reason `status` widened to optional: a count-only queued write (Task 4's drain,
+/// flushing a plain `.incrementEncounter`) has no status to send. Absent, not `null` — the server
+/// tells "leave the column alone" from "set the column" by whether the key is present at all
+/// (`COALESCE($2, status)`), so `null` would not do the same job as omitting the key.
+@Test func deltaWriteWithoutAStatusOmitsTheKeyEntirely() throws {
+    let body = UpdateHuntRequest(encounterDelta: 3, writeID: UUID())
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(!json.contains("\"status\""))
 }

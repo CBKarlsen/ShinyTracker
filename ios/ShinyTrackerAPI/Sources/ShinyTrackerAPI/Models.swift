@@ -500,9 +500,9 @@ public struct CreateHuntRequest: Codable, Sendable, Equatable {
 public struct UpdateHuntRequest: Codable, Sendable, Equatable {
     public let encounterCount: Int?
     public let encounterDelta: Int?
-    /// The delta path's idempotency key. Required by the server whenever `encounterDelta` is
-    /// present (and rejected as a 400 otherwise), so a retried queued write that already landed
-    /// cannot apply twice.
+    /// The server's idempotency key for the delta path: a retried queued write that already
+    /// landed must not apply twice. Required whenever `encounterDelta` is present (and rejected
+    /// as a 400 otherwise).
     public let writeID: UUID?
     /// Optional so the delta initialiser can omit it: a count-only queued write has no status to
     /// send, and the server's `COALESCE($2, status)` leaves the row alone rather than the client
@@ -561,20 +561,6 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
         case allowDecrease = "allow_decrease"
-    }
-
-    // Hand-written only for `writeID`: the synthesised encoder would emit `UUID`'s own
-    // (uppercase) `uuidString`, but `APIClient.id(_:)` already lowercases every path uuid for the
-    // Supabase `sub` comparison, and a queued write's idempotency key should match that case.
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(encounterCount, forKey: .encounterCount)
-        try container.encodeIfPresent(encounterDelta, forKey: .encounterDelta)
-        try container.encodeIfPresent(writeID?.uuidString.lowercased(), forKey: .writeID)
-        try container.encodeIfPresent(status, forKey: .status)
-        try container.encodeIfPresent(huntParameters, forKey: .huntParameters)
-        try container.encodeIfPresent(totalTimeSeconds, forKey: .totalTimeSeconds)
-        try container.encodeIfPresent(allowDecrease, forKey: .allowDecrease)
     }
 }
 
