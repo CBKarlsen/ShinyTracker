@@ -717,6 +717,12 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				onSetCount={commitCount}
 				onUpdate={(updated) => {
 					const existing = hunts.find((h) => h.id === updated.id);
+					// `updated.encounter_count` is a stale passenger: the params save
+					// deliberately sends no count, so the server echoes whatever it had
+					// stored, which can lag an in-flight tap flush by a round trip.
+					// Harmless only because every display and write path treats
+					// `hunts[i].encounter_count` as the fallback behind localCounts —
+					// read it directly and this becomes a rollback.
 					setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)));
 					// If a streak hunt's params were just saved, sync the optimistic
 					// chain to the saved value so the render injection doesn't override

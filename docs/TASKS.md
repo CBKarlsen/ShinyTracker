@@ -40,9 +40,10 @@ Half done. The **perimeter is gone** (2026-08-13): `allow_decrease`, `calc.Decid
 and `HuntCountPolicy`'s two permission rules are deleted, because no client ever sent the flag and
 the clamp behind it was silently discarding the web's miscount undo.
 
-What remains is the path itself. `frontend/` still PATCHes absolute counts from five sites
-(`Dashboard.tsx` flush / revertBurst / break-chain / phase-reset, `useHunts.updateEncounterCount`),
-guarded client-side by `seqRef`. Moving them to `encounter_delta` would delete that machinery too
+What remains is the path itself. `frontend/` still PATCHes absolute counts from seven call sites,
+all in `Dashboard.tsx` (heartbeat, flush, revertBurst, completion, break-chain and its undo,
+phase-reset), guarded client-side by `seqRef` and serialized per hunt by `patchHunt`. `features/dashboard/useHunts.ts`
+has a fifth, but the whole module is dead — zero importers — so it wants deleting, not migrating. Moving them to `encounter_delta` would delete that machinery too
 and close the last multi-device gap — two web tabs on one hunt currently last-write-wins.
 
 Note `hunt_parameters.chain_length` is absolute regardless, so `seqRef` cannot go entirely on a
