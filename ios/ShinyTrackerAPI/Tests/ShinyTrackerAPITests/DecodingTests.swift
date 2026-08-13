@@ -674,3 +674,26 @@ private let runDetailJSON = """
     #expect(await store.load([HuntDetail].self, as: .hunts) == hunts)
     #expect(await store.load(NuzlockeRunDetail.self, as: .run(detail.id)) == detail)
 }
+
+/// A delta write must carry its idempotency key and must NOT carry an absolute count — the
+/// server ignores `encounter_count` when a delta is present, and sending a stale one anyway
+/// would be a lie in the payload.
+@Test func deltaWriteCarriesItsKeyAndOmitsTheAbsoluteCount() throws {
+    let key = UUID()
+    let body = UpdateHuntRequest(
+        status: .active, encounterDelta: 500, writeID: key, totalTimeSeconds: 4200)
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(json.contains("\"encounter_delta\":500"))
+    #expect(json.contains("\"write_id\":\"\(key.uuidString.lowercased())\""))
+    #expect(!json.contains("encounter_count"))
+    #expect(json.contains("\"total_time_seconds\":4200"))
+}
+
+/// The absolute path is unchanged, and a delta write never leaks into it.
+@Test func absoluteWriteStillOmitsTheDeltaFields() throws {
+    let body = UpdateHuntRequest(encounterCount: 12, status: .active)
+    let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
+    #expect(json.contains("\"encounter_count\":12"))
+    #expect(!json.contains("encounter_delta"))
+    #expect(!json.contains("write_id"))
+}
