@@ -78,9 +78,14 @@ final class HuntListModel {
     /// `STEPS = [1, 2, 3, 5, 10]` — the ×N cycler.
     static let steps = [1, 2, 3, 5, 10]
 
-    /// How many failed sends a queued write gets before it is given up on. A write the server
-    /// keeps refusing for a reason this client cannot classify would otherwise block every entry
-    /// behind it forever, and the queue is ordered precisely so nothing overtakes.
+    /// How many *answered* failures a queued write gets before it is given up on. A write the
+    /// server keeps refusing for a reason this client cannot classify would otherwise block every
+    /// entry behind it forever, and the queue is ordered precisely so nothing overtakes.
+    ///
+    /// Only a failure the server itself produced spends one of these. A transport failure or an
+    /// expired session must never count: being offline is the state this queue exists for, and a
+    /// drain fires after every pause in tapping, so counting those would delete an offline
+    /// session's encounters within seconds of starting it.
     static let failureLimit = 5
 
     private(set) var state: LoadState = .loading
@@ -252,7 +257,16 @@ final class HuntListModel {
             // with the on-screen count, which is ahead of the response by whatever is still queued.
             history = all.filter { $0.status == "completed" || completing.contains($0.id) }
                 .map { detail in
-                    HuntRow(
+                    // Only the hunts completing offline get the local count. A hunt the server
+                    // already calls completed takes the response verbatim: reconciling it too
+                    // would hold a number this client never confirmed above one the server did —
+                    // `LogPhaseHandler` resets counts, and another device can lower one — which is
+                    // exactly the pairing `rebuild`'s `isServerBacked` gate exists to prevent, and
+                    // here there would be no gate at all.
+                    guard completing.contains(detail.id) else {
+                        return HuntRow(detail: detail, count: detail.encounterCount)
+                    }
+                    return HuntRow(
                         detail: detail,
                         count: HuntCountPolicy.reconciled(
                             local: current.first(where: { $0.id == detail.id })?.count ?? 0,
@@ -344,15 +358,18 @@ final class HuntListModel {
         await restoreQueue()
 
         var completedAny = false
+        // Held until the end rather than assigned as it happens: the `refresh` below clears
+        // `syncError` as its first statement, so a message set inside the loop would erase itself
+        // in the same call, before a frame was ever drawn. Every drop is named — two in one drain
+        // used to overwrite each other and report only the last hunt.
+        var dropped: [String] = []
         while let entry = queue.next {
             if entry.failures >= Self.failureLimit {
                 queue.remove(entry.id)
                 await persist()
                 // Never silently: the user counted these encounters and is entitled to know they
                 // did not reach the server, even though nothing can be done about it now.
-                syncError =
-                    "Couldn't save \(name(of: entry.huntID)) after \(Self.failureLimit) tries. "
-                    + "Those encounters were dropped."
+                dropped.append(name(of: entry.huntID))
                 continue
             }
             // Marked and persisted BEFORE the request goes out. `attempted` means "may have reached
@@ -386,10 +403,15 @@ final class HuntListModel {
                     // ordered so that nothing overtakes.
                     queue.remove(entry.id)
                     await persist()
-                    syncError = "Couldn't save \(name(of: entry.huntID)). \(message(for: error))"
+                    dropped.append(name(of: entry.huntID))
                     continue
                 }
-                queue.markFailed(entry.id)
+                // A life is spent only on a failure the server answered. `APIError` is exactly
+                // that set — a 5xx, a 429, or a response that would not decode. A `URLError` or an
+                // expired session never counts: a drain fires after every pause in tapping, so
+                // counting those would burn all five lives within seconds of a plane taking off
+                // and delete the very encounters this queue exists to keep.
+                if error is APIError { queue.markFailed(entry.id) }
                 await persist()
                 // Deliberately silent. Being offline is the normal state this whole queue exists
                 // for, and the counts are safe on disk — there is nothing for the user to do and
@@ -401,6 +423,10 @@ final class HuntListModel {
         // the response is a `Hunt` (no `total_time_seconds`), so History can only show the right
         // number after a re-read.
         if completedAny { await refresh() }
+        if !dropped.isEmpty {
+            syncError =
+                "Couldn't save \(dropped.joined(separator: ", ")). Those encounters were dropped."
+        }
     }
 
     /// One entry as a request. Count writes carry no `status`: the server's `COALESCE` then leaves
@@ -444,14 +470,20 @@ final class HuntListModel {
 
     /// Reads the queue back, once per launch.
     ///
-    /// Nothing can have enqueued before this: `bump` and `markFound` both need a row, rows only
-    /// exist after `load`, and `load` restores here before it publishes any. So this never has to
-    /// merge disk into memory — which is as well, since merging two queues is exactly the kind of
-    /// decision that does not belong in this file.
+    /// Nothing should be able to enqueue before this: `bump` and `markFound` both need a row, rows
+    /// only exist after `load`, and `load` restores here before it publishes any. So this never
+    /// has to merge disk into memory — which is as well, since merging two queues is exactly the
+    /// kind of decision that does not belong in this file.
+    ///
+    /// The emptiness check is not that argument repeated, it is the cost of being wrong about it:
+    /// the flag is set before the read so two callers cannot both restore, which leaves a window
+    /// where a tap during the read would be overwritten by the file. Disk only wins an empty
+    /// queue; anything already in memory is newer than what was on disk when the read started.
     private func restoreQueue() async {
         guard !queueRestored else { return }
         queueRestored = true
-        queue = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
+        let restored = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
+        if queue.entries.isEmpty { queue = restored }
     }
 
     /// Queue and clocks together. They are two halves of one tap — encounters and the time they
