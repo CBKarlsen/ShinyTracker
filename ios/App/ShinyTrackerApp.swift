@@ -195,6 +195,9 @@ struct AppShell: View {
         // The selected tab keeps its mode colour — native chrome, not generic chrome.
         .tint(mode.accent.color)
         .tabBarMinimizeBehavior(.onScrollDown)
+        .tabViewBottomAccessory {
+            LiveHuntAccessory(model: hunts) { mode = .hunt }
+        }
         // Counting is offline-first: a tap only reaches a queue on disk. Coming back to the app is
         // the moment most likely to have a network behind it, and it costs one no-op call when the
         // queue is empty. Deliberately the only trigger besides a load — a failed drain waits for

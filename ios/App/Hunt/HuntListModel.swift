@@ -107,6 +107,14 @@ final class HuntListModel {
     /// most recent hunt — `GET /api/hunts` orders by `created_at DESC`.
     private(set) var liveHuntID: UUID?
 
+    /// The hunt the bottom accessory counts. `liveHuntID` can name a row that a refresh has
+    /// since dropped, so this resolves rather than force-unwrapping — the accessory renders
+    /// nothing when it comes back nil.
+    var liveRow: HuntRow? {
+        guard let liveHuntID else { return nil }
+        return rows.first { $0.id == liveHuntID }
+    }
+
     /// A failure worth telling the user about, surfaced above the list.
     ///
     /// Not set for a write that merely could not be sent yet: that is what the queue is for, and
