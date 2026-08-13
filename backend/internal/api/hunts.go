@@ -13,6 +13,7 @@ import (
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -278,6 +279,12 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		// no: a sync or a replayed offline burst can only ever raise it. See
 		// calc.DecideEncounterCount.
 		AllowDecrease bool `json:"allow_decrease"`
+		// A relative count change. When present, encounter_count is ignored and
+		// the count moves by this amount instead — see calc.ApplyEncounterDelta.
+		EncounterDelta *int `json:"encounter_delta"`
+		// The idempotency key for that delta. Required with it, meaningless
+		// without it: a retried delta that already landed must not apply twice.
+		WriteID *string `json:"write_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -298,6 +305,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if nicknameTooLong(req.Nickname) {
 		http.Error(w, "nickname is too long", http.StatusBadRequest)
+		return
+	}
+	// A delta without its key cannot be deduped, and an offline queue retries by
+	// definition — accepting one would mean applying the same "+500" twice. A key
+	// without a delta is harmless and simply ignored: there is nothing to dedupe.
+	if req.EncounterDelta != nil && (req.WriteID == nil || *req.WriteID == "") {
+		http.Error(w, "write_id is required with encounter_delta", http.StatusBadRequest)
 		return
 	}
 
@@ -326,7 +340,60 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	newEncounterCount := calc.DecideEncounterCount(storedCount, req.EncounterCount, req.AllowDecrease)
+	// Two ways to move the count. The absolute path is unchanged: the web client
+	// sends encounter_count and calc.DecideEncounterCount guards it against a
+	// stale overwrite. The delta path exists because an offline client cannot
+	// know the current count, so it sends a relative change instead — which
+	// cannot be stale, but must not be applied twice.
+	var tx pgx.Tx
+	newEncounterCount := storedCount
+	if req.EncounterDelta != nil {
+		// The dedupe row and the count it authorises commit together or not at
+		// all. Two transactions leave a window where a crash between them either
+		// double-applies the delta or loses it.
+		tx, err = database.DB.Begin(context.Background())
+		if err != nil {
+			http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+			return
+		}
+		// No-op once Commit has succeeded, so every early return below rolls back.
+		defer tx.Rollback(context.Background())
+
+		// Re-read the count under a row lock rather than trusting the storedCount
+		// read above: two clients on one hunt (D1 names phone + Apple Watch) is
+		// the case deltas exist for, and an unlocked read-modify-write would let
+		// the second overwrite the first's increment with its own.
+		if err := tx.QueryRow(context.Background(),
+			`SELECT encounter_count FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+			huntID, userID).Scan(&newEncounterCount); err != nil {
+			http.Error(w, "Hunt not found", http.StatusNotFound)
+			return
+		}
+
+		tag, err := tx.Exec(context.Background(),
+			`INSERT INTO hunt_writes (write_id, user_id, hunt_id) VALUES ($1, $2, $3) ON CONFLICT (write_id) DO NOTHING`,
+			*req.WriteID, userID, huntID)
+		if err != nil {
+			// Same 22P02 reasoning as DeleteHunt: a malformed write_id is the
+			// client's mistake, not the server's.
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "22P02" {
+				http.Error(w, "write_id must be a UUID", http.StatusBadRequest)
+				return
+			}
+			http.Error(w, "Failed to record write", http.StatusInternalServerError)
+			return
+		}
+		// Zero rows inserted means this write_id already landed. A replay skips
+		// only the count — status, time and nickname still apply below. Time is
+		// max-merged and so idempotent already, and a replayed completion must
+		// still be able to complete a hunt whose first response was lost.
+		if tag.RowsAffected() > 0 {
+			newEncounterCount = calc.ApplyEncounterDelta(newEncounterCount, *req.EncounterDelta)
+		}
+	} else {
+		newEncounterCount = calc.DecideEncounterCount(storedCount, req.EncounterCount, req.AllowDecrease)
+	}
 	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
 		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)
 	}
@@ -335,11 +402,21 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		huntParameters = req.HuntParameters
 	}
 
+	// The UPDATE has to run inside the delta's transaction when there is one, or
+	// the dedupe row and the count it authorises would not commit together.
+	var q interface {
+		QueryRow(context.Context, string, ...any) pgx.Row
+	} = database.DB
+	if tx != nil {
+		q = tx
+	}
+
 	// $1 binds newEncounterCount, not req.EncounterCount: that's the guarded
-	// value from calc.DecideEncounterCount above. Binding the raw request field
-	// here again would silently bring back last-write-wins.
+	// value from calc.DecideEncounterCount / calc.ApplyEncounterDelta above.
+	// Binding the raw request field here again would silently bring back
+	// last-write-wins.
 	var hunt models.UserHunt
-	err = database.DB.QueryRow(context.Background(),
+	err = q.QueryRow(context.Background(),
 		`UPDATE user_hunts
 		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
 		 WHERE id = $7 AND user_id = $8
@@ -350,6 +427,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to update hunt", http.StatusInternalServerError)
 		return
+	}
+
+	if tx != nil {
+		if err := tx.Commit(context.Background()); err != nil {
+			http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
