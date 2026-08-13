@@ -6,7 +6,10 @@ name: ShinyTracker
 options:
   bundleIdPrefix: com.casperkarlsen
   deploymentTarget:
-    iOS: "17.0"
+    # iOS 26: the app is built around Liquid Glass and TabView's bottom accessory
+    # (docs/superpowers/specs/2026-08-13-native-chrome-design.md). The codebase carries
+    # zero availability guards precisely because the floor moves instead.
+    iOS: "26.0"
   createIntermediateGroups: true
 
 packages:
