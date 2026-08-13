@@ -1,6 +1,7 @@
 import Foundation
 
-/// The rules governing when a hunt's encounter count may move down.
+/// Which encounter count a hunt row should show, when the client's number and the server's
+/// disagree.
 ///
 /// These live here, apart from the view model that applies them, for one reason: they are the
 /// rules that broke. Five separate fix passes on `HuntListModel` each closed one scenario without
@@ -8,13 +9,13 @@ import Foundation
 /// no test target. Every claim about it was derived by reading. The decisions themselves are pure
 /// functions of a few integers and booleans, so they belong somewhere they can be executed.
 ///
-/// It is deliberately the same shape as the server's `calc.DecideTotalTime` and
-/// `calc.DecideEncounterCount`: the count is governed by small named decisions with tests on both
-/// sides of the wire, rather than by conditionals buried in a request builder.
+/// It is deliberately the same shape as the server's `calc.DecideTotalTime`: small named decisions
+/// with tests on both sides of the wire, rather than conditionals buried in a request builder.
 ///
 /// The invariant all of it serves, from `docs/handoff/DECISIONS.md` D1: *"Never overwrite a higher
 /// server value with a lower local one without an explicit user decision… Losing a long hunt is
-/// the one unforgivable failure in this app."*
+/// the one unforgivable failure in this app."* Writing is no longer part of that — counting goes
+/// through deltas, which compose correctly by construction. What is left here is display.
 public enum HuntCountPolicy {
 
     /// What a list rebuild should show for one hunt, and whether that number counts as confirmed.
@@ -54,23 +55,6 @@ public enum HuntCountPolicy {
             return Rebuild(count: max(response, onScreen ?? 0), isServerBacked: true)
         }
         return Rebuild(count: response, isServerBacked: true)
-    }
-
-    /// Whether pressing a counter button should record permission to lower the stored count.
-    ///
-    /// Decided when the button is pressed, never when the request is built. The two are ~400ms
-    /// apart because writes are debounced, and a refresh landing in between could otherwise flip
-    /// the answer for a row still showing a stale number.
-    public static func armsDecreasePermission(delta: Int, isServerBacked: Bool) -> Bool {
-        delta < 0 && isServerBacked
-    }
-
-    /// Whether a write should carry `allow_decrease`.
-    ///
-    /// Re-checks backing as belt-and-braces. Backing only ever grows within a launch, so this can
-    /// only ever agree with the decision made at press time.
-    public static func sendsDecreasePermission(userLowered: Bool, isServerBacked: Bool) -> Bool {
-        userLowered && isServerBacked
     }
 
     /// What to display after a write, given what the server says it stored.

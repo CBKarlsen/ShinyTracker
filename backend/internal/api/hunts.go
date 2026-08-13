@@ -264,10 +264,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		// Pointer so "absent" is distinguishable from "0". Since status became
-		// optional there is no longer any field a caller must send, so a body of
-		// {"allow_decrease": true} used to decode to count 0 with permission to
-		// lower — and zero a hunt. Absent now means "leave the count alone" and
-		// allow_decrease is ignored with it.
+		// optional there is no longer any field a caller must send, so a body
+		// carrying only some other field would otherwise decode to count 0 —
+		// and zero a hunt. Absent means "leave the count alone".
 		EncounterCount *int `json:"encounter_count"`
 		// Pointer so a count-only offline write can omit it. Absent leaves the
 		// column alone (COALESCE in the UPDATE below): a queued delta carries no
@@ -285,11 +284,6 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		// is the way to clear one, which the UPDATE folds back to NULL so the
 		// column never holds an empty string.
 		Nickname *string `json:"nickname"`
-		// The "−" control's explicit permission to lower the count. Absent means
-		// no: a sync or a replayed offline burst can only ever raise it. See
-		// calc.DecideEncounterCount. Meaningless without encounter_count, and
-		// ignored there — on its own it is permission to lower nothing.
-		AllowDecrease bool `json:"allow_decrease"`
 		// A relative count change. When present, encounter_count is ignored and
 		// the count moves by this amount instead — see calc.ApplyEncounterDelta.
 		EncounterDelta *int `json:"encounter_delta"`
@@ -362,11 +356,20 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// Two ways to move the count. The absolute path is unchanged: the web client
-	// sends encounter_count and calc.DecideEncounterCount guards it against a
-	// stale overwrite. The delta path exists because an offline client cannot
-	// know the current count, so it sends a relative change instead — which
-	// cannot be stale, but must not be applied twice.
+	// Two ways to move the count.
+	//
+	// The delta path is how iOS counts: an offline client cannot know the
+	// current count, so it sends a relative change, which cannot be stale but
+	// must not be applied twice. This is where D1's monotonic guarantee now
+	// lives — a replayed or concurrent delta composes correctly by
+	// construction, and calc.ApplyEncounterDelta floors the result at zero.
+	//
+	// The absolute path is the web client's, and it is stored as submitted.
+	// It used to be clamped to max(stored, submitted) to stop a stale iOS
+	// count overwriting a good server one; iOS no longer sends absolute counts
+	// at all, and the clamp's only remaining effect was to silently discard
+	// the web's miscount undo, which lowers the count on purpose. Every write
+	// on this path is a deliberate action taken against an on-screen number.
 	var tx pgx.Tx
 	newEncounterCount := storedCount
 	if req.EncounterDelta != nil {
@@ -437,7 +440,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 			newEncounterCount = calc.ApplyEncounterDelta(newEncounterCount, *req.EncounterDelta)
 		}
 	} else if req.EncounterCount != nil {
-		newEncounterCount = calc.DecideEncounterCount(storedCount, *req.EncounterCount, req.AllowDecrease)
+		newEncounterCount = *req.EncounterCount
 	}
 	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
 		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)
@@ -456,10 +459,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		q = tx
 	}
 
-	// $1 binds newEncounterCount, not req.EncounterCount: that's the guarded
-	// value from calc.DecideEncounterCount / calc.ApplyEncounterDelta above.
-	// Binding the raw request field here again would silently bring back
-	// last-write-wins.
+	// $1 binds newEncounterCount, not req.EncounterCount. On the delta path
+	// they are different things entirely — newEncounterCount is the composed
+	// value from calc.ApplyEncounterDelta, and req.EncounterCount is nil —
+	// so binding the request field here would zero the count on every offline
+	// write. It also stays correct when a replayed write_id skips the update:
+	// newEncounterCount still holds the stored count, so the row is rewritten
+	// with what it already had rather than having the delta applied twice.
 	var hunt models.UserHunt
 	err = q.QueryRow(context.Background(),
 		`UPDATE user_hunts

@@ -93,6 +93,42 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		setErrorMsg("Your session expired — please sign in again.");
 	}, [logout]);
 
+	// Every write path below (heartbeat, debounced flush, undo revert,
+	// break-chain + its undo, phase reset) PATCHes the same hunt with an
+	// absolute encounter_count. The backend used to clamp a submitted count to
+	// max(stored, submitted); now it stores exactly what's submitted. So if two
+	// of these PATCHes are ever in flight for one hunt and the network
+	// reorders the responses, the older (lower) request can land LAST on the
+	// server and silently erase encounters — seqRef only stops a stale
+	// *response* from writing local state, it doesn't stop the write itself.
+	// Chaining every PATCH for a hunt behind whatever is already in flight for
+	// THAT hunt (and only that hunt — other hunts stay concurrent) makes that
+	// server-side reordering impossible.
+	const patchChains = useRef<Record<string, Promise<unknown>>>({});
+	const patchHunt = useCallback(
+		(id: string, body: object): Promise<Response> => {
+			const prior = patchChains.current[id] ?? Promise.resolve();
+			// A prior failure must not wedge this hunt's queue forever — swallow it
+			// before chaining on; the caller still observes ITS OWN request's
+			// success/failure via the returned promise below.
+			const run = prior.catch(() => {}).then(() =>
+				authedFetch(
+					`${API_BASE}/api/hunts/${id}`,
+					token,
+					{
+						method: "PATCH",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(body),
+					},
+					handleSessionExpired,
+				),
+			);
+			patchChains.current[id] = run.catch(() => {});
+			return run;
+		},
+		[token, handleSessionExpired],
+	);
+
 	// For streak hunts, build the hunt_parameters payload carrying the live
 	// chain so PATCHes advance/reset chain_length. Returns undefined for
 	// non-streak hunts (their hunt_parameters must be left untouched — the
@@ -195,20 +231,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 					const chainSent = localChainsRef.current[huntId] ?? count;
 					const params = streakParams(hunt, chainSent);
 					const seq = nextSeq(huntId);
-					return authedFetch(
-						`${API_BASE}/api/hunts/${huntId}`,
-						token,
-						{
-							method: "PATCH",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({
-								encounter_count: count,
-								status: hunt.status,
-								...(params ? { hunt_parameters: params } : {}),
-							}),
-						},
-						handleSessionExpired,
-					).then((res) => {
+					return patchHunt(huntId, {
+						encounter_count: count,
+						status: hunt.status,
+						...(params ? { hunt_parameters: params } : {}),
+					}).then((res) => {
 						if (res.ok && isLatestSeq(huntId, seq)) {
 							committedRef.current[huntId] = count;
 							committedChainRef.current[huntId] = chainSent;
@@ -221,7 +248,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			);
 		}, 60_000);
 		return () => clearInterval(id);
-	}, [localCounts, hunts, token, handleSessionExpired, streakParams, nextSeq, isLatestSeq]);
+	}, [localCounts, hunts, streakParams, nextSeq, isLatestSeq, patchHunt]);
 
 	// Keep localCountsRef in sync so the debounce timer always reads the latest count.
 	useEffect(() => { localCountsRef.current = localCounts; }, [localCounts]);
@@ -240,20 +267,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		// response is stale and must not touch committedRef/setHunts.
 		const seq = nextSeq(id);
 		try {
-			const res = await authedFetch(
-				`${API_BASE}/api/hunts/${id}`,
-				token,
-				{
-					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						encounter_count: count,
-						status: "active",
-						...(params ? { hunt_parameters: params } : {}),
-					}),
-				},
-				handleSessionExpired,
-			);
+			const res = await patchHunt(id, {
+				encounter_count: count,
+				status: "active",
+				...(params ? { hunt_parameters: params } : {}),
+			});
 			if (!isLatestSeq(id, seq)) return;
 			if (res.ok) {
 				committedRef.current[id] = count;
@@ -295,7 +313,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			dismissUndoFor(id);
 			setErrorMsg("Sync failed — clicks weren't saved.");
 		}
-	}, [token, handleSessionExpired, hunts, streakParams, dismissUndoFor, nextSeq, isLatestSeq]);
+	}, [hunts, streakParams, dismissUndoFor, nextSeq, isLatestSeq, patchHunt]);
 
 	// (Re)start the 1500ms debounce that flushes the current count, or flush
 	// right away for a deliberate one-shot edit (undo revert, direct entry).
@@ -339,20 +357,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 			const params = hunt ? streakParams(hunt, anchor.chain) : undefined;
 			const seq = nextSeq(id);
 			try {
-				const res = await authedFetch(
-					`${API_BASE}/api/hunts/${id}`,
-					token,
-					{
-						method: "PATCH",
-						headers: { "Content-Type": "application/json" },
-						body: JSON.stringify({
-							encounter_count: anchor.count,
-							status: "active",
-							...(params ? { hunt_parameters: params } : {}),
-						}),
-					},
-					handleSessionExpired,
-				);
+				const res = await patchHunt(id, {
+					encounter_count: anchor.count,
+					status: "active",
+					...(params ? { hunt_parameters: params } : {}),
+				});
 				if (!isLatestSeq(id, seq)) return;
 				if (res.ok) {
 					committedRef.current[id] = anchor.count;
@@ -373,7 +382,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				setErrorMsg("Undo failed — count wasn't restored.");
 			}
 		},
-		[token, handleSessionExpired, hunts, streakParams, nextSeq, isLatestSeq],
+		[hunts, streakParams, nextSeq, isLatestSeq, patchHunt],
 	);
 
 	// Seals a tap burst into a single undo entry once BURST_COALESCE_MS has
@@ -481,16 +490,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		dismissUndoFor(id);
 		const currentCount = localCounts[id] ?? 0;
 		try {
-			const res = await authedFetch(
-				`${API_BASE}/api/hunts/${id}`,
-				token,
-				{
-					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ encounter_count: currentCount, status: "completed" }),
-				},
-				handleSessionExpired,
-			);
+			const res = await patchHunt(id, { encounter_count: currentCount, status: "completed" });
 			if (res.ok) {
 				setHunts((prev) => prev.filter((h) => h.id !== id));
 				onHuntCountChange(hunts.length - 1);
@@ -526,16 +526,7 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		});
 		const seq = nextSeq(id);
 		try {
-			const res = await authedFetch(
-				`${API_BASE}/api/hunts/${id}`,
-				token,
-				{
-					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ encounter_count: count, status: "active", hunt_parameters: params }),
-				},
-				handleSessionExpired,
-			);
+			const res = await patchHunt(id, { encounter_count: count, status: "active", hunt_parameters: params });
 			if (!isLatestSeq(id, seq)) return;
 			if (res.ok) {
 				setHunts((prev) => prev.map((h) => (h.id === id ? { ...h, hunt_parameters: params } : h)));
@@ -551,20 +542,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 					});
 					const undoSeq = nextSeq(id);
 					try {
-						const res2 = await authedFetch(
-							`${API_BASE}/api/hunts/${id}`,
-							token,
-							{
-								method: "PATCH",
-								headers: { "Content-Type": "application/json" },
-								body: JSON.stringify({
-									encounter_count: localCountsRef.current[id] ?? count,
-									status: "active",
-									hunt_parameters: revertParams,
-								}),
-							},
-							handleSessionExpired,
-						);
+						const res2 = await patchHunt(id, {
+							encounter_count: localCountsRef.current[id] ?? count,
+							status: "active",
+							hunt_parameters: revertParams,
+						});
 						if (!isLatestSeq(id, undoSeq)) return;
 						if (res2.ok) {
 							setHunts((prev) =>
@@ -618,20 +600,11 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 		// restore the pre-phase chain.
 		if (isStreakMethod(updated.formula_type)) {
 			const stored = (updated.hunt_parameters as Record<string, any>) || {};
-			authedFetch(
-				`${API_BASE}/api/hunts/${updated.id}`,
-				token,
-				{
-					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						encounter_count: 0,
-						status: "active",
-						hunt_parameters: { ...stored, chain_length: 0 },
-					}),
-				},
-				handleSessionExpired,
-			).catch((err) => {
+			patchHunt(updated.id, {
+				encounter_count: 0,
+				status: "active",
+				hunt_parameters: { ...stored, chain_length: 0 },
+			}).catch((err) => {
 				if (err instanceof SessionExpiredError) return;
 				console.error(err);
 			});
@@ -744,6 +717,12 @@ const Dashboard: React.FC<Props> = ({ onNewHunt, onHuntCountChange, refreshKey }
 				onSetCount={commitCount}
 				onUpdate={(updated) => {
 					const existing = hunts.find((h) => h.id === updated.id);
+					// `updated.encounter_count` is a stale passenger: the params save
+					// deliberately sends no count, so the server echoes whatever it had
+					// stored, which can lag an in-flight tap flush by a round trip.
+					// Harmless only because every display and write path treats
+					// `hunts[i].encounter_count` as the fallback behind localCounts —
+					// read it directly and this becomes a rollback.
 					setHunts((prev) => prev.map((h) => (h.id === updated.id ? { ...h, ...updated } : h)));
 					// If a streak hunt's params were just saved, sync the optimistic
 					// chain to the saved value so the render injection doesn't override

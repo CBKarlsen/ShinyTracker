@@ -638,19 +638,6 @@ private let runDetailJSON = """
         .contains("starter")))
 }
 
-/// Omitted means "no" on the wire, which is what makes the guard safe by default: every caller
-/// that is not the "−" button gets monotonic behaviour without opting into it.
-@Test func updateHuntBodyOmitsAllowDecreaseUnlessAsked() throws {
-    let encoder = JSONEncoder()
-    let plain = UpdateHuntRequest(encounterCount: 12, status: .active)
-    #expect(!(try #require(String(data: encoder.encode(plain), encoding: .utf8))
-        .contains("allow_decrease")))
-
-    let lowering = UpdateHuntRequest(encounterCount: 11, status: .active, allowDecrease: true)
-    #expect(try #require(String(data: encoder.encode(lowering), encoding: .utf8))
-        .contains("\"allow_decrease\":true"))
-}
-
 /// The response types are `Codable`, not `Decodable`, only because ``SnapshotStore`` writes them
 /// back out to disk. Nothing else in the app ever encodes one, so this is the only place that
 /// would notice if the synthesised `encode` stopped agreeing with the synthesised `init(from:)`.

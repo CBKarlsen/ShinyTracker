@@ -24,8 +24,7 @@ Status: ✅ shipped · 🔜 next · ⏳ backlog · 🐞 follow-up
 - **Perceived performance** — screens no longer blank on tab switch, sprites are cached with a real
   placeholder, and the Nuzlocke timeline stopped rescanning itself once per row per frame.
 - **Offline, sub-project A** — `SnapshotStore` renders last-known data on a cold launch; `HuntClock`
-  gives the client its own elapsed time (completing D1); the server refuses to lower a count unless
-  the user explicitly asked.
+  gives the client its own elapsed time (completing D1).
 - **Offline, sub-project B** — counting and completing a hunt work with **no signal**. Taps append to
   a durable `WriteQueue` and drain as relative **deltas** with idempotency keys, deduped server-side
   in one transaction.
@@ -36,14 +35,24 @@ Status: ✅ shipped · 🔜 next · ⏳ backlog · 🐞 follow-up
 
 Three candidates, in the order I'd take them.
 
-### 1. Retire the absolute-count path
-It is now unreachable from iOS. `HuntCountPolicy.armsDecreasePermission` and
-`sendsDecreasePermission` have **no production callers**, and `allow_decrease` is sent by no client
-at all. It is a defensive perimeter around a door only the web app uses — and that perimeter is the
-source of most of the subtlety in `HuntListModel`, which took five fix passes to get right.
+### 1. Move the web client to deltas
+Half done. The **perimeter is gone** (2026-08-13): `allow_decrease`, `calc.DecideEncounterCount`
+and `HuntCountPolicy`'s two permission rules are deleted, because no client ever sent the flag and
+the clamp behind it was silently discarding the web's miscount undo.
 
-Moving `frontend/` to deltas would let a large amount of hard-won complexity be **deleted** rather
-than maintained. Highest value-per-line on this list.
+What remains is the path itself. `frontend/` still PATCHes absolute counts from seven call sites,
+all in `Dashboard.tsx` (heartbeat, flush, revertBurst, completion, break-chain and its undo,
+phase-reset), guarded client-side by `seqRef` and serialized per hunt by `patchHunt`. `features/dashboard/useHunts.ts`
+has a fifth, but the whole module is dead — zero importers — so it wants deleting, not migrating. Moving them to `encounter_delta` would delete that machinery too
+and close the last multi-device gap — two web tabs on one hunt currently last-write-wins.
+
+Note `hunt_parameters.chain_length` is absolute regardless, so `seqRef` cannot go entirely on a
+count-only migration.
+
+On the iOS side the absolute path is already vestigial: `UpdateHuntRequest`'s
+`init(encounterCount:status:…)` has no production caller left, only encoding tests. It can be
+deleted whenever, which would make "iOS cannot send an absolute count" a type-level guarantee
+rather than a convention.
 
 ### 2. Offline, sub-project C — the remaining write paths
 Nuzlocke encounters, party/boss progress, dex ticks, charm toggles. Mostly repetition now that the
