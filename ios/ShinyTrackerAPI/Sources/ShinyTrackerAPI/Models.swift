@@ -9,11 +9,16 @@ import ShinyTrackerKit
 /// **dictionary** keys, so `hunt_parameters: {"chain_length": 30}` would decode as
 /// `chainLength` and every `params.int("chain_length", …)` lookup in `ShinyTrackerKit` would
 /// silently fall back to its default — wrong odds, no error. Explicit keys, no strategy.
+///
+/// The response types are `Codable` rather than `Decodable` because ``SnapshotStore`` writes them
+/// back out to disk. The encoding is never sent to the server — it re-reads its own files — so the
+/// synthesised `encode` only has to round-trip against the synthesised `init(from:)`, which the
+/// shared `CodingKeys` guarantee.
 
 // MARK: - Reference data
 
 /// `GET /api/me` — `MeHandler` returns exactly these three fields (it upserts the profile row).
-public struct Profile: Decodable, Sendable, Equatable {
+public struct Profile: Codable, Sendable, Equatable {
     public let id: UUID
     public let username: String
     public let isAdmin: Bool
@@ -25,7 +30,7 @@ public struct Profile: Decodable, Sendable, Equatable {
 }
 
 /// `GET /api/games` — `models.Game`.
-public struct Game: Decodable, Sendable, Equatable, Identifiable {
+public struct Game: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let title: String
     public let generation: Int
@@ -38,7 +43,7 @@ public struct Game: Decodable, Sendable, Equatable, Identifiable {
 }
 
 /// `GET /api/pokemon` — `models.Pokemon`.
-public struct Pokemon: Decodable, Sendable, Equatable, Identifiable {
+public struct Pokemon: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let name: String
     public let spriteURL: String
@@ -62,7 +67,7 @@ public struct Pokemon: Decodable, Sendable, Equatable, Identifiable {
 }
 
 /// One node of an evolution line — `calc.EvolveFrom`.
-public struct EvolutionLink: Decodable, Sendable, Equatable {
+public struct EvolutionLink: Codable, Sendable, Equatable {
     public let pokemonID: Int
     public let name: String
 
@@ -74,7 +79,7 @@ public struct EvolutionLink: Decodable, Sendable, Equatable {
 
 /// One `pokemon_locations` row — `api.PokemonLocationDetail`. The numeric columns and
 /// `conditions` are `COALESCE`d in the query, so none of them arrive as null.
-public struct PokemonLocation: Decodable, Sendable, Equatable {
+public struct PokemonLocation: Codable, Sendable, Equatable {
     public let gameID: Int
     public let area: String
     public let version: String
@@ -94,7 +99,7 @@ public struct PokemonLocation: Decodable, Sendable, Equatable {
 
 /// Six base stats — `api.PokemonStats`. Absent (not zero) for a species `cmd/seed_moves` has
 /// not been through, which is why the handler declares it `omitempty`.
-public struct PokemonStats: Decodable, Sendable, Equatable {
+public struct PokemonStats: Codable, Sendable, Equatable {
     public let hp: Int
     public let attack: Int
     public let defense: Int
@@ -120,7 +125,7 @@ public struct PokemonStats: Decodable, Sendable, Equatable {
 }
 
 /// One ability slot — `api.PokemonAbilityDetail`.
-public struct PokemonAbility: Decodable, Sendable, Equatable, Identifiable {
+public struct PokemonAbility: Codable, Sendable, Equatable, Identifiable {
     public let slug: String
     public let name: String
     public let effect: String
@@ -140,7 +145,7 @@ public struct PokemonAbility: Decodable, Sendable, Equatable, Identifiable {
 /// `power` and `accuracy` are genuinely null for status and always-hit moves, and `level` is
 /// non-null only for `method == "level-up"`; none of the three may be flattened to 0, which
 /// would read as "0 power" rather than "not applicable".
-public struct PokemonMove: Decodable, Sendable, Equatable, Identifiable {
+public struct PokemonMove: Codable, Sendable, Equatable, Identifiable {
     public let slug: String
     public let name: String
     /// A PokeAPI type slug — `"ground"`. `PokemonType(slug:)` in `ShinyTrackerUI` parses it.
@@ -175,7 +180,7 @@ public struct PokemonMove: Decodable, Sendable, Equatable, Identifiable {
 /// - ``abilities`` is always present from the current handler (`[]` at worst).
 /// - ``moves`` is `null` when the request carried no `game_id`, and `[]` when it did but that
 ///   game has no seeded moveset — the handler keeps those two cases distinct on purpose.
-public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
+public struct PokemonDetail: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let name: String
     public let spriteURL: String
@@ -216,7 +221,7 @@ public struct PokemonDetail: Decodable, Sendable, Equatable, Identifiable {
 /// of the games *you own*" — it is not per-game, and there is no endpoint that is.
 /// `lockedEverywhere` is shiny-locked in every game it appears in, i.e. it can never be caught
 /// shiny by anyone. Both lists are nil-guarded to `[]` by the handler.
-public struct DexStatus: Decodable, Sendable, Equatable {
+public struct DexStatus: Codable, Sendable, Equatable {
     public let notInYourGames: [Int]
     public let lockedEverywhere: [Int]
 
@@ -227,7 +232,7 @@ public struct DexStatus: Decodable, Sendable, Equatable {
 }
 
 /// `GET /api/methods` — `api.MethodDetail`. One row per (game, method name).
-public struct MethodDetail: Decodable, Sendable, Equatable, Identifiable {
+public struct MethodDetail: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let gameID: Int
     public let gameTitle: String
@@ -251,7 +256,7 @@ public struct MethodDetail: Decodable, Sendable, Equatable, Identifiable {
 
 /// `GET /api/hunt-methods?pokemon_id=` — `api.HuntMethodDetail`. Same columns as
 /// ``MethodDetail`` plus the Pokemon it was resolved for. Only covers games the user owns.
-public struct HuntMethodDetail: Decodable, Sendable, Equatable, Identifiable {
+public struct HuntMethodDetail: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let pokemonID: Int
     public let gameID: Int
@@ -276,7 +281,7 @@ public struct HuntMethodDetail: Decodable, Sendable, Equatable, Identifiable {
 }
 
 /// `GET /api/user/{id}/games` — `models.UserGame`.
-public struct UserGame: Decodable, Sendable, Equatable {
+public struct UserGame: Codable, Sendable, Equatable {
     public let userID: UUID
     public let gameID: Int
     public let hasShinyCharm: Bool
@@ -300,7 +305,7 @@ public struct UserGame: Decodable, Sendable, Equatable {
 /// `gameID` is additionally always null on the `PATCH` response: `UpdateHuntHandler`'s
 /// `RETURNING` clause omits `game_id`, so Go encodes the zero value of the pointer. Read the
 /// game from the hunt list, not from a patch result.
-public struct Hunt: Decodable, Sendable, Equatable, Identifiable {
+public struct Hunt: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let userID: UUID
     public let pokemonID: Int
@@ -336,7 +341,7 @@ public struct Hunt: Decodable, Sendable, Equatable, Identifiable {
 }
 
 /// One `hunt_phases` row, joined with its Pokemon — `models.HuntPhase`.
-public struct HuntPhase: Decodable, Sendable, Equatable, Identifiable {
+public struct HuntPhase: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let huntID: UUID
     public let pokemonID: Int
@@ -367,7 +372,7 @@ public struct HuntPhase: Decodable, Sendable, Equatable, Identifiable {
 /// too. Everything from the `LEFT JOIN`s is optional: a custom-method hunt has no method row,
 /// no game row and therefore no charm flag. `formulaType` is `COALESCE`d to `'static'` in SQL
 /// but stays optional because the column is left-joined.
-public struct HuntDetail: Decodable, Sendable, Equatable, Identifiable {
+public struct HuntDetail: Codable, Sendable, Equatable, Identifiable {
     // --- embedded UserHunt ---
     public let id: UUID
     public let userID: UUID
@@ -497,17 +502,22 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
     public let status: HuntStatus
     public let huntParameters: [String: ParamValue]?
     public let totalTimeSeconds: Int?
+    /// Explicit permission to lower the count, set only by the "−" control. Omitted everywhere
+    /// else, so a sync or a replayed offline burst can only ever raise it — `calc.DecideEncounterCount`.
+    public let allowDecrease: Bool?
 
     public init(
         encounterCount: Int,
         status: HuntStatus,
         huntParameters: [String: ParamValue]? = nil,
-        totalTimeSeconds: Int? = nil
+        totalTimeSeconds: Int? = nil,
+        allowDecrease: Bool? = nil
     ) {
         self.encounterCount = encounterCount
         self.status = status
         self.huntParameters = huntParameters
         self.totalTimeSeconds = totalTimeSeconds
+        self.allowDecrease = allowDecrease
     }
 
     enum CodingKeys: String, CodingKey {
@@ -515,6 +525,7 @@ public struct UpdateHuntRequest: Codable, Sendable, Equatable {
         case encounterCount = "encounter_count"
         case huntParameters = "hunt_parameters"
         case totalTimeSeconds = "total_time_seconds"
+        case allowDecrease = "allow_decrease"
     }
 }
 
@@ -560,7 +571,7 @@ public struct SetUserGameRequest: Codable, Sendable, Equatable {
 ///
 /// `PutRunEncounterHandler` validates the logged `pokemon_id` against exactly this pool, so a
 /// picker must offer these and nothing else: anything off-pool is a 400.
-public struct NuzlockeEncounterOption: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeEncounterOption: Codable, Sendable, Equatable, Identifiable {
     public let pokemonID: Int
     public let pokemonName: String
     public let spriteURL: String
@@ -575,7 +586,7 @@ public struct NuzlockeEncounterOption: Decodable, Sendable, Equatable, Identifia
 }
 
 /// One move on a boss squad member — `models.NuzlockeBossMove`.
-public struct NuzlockeBossMove: Decodable, Sendable, Equatable {
+public struct NuzlockeBossMove: Codable, Sendable, Equatable {
     public let name: String
     public let type: String
     /// Base power, or **0 for a variable-power move** — Grass Knot, Metal Burst, Gyro Ball,
@@ -596,7 +607,7 @@ public struct NuzlockeBossMove: Decodable, Sendable, Equatable {
 }
 
 /// One member of a boss's squad — `models.NuzlockeBossMon`.
-public struct NuzlockeBossMon: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeBossMon: Codable, Sendable, Equatable, Identifiable {
     public let pokemonID: Int
     public let pokemonName: String
     public let spriteURL: String
@@ -623,7 +634,7 @@ public struct NuzlockeBossMon: Decodable, Sendable, Equatable, Identifiable {
 /// Two shapes in one type, discriminated by ``kind``: a `location` carries ``encounters``, a
 /// `boss` carries ``bossTitle``/``place``/``levelCap``/``squad``. Every one of those is
 /// `omitempty` in Go, so the other kind's fields are simply absent — optional, not empty.
-public struct NuzlockeTimelineEntry: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeTimelineEntry: Codable, Sendable, Equatable, Identifiable {
     public let id: Int
     public let slug: String
     /// `"location"` or `"boss"` — a `CHECK` constraint, but kept a `String` for the same reason
@@ -650,7 +661,7 @@ public struct NuzlockeTimelineEntry: Decodable, Sendable, Equatable, Identifiabl
 /// One seeded version of a game, plus the starter choices its rosters depend on —
 /// `models.NuzlockeVersionInfo`. Empty ``starters`` means the rosters are identical whatever
 /// you picked, so the run need not record one and the UI must not ask.
-public struct NuzlockeVersionInfo: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeVersionInfo: Codable, Sendable, Equatable, Identifiable {
     public let version: String
     public let starters: [String]
 
@@ -662,7 +673,7 @@ public struct NuzlockeVersionInfo: Decodable, Sendable, Equatable, Identifiable 
 /// `gameID`/`gameTitle` are both nullable: the FK is `ON DELETE SET NULL`, so a run outlives the
 /// game row it was started against. A run in that state can no longer log anything — every write
 /// handler 400s with "This run has no game set".
-public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeRun: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let userID: UUID
     public let gameID: Int?
@@ -711,7 +722,7 @@ public struct NuzlockeRun: Decodable, Sendable, Equatable, Identifiable {
 ///
 /// `locationSlug` is likewise empty on nothing: `PutRunEncounterHandler` sets it from the path
 /// and the `PATCH` re-selects it, so it is always populated in practice.
-public struct NuzlockeEncounterLog: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeEncounterLog: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let runID: UUID
     public let locationSlug: String
@@ -742,7 +753,7 @@ public struct NuzlockeEncounterLog: Decodable, Sendable, Equatable, Identifiable
 }
 
 /// The beaten flag for one boss of one run — `models.NuzlockeBossProgress`.
-public struct NuzlockeBossProgress: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeBossProgress: Codable, Sendable, Equatable, Identifiable {
     public let bossSlug: String
     public let beaten: Bool
 
@@ -759,7 +770,7 @@ public struct NuzlockeBossProgress: Decodable, Sendable, Equatable, Identifiable
 /// Go embeds `NuzlockeRun`, which flattens into the same JSON object, so this is a flat struct
 /// for the same reason ``HuntDetail`` is. The three list fields are always present (the handler
 /// initialises them to empty slices), unlike most list responses in this API.
-public struct NuzlockeRunDetail: Decodable, Sendable, Equatable, Identifiable {
+public struct NuzlockeRunDetail: Codable, Sendable, Equatable, Identifiable {
     // --- embedded NuzlockeRun ---
     public let id: UUID
     public let userID: UUID

@@ -95,12 +95,42 @@ final class HuntListModel {
     private var stepByHunt: [UUID: Int] = [:]
 
     private let client: APIClient
+    private let store: SnapshotStore
     /// Debounced writers, one per hunt. See ``scheduleSync(_:)``.
     private var pendingWrites: [UUID: Task<Void, Never>] = [:]
     /// The count each hunt had before its current burst of taps — the rollback target.
     private var preBurstCount: [UUID: Int] = [:]
+    /// The clock each hunt had before that same burst. Time and count have to move together: the
+    /// clock banks a gap on every tap and reaches disk before the PATCH, so rolling back only the
+    /// count would credit a failed offline session its hours and one encounter, and every derived
+    /// rate (the web app divides straight by `total_time_seconds`) is then nonsense.
+    private var preBurstClock: [UUID: HuntClock] = [:]
+    /// Client-owned elapsed time per hunt (D1). Restored from the store once per launch, then
+    /// written back on every flush — a burst of taps is already coalesced there, so this does not
+    /// touch the disk once per tap.
+    private var clocks: [UUID: HuntClock] = [:]
+    private var clocksRestored = false
+    /// Hunts whose count the user lowered with "−" and whose PATCH has not landed yet. Cleared the
+    /// moment the write resolves, either way, so a later sync cannot inherit the permission.
+    private var loweredByUser: Set<UUID> = []
+    /// Hunts whose count on screen is a number the server has confirmed this launch.
+    ///
+    /// The snapshot is stale by every tap of the previous session by construction — `.hunts` is
+    /// written only by `load`, never by `flush` — so a restored 2,500 can sit in front of a server
+    /// total of 2,847 indefinitely when the refresh behind it fails. `allow_decrease` on an
+    /// absolute count from that state does not remove one encounter, it removes 348.
+    ///
+    /// Per row, not one flag for the session, because provenance genuinely is per row: `load`'s
+    /// carve-out keeps the local count for any hunt with an unflushed burst, so a refresh can make
+    /// every other row server-backed while that one still holds the snapshot's number. Membership
+    /// is only ever added within a launch (and dropped with the hunt), so the press-time and
+    /// send-time checks cannot disagree in the direction that loses data.
+    private var serverBacked: Set<UUID> = []
 
-    init(client: APIClient) { self.client = client }
+    init(client: APIClient, store: SnapshotStore) {
+        self.client = client
+        self.store = store
+    }
 
     func step(for id: UUID) -> Int { stepByHunt[id] ?? 1 }
 
@@ -124,12 +154,39 @@ final class HuntListModel {
     }
 
     private func load(quiet: Bool) async {
-        if !quiet { state = .loading }
         syncError = nil
+        // Once per launch, not once per refresh: after the first read the in-memory dictionary is
+        // newer than the file, and re-reading would throw away time counted since.
+        if !clocksRestored {
+            clocksRestored = true
+            clocks = await store.load([UUID: HuntClock].self, as: .clocks) ?? [:]
+        }
+        // Draw last-known data immediately rather than a spinner. The refresh below always runs,
+        // so this is never shown without being corrected in the same breath — the trade is that a
+        // cold launch briefly shows stale data, which is what "opens instantly" costs.
+        if !quiet, state != .ready, let cached: [HuntDetail] = await store.load([HuntDetail].self, as: .hunts) {
+            rows = cached.filter { $0.status == "active" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            history = cached.filter { $0.status == "completed" }.map { HuntRow(detail: $0, count: $0.encounterCount) }
+            // Same seeding rule as the loaded path, so a cold offline launch highlights a card
+            // instead of waiting for the first tap to pick one.
+            if liveHuntID == nil { liveHuntID = rows.first?.id }
+            state = .ready
+        }
+        // Only reached still `.loading` (or `.failed`, retried) when the restore above did not
+        // run or found nothing on disk — so this guard is the one actually gating whether the
+        // spinner replaces a screen that already has something to show.
+        if !quiet, state != .ready { state = .loading }
         do {
             // `status` is a free-form String on purpose (Models.swift), so both tabs are filled
             // by filtering one response rather than trusting the server to send one kind.
             let all = try await client.hunts()
+            // The server's total is authoritative when it is ahead of this device: `DecideTotalTime`
+            // keeps the max, so a clock left behind would have every send swallowed until it caught
+            // up on its own. Only existing clocks are raised — `bump` seeds new ones from the same
+            // field. Not persisted here: the value came from the server, which still has it.
+            for detail in all where clocks[detail.id] != nil {
+                clocks[detail.id]?.raise(to: detail.totalTimeSeconds)
+            }
             // A burst of taps that has not been flushed yet is newer than anything this response
             // can contain, so it survives the reload. Without this, pull-to-refresh — or the
             // refresh that follows starting or completing another hunt — silently rolls those
@@ -141,18 +198,47 @@ final class HuntListModel {
             let unflushed = preBurstCount
             let current = rows
             rows = all.filter { $0.status == "active" }.map { detail in
-                let local = unflushed[detail.id] != nil
-                    ? current.first(where: { $0.id == detail.id })?.count : nil
-                return HuntRow(detail: detail, count: local ?? detail.encounterCount)
+                let onScreen = current.first(where: { $0.id == detail.id })?.count
+                // Carved out: the local number wins in either direction, because the burst may be
+                // a decrease the user has made and not yet sent, and reverting that mid-burst would
+                // have the screen fight them.
+                //
+                // Otherwise a count this client has confirmed never moves down. Four call sites can
+                // have a `load` in flight at once (`appear`, pull-to-refresh, the new-hunt sheet,
+                // `markFound`) with no dedupe between them, so a slow first GET can land after a
+                // successful flush and carry an older count. Taking it would leave the row lower
+                // than the server *and* marked server-backed by the insert below — precisely the
+                // pairing that arms a destructive "−".
+                //
+                // A count this client never confirmed gets no such standing, or `max` would
+                // resurrect it: the server may have lowered the count legitimately, and
+                // `LogPhaseHandler` sets it to 0 outright. iOS cannot log a phase (no call site for
+                // `logPhase`), so that reset always arrives as someone else's write, and a snapshot
+                // outranking it would undo the phase on the next `+`.
+                let count = unflushed[detail.id] != nil
+                    ? (onScreen ?? detail.encounterCount)
+                    : serverBacked.contains(detail.id)
+                        ? max(detail.encounterCount, onScreen ?? 0)
+                        : detail.encounterCount
+                return HuntRow(detail: detail, count: count)
             }
+            // Exactly the rows that took the server's number — read off the same `unflushed`
+            // snapshot as the rebuild above, so the two can never disagree about which those are.
+            // A carved-out row is still showing the snapshot's count and stays unbacked until its
+            // own write lands.
+            for detail in all where unflushed[detail.id] == nil { serverBacked.insert(detail.id) }
             history = all.filter { $0.status == "completed" }
                 .map { HuntRow(detail: $0, count: $0.encounterCount) }
             if liveHuntID == nil || !rows.contains(where: { $0.id == liveHuntID }) {
                 liveHuntID = rows.first?.id
             }
             state = .ready
+            // The raw response, not `rows`/`history`: those are derived on the way back in, and a
+            // second saved copy of the same thing is a second thing to keep in sync.
+            await store.save(all, as: .hunts)
         } catch {
-            if quiet {
+            if quiet || state == .ready {
+                // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
                 syncError = "Couldn't refresh your hunts. \(message(for: error))"
             } else {
                 state = .failed(message(for: error))
@@ -171,8 +257,25 @@ final class HuntListModel {
         rows[index].count = after
         liveHuntID = id
         syncError = nil
+        // D1: the client owns elapsed time. The threshold comes from the method's own cadence —
+        // avg_time_seconds is already on HuntDetail, so this needs no request. Seeding from the
+        // server's total means a hunt that was being timed server-side does not restart at zero
+        // when this client takes over.
+        let threshold = HuntClock.idleThreshold(avgTimeSeconds: rows[index].detail.avgTimeSeconds)
+        let clockBefore = clocks[id] ?? HuntClock(totalSeconds: rows[index].detail.totalTimeSeconds)
+        var clock = clockBefore
+        clock.record(at: Date(), idleThreshold: threshold)
+        clocks[id] = clock
+        // Only "−" can get here with a negative delta (HuntCard), and this is the sole source of
+        // allow_decrease. The provenance gate is at press time, not send time: what the permission
+        // has to be true of is the number the user was looking at when they pressed. A refresh
+        // landing inside the 400ms debounce backs every *other* row without correcting this one —
+        // `load` deliberately keeps the local count for anything in `preBurstCount` — so a
+        // send-time-only gate would hand this row's stale count the permission the first press was
+        // denied, on nothing more exotic than a second tap of "−".
+        if delta < 0, serverBacked.contains(id) { loweredByUser.insert(id) }
         Haptics.impact(delta > 0 ? .light : .rigid)
-        scheduleSync(id, rollbackTo: before)
+        scheduleSync(id, rollbackTo: before, clockRollbackTo: clockBefore)
     }
 
     /// Coalesces a burst of taps into one PATCH.
@@ -181,8 +284,11 @@ final class HuntListModel {
     /// request per tap both floods the API and races: two in-flight PATCHes can land out of
     /// order and write a stale count. Debouncing removes the race entirely instead of managing
     /// it, and the value sent is always the current one.
-    private func scheduleSync(_ id: UUID, rollbackTo: Int) {
-        if preBurstCount[id] == nil { preBurstCount[id] = rollbackTo }
+    private func scheduleSync(_ id: UUID, rollbackTo: Int, clockRollbackTo: HuntClock) {
+        if preBurstCount[id] == nil {
+            preBurstCount[id] = rollbackTo
+            preBurstClock[id] = clockRollbackTo
+        }
         pendingWrites[id]?.cancel()
         pendingWrites[id] = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
@@ -194,22 +300,70 @@ final class HuntListModel {
     private func flush(_ id: UUID) async {
         guard let row = rows.first(where: { $0.id == id }) else { return }
         let rollback = preBurstCount[id]
+        // Captured before the await for the same reason `rollback` is: `markFound` and `abandon`
+        // clear this state, so a Found pressed while this request is in flight would otherwise
+        // leave the catch below rolling the count back with no clock to roll back with it.
+        let rollbackClock = preBurstClock[id]
+        // Before the request, not after: a clock that only reaches disk on a successful PATCH
+        // loses the whole session if the app is killed offline, which is the case D1 exists for.
+        await store.save(clocks, as: .clocks)
         do {
-            // `totalTimeSeconds` is deliberately omitted: supplying it latches the hunt to
-            // client-owned time (DECISIONS.md D1) and there is no client timer yet, so this
-            // screen must not claim authority over it.
-            _ = try await client.updateHunt(
+            // Supplying total_time_seconds latches this hunt client-authoritative for good
+            // (calc.DecideTotalTime). That is correct now that HuntClock actually tracks it: the
+            // server cannot see an offline session, and deriving from PATCH gaps would credit it
+            // zero.
+            let saved = try await client.updateHunt(
                 huntID: id,
-                UpdateHuntRequest(encounterCount: row.count, status: .active)
+                UpdateHuntRequest(
+                    encounterCount: row.count,
+                    status: .active,
+                    totalTimeSeconds: clocks[id]?.totalSeconds,
+                    allowDecrease: allowDecrease(for: id)
+                )
             )
-            preBurstCount[id] = nil
+            // The response carries what the server actually stored, so a value that lost
+            // `DecideEncounterCount`'s comparison learns the truth here instead of diverging
+            // silently — this is what heals a screen still showing a stale snapshot count.
+            // `max` because taps made while the request was in flight are newer than both.
+            if let index = rows.firstIndex(where: { $0.id == id }) {
+                rows[index].count = max(rows[index].count, saved.encounterCount)
+            }
+            // This row now rests on a number the server accepted, so it is server-backed even if
+            // the list has never loaded. That is what turns a clamped "−" into a working one after
+            // a single successful write, rather than only after a successful refresh.
+            serverBacked.insert(id)
+            forgetPendingBurst(id)
         } catch {
+            // The row still being here gates both halves. A mark-found or abandon that landed
+            // while this request was in flight has already dropped the hunt, and restoring its
+            // clock then would write the entry back to disk to be restored on every launch for the
+            // rest of the account's life — the dead weight `drop` deletes it to avoid. Count and
+            // clock move together or not at all, which is I2's whole point.
             if let rollback, let index = rows.firstIndex(where: { $0.id == id }) {
                 rows[index].count = rollback
+                // The clock goes back with it, and back to disk: it was persisted above, before
+                // the request, so leaving it advanced would keep time the taps never earned.
+                if let rollbackClock {
+                    clocks[id] = rollbackClock
+                    await store.save(clocks, as: .clocks)
+                }
             }
-            preBurstCount[id] = nil
+            // The count went back up with the rollback, so the permission to lower it no longer
+            // describes anything the user asked for.
+            forgetPendingBurst(id)
             syncError = "Couldn't save that count. \(message(for: error))"
         }
+    }
+
+    /// The only grant of `allow_decrease`: the user pressed "−" **and** the count it is relative to
+    /// is one the server has confirmed. The flag makes the server take the number sent verbatim, so
+    /// pairing it with a count restored from the snapshot would not subtract one encounter, it
+    /// would overwrite the real total with a stale one.
+    ///
+    /// Belt and braces — `bump` already refuses to arm `loweredByUser` for an unbacked row, and
+    /// `serverBacked` only grows within a launch, so this can only ever agree with that decision.
+    private func allowDecrease(for id: UUID) -> Bool? {
+        loweredByUser.contains(id) && serverBacked.contains(id) ? true : nil
     }
 
     // MARK: Found and abandoned
@@ -224,12 +378,32 @@ final class HuntListModel {
         // Land any pending count first, otherwise the completing PATCH races the debounced one.
         pendingWrites[id]?.cancel()
         do {
-            // `totalTimeSeconds` stays omitted here for the same reason as in `flush` — see D1.
+            // Sends the clock for the same reason `flush` does, so a completed hunt records the
+            // time it actually took.
+            //
+            // It carries `allowDecrease` for the same reason too: the cancel above means this
+            // PATCH inherits whatever the debounced one was going to send, including a "−"
+            // pressed inside the 400ms window. Without the permission the monotonic guard
+            // (`calc.DecideEncounterCount`) clamps that decrement away silently.
+            //
+            // The flag is dropped on **both** exits — `drop` on the way out, the catch below on
+            // failure. Nothing here scopes it to mark-found, so keeping it after a failure would
+            // arm the next ordinary `+` flush to write an absolute count with permission to lower
+            // it, with no "−" pressed. The cost of dropping it is that the "−" inside that 400ms
+            // window is silently clamped on a retry: a no-op instead of lost encounters.
+            // The response is not reconciled into `rows` the way `flush` does it: this row leaves
+            // the list two lines below, and the `refresh` after that re-reads the completed hunt
+            // — with the stored count — straight from the server.
             _ = try await client.updateHunt(
                 huntID: id,
-                UpdateHuntRequest(encounterCount: row.count, status: .completed)
+                UpdateHuntRequest(
+                    encounterCount: row.count,
+                    status: .completed,
+                    totalTimeSeconds: clocks[id]?.totalSeconds,
+                    allowDecrease: allowDecrease(for: id)
+                )
             )
-            drop(id)
+            await drop(id)
             Haptics.notify(.success)
             // The completed hunt's final elapsed time is derived server-side from this very
             // PATCH, and the response is a `Hunt` (no `total_time_seconds`), so History can only
@@ -237,6 +411,7 @@ final class HuntListModel {
             await refresh()
             return true
         } catch {
+            forgetPendingBurst(id)
             syncError = "Couldn't mark that hunt found. \(message(for: error))"
             return false
         }
@@ -249,18 +424,40 @@ final class HuntListModel {
         pendingWrites[id]?.cancel()
         do {
             try await client.deleteHunt(huntID: id)
-            drop(id)
+            await drop(id)
             Haptics.notify(.warning)
             return true
         } catch {
+            forgetPendingBurst(id)
             syncError = "Couldn't abandon that hunt. \(message(for: error))"
             return false
         }
     }
 
-    private func drop(_ id: UUID) {
+    /// Forgets a burst that will now never be flushed: `markFound` and `abandon` both cancel the
+    /// debounced write, so on their failure paths nothing else is left to clear this state. Leaving
+    /// it arms two separate mistakes on a hunt that is still on screen — `loweredByUser` would hand
+    /// the decrease permission to the next ordinary `+`, and `preBurstCount` would keep `load`'s
+    /// carve-out treating the row as locally authoritative for the rest of the launch, which is
+    /// exactly the stale-count-meets-fresh-permission pairing the gate in `bump` exists to stop.
+    private func forgetPendingBurst(_ id: UUID) {
+        loweredByUser.remove(id)
+        preBurstCount[id] = nil
+        preBurstClock[id] = nil
+    }
+
+    private func drop(_ id: UUID) async {
         rows.removeAll { $0.id == id }
         if liveHuntID == id { liveHuntID = rows.first?.id }
+        // The hunt is finished or gone, so its clock is dead weight that would otherwise be
+        // restored on every launch for the rest of the account's life.
+        clocks[id] = nil
+        // The only removal from `serverBacked`: the hunt itself is gone, so nothing can be pressed
+        // against a stale copy of it. Anything less than that and the set could shrink under a row
+        // still on screen, which is how the press-time and send-time gates would come to disagree.
+        serverBacked.remove(id)
+        forgetPendingBurst(id)
+        await store.save(clocks, as: .clocks)
     }
 
     private func message(for error: any Error) -> String { userFacingMessage(for: error) }
