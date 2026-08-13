@@ -195,38 +195,25 @@ final class HuntListModel {
             // ponytail: local wins while unflushed, which is wrong only in the multi-device case
             // (a second device's higher count would lose). Real reconciliation is the offline
             // sync layer's job — see DECISIONS.md D1 on the monotonic counter.
+            // Which count each row shows, and whether it counts as confirmed, are one decision —
+            // `HuntCountPolicy.rebuild`, in ShinyTrackerKit, where it is tested. They were two
+            // expressions reading the same state, and a review found the pairing they can produce
+            // (a count this client never confirmed, marked confirmed) is exactly what arms a
+            // destructive "−". Returning both together makes them impossible to disagree.
             let unflushed = preBurstCount
             let current = rows
+            var backed = serverBacked
             rows = all.filter { $0.status == "active" }.map { detail in
-                let onScreen = current.first(where: { $0.id == detail.id })?.count
-                // Carved out: the local number wins in either direction, because the burst may be
-                // a decrease the user has made and not yet sent, and reverting that mid-burst would
-                // have the screen fight them.
-                //
-                // Otherwise a count this client has confirmed never moves down. Four call sites can
-                // have a `load` in flight at once (`appear`, pull-to-refresh, the new-hunt sheet,
-                // `markFound`) with no dedupe between them, so a slow first GET can land after a
-                // successful flush and carry an older count. Taking it would leave the row lower
-                // than the server *and* marked server-backed by the insert below — precisely the
-                // pairing that arms a destructive "−".
-                //
-                // A count this client never confirmed gets no such standing, or `max` would
-                // resurrect it: the server may have lowered the count legitimately, and
-                // `LogPhaseHandler` sets it to 0 outright. iOS cannot log a phase (no call site for
-                // `logPhase`), so that reset always arrives as someone else's write, and a snapshot
-                // outranking it would undo the phase on the next `+`.
-                let count = unflushed[detail.id] != nil
-                    ? (onScreen ?? detail.encounterCount)
-                    : serverBacked.contains(detail.id)
-                        ? max(detail.encounterCount, onScreen ?? 0)
-                        : detail.encounterCount
-                return HuntRow(detail: detail, count: count)
+                let decision = HuntCountPolicy.rebuild(
+                    response: detail.encounterCount,
+                    onScreen: current.first(where: { $0.id == detail.id })?.count,
+                    hasUnflushedBurst: unflushed[detail.id] != nil,
+                    isServerBacked: backed.contains(detail.id)
+                )
+                if decision.isServerBacked { backed.insert(detail.id) }
+                return HuntRow(detail: detail, count: decision.count)
             }
-            // Exactly the rows that took the server's number — read off the same `unflushed`
-            // snapshot as the rebuild above, so the two can never disagree about which those are.
-            // A carved-out row is still showing the snapshot's count and stays unbacked until its
-            // own write lands.
-            for detail in all where unflushed[detail.id] == nil { serverBacked.insert(detail.id) }
+            serverBacked = backed
             history = all.filter { $0.status == "completed" }
                 .map { HuntRow(detail: $0, count: $0.encounterCount) }
             if liveHuntID == nil || !rows.contains(where: { $0.id == liveHuntID }) {
@@ -273,7 +260,9 @@ final class HuntListModel {
         // `load` deliberately keeps the local count for anything in `preBurstCount` — so a
         // send-time-only gate would hand this row's stale count the permission the first press was
         // denied, on nothing more exotic than a second tap of "−".
-        if delta < 0, serverBacked.contains(id) { loweredByUser.insert(id) }
+        if HuntCountPolicy.armsDecreasePermission(delta: delta, isServerBacked: serverBacked.contains(id)) {
+            loweredByUser.insert(id)
+        }
         Haptics.impact(delta > 0 ? .light : .rigid)
         scheduleSync(id, rollbackTo: before, clockRollbackTo: clockBefore)
     }
@@ -326,7 +315,8 @@ final class HuntListModel {
             // silently — this is what heals a screen still showing a stale snapshot count.
             // `max` because taps made while the request was in flight are newer than both.
             if let index = rows.firstIndex(where: { $0.id == id }) {
-                rows[index].count = max(rows[index].count, saved.encounterCount)
+                rows[index].count = HuntCountPolicy.reconciled(
+                    local: rows[index].count, stored: saved.encounterCount)
             }
             // This row now rests on a number the server accepted, so it is server-backed even if
             // the list has never loaded. That is what turns a clamped "−" into a working one after
@@ -363,7 +353,9 @@ final class HuntListModel {
     /// Belt and braces — `bump` already refuses to arm `loweredByUser` for an unbacked row, and
     /// `serverBacked` only grows within a launch, so this can only ever agree with that decision.
     private func allowDecrease(for id: UUID) -> Bool? {
-        loweredByUser.contains(id) && serverBacked.contains(id) ? true : nil
+        HuntCountPolicy.sendsDecreasePermission(
+            userLowered: loweredByUser.contains(id), isServerBacked: serverBacked.contains(id)
+        ) ? true : nil
     }
 
     // MARK: Found and abandoned
