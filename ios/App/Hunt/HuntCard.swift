@@ -118,7 +118,9 @@ struct HuntCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
             "Hunted for \(formatElapsed(row.detail.totalTimeSeconds)), paused"
-                + (model.hasPendingWrites(row.id) ? ", counts queued to sync" : "")
+                + (model.hasPendingWrites(row.id)
+                    ? (model.isWaitingToRetry ? ", counts waiting to retry" : ", counts queued to sync")
+                    : "")
         )
     }
 
@@ -127,9 +129,13 @@ struct HuntCard: View {
     /// alert colour or a spinner that would suggest something is stuck or wrong.
     private var queuedBadge: some View {
         HStack(spacing: 6) {
-            Image(systemName: "icloud.and.arrow.up")
+            Image(systemName: model.isWaitingToRetry
+                    ? "arrow.clockwise.icloud" : "icloud.and.arrow.up")
                 .font(.system(size: 11, weight: .semibold))
-            Text("queued")
+            // "waiting" only while the drain is cooling off after the server answered and failed.
+            // Otherwise the badge would be indistinguishable from ordinary offline counting, and a
+            // pull-to-refresh that deliberately does nothing would read as the app being broken.
+            Text(model.isWaitingToRetry ? "waiting" : "queued")
                 .font(Typography.badge)
         }
         .foregroundStyle(Palette.textMuted.color)
