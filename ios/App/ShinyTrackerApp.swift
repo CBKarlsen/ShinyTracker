@@ -87,7 +87,6 @@ enum AppMode: String, CaseIterable, Identifiable {
     case hunt = "Hunt"
     case nuzlocke = "Nuzlocke"
     case dex = "Dex"
-    case team = "Team"
 
     var id: Self { self }
 
@@ -96,17 +95,15 @@ enum AppMode: String, CaseIterable, Identifiable {
         case .hunt: Palette.hunt
         case .nuzlocke: Palette.nuzlocke
         case .dex: Palette.dex
-        case .team: Palette.team
         }
     }
 
-    /// System symbols standing in for the prototype's inline SVGs and its shiny-charm PNG.
+    /// System symbols standing in for the prototype's inline SVGs.
     var symbol: String {
         switch self {
         case .hunt: "sparkles"
         case .nuzlocke: "list.bullet.rectangle"
         case .dex: "square.split.1x2"
-        case .team: "circle.and.line.horizontal"
         }
     }
 }
@@ -167,27 +164,25 @@ struct AppShell: View {
     }
     #endif
 
+    // A real TabView, not a hand-drawn bar: it renders in Liquid Glass on the iOS 26 SDK,
+    // insets its own content (which is what the old safeAreaInset was compensating for), and
+    // minimizes on scroll. `selection` is the same @State the switch used, so the DEBUG
+    // preview harnesses that pass an initial mode still work unchanged.
     var body: some View {
-        // safeAreaInset rather than a ZStack overlay: it makes SwiftUI inset the
-        // scrollable content by the bar's real measured height, including the home
-        // indicator. The ZStack version floated the bar OVER the list and relied on a
-        // hand-tuned bottom padding, which under-cleared it — the last card was clipped
-        // behind the bar. A measured inset cannot drift when the bar's size changes.
-        Group {
-            switch mode {
-            case .hunt:
+        TabView(selection: $mode) {
+            Tab(AppMode.hunt.rawValue, systemImage: AppMode.hunt.symbol, value: AppMode.hunt) {
                 HuntScreen(model: hunts, library: library, newHunt: newHunt)
-            case .dex:
-                DexScreen(model: dex)
-            case .nuzlocke:
+            }
+            Tab(AppMode.nuzlocke.rawValue, systemImage: AppMode.nuzlocke.symbol, value: AppMode.nuzlocke) {
                 NuzlockeScreen(model: nuzlocke)
-            case .team:
-                ModePlaceholder(mode: mode)
+            }
+            Tab(AppMode.dex.rawValue, systemImage: AppMode.dex.symbol, value: AppMode.dex) {
+                DexScreen(model: dex)
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            ModeTabBar(mode: $mode)
-        }
+        // The selected tab keeps its mode colour — native chrome, not generic chrome.
+        .tint(mode.accent.color)
+        .tabBarMinimizeBehavior(.onScrollDown)
         // Counting is offline-first: a tap only reaches a queue on disk. Coming back to the app is
         // the moment most likely to have a network behind it, and it costs one no-op call when the
         // queue is empty. Deliberately the only trigger besides a load — a failed drain waits for
@@ -196,111 +191,6 @@ struct AppShell: View {
             guard phase == .active else { return }
             Task { await hunts.drain() }
         }
-    }
-}
-
-struct ModePlaceholder: View {
-    let mode: AppMode
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: mode.symbol)
-                .font(.system(size: 26))
-                .foregroundStyle(mode.accent.color.opacity(0.55))
-            Text(mode.rawValue)
-                .font(Typography.emptyTitle)
-                .foregroundStyle(Palette.textPrimary.color)
-            Text("Not built yet.")
-                .font(Typography.emptyBody)
-                .foregroundStyle(Palette.textMuted.color)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-// MARK: - Tab bar
-
-/// The floating bar: four mode pills — the selected one filled in its mode colour and labelled,
-/// the rest icon-only — plus the profile tile on the right.
-///
-/// `padding:6px;border-radius:24px;background:rgba(18,18,26,.82);border:1px solid #2a2a36;
-///  backdrop-filter:blur(24px)`
-struct ModeTabBar: View {
-    @Binding var mode: AppMode
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(AppMode.allCases) { candidate in
-                pill(candidate)
-            }
-            profileTile
-        }
-        .padding(6)
-        .background {
-            RoundedRectangle(cornerRadius: Radii.tabBar)
-                .fill(.ultraThinMaterial)                                  // blur(24px)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radii.tabBar)
-                        .fill(Palette.tabBar.color.opacity(Palette.tabBarOpacity))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radii.tabBar)
-                        .strokeBorder(Palette.tabBarBorder.color, lineWidth: 1)
-                )
-        }
-        .shadow(color: .black.opacity(0.9), radius: 17, y: 12)
-        .padding(.bottom, 26)
-    }
-
-    /// `pill(on, color)`: 40 tall, `padding:0 15px` and auto width when on, a bare 46pt square
-    /// when off.
-    private func pill(_ candidate: AppMode) -> some View {
-        let on = candidate == mode
-        return Button {
-            mode = candidate
-        } label: {
-            HStack(spacing: 7) {
-                Image(systemName: candidate.symbol).font(.system(size: 15))
-                if on {
-                    Text(candidate.rawValue).font(Typography.segmentOn)
-                }
-            }
-            .foregroundStyle((on ? Palette.onAccent : Palette.textSecondary).color)
-            .frame(height: 40)
-            .frame(minWidth: on ? 0 : 46)
-            .padding(.horizontal, on ? 15 : 0)
-            .background(
-                on ? candidate.accent.color : .clear,
-                in: .rect(cornerRadius: Radii.pill)
-            )
-            .contentShape(.rect)
-        }
-        .accessibilityLabel(candidate.rawValue)
-        .accessibilityAddTraits(on ? [.isSelected] : [])
-    }
-
-    /// `linear-gradient(135deg,#26262e,#1a1a24)` with a letter in it. The prototype hardcodes
-    /// "T"; there is no profile fetch on this screen, so it is the generic person glyph.
-    private var profileTile: some View {
-        Image(systemName: "person.fill")
-            .font(.system(size: 13))
-            .foregroundStyle(Palette.textPrimary.color)
-            .frame(width: 34, height: 34)
-            .background(
-                LinearGradient(
-                    colors: [Swatch(0x26262E).color, Swatch(0x1A1A24).color],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ),
-                in: .rect(cornerRadius: 12)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Palette.border.color, lineWidth: 1)
-            )
-            .padding(.leading, 1)
-            .padding(.trailing, 3)
-            .accessibilityHidden(true)
     }
 }
 
