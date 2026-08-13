@@ -103,9 +103,15 @@ export function HeroHunt({
 				{
 					method: "PATCH",
 					headers: { "Content-Type": "application/json" },
+					// Deliberately sends no encounter_count. Saving parameters has
+					// nothing to do with the count, and this component is outside
+					// Dashboard's per-hunt PATCH chain, so a count sent from here
+					// could land after a tap flush and undo it — `hunt.encounter_count`
+					// is Dashboard's merged local count, which lags a burst by a
+					// render. The server treats an absent encounter_count as "leave
+					// it alone" (it is a pointer in UpdateHuntHandler), which is
+					// exactly right here. Same for status.
 					body: JSON.stringify({
-						encounter_count: hunt.encounter_count,
-						status: hunt.status,
 						hunt_parameters: huntParams,
 					}),
 				},

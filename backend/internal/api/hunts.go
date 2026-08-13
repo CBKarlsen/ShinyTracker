@@ -459,10 +459,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		q = tx
 	}
 
-	// $1 binds newEncounterCount, not req.EncounterCount: that's the guarded
-	// value from calc.DecideEncounterCount / calc.ApplyEncounterDelta above.
-	// Binding the raw request field here again would silently bring back
-	// last-write-wins.
+	// $1 binds newEncounterCount, not req.EncounterCount. On the delta path
+	// they are different things entirely — newEncounterCount is the composed
+	// value from calc.ApplyEncounterDelta, and req.EncounterCount is nil —
+	// so binding the request field here would zero the count on every offline
+	// write. It also stays correct when a replayed write_id skips the update:
+	// newEncounterCount still holds the stored count, so the row is rewritten
+	// with what it already had rather than having the delta applied twice.
 	var hunt models.UserHunt
 	err = q.QueryRow(context.Background(),
 		`UPDATE user_hunts

@@ -45,12 +45,20 @@ count the same hunt (phone + Apple Watch is an explicitly planned configuration)
 hunt is the one unforgivable failure in this app.
 
 *Where this is enforced, since 2026-08-13:* in the **write model**, not in a comparison. A delta
-carries no opinion about the current count, so there is no stale value to defend against. The
-server-side clamp that used to defend the absolute path was removed once iOS stopped using it —
-by then its only remaining effect was on the web client, whose lowering writes (the miscount undo)
-are precisely the "explicit user decision" the invariant exempts, and which it was silently
-discarding. Two web tabs on one hunt can once again clobber each other; that is last-write-wins
-between two deliberate human actions, which is the case this invariant was never about.
+carries no opinion about the current count, so there is no stale value to defend against.
+
+The server-side clamp that used to defend the absolute path was removed once iOS stopped using it.
+By then its only remaining effect was on the web client, and that effect was harm: every downward
+write the web makes — the miscount undo, direct count entry, and the undo of a direct entry — is
+precisely the "explicit user decision" this invariant exempts, and the clamp was discarding all
+three silently, with a 200 and a success toast.
+
+Nothing on the absolute path now compares against the stored count, so a *stale* absolute write
+would overwrite a good one. That is handled at the source instead: `Dashboard.tsx` serializes its
+PATCHes per hunt id, so two writes for one hunt are never in flight at once and cannot be reordered
+by the network. What that does not cover is two tabs, or a tab racing the iOS app — last-write-wins
+between separate deliberate actors, which is the gap that closes when the web moves to deltas
+(`docs/TASKS.md` #1).
 
 ---
 

@@ -48,6 +48,11 @@ and close the last multi-device gap — two web tabs on one hunt currently last-
 Note `hunt_parameters.chain_length` is absolute regardless, so `seqRef` cannot go entirely on a
 count-only migration.
 
+On the iOS side the absolute path is already vestigial: `UpdateHuntRequest`'s
+`init(encounterCount:status:…)` has no production caller left, only encoding tests. It can be
+deleted whenever, which would make "iOS cannot send an absolute count" a type-level guarantee
+rather than a convention.
+
 ### 2. Offline, sub-project C — the remaining write paths
 Nuzlocke encounters, party/boss progress, dex ticks, charm toggles. Mostly repetition now that the
 queue, the idempotency scheme and the drain exist.
