@@ -171,3 +171,35 @@ private let huntB = UUID()
     #expect(queue.entries.count == 1)
     #expect(queue.entries[0].kind == .found)
 }
+
+/// Restoring from disk races a tap made during the file read. Neither side may be dropped, the
+/// disk side is older and so drains first, and the seam must not merge: the disk entry may already
+/// have been attempted in the launch that wrote it, in which case merging this launch's count into
+/// it would have the server's dedupe swallow those encounters.
+@Test func prependKeepsBothSidesInOrderAndDoesNotMergeAcrossTheSeam() {
+    var fromDisk = WriteQueue()
+    fromDisk.enqueue(.count(delta: 7), for: huntA)
+    let older = try! #require(fromDisk.next)
+    fromDisk.markAttempted(older.id)
+
+    var live = WriteQueue()
+    live.enqueue(.count(delta: 2), for: huntA)
+
+    live.prepend(fromDisk)
+    #expect(live.entries.count == 2)
+    #expect(live.entries[0].id == older.id)
+    #expect(live.entries[0].kind == .count(delta: 7))
+    #expect(live.entries[0].attempted)
+    #expect(live.entries[1].kind == .count(delta: 2))
+}
+
+/// The ordinary case: nothing was tapped during the read, so the queue is simply what was on disk.
+@Test func prependOntoAnEmptyQueueIsTheDiskQueue() {
+    var fromDisk = WriteQueue()
+    fromDisk.enqueue(.count(delta: 4), for: huntA)
+    fromDisk.enqueue(.found, for: huntB)
+
+    var live = WriteQueue()
+    live.prepend(fromDisk)
+    #expect(live == fromDisk)
+}

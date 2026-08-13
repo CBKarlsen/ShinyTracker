@@ -187,7 +187,12 @@ final class HuntListModel {
         // newer than the file, and re-reading would throw away time counted since.
         if !clocksRestored {
             clocksRestored = true
-            clocks = await store.load([UUID: HuntClock].self, as: .clocks) ?? [:]
+            // Merged, not assigned, for exactly the reason `restoreQueue` merges: the flag is set
+            // before the read, so a tap landing during it writes a clock this line would otherwise
+            // overwrite with the file. Where both sides have one the in-memory clock wins — it
+            // banked a gap this launch, so it is the newer of the two.
+            let restored = await store.load([UUID: HuntClock].self, as: .clocks) ?? [:]
+            clocks = restored.merging(clocks) { _, live in live }
         }
         await restoreQueue()
         // Draw last-known data immediately rather than a spinner. The refresh below always runs,
@@ -475,15 +480,16 @@ final class HuntListModel {
     /// has to merge disk into memory — which is as well, since merging two queues is exactly the
     /// kind of decision that does not belong in this file.
     ///
-    /// The emptiness check is not that argument repeated, it is the cost of being wrong about it:
-    /// the flag is set before the read so two callers cannot both restore, which leaves a window
-    /// where a tap during the read would be overwritten by the file. Disk only wins an empty
-    /// queue; anything already in memory is newer than what was on disk when the read started.
+    /// The `prepend` is not that argument repeated, it is the cost of being wrong about it. The
+    /// flag is set before the read so two callers cannot both restore, which leaves a window where
+    /// a tap can enqueue while the file is being read — `load` has no reentrancy guard, so a second
+    /// load can publish rows from the cache and take a tap while the first is still in that await.
+    /// Merging keeps both, oldest first; choosing a side would throw away either the tap or the
+    /// whole previous session's queue. See `WriteQueue.prepend`.
     private func restoreQueue() async {
         guard !queueRestored else { return }
         queueRestored = true
-        let restored = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
-        if queue.entries.isEmpty { queue = restored }
+        queue.prepend(await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue())
     }
 
     /// Queue and clocks together. They are two halves of one tap — encounters and the time they

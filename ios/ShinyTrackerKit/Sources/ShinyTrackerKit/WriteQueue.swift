@@ -69,6 +69,21 @@ public struct WriteQueue: Codable, Equatable, Sendable {
             PendingWrite(id: UUID(), huntID: huntID, kind: kind, attempted: false, failures: 0))
     }
 
+    /// Puts an older queue in front of this one.
+    ///
+    /// Restoring from disk races a tap that lands during the file read: the read is an `await`, and
+    /// the queue can be enqueued into while it is in flight. Choosing a side loses data either way
+    /// — discarding the file throws away a whole previous session, discarding the tap throws away
+    /// the tap — so both are kept, and the disk entries go first because they were enqueued in an
+    /// earlier launch and the queue's whole guarantee is that it drains in order.
+    ///
+    /// Nothing merges across the seam, deliberately: an entry restored from disk may already have
+    /// been attempted in the launch that wrote it, and merging this launch's work into it would
+    /// have the server's dedupe swallow that work. Same rule as `enqueue`, same reason.
+    public mutating func prepend(_ older: WriteQueue) {
+        entries.insert(contentsOf: older.entries, at: 0)
+    }
+
     /// Marks an entry as (maybe) sent, freezing it against future merges and coalescing. Call this
     /// *before* the request goes out, not after it returns: `attempted` means "may have reached the
     /// server", not "was sent". A drain that waits until after a successful response to mark this
