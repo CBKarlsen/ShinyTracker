@@ -176,6 +176,18 @@ final class HuntListModel {
     /// so this exists only to acknowledge the queue, not to gate on it.
     func hasPendingWrites(_ id: UUID) -> Bool { huntsOwedWrites.contains(id) }
 
+    /// Whether the drain is inside its post-failure cooldown.
+    ///
+    /// Surfaced so the badge can say "waiting" rather than "queued". Without it the cooldown reads
+    /// as a broken app: the server answered and failed, so nothing retries for 30 seconds — and a
+    /// pull-to-refresh in that window does nothing at all, silently. The cooldown itself is
+    /// deliberate (five answered failures used to cost about three seconds of tapping, and the
+    /// queue was deleted with them), so the fix is to say so, not to shorten it.
+    var isWaitingToRetry: Bool {
+        guard let notBefore = nextDrainNotBefore else { return false }
+        return Date() < notBefore
+    }
+
     /// Clears the permanent-failure banner. Nothing to undo server-side — those writes are already
     /// gone from the queue — this only stops telling the user about it.
     func dismissFailedWrites() { failedWrites = [] }
