@@ -263,8 +263,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	huntID := chi.URLParam(r, "id")
 
 	var req struct {
-		EncounterCount int             `json:"encounter_count"`
-		Status         string          `json:"status"`
+		EncounterCount int `json:"encounter_count"`
+		// Pointer so a count-only offline write can omit it. Absent leaves the
+		// column alone (COALESCE in the UPDATE below): a queued delta carries no
+		// status, and defaulting one to "active" would reopen a hunt that another
+		// device completed while the write sat in the queue — last-write-wins on
+		// the lifecycle column, the exact failure deltas exist to remove.
+		Status         *string         `json:"status"`
 		HuntParameters json.RawMessage `json:"hunt_parameters"`
 		// Pointer so "absent" (pre-D1 web frontend, keep deriving server-side)
 		// is distinguishable from "zero". See calc.DecideTotalTime.
@@ -295,7 +300,9 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// the hunt lifecycle (and the active|completed filters across the app), so an
 	// arbitrary value would corrupt state; a negative encounter_count would break
 	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
-	if req.Status != "active" && req.Status != "completed" {
+	// An absent status means "leave it alone"; a present one is still held to the
+	// enum, "" included.
+	if req.Status != nil && *req.Status != "active" && *req.Status != "completed" {
 		http.Error(w, "status must be 'active' or 'completed'", http.StatusBadRequest)
 		return
 	}
@@ -359,16 +366,33 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		// No-op once Commit has succeeded, so every early return below rolls back.
 		defer tx.Rollback(context.Background())
 
-		// Re-read the count under a row lock rather than trusting the storedCount
-		// read above: two clients on one hunt (D1 names phone + Apple Watch) is
-		// the case deltas exist for, and an unlocked read-modify-write would let
-		// the second overwrite the first's increment with its own.
+		// Re-read under a row lock rather than trusting the pre-transaction read:
+		// two clients on one hunt (D1 names phone + Apple Watch) is the case
+		// deltas exist for, and an unlocked read-modify-write lets the second
+		// request overwrite whatever the first just committed.
+		//
+		// Every value this UPDATE derives from prior state is re-read, not just
+		// the count. Re-reading the count alone would keep the encounters and
+		// still write a stale total_time_seconds and hunt_parameters over the
+		// other device's — losing its elapsed time and its chain length.
+		//
+		// Positionally coupled to its Scan targets, same as the SELECT above.
+		var lockedUpdatedAt time.Time
+		var lockedTotalTime int
+		var lockedOwnsTime bool
+		var lockedParameters json.RawMessage
 		if err := tx.QueryRow(context.Background(),
-			`SELECT encounter_count FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-			huntID, userID).Scan(&newEncounterCount); err != nil {
+			`SELECT encounter_count, updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+			huntID, userID).Scan(&newEncounterCount, &lockedUpdatedAt, &lockedTotalTime, &lockedOwnsTime, &lockedParameters); err != nil {
 			http.Error(w, "Hunt not found", http.StatusNotFound)
 			return
 		}
+		newTotalTime, newClientOwnsTime, err = calc.DecideTotalTime(lockedTotalTime, lockedOwnsTime, req.TotalTimeSeconds, time.Since(lockedUpdatedAt))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		huntParameters = lockedParameters
 
 		tag, err := tx.Exec(context.Background(),
 			`INSERT INTO hunt_writes (write_id, user_id, hunt_id) VALUES ($1, $2, $3) ON CONFLICT (write_id) DO NOTHING`,
@@ -418,7 +442,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	var hunt models.UserHunt
 	err = q.QueryRow(context.Background(),
 		`UPDATE user_hunts
-		 SET encounter_count = $1, status = $2, updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
+		 SET encounter_count = $1, status = COALESCE($2, status), updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
 		 WHERE id = $7 AND user_id = $8
 		 RETURNING id, user_id, pokemon_id, hunt_method_id, encounter_count, phase_count, status, acquisition_type, hunt_parameters, created_at, updated_at, nickname`,
 		newEncounterCount, req.Status, newTotalTime, newClientOwnsTime, huntParameters, req.Nickname, huntID, userID).
