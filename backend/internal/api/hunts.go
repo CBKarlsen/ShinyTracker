@@ -263,7 +263,12 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	huntID := chi.URLParam(r, "id")
 
 	var req struct {
-		EncounterCount int `json:"encounter_count"`
+		// Pointer so "absent" is distinguishable from "0". Since status became
+		// optional there is no longer any field a caller must send, so a body of
+		// {"allow_decrease": true} used to decode to count 0 with permission to
+		// lower — and zero a hunt. Absent now means "leave the count alone" and
+		// allow_decrease is ignored with it.
+		EncounterCount *int `json:"encounter_count"`
 		// Pointer so a count-only offline write can omit it. Absent leaves the
 		// column alone (COALESCE in the UPDATE below): a queued delta carries no
 		// status, and defaulting one to "active" would reopen a hunt that another
@@ -282,7 +287,8 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		Nickname *string `json:"nickname"`
 		// The "−" control's explicit permission to lower the count. Absent means
 		// no: a sync or a replayed offline burst can only ever raise it. See
-		// calc.DecideEncounterCount.
+		// calc.DecideEncounterCount. Meaningless without encounter_count, and
+		// ignored there — on its own it is permission to lower nothing.
 		AllowDecrease bool `json:"allow_decrease"`
 		// A relative count change. When present, encounter_count is ignored and
 		// the count moves by this amount instead — see calc.ApplyEncounterDelta.
@@ -306,7 +312,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "status must be 'active' or 'completed'", http.StatusBadRequest)
 		return
 	}
-	if req.EncounterCount < 0 {
+	if req.EncounterCount != nil && *req.EncounterCount < 0 {
 		http.Error(w, "encounter_count must be >= 0", http.StatusBadRequest)
 		return
 	}
@@ -335,7 +341,16 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		`SELECT updated_at, total_time_seconds, client_owns_time, hunt_parameters, encounter_count FROM user_hunts WHERE id = $1 AND user_id = $2`,
 		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &clientOwnsTime, &huntParameters, &storedCount)
 	if err != nil {
-		http.Error(w, "Hunt not found", http.StatusNotFound)
+		// Only "no such row" is a 404. Every other error here is the database
+		// being unreachable — a pooler reset, a paused project, a statement
+		// timeout — and the offline queue reads 404 as "this write can never
+		// land" and deletes the entry. A whole offline session must not be
+		// dropped because the connection blinked; a 500 is retryable.
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Hunt not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to load hunt", http.StatusInternalServerError)
 		return
 	}
 
@@ -384,7 +399,13 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		if err := tx.QueryRow(context.Background(),
 			`SELECT encounter_count, updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
 			huntID, userID).Scan(&newEncounterCount, &lockedUpdatedAt, &lockedTotalTime, &lockedOwnsTime, &lockedParameters); err != nil {
-			http.Error(w, "Hunt not found", http.StatusNotFound)
+			// Same split as the unlocked read above, and it matters more here:
+			// this is the delta path, so the caller is the offline queue itself.
+			if errors.Is(err, pgx.ErrNoRows) {
+				http.Error(w, "Hunt not found", http.StatusNotFound)
+				return
+			}
+			http.Error(w, "Failed to load hunt", http.StatusInternalServerError)
 			return
 		}
 		newTotalTime, newClientOwnsTime, err = calc.DecideTotalTime(lockedTotalTime, lockedOwnsTime, req.TotalTimeSeconds, time.Since(lockedUpdatedAt))
@@ -415,8 +436,8 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		if tag.RowsAffected() > 0 {
 			newEncounterCount = calc.ApplyEncounterDelta(newEncounterCount, *req.EncounterDelta)
 		}
-	} else {
-		newEncounterCount = calc.DecideEncounterCount(storedCount, req.EncounterCount, req.AllowDecrease)
+	} else if req.EncounterCount != nil {
+		newEncounterCount = calc.DecideEncounterCount(storedCount, *req.EncounterCount, req.AllowDecrease)
 	}
 	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
 		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)

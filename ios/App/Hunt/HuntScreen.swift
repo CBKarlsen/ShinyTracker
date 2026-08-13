@@ -301,7 +301,9 @@ struct HuntScreen: View {
     /// the danger colour and waits for the user to dismiss it rather than fading on its own.
     private var failedWritesBanner: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(model.failedWrites, id: \.self) { message in
+            // By position, not by the string: two writes for the same hunt dropped in one drain
+            // produce the same sentence twice, and duplicate ids in a `ForEach` are undefined.
+            ForEach(Array(model.failedWrites.enumerated()), id: \.offset) { _, message in
                 Text(message)
                     .font(Typography.hint)
                     .foregroundStyle(Palette.danger.color)

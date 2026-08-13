@@ -203,3 +203,32 @@ private let huntB = UUID()
     live.prepend(fromDisk)
     #expect(live == fromDisk)
 }
+
+/// The remainder a server response knows nothing about. An entry's response reflects that entry
+/// only, so reconciling a row against it without this puts the screen back to before everything
+/// still queued.
+@Test func pendingDeltaSumsOnlyThisHuntsQueuedCounts() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 5), for: huntA)
+    let first = try! #require(queue.next)
+    queue.markAttempted(first.id)          // freezes it, so the next count is its own entry
+    queue.enqueue(.count(delta: -3), for: huntA)
+    queue.enqueue(.count(delta: 100), for: huntB)
+    queue.enqueue(.found, for: huntA)      // a completion carries no encounters of its own
+
+    #expect(queue.pendingDelta(for: huntA) == 2)
+    #expect(queue.pendingDelta(for: huntB) == 100)
+    #expect(queue.pendingDelta(for: UUID()) == 0)
+}
+
+/// Drained entries are removed, so what remains is exactly what the server has not been told.
+@Test func pendingDeltaShrinksAsEntriesAreRemoved() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 5), for: huntA)
+    let sent = try! #require(queue.next)
+    queue.markAttempted(sent.id)
+    queue.enqueue(.count(delta: -3), for: huntA)
+
+    queue.remove(sent.id)
+    #expect(queue.pendingDelta(for: huntA) == -3)
+}

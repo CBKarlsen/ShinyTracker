@@ -88,6 +88,14 @@ final class HuntListModel {
     /// session's encounters within seconds of starting it.
     static let failureLimit = 5
 
+    /// How long after an answered failure the next drain waits. The limit above is meant to be
+    /// spent by a server that *keeps* refusing a write, over time — but the drain fires 400 ms
+    /// after every pause in tapping, so without this a hunter tapping through one bad minute (a
+    /// deploy blip, an exhausted pool, a migration not yet live) spends all five lives in about
+    /// three seconds and the session is deleted. This also stops the app hammering a server that
+    /// is already failing.
+    static let drainCooldown: TimeInterval = 30
+
     private(set) var state: LoadState = .loading
     private(set) var rows: [HuntRow] = []
     /// The History tab: `status == "completed"`, newest first (`GET /api/hunts` orders by
@@ -133,24 +141,15 @@ final class HuntListModel {
     /// Reentrancy guard for ``drain()``. Two drains over one ordered queue would send the same
     /// entry twice and, worse, let the second overtake the first.
     private var draining = false
-    /// The count each hunt had before its current burst of taps — the rollback target.
-    ///
-    /// Unwritten since counting moved to the queue: a queued write is never rolled back, it waits.
-    private var preBurstCount: [UUID: Int] = [:]
-    /// The clock each hunt had before that same burst — the other half of the rollback, and dead
-    /// for the same reason as ``preBurstCount``.
-    private var preBurstClock: [UUID: HuntClock] = [:]
+    /// When the next drain may run. Set only by an answered failure — see ``drainCooldown``.
+    /// Memory-only on purpose: a relaunch is not the tap-burst this protects against, and at worst
+    /// costs the entry one life.
+    private var nextDrainNotBefore: Date?
     /// Client-owned elapsed time per hunt (D1). Restored from the store once per launch, then
     /// written back beside the queue on every tap: the two are halves of one action, and a clock
     /// that reached disk later than the count it belongs to would survive a kill without it.
     private var clocks: [UUID: HuntClock] = [:]
     private var clocksRestored = false
-    /// Hunts whose count the user lowered with "−" and whose write has not landed yet.
-    ///
-    /// Still recorded, no longer read: `allow_decrease` is an absolute-path flag and a queued write
-    /// is a delta, where lowering is just a negative one. Kept because the web client still uses
-    /// the absolute path and the two clients share this policy.
-    private var loweredByUser: Set<UUID> = []
     /// Hunts whose count on screen is a number the server has confirmed this launch.
     ///
     /// The snapshot is stale by every tap of the previous session by construction — `.hunts` is
@@ -222,10 +221,15 @@ final class HuntListModel {
             // concerned, snapshot or not — it was marked found offline and the snapshot predates
             // that. Showing it back in Active would read as the completion having been undone.
             let completing = huntsCompleting
+            // Snapshot count **plus what is still queued**. `.hunts` is written only by a
+            // successful `load`, so by construction it predates every queued tap: shown raw, the
+            // cold launch after an offline session displays the count from *before* the session —
+            // on the one path this whole feature exists for, and offline it never corrects. A
+            // hunt found offline would sit in History showing 12 for a shiny caught at 3,412.
             rows = cached.filter { $0.status == "active" && !completing.contains($0.id) }
-                .map { HuntRow(detail: $0, count: $0.encounterCount) }
+                .map { HuntRow(detail: $0, count: restoredCount(for: $0)) }
             history = cached.filter { $0.status == "completed" || completing.contains($0.id) }
-                .map { HuntRow(detail: $0, count: $0.encounterCount) }
+                .map { HuntRow(detail: $0, count: restoredCount(for: $0)) }
             // Same seeding rule as the loaded path, so a cold offline launch highlights a card
             // instead of waiting for the first tap to pick one.
             if liveHuntID == nil { liveHuntID = rows.first?.id }
@@ -337,13 +341,6 @@ final class HuntListModel {
         var clock = clockBefore
         clock.record(at: Date(), idleThreshold: threshold)
         clocks[id] = clock
-        // Only "−" can get here with a negative delta (HuntCard). Nothing on iOS reads this any
-        // more — a queued write is a delta, and a negative one needs no permission to be honoured
-        // — but the record is kept for the same reason `allowDecrease(for:)` is: the absolute path
-        // still exists, and this is where its provenance would come from.
-        if HuntCountPolicy.armsDecreasePermission(delta: delta, isServerBacked: serverBacked.contains(id)) {
-            loweredByUser.insert(id)
-        }
         // `after - before`, not `delta`: the clamp at 0 above can shrink it, and the server has to
         // move by what the screen moved by. Coalescing a burst into one request is the queue's
         // decision, not this one's.
@@ -377,6 +374,9 @@ final class HuntListModel {
         // `load` calls this, and a completion landing here calls `refresh`. The guard is what makes
         // that safe, and it is also what stops a foreground drain racing the debounced one.
         guard !draining else { return }
+        // Backing off after an answered failure. Without it the 400 ms debounce turns one bad
+        // minute into five failed drains in about three seconds, and the fifth deletes the entry.
+        if let notBefore = nextDrainNotBefore, Date() < notBefore { return }
         draining = true
         defer { draining = false }
         await restoreQueue()
@@ -388,11 +388,9 @@ final class HuntListModel {
         var dropped: [String] = []
         while let entry = queue.next {
             if entry.failures >= Self.failureLimit {
-                queue.remove(entry.id)
-                await persist()
                 // Never silently: the user counted these encounters and is entitled to know they
                 // did not reach the server, even though nothing can be done about it now.
-                dropped.append(name(of: entry.huntID))
+                dropped.append(await dropPermanently(entry))
                 continue
             }
             // Marked and persisted BEFORE the request goes out. `attempted` means "may have reached
@@ -411,11 +409,17 @@ final class HuntListModel {
                     completedAny = true
                     await retireClock(entry.huntID)
                 } else if let index = rows.firstIndex(where: { $0.id == entry.huntID }) {
-                    // Taps made while the request was in flight are newer than the response, and
-                    // so is anything still queued behind this entry: the server's number is a
-                    // floor, never a replacement.
+                    // `saved.encounterCount` is the server's total after **this entry only**;
+                    // everything still queued behind it is work the server has not been told
+                    // about, so the number the screen should agree with is that total plus the
+                    // remainder. Reconciling against the response alone makes `max` pick the wrong
+                    // side whenever the remainder is negative — a "+5" landing while a "−3" is
+                    // still queued would push the screen 3 *up*, and `serverBacked` would then
+                    // defend that lie for the rest of the launch. Read after `remove`, so this
+                    // entry's own delta is no longer in it.
                     rows[index].count = HuntCountPolicy.reconciled(
-                        local: rows[index].count, stored: saved.encounterCount)
+                        local: rows[index].count,
+                        stored: saved.encounterCount + queue.pendingDelta(for: entry.huntID))
                     // The server has now confirmed a number for this row, so a later response that
                     // is lower than what is on screen can be recognised as stale.
                     serverBacked.insert(entry.huntID)
@@ -424,9 +428,7 @@ final class HuntListModel {
                 guard isRetryable(error) else {
                     // Retrying this forever would wedge every entry behind it, and the queue is
                     // ordered so that nothing overtakes.
-                    queue.remove(entry.id)
-                    await persist()
-                    dropped.append(name(of: entry.huntID))
+                    dropped.append(await dropPermanently(entry))
                     continue
                 }
                 // A life is spent only on a failure the server answered. `APIError` is exactly
@@ -434,7 +436,12 @@ final class HuntListModel {
                 // expired session never counts: a drain fires after every pause in tapping, so
                 // counting those would burn all five lives within seconds of a plane taking off
                 // and delete the very encounters this queue exists to keep.
-                if error is APIError { queue.markFailed(entry.id) }
+                if error is APIError {
+                    queue.markFailed(entry.id)
+                    // …and the next drain waits, so a burst of taps cannot spend the rest of the
+                    // lives in the seconds it takes to make them.
+                    nextDrainNotBefore = Date().addingTimeInterval(Self.drainCooldown)
+                }
                 await persist()
                 // Deliberately silent. Being offline is the normal state this whole queue exists
                 // for, and the counts are safe on disk — there is nothing for the user to do and
@@ -448,9 +455,34 @@ final class HuntListModel {
         if completedAny { await refresh() }
         // Appended, not assigned: a hunt given up on in an earlier drain this session must not be
         // forgotten because a later, unrelated drain also had a drop.
-        if !dropped.isEmpty {
-            failedWrites += dropped.map { "\($0)'s count couldn't be saved and will not be retried." }
+        failedWrites += dropped
+    }
+
+    /// Gives up on an entry, takes its effect back off the screen, and says what was lost.
+    ///
+    /// Removing it from the queue is not enough on its own. Its delta is already on the row, and
+    /// nothing else ever subtracts it — so the screen would keep encounters the server will never
+    /// have, and `serverBacked` would refuse to correct them for the rest of the launch.
+    ///
+    /// The sentence is chosen on the kind, because a dropped completion did not fail to save a
+    /// *count*: the hunt is about to come back out of History and into Active on the next refresh
+    /// (`huntsCompleting` no longer holds it), and being told its count went missing would not
+    /// explain that at all.
+    private func dropPermanently(_ entry: PendingWrite) async -> String {
+        queue.remove(entry.id)
+        await persist()
+        let name = name(of: entry.huntID)
+        guard case .count(let delta) = entry.kind else {
+            return "\(name) couldn't be marked found. It's still an active hunt."
         }
+        if let index = rows.firstIndex(where: { $0.id == entry.huntID }) {
+            rows[index].count = max(0, rows[index].count - delta)
+        } else if let index = history.firstIndex(where: { $0.id == entry.huntID }) {
+            // A count for a hunt already completed on this device: its row lives in History until
+            // the completion behind it lands.
+            history[index].count = max(0, history[index].count - delta)
+        }
+        return "\(name)'s count couldn't be saved and will not be retried."
     }
 
     /// One entry as a request. Count writes carry no `status`: the server's `COALESCE` then leaves
@@ -524,23 +556,6 @@ final class HuntListModel {
         (rows + history).first { $0.id == huntID }?.name ?? "that hunt"
     }
 
-    /// The only grant of `allow_decrease`: the user pressed "−" **and** the count it is relative to
-    /// is one the server has confirmed. The flag makes the server take the number sent verbatim, so
-    /// pairing it with a count restored from the snapshot would not subtract one encounter, it
-    /// would overwrite the real total with a stale one.
-    ///
-    /// Belt and braces — `bump` already refuses to arm `loweredByUser` for an unbacked row, and
-    /// `serverBacked` only grows within a launch, so this can only ever agree with that decision.
-    ///
-    /// Uncalled since counting became a queue of deltas, where lowering is a negative delta and
-    /// needs no permission. Kept because the flag itself is not iOS's: the web client sends
-    /// absolute counts, and this is the one description of when that is allowed to go down.
-    private func allowDecrease(for id: UUID) -> Bool? {
-        HuntCountPolicy.sendsDecreasePermission(
-            userLowered: loweredByUser.contains(id), isServerBacked: serverBacked.contains(id)
-        ) ? true : nil
-    }
-
     // MARK: Found and abandoned
 
     /// Completes the hunt: it leaves the Active list and appears in History.
@@ -583,18 +598,9 @@ final class HuntListModel {
             Haptics.notify(.warning)
             return true
         } catch {
-            forgetPendingBurst(id)
             syncError = "Couldn't abandon that hunt. \(message(for: error))"
             return false
         }
-    }
-
-    /// Clears the per-hunt state a failed lifecycle write would otherwise leave armed. Only
-    /// `loweredByUser` still has anything in it; the rest is kept for the absolute path.
-    private func forgetPendingBurst(_ id: UUID) {
-        loweredByUser.remove(id)
-        preBurstCount[id] = nil
-        preBurstClock[id] = nil
     }
 
     /// Takes the hunt off the Active list. The clock stays: a completion can still be queued behind
@@ -606,7 +612,6 @@ final class HuntListModel {
         // against a stale copy of it. Anything less than that and the set could shrink under a row
         // still on screen, which is how the press-time and send-time gates would come to disagree.
         serverBacked.remove(id)
-        forgetPendingBurst(id)
     }
 
     /// The hunt is finished or gone and the server knows it, so its clock is dead weight that would
@@ -614,6 +619,13 @@ final class HuntListModel {
     private func retireClock(_ id: UUID) async {
         clocks[id] = nil
         await persist()
+    }
+
+    /// A cached hunt's count as it should appear now: the snapshot, plus every queued delta the
+    /// server has not been told about. The sum lives in ``WriteQueue/pendingDelta(for:)``, where
+    /// it is tested.
+    private func restoredCount(for detail: HuntDetail) -> Int {
+        max(0, detail.encounterCount + queue.pendingDelta(for: detail.id))
     }
 
     /// Hunts the queue still owes a write for. Their on-screen count is newer than any response

@@ -27,6 +27,12 @@ public struct SnapshotKey: Hashable, Sendable {
     public static let clocks = SnapshotKey("clocks")
     /// Hunt writes made but not yet accepted by the server. Durable because its whole purpose is
     /// surviving the app being killed between counting and connectivity returning.
+    ///
+    /// **The one key here that is records, not cache.** Every other key can be thrown away and
+    /// refetched; this one is the *only* copy of encounters the server has never seen, so
+    /// discarding it loses a hunt — the failure D1 calls unforgivable. If `PendingWrite`'s shape
+    /// ever changes, this key must be migrated (decode the old shape, write the new one), never
+    /// dropped with a `schemaVersion` bump. See the note on `SnapshotStore.schemaVersion`.
     public static let pendingWrites = SnapshotKey("pending-writes")
 
     /// `uuidString.lowercased()` is `[0-9a-f-]` only, so this cannot produce a traversing path.
@@ -37,14 +43,21 @@ public struct SnapshotKey: Hashable, Sendable {
 
 /// Last-known API payloads on disk, so a cold launch draws something before the network answers.
 ///
-/// **A miss is the only failure mode.** Corrupt file, truncated write, a payload whose shape
-/// changed server-side, a version bump — every one returns nil and the caller falls back to the
-/// network. Persistence must never produce an error screen or a crash; the worst outcome it is
-/// allowed to cause is the spinner the user would have seen anyway. That is why nothing here
-/// throws and every failure path is a silent `return`.
+/// **A miss is the only failure mode — for every key except `.pendingWrites`.** Corrupt file,
+/// truncated write, a payload whose shape changed server-side, a version bump — every one returns
+/// nil and the caller falls back to the network. Persistence must never produce an error screen or
+/// a crash; the worst outcome it is allowed to cause is the spinner the user would have seen
+/// anyway. That is why nothing here throws and every failure path is a silent `return`.
+///
+/// `.pendingWrites` is the exception and does not fall back to anything: the network is where its
+/// contents were *going*. A miss there is lost encounters, not a spinner.
 public actor SnapshotStore {
-    /// Bumping this discards every snapshot rather than migrating. These are caches, not records
-    /// — the server is the source of truth and a refetch costs one request.
+    /// Bumping this discards every snapshot rather than migrating. Caches, not records — the
+    /// server is the source of truth and a refetch costs one request.
+    ///
+    /// **Except `.pendingWrites`, which the server has never seen.** Bumping this without
+    /// migrating that key first deletes every user's unsent hunt counts, including a whole offline
+    /// session. Migrate it (read the old shape, write the new) before touching this number.
     static let schemaVersion = 1
 
     private let directory: URL

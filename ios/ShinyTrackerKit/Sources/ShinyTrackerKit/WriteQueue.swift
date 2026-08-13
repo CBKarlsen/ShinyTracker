@@ -69,6 +69,23 @@ public struct WriteQueue: Codable, Equatable, Sendable {
             PendingWrite(id: UUID(), huntID: huntID, kind: kind, attempted: false, failures: 0))
     }
 
+    /// How far ahead of the server this hunt's screen count is: the sum of every queued delta for
+    /// it.
+    ///
+    /// The server's stored count only ever reflects the writes it has actually seen, so it is the
+    /// right number for a row only once this is added back. Both places that need it are places
+    /// where a count is taken from the server or from a snapshot — a drain's response, which is
+    /// blind to everything queued behind the entry that produced it, and a cached restore, whose
+    /// snapshot predates every queued tap by construction.
+    ///
+    /// A `.found` contributes nothing: a completion carries no encounters of its own.
+    public func pendingDelta(for huntID: UUID) -> Int {
+        entries.reduce(0) { total, entry in
+            guard entry.huntID == huntID, case .count(let delta) = entry.kind else { return total }
+            return total + delta
+        }
+    }
+
     /// Puts an older queue in front of this one.
     ///
     /// Restoring from disk races a tap that lands during the file read: the read is an `await`, and
