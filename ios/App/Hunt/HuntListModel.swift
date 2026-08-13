@@ -103,8 +103,18 @@ final class HuntListModel {
     ///
     /// Not set for a write that merely could not be sent yet: that is what the queue is for, and
     /// saying so on every foreground of an offline hunt would be noise. Only a refresh that failed
-    /// with nothing cached, and a queued write given up on, get here.
+    /// with nothing cached gets here now — a queued write given up on has its own channel below,
+    /// because it does not share this one's lifecycle: `bump` clears `syncError` on every tap
+    /// (right, for "couldn't refresh" — the next tap is the retry), which would erase a permanent
+    /// failure before the user had a chance to read it.
     private(set) var syncError: String?
+
+    /// One sentence per write the server will never accept, naming the hunt. Deliberately not
+    /// folded into `syncError`: that string is for something transient ("couldn't refresh", "try
+    /// again") that the UI clears on the next tap or reload, and a permanent failure needs the
+    /// opposite — it says so in the danger colour and stays said until the user dismisses it,
+    /// because the encounters really are gone and no retry is coming.
+    private(set) var failedWrites: [String] = []
 
     /// Per-hunt ×N step. Lives here, not in ``HuntRow``, so it survives a reload of the list.
     private var stepByHunt: [UUID: Int] = [:]
@@ -161,6 +171,15 @@ final class HuntListModel {
     }
 
     func step(for id: UUID) -> Int { stepByHunt[id] ?? 1 }
+
+    /// Whether this hunt has a write sitting in the queue. The UI's cue that counting happened —
+    /// not that anything is wrong: the count and the buttons already read correctly regardless,
+    /// so this exists only to acknowledge the queue, not to gate on it.
+    func hasPendingWrites(_ id: UUID) -> Bool { huntsOwedWrites.contains(id) }
+
+    /// Clears the permanent-failure banner. Nothing to undo server-side — those writes are already
+    /// gone from the queue — this only stops telling the user about it.
+    func dismissFailedWrites() { failedWrites = [] }
 
     func cycleStep(_ id: UUID) {
         let steps = Self.steps
@@ -363,10 +382,9 @@ final class HuntListModel {
         await restoreQueue()
 
         var completedAny = false
-        // Held until the end rather than assigned as it happens: the `refresh` below clears
-        // `syncError` as its first statement, so a message set inside the loop would erase itself
-        // in the same call, before a frame was ever drawn. Every drop is named — two in one drain
-        // used to overwrite each other and report only the last hunt.
+        // Held until the end rather than appended to `failedWrites` as it happens: the whole drain
+        // finishes in one pass, so there is no reason for the banner to trickle in one hunt at a
+        // time when it can just gain the whole batch at once.
         var dropped: [String] = []
         while let entry = queue.next {
             if entry.failures >= Self.failureLimit {
@@ -428,9 +446,10 @@ final class HuntListModel {
         // the response is a `Hunt` (no `total_time_seconds`), so History can only show the right
         // number after a re-read.
         if completedAny { await refresh() }
+        // Appended, not assigned: a hunt given up on in an earlier drain this session must not be
+        // forgotten because a later, unrelated drain also had a drop.
         if !dropped.isEmpty {
-            syncError =
-                "Couldn't save \(dropped.joined(separator: ", ")). Those encounters were dropped."
+            failedWrites += dropped.map { "\($0)'s count couldn't be saved and will not be retried." }
         }
     }
 

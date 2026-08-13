@@ -109,10 +109,37 @@ struct HuntCard: View {
             Text("paused")
                 .font(Typography.hint)
                 .foregroundStyle(Palette.textMuted.color)
+
+            if model.hasPendingWrites(row.id) {
+                queuedBadge
+            }
         }
         .padding(.top, 12)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Hunted for \(formatElapsed(row.detail.totalTimeSeconds)), paused")
+        .accessibilityLabel(
+            "Hunted for \(formatElapsed(row.detail.totalTimeSeconds)), paused"
+                + (model.hasPendingWrites(row.id) ? ", counts queued to sync" : "")
+        )
+    }
+
+    /// An acknowledgement, not a warning: queued work is the normal state of counting offline, so
+    /// this borrows the timer badge's own pill — same size, same muted colour — rather than an
+    /// alert colour or a spinner that would suggest something is stuck or wrong.
+    private var queuedBadge: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "icloud.and.arrow.up")
+                .font(.system(size: 11, weight: .semibold))
+            Text("queued")
+                .font(Typography.badge)
+        }
+        .foregroundStyle(Palette.textMuted.color)
+        .padding(.horizontal, 11)
+        .frame(height: 30)
+        .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.badge))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radii.badge)
+                .strokeBorder(Palette.border.color, lineWidth: 1)
+        )
     }
 
     // MARK: Progress
