@@ -116,3 +116,58 @@ private let huntB = UUID()
     #expect(replayed == queue)
     #expect(replayed.entries[0].attempted)
 }
+
+// MARK: - Regression guards added in review round 1
+
+/// The id is the server's idempotency key, so a merge must keep it. Minting a fresh one would
+/// have the server treat the merged write as new and apply the delta a second time.
+@Test func mergingKeepsTheEntrysIdentity() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 1), for: huntA)
+    let original = queue.entries[0].id
+    queue.enqueue(.count(delta: 1), for: huntA)
+    #expect(queue.entries[0].id == original)
+    #expect(queue.entries[0].kind == .count(delta: 2))
+}
+
+/// A failed send is still an attempted one — the request may have reached the server even though
+/// the response didn't come back. `markFailed` must not reopen the entry to merging.
+@Test func markFailedDoesNotUnfreezeAnAttemptedEntry() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 1), for: huntA)
+    let first = try! #require(queue.next)
+    queue.markAttempted(first.id)
+    queue.markFailed(first.id)
+    queue.enqueue(.count(delta: 1), for: huntA)
+    #expect(queue.entries.count == 2)
+}
+
+/// A drain can race a removal (e.g. a retry timer firing after the entry was already cleared).
+/// All three id-addressed mutators must no-op rather than trap or touch the wrong entry.
+@Test func mutatorsNoOpOnAnUnknownID() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 1), for: huntA)
+    let untouched = queue
+
+    let unknown = UUID()
+    queue.markAttempted(unknown)
+    queue.markFailed(unknown)
+    queue.remove(unknown)
+    #expect(queue == untouched)
+}
+
+@Test func nextIsNilOnAnEmptyQueue() {
+    let queue = WriteQueue()
+    #expect(queue.next == nil)
+}
+
+/// The barrier cuts both ways: a `.found` must survive sitting behind a count that nets to zero,
+/// not just block merging across itself.
+@Test func aFoundIsNotRemovedByAFollowingNetZero() {
+    var queue = WriteQueue()
+    queue.enqueue(.found, for: huntA)
+    queue.enqueue(.count(delta: 3), for: huntA)
+    queue.enqueue(.count(delta: -3), for: huntA)
+    #expect(queue.entries.count == 1)
+    #expect(queue.entries[0].kind == .found)
+}

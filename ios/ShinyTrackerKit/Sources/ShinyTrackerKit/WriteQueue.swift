@@ -31,7 +31,7 @@ public struct PendingWrite: Codable, Equatable, Identifiable, Sendable {
 /// far as the dedupe table is concerned that id was already applied. So an attempted entry is
 /// frozen: nothing merges into it, and nothing coalesces it away. New work after an attempt starts a
 /// fresh entry with a fresh id.
-public struct WriteQueue: Codable, Equatable {
+public struct WriteQueue: Codable, Equatable, Sendable {
     public private(set) var entries: [PendingWrite]
 
     public init() {
@@ -69,9 +69,14 @@ public struct WriteQueue: Codable, Equatable {
             PendingWrite(id: UUID(), huntID: huntID, kind: kind, attempted: false, failures: 0))
     }
 
-    /// Marks an entry as sent, freezing it against future merges and coalescing. Addressed by `id`,
-    /// not index — a drain awaits a network call between reading `next` and calling this, and the
-    /// queue can change underneath it in that window.
+    /// Marks an entry as (maybe) sent, freezing it against future merges and coalescing. Call this
+    /// *before* the request goes out, not after it returns: `attempted` means "may have reached the
+    /// server", not "was sent". A drain that waits until after a successful response to mark this
+    /// leaves the entry mergeable for the whole flight, so a delta tapped mid-request merges into
+    /// the id already in transit — the server's dedupe then swallows it. Marking early can waste at
+    /// most one queue entry (on a request that turns out to have failed outright); marking late can
+    /// lose real counts. Addressed by `id`, not index — the request is awaited after this call, and
+    /// the queue can change underneath it during that await.
     public mutating func markAttempted(_ id: UUID) {
         guard let index = entries.firstIndex(where: { $0.id == id }) else { return }
         entries[index].attempted = true
