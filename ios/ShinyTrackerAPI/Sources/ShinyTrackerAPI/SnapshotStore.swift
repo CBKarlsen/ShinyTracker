@@ -25,6 +25,9 @@ public struct SnapshotKey: Hashable, Sendable {
     /// Per-hunt client-owned elapsed time (`HuntClock`). Persisted so time survives a relaunch;
     /// the server only learns it on the next flush.
     public static let clocks = SnapshotKey("clocks")
+    /// Hunt writes made but not yet accepted by the server. Durable because its whole purpose is
+    /// surviving the app being killed between counting and connectivity returning.
+    public static let pendingWrites = SnapshotKey("pending-writes")
 
     /// `uuidString.lowercased()` is `[0-9a-f-]` only, so this cannot produce a traversing path.
     public static func run(_ id: UUID) -> SnapshotKey {
