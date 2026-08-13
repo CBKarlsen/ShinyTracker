@@ -87,6 +87,7 @@ enum AppMode: String, CaseIterable, Identifiable {
     case hunt = "Hunt"
     case nuzlocke = "Nuzlocke"
     case dex = "Dex"
+    case you = "You"
 
     var id: Self { self }
 
@@ -95,6 +96,8 @@ enum AppMode: String, CaseIterable, Identifiable {
         case .hunt: Palette.hunt
         case .nuzlocke: Palette.nuzlocke
         case .dex: Palette.dex
+        // No mode colour of its own — the You tab is chrome, not a hunting mode.
+        case .you: Palette.dex
         }
     }
 
@@ -104,6 +107,7 @@ enum AppMode: String, CaseIterable, Identifiable {
         case .hunt: "sparkles"
         case .nuzlocke: "list.bullet.rectangle"
         case .dex: "square.split.1x2"
+        case .you: "person.crop.circle"
         }
     }
 }
@@ -116,6 +120,9 @@ struct AppShell: View {
     @State private var newHunt: NewHuntModel
     @State private var dex: DexModel
     @State private var nuzlocke: NuzlockeModel
+    /// Only the You tab needs it, and only to sign out. Optional because the three DEBUG
+    /// preview harnesses construct a shell with no session at all.
+    private let auth: AuthSession?
 
     init(auth: AuthSession) {
         // One client for the session, shared by every mode. `APIConfig.fromBundle()`
@@ -124,12 +131,12 @@ struct AppShell: View {
         // The living-dex store is keyed by user id: these ticks live in UserDefaults
         // until the API can hold them, and an unscoped key would show one account
         // another's dex after a sign-out/sign-in on the same device.
-        self.init(client: APIClient(auth: .session(auth)), userID: auth.userID)
+        self.init(client: APIClient(auth: .session(auth)), userID: auth.userID, auth: auth)
     }
 
     /// Every model shares one client — and the new-hunt sheet shares the *library* model with
     /// the Games tab, so a charm toggled there moves the odds in the method step immediately.
-    init(client: APIClient, mode: AppMode = .hunt, userID: UUID? = nil) {
+    init(client: APIClient, mode: AppMode = .hunt, userID: UUID? = nil, auth: AuthSession? = nil) {
         // Exactly one store for the whole session, four keys. Two stores over the same key would
         // race on the temp file an atomic write moves into place — the loser is only a cache miss,
         // but there is no reason to have two when the keys never overlap.
@@ -143,6 +150,7 @@ struct AppShell: View {
             initialValue: DexModel(
                 client: client, store: .userDefaults(userID: userID), snapshots: snapshots))
         _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
+        self.auth = auth
     }
 
     #if DEBUG
@@ -161,6 +169,7 @@ struct AppShell: View {
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: dex)
         _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
+        self.auth = nil
     }
     #endif
 
@@ -178,6 +187,9 @@ struct AppShell: View {
             }
             Tab(AppMode.dex.rawValue, systemImage: AppMode.dex.symbol, value: AppMode.dex) {
                 DexScreen(model: dex)
+            }
+            Tab(AppMode.you.rawValue, systemImage: AppMode.you.symbol, value: AppMode.you) {
+                YouScreen(auth: auth)
             }
         }
         // The selected tab keeps its mode colour — native chrome, not generic chrome.
