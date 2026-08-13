@@ -203,15 +203,23 @@ final class HuntListModel {
                 // a decrease the user has made and not yet sent, and reverting that mid-burst would
                 // have the screen fight them.
                 //
-                // Otherwise the count never moves down. Four call sites can have a `load` in flight
-                // at once (`appear`, pull-to-refresh, the new-hunt sheet, `markFound`) with no
-                // dedupe between them, so a slow first GET can land after a successful flush and
-                // carry an older count. Taking it would leave the row lower than the server *and*
-                // marked server-backed by the insert below — which is precisely the pairing that
-                // arms a destructive "−".
+                // Otherwise a count this client has confirmed never moves down. Four call sites can
+                // have a `load` in flight at once (`appear`, pull-to-refresh, the new-hunt sheet,
+                // `markFound`) with no dedupe between them, so a slow first GET can land after a
+                // successful flush and carry an older count. Taking it would leave the row lower
+                // than the server *and* marked server-backed by the insert below — precisely the
+                // pairing that arms a destructive "−".
+                //
+                // A count this client never confirmed gets no such standing, or `max` would
+                // resurrect it: the server may have lowered the count legitimately, and
+                // `LogPhaseHandler` sets it to 0 outright. iOS cannot log a phase (no call site for
+                // `logPhase`), so that reset always arrives as someone else's write, and a snapshot
+                // outranking it would undo the phase on the next `+`.
                 let count = unflushed[detail.id] != nil
                     ? (onScreen ?? detail.encounterCount)
-                    : max(detail.encounterCount, onScreen ?? 0)
+                    : serverBacked.contains(detail.id)
+                        ? max(detail.encounterCount, onScreen ?? 0)
+                        : detail.encounterCount
                 return HuntRow(detail: detail, count: count)
             }
             // Exactly the rows that took the server's number — read off the same `unflushed`
