@@ -33,8 +33,10 @@ BEGIN;
 --    so no wild row was ever sourced from PokeAPI — a genuine gap. Modeled as
 --    'wild' (a contest catch is a real wild-encounter table roll, not a
 --    guaranteed individual), so existing wild-based hunt methods pick it up
---    via the normal computeAvailability join — no method_availability insert
---    needed here.
+--    via the normal computeAvailability join. That join only runs inside
+--    `go run ./cmd/seed`, though — applying this file directly leaves the pair
+--    available with no hunt route, so the third INSERT below mirrors
+--    computeAvailability's derivation, scoped to these two ids.
 --    Durable fix (already wired): seeds/overworld_species.json now carries
 --    these two ids under "Gold/Silver/Crystal" / "HeartGold/SoulSilver", so a
 --    normal `go run ./cmd/seed` reseed no longer drops them — this section is
@@ -55,6 +57,23 @@ SELECT v.pid, g.id
 FROM (VALUES (123),(127)) AS v(pid)
 CROSS JOIN games g
 WHERE g.title IN ('Gold/Silver/Crystal', 'HeartGold/SoulSilver')
+ON CONFLICT DO NOTHING;
+
+-- Mirrors computeAvailability (cmd/seed/main.go) exactly, scoped to 123/127,
+-- so this file is complete on its own. A full reseed recomputes the same rows.
+INSERT INTO method_availability (pokemon_id, method_id, game_id)
+SELECT DISTINCT pge.pokemon_id, hm.id, pge.game_id
+FROM pokemon_game_encounter pge
+JOIN games g ON g.id = pge.game_id AND g.generation >= 2
+JOIN hunt_methods hm ON hm.requires_kind = pge.kind
+    AND (hm.requires_terrain = pge.terrain
+        OR (hm.requires_terrain IS NULL AND pge.terrain <> 'friend_safari'))
+JOIN method_games mg ON mg.method_id = hm.id AND mg.game_id = pge.game_id
+AND NOT EXISTS (
+    SELECT 1 FROM shiny_locks sl
+    WHERE sl.pokemon_id = pge.pokemon_id AND sl.game_id = pge.game_id)
+WHERE pge.pokemon_id IN (123,127)
+  AND g.title IN ('Gold/Silver/Crystal','HeartGold/SoulSilver')
 ON CONFLICT DO NOTHING;
 -- Expect: up to 4 rows per INSERT.
 
