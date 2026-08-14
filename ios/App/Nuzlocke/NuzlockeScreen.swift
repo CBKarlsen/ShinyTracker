@@ -1,4 +1,5 @@
 import ShinyTrackerAPI
+import ShinyTrackerKit
 import ShinyTrackerUI
 import SwiftUI
 
@@ -13,6 +14,10 @@ struct NuzlockeScreen: View {
     @State private var loggingAt: NuzlockeTimelineEntry?
     @State private var openBoss: NuzlockeTimelineEntry?
     @State private var showingRoster = false
+    /// Manual expand/collapse, keyed by chapter id. Absent means "follow the automatic rule";
+    /// present always wins. Deliberately not persisted — a run is read in one sitting, and a
+    /// remembered collapse would silently hide a chapter the player last touched days ago.
+    @State private var expandOverrides: [String: Bool] = [:]
 
     /// The run's game is the title, the level cap its subtitle, and switching runs is a toolbar
     /// button — so the large title collapses on scroll and the timeline gets the space back.
@@ -138,11 +143,18 @@ struct NuzlockeScreen: View {
                     .foregroundStyle(Palette.textMuted.color)
                     .padding(.top, 6)
 
-                ForEach(model.timeline) { entry in
-                    if entry.isBoss {
-                        checkpointRow(entry)
-                    } else {
-                        locationRow(entry)
+                ForEach(model.chapters) { chapter in
+                    chapterHeader(chapter)
+                    if isExpanded(chapter) {
+                        ForEach(chapter.rows, id: \.slug) { row in
+                            if let entry = model.entry(at: row.slug) {
+                                if entry.isBoss {
+                                    checkpointRow(entry)
+                                } else {
+                                    locationRow(entry)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -155,6 +167,58 @@ struct NuzlockeScreen: View {
                 ProgressView().tint(Palette.textMuted.color)
             }
         }
+    }
+
+    // MARK: Chapters
+
+    /// Whether a chapter's rows are showing.
+    ///
+    /// A chapter collapses only once it is **fully resolved** — every boss beaten *and* every
+    /// route logged — and never while it is the one being worked through. Collapsing on "gym
+    /// beaten" would be wrong: Platinum's Valley Windworks sits before the Mars fight that
+    /// unlocks its only encounter, so the route becomes catchable exactly when that rule would
+    /// hide it.
+    ///
+    /// `expandOverrides` is the manual answer, and it always wins. Auto-collapse is a
+    /// convenience, not a policy — a player who wants to look back at Oreburgh can.
+    private func isExpanded(_ chapter: NuzlockeRules.Chapter) -> Bool {
+        if let override = expandOverrides[chapter.id] { return override }
+        return !(model.isResolved(chapter) && chapter.id != model.openChapterID)
+    }
+
+    private func chapterHeader(_ chapter: NuzlockeRules.Chapter) -> some View {
+        let expanded = isExpanded(chapter)
+        let isOpen = chapter.id == model.openChapterID
+        let summary = model.summary(for: chapter)
+        return Button {
+            expandOverrides[chapter.id] = !expanded
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .foregroundStyle(Palette.textFaint.color)
+
+                Text(chapter.title)
+                    .font(Typography.blockLabel)
+                    .tracking(Typography.blockLabelTracking)
+                    .textCase(.uppercase)
+                    .foregroundStyle((isOpen ? Palette.nuzlocke : Palette.textMuted).color)
+
+                Spacer(minLength: 0)
+
+                if !summary.isEmpty {
+                    Text(summary)
+                        .font(Typography.hint)
+                        .foregroundStyle(Palette.textFaint.color)
+                }
+            }
+            .padding(.vertical, 7)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(chapter.title). \(summary.isEmpty ? "Nothing logged" : summary)")
+        .accessibilityHint(expanded ? "Collapses this chapter" : "Expands this chapter")
     }
 
     // MARK: Checkpoint

@@ -42,6 +42,10 @@ final class NuzlockeModel {
     /// "you're here" — the first location with nothing logged against it.
     private(set) var currentSlug: String?
     private(set) var coverage: [CoverageGap] = []
+    /// The timeline grouped into gym-bounded chapters. Rebuilt with the rest of the derived
+    /// state rather than computed on access: this screen already had a performance fix for
+    /// rescanning the timeline once per row per frame, and 62 entries would do it again.
+    private(set) var chapters: [NuzlockeRules.Chapter] = []
 
     /// A failed write, surfaced after the optimistic change has been rolled back.
     private(set) var syncError: String?
@@ -219,6 +223,17 @@ final class NuzlockeModel {
             },
             uniquingKeysWith: { _, second in second })
         currentSlug = timeline.first { !$0.isBoss && logsBySlug[$0.slug] == nil }?.slug
+        chapters = NuzlockeRules.chapters(
+            timeline.map {
+                NuzlockeRules.Row(
+                    slug: $0.slug,
+                    isBoss: $0.isBoss,
+                    // The seed spells gym fights "Gym Leader · Rock"; rivals and Galactic
+                    // commanders carry their own titles, and chapters break only on gyms.
+                    isGym: $0.bossTitle?.hasPrefix("Gym Leader") == true,
+                    place: $0.place
+                )
+            })
         coverage = computeCoverage()
     }
 
@@ -295,6 +310,28 @@ final class NuzlockeModel {
 
     func entry(at slug: String) -> NuzlockeTimelineEntry? {
         timeline.first { $0.slug == slug }
+    }
+
+    // MARK: Chapters
+
+    /// The chapter being worked through — the one holding the next unbeaten checkpoint.
+    var openChapterID: String? { NuzlockeRules.openChapterID(chapters, beaten: beaten) }
+
+    /// Nothing left owed in this chapter: every boss beaten and every route logged.
+    func isResolved(_ chapter: NuzlockeRules.Chapter) -> Bool {
+        NuzlockeRules.isResolved(chapter, beaten: beaten, logged: Set(logsBySlug.keys))
+    }
+
+    /// "6 catches · 2 routes open" — what a collapsed chapter is still holding. The open-route
+    /// count is the half that matters: one encounter per route means an unlogged route in a
+    /// finished chapter is a debt, not history.
+    func summary(for chapter: NuzlockeRules.Chapter) -> String {
+        let caught = chapter.rows.count { logsBySlug[$0.slug]?.status == "caught" }
+        let open = NuzlockeRules.openRouteCount(chapter, logged: Set(logsBySlug.keys))
+        var parts: [String] = []
+        if caught > 0 { parts.append("\(caught) caught") }
+        if open > 0 { parts.append("\(open) route\(open == 1 ? "" : "s") open") }
+        return parts.joined(separator: " · ")
     }
 
     /// Species already caught elsewhere in this run — what the dupes clause bars. Computed here

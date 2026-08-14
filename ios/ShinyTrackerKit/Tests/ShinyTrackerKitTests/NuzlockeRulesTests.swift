@@ -96,3 +96,102 @@ private func beaten(through slug: String) -> Set<String> {
     ]
     #expect(NuzlockeRules.levelCap(checkpoints: sparse, beaten: ["a"]) == 30)
 }
+
+// MARK: - Chapters
+
+/// A miniature of Platinum's real shape: routes, a rival and a Galactic fight between gyms, and
+/// the League as a run of bosses with no routes among them.
+private let shape: [NuzlockeRules.Row] = [
+    .init(slug: "r201", isBoss: false, isGym: false, place: nil),
+    .init(slug: "rival1", isBoss: true, isGym: false, place: "Route 201"),
+    .init(slug: "r203", isBoss: false, isGym: false, place: nil),
+    .init(slug: "mine", isBoss: false, isGym: false, place: nil),
+    .init(slug: "gym1", isBoss: true, isGym: true, place: "Oreburgh Gym"),
+    .init(slug: "r205", isBoss: false, isGym: false, place: nil),
+    .init(slug: "wind", isBoss: false, isGym: false, place: nil),
+    .init(slug: "galactic-windworks", isBoss: true, isGym: false, place: "Valley Windworks"),
+    .init(slug: "gym2", isBoss: true, isGym: true, place: "Eterna Gym"),
+    .init(slug: "e4-aaron", isBoss: true, isGym: false, place: "Pokémon League"),
+    .init(slug: "champion", isBoss: true, isGym: false, place: "Pokémon League"),
+]
+
+@Test func chaptersBreakAfterGymsNotAfterEveryBoss() {
+    let chapters = NuzlockeRules.chapters(shape)
+    #expect(chapters.map(\.id) == ["gym1", "gym2", "champion"])
+    // The rival and the Galactic fight are rows inside a chapter, not chapters of their own.
+    #expect(chapters[0].rows.map(\.slug) == ["r201", "rival1", "r203", "mine", "gym1"])
+    #expect(chapters[1].rows.map(\.slug) == ["r205", "wind", "galactic-windworks", "gym2"])
+}
+
+/// The Elite Four and the Champion are one chapter. Five separate ones would misrepresent the
+/// only stretch of a run you cannot leave partway through.
+@Test func theLeagueIsOneChapter() {
+    let chapters = NuzlockeRules.chapters(shape)
+    #expect(chapters.last?.rows.map(\.slug) == ["e4-aaron", "champion"])
+    #expect(chapters.last?.title == "Pokémon League")
+}
+
+@Test func gymChaptersAreNamedForTheirTownNotTheirGym() {
+    #expect(NuzlockeRules.chapters(shape).map(\.title) == ["Oreburgh", "Eterna", "Pokémon League"])
+}
+
+@Test func anEmptyTimelineHasNoChapters() {
+    #expect(NuzlockeRules.chapters([]).isEmpty)
+}
+
+// MARK: - Which chapter is open
+
+@Test func theOpenChapterHoldsTheFirstUnbeatenBoss() {
+    let chapters = NuzlockeRules.chapters(shape)
+    #expect(NuzlockeRules.openChapterID(chapters, beaten: []) == "gym1")
+    #expect(NuzlockeRules.openChapterID(chapters, beaten: ["rival1", "gym1"]) == "gym2")
+}
+
+/// The reason the open chapter is derived from bosses and not from the first unlogged route:
+/// Valley Windworks needs a Friday *and* a beaten Mars, so a player routinely walks past it. If
+/// an unlogged route drove this, the run would stay pinned to chapter 2 forever.
+@Test func aSkippedRouteDoesNotPinTheOpenChapter() {
+    let chapters = NuzlockeRules.chapters(shape)
+    let beaten: Set<String> = ["rival1", "gym1", "galactic-windworks", "gym2"]
+    // "wind" is deliberately never logged.
+    #expect(NuzlockeRules.openChapterID(chapters, beaten: beaten) == "champion")
+}
+
+@Test func aFinishedRunHasNoOpenChapter() {
+    let chapters = NuzlockeRules.chapters(shape)
+    let all = Set(shape.filter(\.isBoss).map(\.slug))
+    #expect(NuzlockeRules.openChapterID(chapters, beaten: all) == nil)
+}
+
+// MARK: - Resolution, the collapse trigger
+
+@Test func aChapterWithEveryBossBeatenAndEveryRouteLoggedIsResolved() {
+    let first = NuzlockeRules.chapters(shape)[0]
+    #expect(
+        NuzlockeRules.isResolved(
+            first, beaten: ["rival1", "gym1"], logged: ["r201", "r203", "mine"]))
+}
+
+/// The case that rules out collapsing on "gym beaten": the gym is down, but a route in the
+/// chapter is still owed, and one encounter per route means it stays owed.
+@Test func aBeatenGymWithAnUnloggedRouteIsNotResolved() {
+    let first = NuzlockeRules.chapters(shape)[0]
+    #expect(
+        !NuzlockeRules.isResolved(first, beaten: ["rival1", "gym1"], logged: ["r201", "r203"]))
+    #expect(NuzlockeRules.openRouteCount(first, logged: ["r201", "r203"]) == 1)
+}
+
+/// And the mirror: every route logged but a boss still standing.
+@Test func everyRouteLoggedWithABossStandingIsNotResolved() {
+    let first = NuzlockeRules.chapters(shape)[0]
+    #expect(
+        !NuzlockeRules.isResolved(first, beaten: ["rival1"], logged: ["r201", "r203", "mine"]))
+}
+
+/// A League chapter has no routes, so it resolves on its bosses alone — `allSatisfy` over an
+/// empty set of locations must not make it un-resolvable.
+@Test func aChapterWithNoRoutesResolvesOnItsBosses() {
+    let league = NuzlockeRules.chapters(shape)[2]
+    #expect(NuzlockeRules.openRouteCount(league, logged: []) == 0)
+    #expect(NuzlockeRules.isResolved(league, beaten: ["e4-aaron", "champion"], logged: []))
+}
