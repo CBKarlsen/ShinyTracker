@@ -310,8 +310,11 @@ func seedMethodExceptions(ctx context.Context) {
 // table was missing legitimately-catchable Pokemon (Great Marsh, honey trees,
 // Hidden Grottoes, Pokewalker, fossil revivals, curated statics). Wild rows come
 // from PokeAPI (the actual games), and legendary wild rows are already purged, so
-// there are no false positives. egg is omitted because egg rows are themselves
-// derived from pokemon_availability and so are already a subset of it.
+// there are no false positives. egg is omitted here — this runs BEFORE
+// deriveEggEncounters, and egg rows are no longer guaranteed to already have a
+// pokemon_availability row waiting for them (a breedable baby Pokemon is exactly
+// the case where one doesn't exist yet). deriveEggEncounters backfills
+// pokemon_availability for its own rows directly instead; see its comment.
 func reconcileAvailability(ctx context.Context) {
 	tag, err := database.DB.Exec(ctx, `
 		INSERT INTO pokemon_availability (pokemon_id, game_id)
@@ -344,30 +347,84 @@ func ensureWildEncounters(ctx context.Context) {
 }
 
 // deriveEggEncounters records an `egg` kind for every breedable base-stage
-// Pokemon in each game that supports breeding. It must run AFTER
-// reconcileAvailability (and after cmd/seed_availability_legacy for Gen 5/6/7)
-// so that pokemon_availability is fully populated before we fan out egg rows.
-// The supports_breeding guard keeps LGPE (no Day-Care) and Legends: Arceus
-// (no breeding at all) from gaining egg rows.
+// Pokemon in each game that supports breeding, using the evolution family
+// rather than the base species' own pokemon_availability row.
+//
+// That distinction matters for baby Pokemon (Pichu, Cleffa, Igglybuff,
+// Smoochum, Elekid, Magby, and others): a baby is itself can_breed = false —
+// only its evolved form can be paired at the Day Care, the baby is what the
+// resulting egg hatches into. Deriving strictly from the base species' own
+// availability row is circular: Pichu is obtainable in HGSS by breeding an
+// already-available Pikachu, but Pichu has no availability row of its own, so
+// the old join (`pa.pokemon_id = base` with `p.can_breed = true` on that same
+// base row) always failed can_breed for the baby and it never got an egg
+// route, which meant it never became available either.
+//
+// Correct rule: a base-stage species (evolves_from_id IS NULL) gets an egg
+// route in a game if ANY member of its evolution family — walked downward via
+// evolves_from_id with a recursive CTE, arbitrarily many stages deep — is
+// itself can_breed = true and available in that game. The base form is always
+// what the egg hatches into, regardless of which family member was bred.
+//
+// Must run AFTER reconcileAvailability (and after cmd/seed_availability_legacy
+// for Gen 5/6/7) so pokemon_availability is fully populated for every family
+// member before we fan out egg rows. The supports_breeding guard keeps LGPE
+// (no Day-Care) and Legends: Arceus (no breeding at all) from gaining egg rows.
+//
+// NOTE: this can grant a baby's egg route in a game with no egg-kind hunt
+// method in the catalog — Gen 2/3 (Gold/Silver/Crystal, Ruby/Sapphire/Emerald,
+// FireRed/LeafGreen) have no Masuda-Method-equivalent modeled in
+// hunt_methods.json, so those pairs land as "available" with no route to hunt
+// them, same shape as the RSE half of Section E that was dropped from
+// docs/audit/pokedex_availability_gap_corrections.sql for the same reason.
+// Left un-gated deliberately (see that file's footer) rather than silently
+// filtered — audit with cmd/audit_methods if it turns out to be noise.
 func deriveEggEncounters(ctx context.Context) {
 	tag, err := database.DB.Exec(ctx, `
+		WITH RECURSIVE family AS (
+			SELECT id AS base_id, id AS member_id
+			FROM pokemon
+			-- Eggs only ever hatch the base form of an evolution line, so an egg
+			-- route belongs only to base-stage species. Evolved forms get a "hunt
+			-- a pre-evolution, then evolve" route instead (computed in the
+			-- /api/pokemon/{id}/route handler from evolves_from_id).
+			WHERE evolves_from_id IS NULL
+			UNION ALL
+			SELECT f.base_id, p.id
+			FROM family f
+			JOIN pokemon p ON p.evolves_from_id = f.member_id
+		)
 		INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind)
-		SELECT pa.pokemon_id, pa.game_id, 'egg'
-		FROM pokemon_availability pa
-		JOIN pokemon p ON p.id = pa.pokemon_id
+		SELECT DISTINCT f.base_id, pa.game_id, 'egg'
+		FROM family f
+		-- The family member actually paired at the Day Care must itself be
+		-- breedable — the base form's own can_breed is often false for babies.
+		JOIN pokemon m ON m.id = f.member_id AND m.can_breed = true
+		JOIN pokemon_availability pa ON pa.pokemon_id = f.member_id
 		-- Restrict to games where breeding is possible (excludes LGPE and PLA).
 		JOIN games g ON g.id = pa.game_id AND g.supports_breeding = true
-		-- Eggs only ever hatch the base form of an evolution line, so an egg
-		-- (Masuda) route belongs only to base-stage species. Evolved forms get
-		-- a "hunt a pre-evolution, then evolve" route instead (computed in the
-		-- /api/pokemon/{id}/route handler from evolves_from_id).
-		WHERE p.can_breed = true AND p.evolves_from_id IS NULL
 		ON CONFLICT DO NOTHING
 	`)
 	if err != nil {
 		log.Fatal("Failed to derive egg encounters: ", err)
 	}
 	log.Printf("Inserted %d egg encounter rows.", tag.RowsAffected())
+
+	// Egg rows are no longer guaranteed to already have a pokemon_availability
+	// row for the base species — a baby is exactly the case where it doesn't
+	// (see above). reconcileAvailability already ran and only reads
+	// wild/static/raid, so pick these up here instead of relying on it.
+	availTag, err := database.DB.Exec(ctx, `
+		INSERT INTO pokemon_availability (pokemon_id, game_id)
+		SELECT pokemon_id, game_id
+		FROM pokemon_game_encounter
+		WHERE kind = 'egg'
+		ON CONFLICT DO NOTHING
+	`)
+	if err != nil {
+		log.Fatal("Failed to backfill pokemon_availability from egg encounters: ", err)
+	}
+	log.Printf("Backfilled %d pokemon_availability rows from egg encounters.", availTag.RowsAffected())
 }
 
 func seedCuratedEncounters(ctx context.Context) {
@@ -438,6 +495,14 @@ func seedCuratedEncounters(ctx context.Context) {
 // lacks terrain data. The source file maps a game title to the National-Dex ids
 // catchable that way. Legendaries and mythicals are guarded out: PokeAPI reports
 // their stationary encounters as locations, which must not become wild rows.
+//
+// overworld_species.json also carries two small entries for games that DO have
+// full PokeAPI wild data (Gold/Silver/Crystal, HeartGold/SoulSilver): 123 Scyther
+// and 127 Pinsir, National Park Bug-Catching Contest only (5% at Lv13-14, all
+// versions). A contest catch is a real wild-encounter table roll, not a curated
+// static, but it's not a location PokeAPI's dataset models, so the pair falls
+// through the normal sync — see docs/audit/pokedex_availability_gap_corrections.sql
+// Section B for the verification writeup. This is the durable fix for that gap.
 //
 // Merged from the former seedOverworldSpecies and seedFishingSpecies, which were
 // the same twenty lines with one terrain literal changed.
