@@ -1,5 +1,6 @@
 import Foundation
 import ShinyTrackerAPI
+import ShinyTrackerKit
 import ShinyTrackerUI
 import SwiftUI
 
@@ -231,9 +232,21 @@ final class NuzlockeModel {
         timeline.first { $0.isBoss && !isBeaten($0.slug) }
     }
 
-    /// "CAP 33" — the next checkpoint's cap. Every seeded boss has one, but the column is
-    /// nullable, so this can be nil even mid-run.
-    var levelCap: Int? { nextCheckpoint?.levelCap }
+    /// "CAP 33" — the cap in force, ratcheted so beating a fight can never lower it.
+    ///
+    /// This used to read `nextCheckpoint?.levelCap` directly, which was wrong: Platinum's seeded
+    /// caps descend three times (37 → 36 after Wake, 41 → 40 after Byron, 46 → 44 after Cyrus),
+    /// because the boss after a gym is often a weaker Galactic fight. The number fell after you
+    /// beat a gym. See ``NuzlockeRules/levelCap(checkpoints:beaten:)``, which is where the rule
+    /// is tested.
+    var levelCap: Int? {
+        NuzlockeRules.levelCap(
+            checkpoints: timeline.lazy.filter(\.isBoss).map {
+                NuzlockeRules.Checkpoint(slug: $0.slug, levelCap: $0.levelCap)
+            },
+            beaten: beaten
+        )
+    }
 
     /// Alive and in the party: caught, not boxed. The API imposes no party size — six is a game
     /// rule the server does not model — so this is however many you have.
