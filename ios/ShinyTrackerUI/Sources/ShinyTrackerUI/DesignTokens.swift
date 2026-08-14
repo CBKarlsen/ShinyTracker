@@ -116,12 +116,6 @@ public enum Palette {
     public static let spriteTileInner = Swatch(0x23232F)
     public static let spriteTileOuter = Swatch(0x14141C)
 
-    // --- tab bar ---
-    /// `background:rgba(18,18,26,.82)` under a `blur(24px)`.
-    public static let tabBar = Swatch(0x12121A)
-    public static let tabBarOpacity = 0.82
-    /// `border:1px solid #2a2a36`.
-    public static let tabBarBorder = Swatch(0x2A2A36)
 }
 
 // MARK: - Radius
@@ -163,8 +157,6 @@ public enum Radii {
     public static let typeChip: CGFloat = 7
     /// Tab-bar pill: `border-radius:19px`.
     public static let pill: CGFloat = 19
-    /// Tab-bar shell: `border-radius:24px`.
-    public static let tabBar: CGFloat = 24
     /// Sprite tile — the prototype computes `Math.round(size / 4)`.
     public static func sprite(_ size: CGFloat) -> CGFloat { (size / 4).rounded() }
 }
