@@ -28,6 +28,13 @@ Status: ✅ shipped · 🔜 next · ⏳ backlog · 🐞 follow-up
 - **Offline, sub-project B** — counting and completing a hunt work with **no signal**. Taps append to
   a durable `WriteQueue` and drain as relative **deltas** with idempotency keys, deduped server-side
   in one transaction.
+- **A native shell** — the hand-drawn `ModeTabBar` (an `HStack` of pills over `.ultraThinMaterial`,
+  transcribed from the web prototype down to its CSS comments) is gone. A real `TabView` renders in
+  **Liquid Glass**, minimizes on scroll, and insets its own content. The deployment target moved to
+  iOS 26 to make all of it unconditional — the codebase carries zero availability guards.
+  A **bottom accessory** docks the live hunt above the bar on every screen, so a hunt can be counted
+  while browsing the Dex; its `+` calls the same `bump(_:by:)` the card does, so it is offline-safe
+  through the existing queue. A **You tab** gives the app its first sign-out.
 
 ---
 
@@ -72,8 +79,14 @@ route *order* and the *trainer squads* need research. Gens 8/9 have no location 
 ## ⏳ Backlog
 
 ### iOS
+- **Native chrome inside the screens** — the shell is native now, but the screens are not: the app
+  still has **zero** `NavigationStack`, `navigationTitle`, `toolbar` and `searchable`. `searchable`
+  would replace the Dex's custom filtering outright. This is the larger half of "use Apple's
+  components" and wants its own spec.
 - **Team mode** is still a placeholder, and the design says it is entered *from* a run — the Nuzlocke
-  coverage warning is the doorway. No backend exists for it.
+  coverage warning is the doorway. No backend exists for it. Its **tab was removed** with the native
+  shell — a tab opening "Not built yet" is the least Apple-feeling thing in the app — and returns
+  when the backend does. `Palette.team` was deliberately kept for that return.
 - **Apple Watch companion** (D3's second-best counting interaction). The delta write model was chosen
   specifically to make this possible without a rewrite.
 - **Background sync** — a landed plane currently syncs when the app is next opened.

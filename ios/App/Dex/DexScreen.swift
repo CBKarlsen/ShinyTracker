@@ -270,9 +270,9 @@ struct DexScreen: View {
                     }
                 }
             }
-            // No bottom padding for the tab bar: `AppShell` insets this scroll view by the
-            // bar's measured height with `safeAreaInset`, and adding the prototype's
-            // `padding-bottom:104px` on top of that leaves a dead gap under the last row.
+            // No bottom padding for the tab bar: `TabView` insets its own content, and adding
+            // the prototype's `padding-bottom:104px` on top of that leaves a dead gap under
+            // the last row. The accessory, when a hunt is live, is inset by the same mechanism.
         }
         .scrollIndicators(.hidden)
         .refreshable { await model.refresh() }
