@@ -1447,5 +1447,13 @@
     902,
     903,
     904
+  ],
+  "Gold/Silver/Crystal": [
+    123,
+    127
+  ],
+  "HeartGold/SoulSilver": [
+    123,
+    127
   ]
 }

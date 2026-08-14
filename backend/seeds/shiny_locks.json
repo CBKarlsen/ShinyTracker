@@ -300,6 +300,21 @@
       "_note": "Iron Crown — shiny-locked Indigo Disk Paradox legendary (Violet) in Scarlet/Violet",
       "pokemon_id": 1023,
       "games": ["Scarlet/Violet"]
+    },
+    {
+      "_note": "Type: Null — shiny-locked post-Champion gift from League Staff at the Battle Tower in Sword/Shield; SwSh locks every in-game gift except Cara Liss's fossils",
+      "pokemon_id": 772,
+      "games": ["Sword/Shield"]
+    },
+    {
+      "_note": "Farfetch'd — shiny-locked in-game trade (Vermilion City) in FireRed/LeafGreen; Gen 3 in-game trades give a fixed, non-shiny individual",
+      "pokemon_id": 83,
+      "games": ["FireRed/LeafGreen"]
+    },
+    {
+      "_note": "Lickitung — shiny-locked in-game trade (Route 18) in FireRed/LeafGreen; Gen 3 in-game trades give a fixed, non-shiny individual",
+      "pokemon_id": 108,
+      "games": ["FireRed/LeafGreen"]
     }
   ]
 }
