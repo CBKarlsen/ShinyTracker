@@ -58,7 +58,7 @@ struct RosterSheet: View {
         if !members.isEmpty {
             Section {
                 ForEach(members) { member in
-                    row(member, tint: tint)
+                    row(member)
                 }
             } header: {
                 Text("\(title) · \(members.count)")
@@ -67,7 +67,7 @@ struct RosterSheet: View {
         }
     }
 
-    private func row(_ member: NuzlockeEncounterLog, tint: Swatch) -> some View {
+    private func row(_ member: NuzlockeEncounterLog) -> some View {
         HStack(spacing: 12) {
             DexSprite(
                 pokemonID: member.pokemonID ?? 0,
