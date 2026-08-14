@@ -15,18 +15,35 @@ struct DexScreen: View {
     /// `grid-template-columns:repeat(3,1fr);gap:8px`
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
 
+    /// The title, the game picker and the search button are the navigation bar's job now, which
+    /// buys the large-title-collapses-on-scroll behaviour for free — the five stacked rows this
+    /// screen used to pin above the grid cost ~150pt that the 1,025 tiles wanted.
+    ///
+    /// Only the Browse/Living/Shiny control stays pinned, via `safeAreaInset`: it filters what you
+    /// are looking at, so it has to stay reachable while you scroll. The progress bar and the hint
+    /// moved *into* the scroll view — they describe the current view rather than controlling it.
     var body: some View {
-        VStack(alignment: .leading, spacing: Metrics.screenGap) {
-            header
-            gameSelector
-            segmentedControl
-            if model.view != .browse { progressRow }
-            hint
+        NavigationStack {
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .navigationTitle("Dex")
+                // Where the header's count went. Empty until the dex loads, so the bar does not
+                // advertise "0 of 0" during the fetch.
+                .navigationSubtitle(model.state == .ready ? model.progressLabel : "")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) { gameToolbarButton }
+                    ToolbarItem(placement: .topBarTrailing) { searchToolbarButton }
+                }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    segmentedControl
+                        .padding(.horizontal, Metrics.screenPadding)
+                        .padding(.bottom, 8)
+                        // Opaque, for the same reason the grid's pinned section headers are:
+                        // scrolled tiles pass under this strip, and the margin around the
+                        // control is transparent without it.
+                        .background(Palette.screen.color)
+                }
         }
-        .padding(.horizontal, Metrics.screenPadding)
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task {
             await model.appear()
             #if DEBUG
@@ -51,74 +68,29 @@ struct DexScreen: View {
         }
     }
 
-    // MARK: Header
+    // MARK: Toolbar
 
-    /// The mode glyph, the title, the count, and the (inert) Reference search — "reachable from
-    /// every header", but the Reference sheet is not built.
-    private var header: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 9) {
-                Image(systemName: "square.split.1x2")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Palette.dex.color)
-                Text("Dex")
-                    .font(Typography.screenTitle)
-                    .tracking(Typography.screenTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
-            }
-
-            Spacer(minLength: 0)
-
-            if model.state == .ready {
-                Text(model.progressLabel)
-                    .font(Typography.summary)
-                    .foregroundStyle(Palette.textMuted.color)
-            }
-
-            Button {} label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16))
-                    .frame(width: Metrics.headerButton, height: Metrics.headerButton)
-                    .contentShape(.rect)
-            }
-            .accessibilityLabel("Search the reference")
-            .foregroundStyle(Palette.textSecondary.color)
-            .background(Palette.surface.color, in: .rect(cornerRadius: 13))
-            .overlay(
-                RoundedRectangle(cornerRadius: 13)
-                    .strokeBorder(Palette.hairline.color, lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: Game selector
-
-    /// `height:46px;background:#111118;border:1px solid #1a1a22;border-radius:14px;padding:0 14px`
-    private var gameSelector: some View {
+    /// The game picker, compacted from the full-width row it used to be. The bar gives it a
+    /// tappable background, so the hand-drawn surface + hairline the row carried is redundant.
+    private var gameToolbarButton: some View {
         Button { pickingGame = true } label: {
-            HStack(spacing: 10) {
-                Text("Game")
-                    .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
-                Spacer(minLength: 0)
-                Text(model.selectedGame?.title ?? "All your games")
-                    .font(Typography.segmentOn)
-                    .foregroundStyle(Palette.textPrimary.color)
-                Text("›")
-                    .font(Typography.segmentOn)
-                    .foregroundStyle(Palette.textFaint.color)
+            HStack(spacing: 4) {
+                Text(model.selectedGame?.title ?? "All games")
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
             }
-            .padding(.horizontal, 14)
-            .frame(height: 46)
-            .frame(maxWidth: .infinity)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.headerButton))
-            .overlay(
-                RoundedRectangle(cornerRadius: Radii.headerButton)
-                    .strokeBorder(Palette.hairline.color, lineWidth: 1)
-            )
-            .contentShape(.rect)
         }
         .accessibilityLabel("Game: \(model.selectedGame?.title ?? "all your games")")
+    }
+
+    /// Still inert — the Reference sheet the prototype promised "from every header" is not built.
+    /// It keeps its place in the bar so the affordance does not move when it is.
+    private var searchToolbarButton: some View {
+        Button {} label: {
+            Image(systemName: "magnifyingglass")
+        }
+        .accessibilityLabel("Search the reference")
     }
 
     // MARK: Segmented control
@@ -220,6 +192,8 @@ struct DexScreen: View {
                     .buttonStyle(GoldButtonStyle())
                     .padding(.top, 10)
             }
+            // The root is a NavigationStack now, so it carries no horizontal inset of its own.
+            .padding(.horizontal, Metrics.screenPadding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         case .ready:
@@ -236,6 +210,14 @@ struct DexScreen: View {
     private var grid: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
+                // Inside the scroll view, not pinned above it: these describe the current view
+                // rather than controlling it, so they are worth screen space only until you
+                // start scrolling.
+                if model.view != .browse {
+                    progressRow.padding(.bottom, Metrics.screenGap)
+                }
+                hint.padding(.bottom, Metrics.screenGap)
+
                 if let message = model.syncError ?? model.refusal {
                     Text(message)
                         .font(Typography.hint)
@@ -270,6 +252,9 @@ struct DexScreen: View {
                     }
                 }
             }
+            // Horizontal padding lives here rather than on the screen's root: the root is a
+            // NavigationStack now, and insetting that would inset the navigation bar too.
+            .padding(.horizontal, Metrics.screenPadding)
             // No bottom padding for the tab bar: `TabView` insets its own content, and adding
             // the prototype's `padding-bottom:104px` on top of that leaves a dead gap under
             // the last row. The accessory, when a hunt is live, is inset by the same mechanism.
