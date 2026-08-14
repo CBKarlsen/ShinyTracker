@@ -199,11 +199,19 @@ struct HuntScreen: View {
         case .ready:
             // `overflow-y:auto;gap:10px;padding-bottom:104px`
             ScrollView {
-                VStack(alignment: .leading, spacing: Metrics.cardGap) {
+                // Lazy like the Dex and Nuzlocke lists: a hunt card is an AsyncImage, a
+                // GeometryReader and four stroked overlays, and `bump` mutates `rows`, so an
+                // eager stack re-evaluates every card in the list on every single tap.
+                LazyVStack(alignment: .leading, spacing: Metrics.cardGap) {
                     if let syncError = model.syncError {
+                        // Not ``Palette/nuzlocke``: blue is Nuzlocke's mode colour, and "each mode
+                        // owns a colour, so you always know where you are" stops meaning anything
+                        // the moment a Hunt screen prints in it. It also read as a tappable link.
+                        // Not ``Palette/danger`` either — that is for the writes that are really
+                        // gone; this one clears itself on the next tap.
                         Text(syncError)
                             .font(Typography.hint)
-                            .foregroundStyle(Palette.nuzlocke.color)
+                            .foregroundStyle(Palette.textSecondary.color)
                             .padding(.horizontal, 2)
                     }
 
@@ -213,7 +221,7 @@ struct HuntScreen: View {
                         // `countHint` — the prototype promises Space/volume-up counting, ⌘Z undo
                         // and a wake lock. None of those exist here (volume counting is ruled
                         // out by DECISIONS.md D3), so the line says only what is true.
-                        Text("Tap +1 to count. ×N changes how many each tap adds.")
+                        Text("Tap +1 to count, or hold to keep counting. ×N changes how many each tap adds.")
                             .font(Typography.hint)
                             .foregroundStyle(Palette.textMuted.color)
                             .padding(.horizontal, 2)
@@ -250,7 +258,7 @@ struct HuntScreen: View {
 
         case .ready:
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     if model.history.isEmpty {
                         StateBlock(
                             symbol: "sparkles",

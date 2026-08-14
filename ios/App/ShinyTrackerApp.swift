@@ -58,22 +58,15 @@ struct RootView: View {
     }
 }
 
-/// `background:#060608` with the warm bloom in the top-right corner.
+/// `background:#060608`, flat.
 ///
-/// The prototype's is an ellipse — `radial-gradient(420px 260px at 78% -6%,#1d1a12 0%,transparent
-/// 62%)`. This is the circular approximation; at these opacities the difference is not visible.
+/// The prototype blooms a warm ellipse out of the top-right corner
+/// (`radial-gradient(420px 260px at 78% -6%,#1d1a12 0%,transparent 62%)`). Dropped: it decorated
+/// nothing, it sat under every screen in the app, and a corner glow is the single most recognisable
+/// tell of a generated interface. The gold belongs on the hunt, not on the wallpaper.
 struct ScreenBackground: View {
     var body: some View {
-        Palette.screen.color
-            .overlay(
-                RadialGradient(
-                    colors: [Palette.glow.color, .clear],
-                    center: UnitPoint(x: 0.78, y: -0.06),
-                    startRadius: 0,
-                    endRadius: 260
-                )
-            )
-            .ignoresSafeArea()
+        Palette.screen.color.ignoresSafeArea()
     }
 }
 

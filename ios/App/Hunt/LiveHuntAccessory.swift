@@ -44,10 +44,16 @@ struct LiveHuntAccessory: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 16, weight: .semibold))
+                        .symbolEffect(.bounce.up, options: .speed(1.6), value: row.count)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Palette.hunt.color)
+                // Holds like the card's `+`, so counting from another tab is not the worse one.
+                // Unlike the card there is no `−` beside it, so an overshoot here is corrected on
+                // the Hunt tab rather than in place — tapping the row above opens it.
+                .buttonRepeatBehavior(.enabled)
                 .accessibilityLabel("Add one encounter to \(row.name)")
+                .accessibilityHint("Hold to keep counting.")
             }
             .padding(.horizontal, 14)
         }
