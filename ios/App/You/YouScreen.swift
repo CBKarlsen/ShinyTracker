@@ -55,7 +55,12 @@ struct YouScreen: View {
             do {
                 try await auth.signOut()
             } catch {
-                errorMessage = "Couldn't sign out — \(error.localizedDescription)"
+                // `userFacingMessage`, not `localizedDescription`: `APIError` and
+                // `SessionExpiredError` conform to `CustomStringConvertible`, not
+                // `LocalizedError`, so `localizedDescription` silently degrades them to the
+                // generic "operation couldn't be completed". Same reason `LoginView` routes
+                // through it.
+                errorMessage = "Couldn't sign out — \(userFacingMessage(for: error))"
             }
             signingOut = false
         }
