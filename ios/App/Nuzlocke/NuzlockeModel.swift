@@ -46,6 +46,11 @@ final class NuzlockeModel {
     /// state rather than computed on access: this screen already had a performance fix for
     /// rescanning the timeline once per row per frame, and 62 entries would do it again.
     private(set) var chapters: [NuzlockeRules.Chapter] = []
+    /// Timeline entries by slug. Same reason as `logsBySlug`: the chapter rows carry slugs, and
+    /// resolving each to its entry with `timeline.first` would put a linear scan inside a loop
+    /// over the timeline — the exact shape this model already precomputes three dictionaries to
+    /// avoid.
+    private(set) var entriesBySlug: [String: NuzlockeTimelineEntry] = [:]
 
     /// A failed write, surfaced after the optimistic change has been rolled back.
     private(set) var syncError: String?
@@ -222,6 +227,8 @@ final class NuzlockeModel {
                             uniquingKeysWith: { _, second in second }))
             },
             uniquingKeysWith: { _, second in second })
+        entriesBySlug = Dictionary(
+            timeline.map { ($0.slug, $0) }, uniquingKeysWith: { _, second in second })
         currentSlug = timeline.first { !$0.isBoss && logsBySlug[$0.slug] == nil }?.slug
         chapters = NuzlockeRules.chapters(
             timeline.map {
@@ -308,9 +315,7 @@ final class NuzlockeModel {
         timeline.first { $0.slug == log.locationSlug }?.name ?? log.locationSlug
     }
 
-    func entry(at slug: String) -> NuzlockeTimelineEntry? {
-        timeline.first { $0.slug == slug }
-    }
+    func entry(at slug: String) -> NuzlockeTimelineEntry? { entriesBySlug[slug] }
 
     // MARK: Chapters
 

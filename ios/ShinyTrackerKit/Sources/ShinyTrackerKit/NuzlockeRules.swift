@@ -113,12 +113,11 @@ public enum NuzlockeRules {
 
     private static func chapter(from rows: [Row]) -> Chapter {
         let last = rows[rows.count - 1]
-        let place = last.place?.replacingOccurrences(of: " Gym", with: "")
-        return Chapter(
-            id: last.slug,
-            title: place?.isEmpty == false ? place! : last.slug,
-            rows: rows
-        )
+        // Suffix only, not every occurrence: a place that merely *contains* " Gym" must survive
+        // intact. "Oreburgh Gym" -> "Oreburgh"; "Pokémon League" is left alone.
+        var title = last.place ?? ""
+        if title.hasSuffix(" Gym") { title.removeLast(4) }
+        return Chapter(id: last.slug, title: title.isEmpty ? last.slug : title, rows: rows)
     }
 
     /// The chapter the run is currently working through: the one holding the first unbeaten boss.

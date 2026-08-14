@@ -195,3 +195,38 @@ private let shape: [NuzlockeRules.Row] = [
     #expect(NuzlockeRules.openRouteCount(league, logged: []) == 0)
     #expect(NuzlockeRules.isResolved(league, beaten: ["e4-aaron", "champion"], logged: []))
 }
+
+/// A timeline ending exactly on a gym must not produce a trailing empty chapter — the remainder
+/// is emptied inside the gym branch, and an empty one would render as a header with no rows.
+@Test func aTimelineEndingOnAGymHasNoEmptyTrailingChapter() {
+    let rows: [NuzlockeRules.Row] = [
+        .init(slug: "r201", isBoss: false, isGym: false, place: nil),
+        .init(slug: "gym1", isBoss: true, isGym: true, place: "Oreburgh Gym"),
+    ]
+    let chapters = NuzlockeRules.chapters(rows)
+    #expect(chapters.count == 1)
+    #expect(chapters[0].rows.map(\.slug) == ["r201", "gym1"])
+}
+
+/// Every input row lands in exactly one chapter, in order. The view resolves rows to timeline
+/// entries through these, so a dropped row is a route that cannot be logged.
+@Test func chaptersPartitionTheTimelineExhaustively() {
+    let flattened = NuzlockeRules.chapters(shape).flatMap { $0.rows.map(\.slug) }
+    #expect(flattened == shape.map(\.slug))
+}
+
+/// The title strip is a suffix rule, so a place that merely contains " Gym" keeps its name.
+@Test func onlyATrailingGymIsStripped() {
+    let rows: [NuzlockeRules.Row] = [
+        .init(slug: "x", isBoss: true, isGym: true, place: "Old Gym Road")
+    ]
+    #expect(NuzlockeRules.chapters(rows).first?.title == "Old Gym Road")
+}
+
+/// A gym with no seeded place falls back to its slug rather than rendering a blank header.
+@Test func aPlacelessChapterFallsBackToItsSlug() {
+    let rows: [NuzlockeRules.Row] = [
+        .init(slug: "gym9", isBoss: true, isGym: true, place: nil)
+    ]
+    #expect(NuzlockeRules.chapters(rows).first?.title == "gym9")
+}

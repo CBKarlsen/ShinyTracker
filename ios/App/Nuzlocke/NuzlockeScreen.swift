@@ -48,6 +48,10 @@ struct NuzlockeScreen: View {
         // A second `.task` so the species table — one big request, and only the coverage warning
         // needs it — loads alongside the run rather than delaying it.
         .task { await model.loadSpeciesTypes() }
+        // Chapter ids are slugs, which are per *game*, not per run — and nothing stops a second
+        // run of the same game. Without this, collapsing Oreburgh in one run would hide it,
+        // already collapsed, in a fresh run that has not touched it.
+        .onChange(of: model.run?.id) { expandOverrides = [:] }
         .sheet(isPresented: $startingRun) {
             NewRunSheet(model: model)
         }
