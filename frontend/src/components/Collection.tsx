@@ -3,8 +3,14 @@ import { useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
-import type { DexStatus, Pokemon, PokemonRoute } from "../types/models";
-import { getSpriteUrl } from "../utils/pokemon";
+import type {
+	DexStatus,
+	Game,
+	GamePokedexResponse,
+	Pokemon,
+	PokemonRoute,
+} from "../types/models";
+import { getSpriteUrl, matchesSearch } from "../utils/pokemon";
 import DexDrawer from "./DexDrawer";
 import type { HuntDetail } from "./HistoricHunts";
 import HuntNextPanel from "./HuntNextPanel";
@@ -21,6 +27,8 @@ const GEN_RANGES: [number, number, number][] = [
 	[9, 906, 1025],
 ];
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+
+const GAME_VIEW_KEY = "st_dex_game_view";
 
 const Collection: React.FC<{
 	onStartHunt?: (pokemon: Pokemon, route: PokemonRoute) => void;
@@ -39,6 +47,14 @@ const Collection: React.FC<{
 	const [loading, setLoading] = useState(true);
 	const [filter, setFilter] = useState<"all" | "owned" | "missing">("all");
 	const [drawerId, setDrawerId] = useState<number | null>(null);
+	const [search, setSearch] = useState("");
+
+	const [games, setGames] = useState<Game[]>([]);
+	const [gameView, setGameView] = useState<string>(
+		() => localStorage.getItem(GAME_VIEW_KEY) || "national",
+	);
+	const [gameDex, setGameDex] = useState<GamePokedexResponse | null>(null);
+	const [gameDexLoading, setGameDexLoading] = useState(false);
 
 	// When asked to focus a specific Pokémon (e.g. from command search),
 	// open its drawer, then tell the parent it was handled so it can reset
@@ -54,7 +70,7 @@ const Collection: React.FC<{
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
-				const [pokeRes, huntsRes, statusRes] = await Promise.all([
+				const [pokeRes, huntsRes, statusRes, gamesRes] = await Promise.all([
 					fetch(`${API_BASE}/api/pokemon?limit=all`),
 					fetch(`${API_BASE}/api/hunts`, {
 						headers: { Authorization: `Bearer ${token}` },
@@ -62,6 +78,7 @@ const Collection: React.FC<{
 					fetch(`${API_BASE}/api/dex/status`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
+					fetch(`${API_BASE}/api/games`),
 				]);
 				if (pokeRes.ok && huntsRes.ok) {
 					const pokeData: Pokemon[] = (await pokeRes.json()) || [];
@@ -82,6 +99,9 @@ const Collection: React.FC<{
 				} else {
 					showError("Failed to fetch Pokedex information.");
 				}
+				if (gamesRes.ok) {
+					setGames((await gamesRes.json()) || []);
+				}
 			} catch (err: unknown) {
 				showError(
 					(err as Error).message || "Failed to fetch Pokedex information.",
@@ -93,6 +113,41 @@ const Collection: React.FC<{
 		};
 		fetchData();
 	}, [token]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch the dex on every render
+	useEffect(() => {
+		localStorage.setItem(GAME_VIEW_KEY, gameView);
+		if (gameView === "national") {
+			setGameDex(null);
+			return;
+		}
+		let cancelled = false;
+		setGameDexLoading(true);
+		fetch(`${API_BASE}/api/games/${gameView}/pokedex`)
+			.then((res) => {
+				if (!res.ok) throw new Error();
+				return res.json();
+			})
+			.then((data: GamePokedexResponse) => {
+				if (cancelled) return;
+				// A game with no seeded rows comes back 200 with an empty list, which
+				// would render an empty grid and 0/0. Treat it as a failure.
+				if (!data.dexes?.length) throw new Error("no dex entries");
+				setGameDex(data);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				showError("No Pokédex data for that game yet — showing National.");
+				setGameView("national");
+			})
+			.finally(() => {
+				if (!cancelled) setGameDexLoading(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [gameView]);
 
 	if (loading) {
 		return (
@@ -109,8 +164,58 @@ const Collection: React.FC<{
 		);
 	}
 
-	const total = pokemon.length || 1025;
-	const caughtCount = caughtIds.size;
+	const pokeById = new Map(pokemon.map((p) => [p.id, p]));
+	const nationalTotal = pokemon.length || 1025;
+
+	// A species can sit in more than one of a game's dexes with a different
+	// number in each (Sword/Shield: 821 entries, 584 unique species), so the
+	// headline and progress bar count unique species. The per-dex rows below
+	// deliberately do not — an entry per dex is what those sections show.
+	const gameSpecies = gameDex
+		? new Set(gameDex.dexes.flatMap((d) => d.entries.map((e) => e.pokemon_id)))
+		: null;
+
+	const total = gameSpecies ? gameSpecies.size : nationalTotal;
+	const caughtCount = gameSpecies
+		? Array.from(gameSpecies).filter((id) => caughtIds.has(id)).length
+		: caughtIds.size;
+	const completionPct = total > 0 ? (caughtCount / total) * 100 : 0;
+
+	// Both views are the same thing — an ordered list of titled sections of
+	// cells — so they are normalized here and rendered once below. National
+	// sections are generations numbered by national id; game sections are that
+	// game's dexes numbered by their own entry_number.
+	const sections = gameDex
+		? gameDex.dexes.map((d) => ({
+				key: d.slug,
+				label: d.name,
+				short: d.name,
+				showNumber: true,
+				entries: [...d.entries]
+					.sort((a, b) => a.number - b.number)
+					.map((e) => ({
+						pokemonId: e.pokemon_id,
+						number: e.number,
+						state: e.shiny_locked ? "locked" : "missing",
+					})),
+			}))
+		: GEN_RANGES.map(([gen, lo, hi]) => ({
+				key: `gen-${gen}`,
+				label: `Generation ${ROMAN[gen]}`,
+				short: `Gen ${ROMAN[gen]}`,
+				showNumber: false,
+				entries: pokemon
+					.filter((p) => p.id >= lo && p.id <= hi)
+					.map((p) => ({
+						pokemonId: p.id,
+						number: p.id,
+						state: blocked.locked.has(p.id)
+							? "locked"
+							: blocked.notInGames.has(p.id)
+								? "notgames"
+								: "missing",
+					})),
+			}));
 
 	return (
 		<div className="page">
@@ -131,14 +236,34 @@ const Collection: React.FC<{
 							letterSpacing: "0.04em",
 						}}
 					>
-						{caughtCount} of {total} shinies ·{" "}
-						{((caughtCount / total) * 100).toFixed(1)}% complete
+						{caughtCount} of {total} shinies · {completionPct.toFixed(1)}%
+						complete
 						<span style={{ color: "var(--ink-4)", marginLeft: 8 }}>
 							(Click any Pokémon to view details)
 						</span>
 					</div>
 				</div>
 				<div className="ctas">
+					<select
+						className="btn"
+						value={gameView}
+						onChange={(e) => setGameView(e.target.value)}
+						style={{ paddingRight: 20 }}
+					>
+						<option value="national">National</option>
+						{games.map((g) => (
+							<option key={g.id} value={g.id}>
+								{g.title}
+							</option>
+						))}
+					</select>
+					<input
+						className="input"
+						placeholder="Search name or #…"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+						style={{ width: 180 }}
+					/>
 					<div
 						style={{
 							display: "flex",
@@ -200,7 +325,7 @@ const Collection: React.FC<{
 					<div
 						style={{
 							height: "100%",
-							width: `${(caughtCount / total) * 100}%`,
+							width: `${completionPct}%`,
 							background: "linear-gradient(90deg, var(--gold), #FFE08A)",
 							borderRadius: 99,
 						}}
@@ -217,20 +342,20 @@ const Collection: React.FC<{
 						letterSpacing: "0.04em",
 					}}
 				>
-					{GEN_RANGES.map(([gen, lo, hi]) => {
-						const count = Array.from(caughtIds).filter(
-							(id) => id >= lo && id <= hi,
+					{sections.map((s) => {
+						const count = s.entries.filter((e) =>
+							caughtIds.has(e.pokemonId),
 						).length;
 						return (
-							<div key={gen} style={{ textAlign: "center" }}>
-								<div>Gen {ROMAN[gen]}</div>
+							<div key={s.key} style={{ textAlign: "center" }}>
+								<div>{s.short}</div>
 								<div
 									style={{
 										color: count > 0 ? "var(--gold)" : "var(--ink-4)",
 										marginTop: 2,
 									}}
 								>
-									{count}/{hi - lo + 1}
+									{count}/{s.entries.length}
 								</div>
 							</div>
 						);
@@ -238,55 +363,65 @@ const Collection: React.FC<{
 				</div>
 			</div>
 
-			{/* Grid by generation */}
-			{GEN_RANGES.map(([gen, lo, hi]) => {
-				const cellsInGen = pokemon
-					.filter((p) => p.id >= lo && p.id <= hi)
-					.filter((p) => {
-						const caught = caughtIds.has(p.id);
+			{gameDexLoading && (
+				<div className="empty" style={{ marginBottom: 20 }}>
+					Loading game Pokédex…
+				</div>
+			)}
+
+			{/* One grid, driven by `sections` — per-dex for a game, per-generation for National */}
+			{sections.map((s) => {
+				const cells = s.entries
+					.filter((e) =>
+						matchesSearch(
+							search,
+							pokeById.get(e.pokemonId)?.name ?? "",
+							e.number,
+						),
+					)
+					.filter((e) => {
+						const caught = caughtIds.has(e.pokemonId);
 						if (filter === "owned") return caught;
 						if (filter === "missing") return !caught;
 						return true;
 					});
-				if (cellsInGen.length === 0) return null;
-				const caughtInGen = Array.from(caughtIds).filter(
-					(id) => id >= lo && id <= hi,
+				if (cells.length === 0) return null;
+				const caughtInSection = s.entries.filter((e) =>
+					caughtIds.has(e.pokemonId),
 				).length;
 				return (
-					<div key={gen}>
+					<div key={s.key}>
 						<div className="gen-head">
-							<span className="lbl">Generation {ROMAN[gen]}</span>
+							<span className="lbl">{s.label}</span>
 							<span className="line" />
 							<span className="count">
-								<b>{caughtInGen}</b> / {hi - lo + 1}
+								<b>{caughtInSection}</b> / {s.entries.length}
 							</span>
 						</div>
 						<div className="dex-grid">
-							{cellsInGen.map((p) => {
-								const caught = caughtIds.has(p.id);
-								const state = caught
-									? "caught"
-									: blocked.locked.has(p.id)
-										? "locked"
-										: blocked.notInGames.has(p.id)
-											? "notgames"
-											: "missing";
+							{cells.map((e) => {
+								const p = pokeById.get(e.pokemonId);
+								const caught = caughtIds.has(e.pokemonId);
+								const label = p?.name ?? `#${e.number}`;
 								return (
 									<div
-										key={p.id}
-										className={`dex-cell ${state}`}
-										onClick={() => setDrawerId(p.id)}
-										title={p.name}
+										key={`${s.key}-${e.pokemonId}`}
+										className={`dex-cell ${caught ? "caught" : e.state}`}
+										onClick={() => setDrawerId(e.pokemonId)}
+										title={label}
 									>
 										<img
 											src={getSpriteUrl(
-												p.id,
+												e.pokemonId,
 												caught,
-												caught ? p.shiny_sprite_url : p.sprite_url,
+												caught ? p?.shiny_sprite_url : p?.sprite_url,
 											)}
-											alt={p.name}
+											alt={label}
 											loading="lazy"
 										/>
+										{s.showNumber && (
+											<span className="dex-num">{e.number}</span>
+										)}
 									</div>
 								);
 							})}

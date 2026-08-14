@@ -82,6 +82,23 @@ export interface DexStatus {
 	locked_everywhere: number[];
 }
 
+export interface PokedexEntry {
+	number: number;
+	pokemon_id: number;
+	shiny_locked: boolean;
+}
+
+export interface GameDex {
+	slug: string;
+	name: string;
+	entries: PokedexEntry[];
+}
+
+export interface GamePokedexResponse {
+	game_id: number;
+	dexes: GameDex[];
+}
+
 export interface RouteLocation {
 	area: string;
 	version: string;

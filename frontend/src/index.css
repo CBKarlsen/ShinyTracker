@@ -1430,6 +1430,16 @@ ul {
 	filter: grayscale(1);
 	opacity: 0.45;
 }
+.dex-cell .dex-num {
+	position: absolute;
+	bottom: 2px;
+	left: 4px;
+	font-family: var(--font-mono);
+	font-size: 8px;
+	line-height: 1;
+	color: var(--ink-3);
+	letter-spacing: 0.02em;
+}
 .dex-drawer-head {
 	display: flex;
 	gap: 13px;
