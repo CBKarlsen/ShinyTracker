@@ -657,6 +657,87 @@ func fetchMoveset(ctx context.Context, pokemonID, gameID int) ([]PokemonMoveDeta
 	return out, rows.Err()
 }
 
+// PokedexEntry is one Pokemon's slot within a single regional dex.
+type PokedexEntry struct {
+	Number      int  `json:"number"`
+	PokemonID   int  `json:"pokemon_id"`
+	ShinyLocked bool `json:"shiny_locked"`
+}
+
+// PokedexDex is one regional dex (e.g. Central Kalos) within a game.
+type PokedexDex struct {
+	Slug    string         `json:"slug"`
+	Name    string         `json:"name"`
+	Entries []PokedexEntry `json:"entries"`
+}
+
+// PokedexResponse is the full payload for GET /api/games/{id}/pokedex.
+type PokedexResponse struct {
+	GameID int          `json:"game_id"`
+	Dexes  []PokedexDex `json:"dexes"`
+}
+
+// GetGamePokedexHandler returns per-game regional Pokedex numbering, grouped
+// by dex (a game can have several, e.g. X/Y's Central/Coastal/Mountain
+// Kalos). Public reference data, same as /games/{id}/pokemon — no auth
+// required.
+func GetGamePokedexHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid id", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := database.DB.Query(context.Background(), `
+		SELECT pe.dex_slug, pe.dex_name, pe.entry_number, pe.pokemon_id,
+		       (sl.pokemon_id IS NOT NULL) AS shiny_locked
+		FROM pokedex_entries pe
+		LEFT JOIN shiny_locks sl ON sl.pokemon_id = pe.pokemon_id AND sl.game_id = pe.game_id
+		WHERE pe.game_id = $1
+		ORDER BY pe.dex_order ASC, pe.entry_number ASC`, id)
+	if err != nil {
+		http.Error(w, "Failed to fetch pokedex", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	dexes := []PokedexDex{}
+	indexBySlug := map[string]int{}
+	for rows.Next() {
+		var slug, name string
+		var number, pokemonID int
+		var shinyLocked bool
+		if err := rows.Scan(&slug, &name, &number, &pokemonID, &shinyLocked); err != nil {
+			// Skipping would drop a Pokemon out of the dex silently, which is
+			// the exact truncation the rows.Err() check below guards against.
+			http.Error(w, "Failed to fetch pokedex", http.StatusInternalServerError)
+			return
+		}
+
+		idx, ok := indexBySlug[slug]
+		if !ok {
+			dexes = append(dexes, PokedexDex{Slug: slug, Name: name, Entries: []PokedexEntry{}})
+			idx = len(dexes) - 1
+			indexBySlug[slug] = idx
+		}
+		dexes[idx].Entries = append(dexes[idx].Entries, PokedexEntry{
+			Number:      number,
+			PokemonID:   pokemonID,
+			ShinyLocked: shinyLocked,
+		})
+	}
+	// The frontend uses this list as the exact regional dex, so a truncated read
+	// must not come back as a 200 — see GetGamePokemonHandler for the same reasoning.
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Failed to fetch pokedex", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(PokedexResponse{GameID: id, Dexes: dexes})
+}
+
 // fetchAncestors returns the pre-evolution line (nearest first) for a Pokemon.
 func fetchAncestors(ctx context.Context, pokemonID int) ([]calc.EvolveFrom, error) {
 	rows, err := database.DB.Query(ctx, `

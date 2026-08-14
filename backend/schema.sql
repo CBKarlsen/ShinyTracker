@@ -133,6 +133,23 @@ CREATE TABLE IF NOT EXISTS pokemon_availability (
     PRIMARY KEY (pokemon_id, game_id)
 );
 
+-- pokedex_entries: per-game regional Pokedex numbering (Migration 020). A game
+-- can have multiple dexes (e.g. X/Y's Central/Coastal/Mountain Kalos), so the
+-- key includes dex_slug, not just game_id + pokemon_id. Seeded from PokeAPI
+-- /api/v2/pokedex/{slug} by cmd/seed_pokedex (idempotent).
+CREATE TABLE IF NOT EXISTS pokedex_entries (
+    game_id      INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+    dex_slug     TEXT NOT NULL,          -- PokeAPI pokedex slug, e.g. 'kalos-central'
+    dex_name     TEXT NOT NULL,          -- display name, e.g. 'Central Kalos'
+    dex_order    INTEGER NOT NULL,       -- ordering of dexes within a game (0-based)
+    pokemon_id   INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
+    entry_number INTEGER NOT NULL,       -- regional dex number within that dex
+    PRIMARY KEY (game_id, dex_slug, pokemon_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pokedex_entries_order
+    ON pokedex_entries (game_id, dex_order, entry_number);
+
 -- shiny_locks: per-game shiny locks (Pokemon that cannot be encountered shiny
 -- in a given game — box legendaries, gift starters, Meltan/Melmetal, etc.).
 -- "Locked everywhere" is DERIVED (locked in every game it is available in),
@@ -440,6 +457,7 @@ CREATE INDEX IF NOT EXISTS idx_nuzlocke_boss_progress_run
 ALTER TABLE pokemon                 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE games                   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pokemon_availability    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pokedex_entries         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pokemon_game_encounter  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shiny_locks             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hunt_methods            ENABLE ROW LEVEL SECURITY;

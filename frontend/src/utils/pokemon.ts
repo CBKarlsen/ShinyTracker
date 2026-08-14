@@ -35,3 +35,21 @@ export const getShowdownGif = (pokemonName: string): string => {
 		.replace(/-+/g, "-");
 	return `https://play.pokemonshowdown.com/sprites/ani-shiny/${name}.gif`;
 };
+
+/**
+ * Dex search: case-insensitive substring match on name, OR an exact dex-number
+ * match. "#025", "025" and "25" all mean number 25. The number half is exact,
+ * not a substring: "1" as a substring matches a third of the dex, which makes
+ * the grid flash to near-everything on the first keystroke.
+ */
+export function matchesSearch(
+	query: string,
+	name: string,
+	dexNumber: number,
+): boolean {
+	const q = query.trim().toLowerCase();
+	if (!q) return true;
+	if (name.toLowerCase().includes(q)) return true;
+	const num = q.replace(/^#/, "");
+	return /^\d+$/.test(num) && Number(num) === dexNumber;
+}
