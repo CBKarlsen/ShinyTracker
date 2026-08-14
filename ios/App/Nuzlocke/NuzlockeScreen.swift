@@ -12,6 +12,7 @@ struct NuzlockeScreen: View {
     @State private var pickingRun = false
     @State private var loggingAt: NuzlockeTimelineEntry?
     @State private var openBoss: NuzlockeTimelineEntry?
+    @State private var showingRoster = false
 
     /// The run's game is the title, the level cap its subtitle, and switching runs is a toolbar
     /// button — so the large title collapses on scroll and the timeline gets the space back.
@@ -53,6 +54,9 @@ struct NuzlockeScreen: View {
         }
         .sheet(item: $openBoss) { boss in
             CheckpointSheet(model: model, boss: boss)
+        }
+        .sheet(isPresented: $showingRoster) {
+            RosterSheet(model: model)
         }
     }
 
@@ -271,16 +275,31 @@ struct NuzlockeScreen: View {
                     .textCase(.uppercase)
                     .foregroundStyle(Palette.textMuted.color)
                 Spacer(minLength: 0)
-                if !model.graveyard.isEmpty {
-                    Text("\(model.graveyard.count) in graveyard")
-                        .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                // The counts were the whole representation of the box and the graveyard. They
+                // are the way into the roster now, where those Pokémon actually exist.
+                Button { showingRoster = true } label: {
+                    HStack(spacing: 8) {
+                        if model.graveyard.isEmpty, model.boxed.isEmpty {
+                            // Nothing lost and nothing boxed yet: the counts would both be
+                            // hidden, leaving a bare chevron with no idea what it opens.
+                            Text("Roster")
+                                .foregroundStyle(Palette.textMuted.color)
+                        }
+                        if !model.graveyard.isEmpty {
+                            Text("\(model.graveyard.count) in graveyard")
+                                .foregroundStyle(Palette.danger.color)
+                        }
+                        if !model.boxed.isEmpty {
+                            Text("\(model.boxed.count) boxed")
+                                .foregroundStyle(Palette.textMuted.color)
+                        }
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(Palette.textFaint.color)
+                    }
+                    .font(Typography.hint)
+                    .contentShape(.rect)
                 }
-                if !model.boxed.isEmpty {
-                    Text("\(model.boxed.count) boxed")
-                        .font(Typography.hint)
-                        .foregroundStyle(Palette.textMuted.color)
-                }
+                .accessibilityLabel("Open the roster")
             }
 
             if model.party.isEmpty {
