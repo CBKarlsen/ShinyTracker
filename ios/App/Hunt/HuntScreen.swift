@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The Hunt mode. Layout, spacing and colour come from `docs/design/hunt-prototype.dc.html`.
 ///
-/// All three segments are built. The header's search button is still inert: Reference "is the
+/// All three segments are built. The toolbar's search button is still inert: Reference "is the
 /// search button in every header, not a tab", and that pillar is out of scope.
 struct HuntScreen: View {
     @State var model: HuntListModel
@@ -22,22 +22,52 @@ struct HuntScreen: View {
         var id: Self { self }
     }
 
+    /// Title, count and buttons are the navigation bar's job, which buys the large title that
+    /// collapses on scroll. Active/History stays pinned below it — it selects what the list is,
+    /// so it has to stay reachable while scrolling.
     var body: some View {
-        // `gap:13px;padding:8px 18px 0`
-        VStack(alignment: .leading, spacing: Metrics.screenGap) {
-            header
-            // Above the segmented control, not inside the Active list: a failed completion's hunt
-            // has already left Active for History by the time it can fail, so a banner scoped to
-            // one tab could name a hunt the user is not looking at.
-            if !model.failedWrites.isEmpty {
-                failedWritesBanner
-            }
-            segmentedControl
+        NavigationStack {
             content
+                // The root is a NavigationStack now, so the screen inset moves here — putting it
+                // on the root would inset the navigation bar too. All three lists hide their
+                // scroll indicators, so insetting outside the scroll view costs nothing.
+                .padding(.horizontal, Metrics.screenPadding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .navigationTitle("Hunt")
+                .navigationSubtitle(huntSummary)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {} label: { Image(systemName: "magnifyingglass") }
+                            .accessibilityLabel("Search the reference")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            newHunt.open()
+                            newHuntOpen = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Start a new hunt")
+                    }
+                }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    VStack(alignment: .leading, spacing: Metrics.screenGap) {
+                        // Above the segmented control, not inside the Active list: a failed
+                        // completion's hunt has already left Active for History by the time it
+                        // can fail, so a banner scoped to one tab could name a hunt the user is
+                        // not looking at. Pinned for the same reason — it must not scroll away
+                        // unread.
+                        if !model.failedWrites.isEmpty {
+                            failedWritesBanner
+                        }
+                        segmentedControl
+                    }
+                    .padding(.horizontal, Metrics.screenPadding)
+                    .padding(.bottom, 8)
+                    // Opaque: scrolled cards pass beneath this strip.
+                    .background(Palette.screen.color)
+                }
         }
-        .padding(.horizontal, Metrics.screenPadding)
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task { await model.appear() }
         // The library is what makes the + button work at all (no owned games, no methods), and
         // the Games tab reads the same model, so it loads with the screen rather than on demand.
@@ -99,66 +129,10 @@ struct HuntScreen: View {
     }
     #endif
 
-    // MARK: Header
-
-    private var header: some View {
-        HStack(spacing: 10) {
-            // `gap:9px` — mode glyph then title. The prototype's glyph is a shiny-charm PNG we
-            // do not have as an asset; `sparkles` is the nearest system symbol and is used for
-            // the ✦ found button too, keeping one glyph for "shiny" throughout.
-            HStack(spacing: 9) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Palette.hunt.color)
-                Text("Hunt")
-                    .font(Typography.screenTitle)
-                    .tracking(Typography.screenTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
-            }
-
-            Spacer(minLength: 0)
-
-            Text(huntSummary)
-                .font(Typography.summary)
-                .foregroundStyle(Palette.textMuted.color)
-
-            // Reference search. Present per the design ("reachable from every header"), inert:
-            // the Reference sheet is out of scope.
-            headerButton(symbol: "magnifyingglass", label: "Search the reference") {}
-                .foregroundStyle(Palette.textSecondary.color)
-                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.headerButton))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radii.headerButton)
-                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
-                )
-
-            // The gold +.
-            headerButton(symbol: "plus", label: "Start a new hunt") {
-                newHunt.open()
-                newHuntOpen = true
-            }
-            .fontWeight(.bold)
-            .foregroundStyle(Palette.onAccent.color)
-            .background(Palette.hunt.color, in: .rect(cornerRadius: Radii.headerButton))
-        }
-    }
-
     /// `${n} ${n === 1 ? 'hunt' : 'hunts'}`.
     private var huntSummary: String {
         let count = model.rows.count
         return "\(count) \(count == 1 ? "hunt" : "hunts")"
-    }
-
-    private func headerButton(
-        symbol: String, label: String, action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 17))
-                .frame(width: Metrics.headerButton, height: Metrics.headerButton)
-                .contentShape(.rect)
-        }
-        .accessibilityLabel(label)
     }
 
     // MARK: Segmented control

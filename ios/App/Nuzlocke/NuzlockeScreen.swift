@@ -13,14 +13,31 @@ struct NuzlockeScreen: View {
     @State private var loggingAt: NuzlockeTimelineEntry?
     @State private var openBoss: NuzlockeTimelineEntry?
 
+    /// The run's game is the title, the level cap its subtitle, and switching runs is a toolbar
+    /// button — so the large title collapses on scroll and the timeline gets the space back.
+    ///
+    /// The cap moved from a coloured badge to the subtitle deliberately: it is the rule you check
+    /// constantly, so it belongs somewhere always visible rather than in a decoration that
+    /// scrolls.
     var body: some View {
-        VStack(alignment: .leading, spacing: Metrics.screenGap) {
-            header
+        NavigationStack {
             content
+                // The root is a NavigationStack now; insetting it would inset the bar too.
+                .padding(.horizontal, Metrics.screenPadding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .navigationTitle(model.run?.gameTitle ?? "Nuzlocke")
+                .navigationSubtitle(capLabel)
+                .toolbar {
+                    if !model.runs.isEmpty {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button { pickingRun = true } label: {
+                                Image(systemName: "square.stack.3d.up")
+                            }
+                            .accessibilityLabel("Switch run")
+                        }
+                    }
+                }
         }
-        .padding(.horizontal, Metrics.screenPadding)
-        .padding(.top, 8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task { await model.appear() }
         // A second `.task` so the species table — one big request, and only the coverage warning
         // needs it — loads alongside the run rather than delaying it.
@@ -39,55 +56,13 @@ struct NuzlockeScreen: View {
         }
     }
 
-    // MARK: Header
+    // MARK: Title
 
-    /// Mode glyph, title, and the level cap — "CAP 33", the one number that governs a run.
-    private var header: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 9) {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.system(size: 15))
-                    .foregroundStyle(Palette.nuzlocke.color)
-                Text(model.run?.gameTitle ?? "Nuzlocke")
-                    .font(Typography.screenTitle)
-                    .tracking(Typography.screenTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-
-            Spacer(minLength: 0)
-
-            if let cap = model.levelCap {
-                Text("CAP \(cap)")
-                    .font(Typography.badge)
-                    .foregroundStyle(Palette.nuzlocke.color)
-                    .padding(.horizontal, 11)
-                    .frame(height: 30)
-                    .background(Palette.nuzlocke.alpha(0x1F), in: .rect(cornerRadius: Radii.badge))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Radii.badge)
-                            .strokeBorder(Palette.nuzlocke.alpha(0x55), lineWidth: 1)
-                    )
-                    .accessibilityLabel("Level cap \(cap)")
-            }
-
-            if !model.runs.isEmpty {
-                Button { pickingRun = true } label: {
-                    Image(systemName: "square.stack.3d.up")
-                        .font(.system(size: 16))
-                        .frame(width: Metrics.headerButton, height: Metrics.headerButton)
-                        .contentShape(.rect)
-                }
-                .accessibilityLabel("Switch run")
-                .foregroundStyle(Palette.textSecondary.color)
-                .background(Palette.surface.color, in: .rect(cornerRadius: 13))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 13)
-                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
-                )
-            }
-        }
+    /// "Level cap 33" — the one number that governs a run. Empty before a run loads; an empty
+    /// subtitle renders as no subtitle, which is what should happen when there is no cap.
+    private var capLabel: String {
+        guard let cap = model.levelCap else { return "" }
+        return "Level cap \(cap)"
     }
 
     // MARK: Body
