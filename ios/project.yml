@@ -41,6 +41,9 @@ targets:
       - package: ShinyTrackerAuth
       - package: ShinyTrackerAPI
       - package: ShinyTrackerUI
+      # Embeds the Live Activity extension in the app bundle. Without this the widget builds
+      # but never ships inside the app, and the activity silently fails to appear.
+      - target: ShinyTrackerWidgets
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.casperkarlsen.shinytracker
@@ -81,6 +84,9 @@ targets:
           - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
             CFBundleTypeRole: Editor
             CFBundleURLSchemes: [shinytracker]
+        # Without this the app may not request a Live Activity at all — ActivityKit reports
+        # `.disabled` and `HuntListModel.syncActivity` quietly does nothing.
+        NSSupportsLiveActivities: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -99,6 +105,51 @@ targets:
     # do not support the Sign In with Apple capability" — so local device testing needs it
     # off. Release builds on a paid team must have it ON: guideline 4.8 requires Sign in
     # with Apple because GitHub and Google sign-in are offered.
+
+  # The Live Activity. A widget extension, because that is the only kind of bundle that may
+  # declare an `ActivityConfiguration`.
+  #
+  # NOTE FOR A FREE PERSONAL TEAM: this is a second bundle identifier, so it needs its own
+  # provisioning profile. Free teams are capped at a small number of app ids — if a device build
+  # starts failing to provision after this, that cap is the first thing to check, not the code.
+  ShinyTrackerWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+      # Compiled into BOTH targets on purpose. The widget needs `HuntActivity` to declare the
+      # activity and `LiveHuntCountIntent` to build its button; the app needs the same two types
+      # to request the activity and to perform the intent. A shared local package would work too
+      # and is three files of ceremony for one source file — the file is written to have no
+      # app-only dependencies precisely so this stays legal.
+      - path: App/Hunt/LiveHunt.swift
+    configFiles:
+      Debug: App/Config/Secrets.xcconfig
+      Release: App/Config/Secrets.xcconfig
+    dependencies:
+      # The palette only. No API client and no session: everything this extension draws arrives
+      # in the activity's `ContentState`, which is what keeps it off the network entirely.
+      - package: ShinyTrackerUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.casperkarlsen.shinytracker.widgets
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+        # Deliberately NOT $(ENTITLEMENTS_FILE): that file is the *app's*, and it carries Sign in
+        # with Apple, which an extension neither has nor may claim. This target needs none.
+        CODE_SIGN_ENTITLEMENTS: ""
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: ShinyTracker
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
 schemes:
   ShinyTracker:

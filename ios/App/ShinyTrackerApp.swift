@@ -14,6 +14,16 @@ struct ShinyTrackerApp: App {
         // ``SpriteCache`` sits in front of it holding the decoded images.
         URLCache.shared = URLCache(
             memoryCapacity: 32 * 1024 * 1024, diskCapacity: 256 * 1024 * 1024)
+
+        // The last-resort route for the Lock Screen's `+`. Installed here rather than beside the
+        // hunt list because *here* is the only code that is guaranteed to run: pressing that
+        // button on a killed app has iOS launch the process to perform the intent, and the view
+        // tree that builds `AppShell` — and with it `HuntListModel` — may never be evaluated.
+        // `LiveHuntCounter` only reaches this after the model has declined, so it can never be
+        // writing the queue file behind a model that holds the same queue in memory.
+        LiveHuntCounter.shared.fallback = { huntID, step in
+            await LiveHuntFallback.count(huntID, by: step)
+        }
     }
 
     var body: some Scene {
@@ -124,6 +134,10 @@ struct AppShell: View {
         // The living-dex store is keyed by user id: these ticks live in UserDefaults
         // until the API can hold them, and an unscoped key would show one account
         // another's dex after a sign-out/sign-in on the same device.
+        // Leaves the user id where a *background* launch can find it. That launch has no session
+        // restored when the Lock Screen's `+` fires, and the write queue is stored per user, so
+        // without this the durable route would not know which directory to append to.
+        LiveHuntFallback.rememberUser(auth.userID)
         self.init(client: APIClient(auth: .session(auth)), userID: auth.userID, auth: auth)
     }
 
