@@ -1,3 +1,4 @@
+import ActivityKit
 import Foundation
 import ShinyTrackerAPI
 import ShinyTrackerAuth
@@ -177,6 +178,48 @@ final class HuntListModel {
     init(client: APIClient, store: SnapshotStore) {
         self.client = client
         self.store = store
+        // Claim the Lock Screen's `+`. Weak, and reporting failure rather than swallowing it, so a
+        // model that cannot serve the tap (see `LiveHuntCounter.handler`) hands it to the durable
+        // path instead of eating it.
+        LiveHuntCounter.shared.handler = { [weak self] huntID, step in
+            guard let self else { return false }
+            return self.countFromActivity(huntID, by: step)
+        }
+    }
+
+    // MARK: Live Activity
+
+    /// Counting from the Lock Screen. Deliberately the *same* `bump` the card calls: the tap lands
+    /// in the write queue, is coalesced with its neighbours and carries an idempotency key, so
+    /// counting from outside the app is offline-safe for free rather than by re-implementation.
+    ///
+    /// Returns false when this model does not know the hunt — an empty `rows` after a background
+    /// launch that never loaded — which is the caller's cue to fall back rather than drop the tap.
+    private func countFromActivity(_ huntID: UUID, by step: Int) -> Bool {
+        guard rows.contains(where: { $0.id == huntID }) else { return false }
+        bump(huntID, by: step)
+        return true
+    }
+
+    /// Mirrors the live hunt onto the Lock Screen and the Dynamic Island.
+    ///
+    /// Only assembles the state — starting, updating and ending belong to ``HuntActivityBridge``,
+    /// which keeps ActivityKit's non-Sendable `Activity` out of this actor entirely.
+    func syncActivity() async {
+        guard let row = liveRow else { return await HuntActivityBridge.endAll() }
+        await HuntActivityBridge.sync(
+            attributes: HuntActivity(
+                huntID: row.id,
+                speciesName: row.name,
+                pokemonID: row.detail.pokemonID,
+                meta: row.meta),
+            state: HuntActivity.ContentState(
+                count: row.count,
+                elapsedSeconds: elapsed(for: row),
+                step: step(for: row.id),
+                denominator: row.denominator,
+                cumulativeProbability: row.cumulativeProbability,
+                counting: isCounting(row)))
     }
 
     func step(for id: UUID) -> Int { stepByHunt[id] ?? 1 }
@@ -243,6 +286,8 @@ final class HuntListModel {
         let steps = Self.steps
         let next = (steps.firstIndex(of: step(for: id)).map { $0 + 1 } ?? 1) % steps.count
         stepByHunt[id] = steps[next]
+        // ×N is what the Lock Screen's `+` adds, so the card has to hear about it too.
+        Task { await syncActivity() }
     }
 
     func load() async { await load(quiet: false) }
@@ -363,6 +408,7 @@ final class HuntListModel {
                 liveHuntID = rows.first?.id
             }
             state = .ready
+            await syncActivity()
             // The raw response, not `rows`/`history`: those are derived on the way back in, and a
             // second saved copy of the same thing is a second thing to keep in sync.
             await store.save(all, as: .hunts)
@@ -412,7 +458,11 @@ final class HuntListModel {
         Haptics.impact(delta > 0 ? .light : .rigid)
         // On disk before anything else can happen to it. A tap that only exists in memory is a tap
         // the next crash eats, and this is the app's one job.
-        Task { await persist() }
+        // The Lock Screen carries the same count, so it moves with the same tap.
+        Task {
+            await persist()
+            await syncActivity()
+        }
         scheduleDrain()
     }
 
@@ -676,6 +726,7 @@ final class HuntListModel {
         // The clock is deliberately not retired here: the queued completion still has to report
         // how long the hunt took. `drain` retires it once the server has that number.
         await persist()
+        await syncActivity()
         Haptics.notify(.success)
         scheduleDrain()
         return true
@@ -702,6 +753,7 @@ final class HuntListModel {
         // The clock survives: a phase ends a count, not a hunt. Hours spent reaching the phase are
         // still hours spent on this hunt, and the server keeps the max of what it is sent.
         await persist()
+        await syncActivity()
         Haptics.notify(.success)
         scheduleDrain()
         return true
@@ -722,6 +774,7 @@ final class HuntListModel {
             for entry in queue.entries where entry.huntID == id { queue.remove(entry.id) }
             drop(id)
             await retireClock(id)
+            await syncActivity()
             Haptics.notify(.warning)
             return true
         } catch {
@@ -797,19 +850,6 @@ func userFacingMessage(for error: any Error) -> String? {
     if let api = error as? APIError { return api.description }
     if let expired = error as? SessionExpiredError { return expired.description }
     return error.localizedDescription
-}
-
-// MARK: - Formatting
-
-/// `fmtTime` from the prototype: `1h 05m`, `41m`, `3d`. Anything under a minute renders as "—"
-/// at the call site, exactly as `elapsed` does there.
-func formatElapsed(_ seconds: Int) -> String {
-    guard seconds >= 60 else { return "—" }
-    let hours = seconds / 3600
-    let minutes = Int((Double(seconds % 3600) / 60).rounded())
-    if hours >= 24 { return "\(Int((Double(hours) / 24).rounded()))d" }
-    if hours >= 1 { return String(format: "%dh %02dm", hours, minutes) }
-    return "\(max(1, minutes))m"
 }
 
 // MARK: - Haptics

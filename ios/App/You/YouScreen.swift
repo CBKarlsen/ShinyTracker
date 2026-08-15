@@ -52,6 +52,10 @@ struct YouScreen: View {
         signingOut = true
         errorMessage = nil
         Task {
+            // Before the sign-out, not after: a Live Activity outlives the app process and the
+            // session, so a card left running would keep this account's hunt on the Lock Screen —
+            // with a working `+` — for the next person to use the phone.
+            await HuntActivityBridge.endAll()
             do {
                 try await auth.signOut()
             } catch {
