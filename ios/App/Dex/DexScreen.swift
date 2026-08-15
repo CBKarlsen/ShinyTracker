@@ -34,14 +34,13 @@ struct DexScreen: View {
                     ToolbarItem(placement: .topBarLeading) { gameToolbarButton }
                     ToolbarItem(placement: .topBarTrailing) { searchToolbarButton }
                 }
-                .safeAreaInset(edge: .top, spacing: 0) {
+                // See the note on `HuntScreen`'s: a `safeAreaBar` is chrome the system dissolves
+                // scrolling content under, so the control no longer needs to paint an opaque
+                // rectangle to keep tiles from showing through — and tiles no longer hard-clip
+                // against one.
+                .safeAreaBar(edge: .top) {
                     segmentedControl
                         .padding(.horizontal, Metrics.screenPadding)
-                        .padding(.bottom, 8)
-                        // Opaque, for the same reason the grid's pinned section headers are:
-                        // scrolled tiles pass under this strip, and the margin around the
-                        // control is transparent without it.
-                        .background(Palette.screen.color)
                 }
         }
         .task {
