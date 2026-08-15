@@ -107,8 +107,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app
+      # Do NOT hardcode a version path. The first version of this workflow said
+      # /Applications/Xcode_26.app, which does not exist on the runner image, and
+      # both macOS jobs died before running a single test. Pick the newest Xcode
+      # present and print what that was, so a toolchain mismatch shows up as a
+      # compile error with a version in the log rather than a path error.
+      - name: Select newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+          swift --version
 
       # Each package is tested on its own rather than via the app scheme: the
       # app target has no test target, and these four are where the tested
@@ -140,8 +151,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_26.app
+      # Do NOT hardcode a version path. The first version of this workflow said
+      # /Applications/Xcode_26.app, which does not exist on the runner image, and
+      # both macOS jobs died before running a single test. Pick the newest Xcode
+      # present and print what that was, so a toolchain mismatch shows up as a
+      # compile error with a version in the log rather than a path error.
+      - name: Select newest Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          echo "Selecting $latest"
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+          swift --version
 
       - name: Install XcodeGen
         run: brew install xcodegen
