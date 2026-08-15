@@ -31,6 +31,11 @@ struct HuntCard: View {
         )
         // `box-shadow: h.live ? '0 0 0 2px accent88, 0 0 38px -12px accent'
         //                     : 'inset 0 0 0 1px #1a1a22'`
+        //
+        // Only the 2px ring survives. The second shadow's `-12px` spread makes it a tight rim in
+        // CSS; SwiftUI's `.shadow` has no spread, so the transcription bloomed a wide gold haze
+        // across the whole card and the background behind it. The ring plus ``surfaceLive`` already
+        // says which card is live — the haze only said "generated".
         .overlay(
             RoundedRectangle(cornerRadius: Radii.card)
                 .strokeBorder(
@@ -38,7 +43,6 @@ struct HuntCard: View {
                     lineWidth: isLive ? 2 : 1
                 )
         )
-        .shadow(color: isLive ? Palette.hunt.alpha(0x66) : .clear, radius: 19, y: 4)
     }
 
     // MARK: Identity
@@ -71,6 +75,10 @@ struct HuntCard: View {
                     .font(Typography.count)
                     .tracking(Typography.countTracking)
                     .foregroundStyle(Palette.textPrimary.color)
+                    // The one thing the tap is *for*. Without this the number swaps in place and
+                    // a tap that worked is indistinguishable from one that didn't register.
+                    .contentTransition(.numericText(value: Double(row.count)))
+                    .animation(.snappy(duration: 0.22), value: row.count)
                 Text("ENCOUNTERS")
                     .font(Typography.overline)
                     .tracking(Typography.overlineTracking)
@@ -84,19 +92,21 @@ struct HuntCard: View {
 
     // MARK: Timer
 
-    /// The badge is read-only. Elapsed time is `total_time_seconds` from the API; the client-owned
-    /// timer that would make this tappable is DECISIONS.md D1 and is not implemented, so the card
-    /// does not offer a control that would not do anything.
+    /// The badge is read-only, and reads the client's clock (DECISIONS.md D1), not the server's
+    /// total. `HuntClock` banks the gap between encounters on every `bump`, so this is the number
+    /// that is actually true — the API's `total_time_seconds` is only the floor, and a hunt counted
+    /// entirely offline has none of this session in it at all.
     private var timerRow: some View {
         HStack(spacing: 8) {
             HStack(spacing: 6) {
                 // `border-radius:4px;background:currentColor` — the paused glyph is the filled dot.
                 Circle()
-                    .fill(Palette.textMuted.color)
+                    .fill((counting ? Palette.hunt : Palette.textMuted).color)
                     .frame(width: 8, height: 8)
-                Text(formatElapsed(row.detail.totalTimeSeconds))
+                Text(formatElapsed(model.elapsed(for: row)))
                     .font(Typography.badge)
                     .foregroundStyle(Palette.textMuted.color)
+                    .contentTransition(.numericText())
             }
             .padding(.horizontal, 11)
             .frame(height: 30)
@@ -106,7 +116,7 @@ struct HuntCard: View {
                     .strokeBorder(Palette.border.color, lineWidth: 1)
             )
 
-            Text("paused")
+            Text(counting ? "counting" : "paused")
                 .font(Typography.hint)
                 .foregroundStyle(Palette.textMuted.color)
 
@@ -117,12 +127,16 @@ struct HuntCard: View {
         .padding(.top, 12)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(
-            "Hunted for \(formatElapsed(row.detail.totalTimeSeconds)), paused"
+            "Hunted for \(formatElapsed(model.elapsed(for: row))), "
+                + (counting ? "counting" : "paused")
                 + (model.hasPendingWrites(row.id)
                     ? (model.isWaitingToRetry ? ", counts waiting to retry" : ", counts queued to sync")
                     : "")
         )
     }
+
+    /// Whether the next tap still lands in this session — see ``HuntListModel/isCounting(_:)``.
+    private var counting: Bool { model.isCounting(row) }
 
     /// An acknowledgement, not a warning: queued work is the normal state of counting offline, so
     /// this borrows the timer badge's own pill — same size, same muted colour — rather than an
@@ -160,6 +174,9 @@ struct HuntCard: View {
                     Capsule()
                         .fill(Palette.hunt.color)
                         .frame(width: geometry.size.width * row.progressRatio)
+                        // Grows with the count instead of jumping — same spring as the number, so
+                        // the two halves of one tap move together.
+                        .animation(.snappy(duration: 0.22), value: row.progressRatio)
                 }
             }
             .frame(height: Metrics.barHeight)
@@ -202,7 +219,9 @@ struct HuntCard: View {
     /// `display:flex;gap:8px;margin-top:14px` — −, the wide +N, ×N, ✦.
     private var controlRow: some View {
         HStack(spacing: 8) {
-            // `−` always corrects by exactly 1, and greys out at 0.
+            // `−` always corrects by exactly 1, and greys out at 0. It holds for the same reason
+            // `+` does, and it is what makes holding `+` safe: an overshoot is undone the same way
+            // it was made. The repeat stops on its own at 0, where the button disables.
             controlButton(label: "Remove one encounter from \(row.name)") {
                 model.bump(row.id, by: -1)
             } content: {
@@ -214,14 +233,25 @@ struct HuntCard: View {
             }
             .frame(width: Metrics.controlNarrow)
             .disabled(row.count == 0)
+            .buttonRepeatBehavior(.enabled)
+            .accessibilityHint("Hold to keep removing.")
 
             // The primary tap target. IOS_HANDOVER.md: this one control carries the feature.
             Button {
                 model.bump(row.id, by: step)
             } label: {
                 HStack(spacing: 7) {
-                    Image(systemName: "plus").font(.system(size: 15, weight: .bold))
-                    Text("+\(step) encounter\(step > 1 ? "s" : "")")
+                    // The glyph kicks upward each time the count actually moves — keyed to
+                    // `row.count`, not to `isPressed`, so a press that changed nothing (− at 0,
+                    // a bump the clamp swallowed) stays still and the button never lies about
+                    // having counted. Sped up so one bounce finishes inside a hold's repeat
+                    // interval instead of being cut off by the next; drop the option to slow it.
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                        .symbolEffect(.bounce.up, options: .speed(1.6), value: row.count)
+                    // No "+" in the string: the glyph beside it is the plus, and carrying it in
+                    // both rendered as "+ +1 encounter" on device.
+                    Text("\(step) encounter\(step > 1 ? "s" : "")")
                         .font(Typography.primaryButton)
                 }
                 .frame(maxWidth: .infinity)
@@ -238,7 +268,30 @@ struct HuntCard: View {
                 .contentShape(.rect)
             }
             .buttonStyle(PressScaleStyle())
+            // The discharge, separate from the press above. Keyed to `row.count`, so it fires when
+            // an encounter actually lands rather than when a finger touches down — a press the
+            // clamp swallowed leaves the button still. The `trigger:` overload runs the phases
+            // once and settles back on the first, which is the one-shot the plain overload isn't.
+            //
+            // Deliberately small: at ×10 with a finger held down this repeats several times a
+            // second, and anything bigger stops reading as feedback and starts reading as lag.
+            // 1.03 / 0.10 are the knobs.
+            .phaseAnimator([false, true], trigger: row.count) { button, firing in
+                button
+                    .scaleEffect(firing ? 1.03 : 1)
+                    .brightness(firing ? 0.10 : 0)
+            } animation: { firing in
+                firing ? .easeOut(duration: 0.07) : .snappy(duration: 0.2, extraBounce: 0.35)
+            }
+            // Catching up is the case this is for: a hunter who counted a stretch in their head,
+            // or forgot to log one, is not going to tap forty times. Repeat is an environment
+            // value, so it reaches the Button through `PressScaleStyle` untouched — and it is set
+            // per button rather than on the row, because ×N would cycle wildly and ✦ would
+            // re-present the found sheet. Each repeat is an ordinary `bump`: clamped at 0,
+            // coalesced by `WriteQueue`, one haptic per step so a hold ratchets audibly.
+            .buttonRepeatBehavior(.enabled)
             .accessibilityLabel("Add \(step) encounter\(step > 1 ? "s" : "") to \(row.name)")
+            .accessibilityHint("Hold to keep counting.")
 
             // ×N cycles 1 · 2 · 3 · 5 · 10 and goes gold once it is above 1.
             controlButton(
@@ -300,11 +353,18 @@ struct HuntCard: View {
 }
 
 /// `style-active="transform:scale(.97)"` on the increment button.
+///
+/// The travel is the prototype's, the curve is not: an 80ms ease-out is a CSS transition, and on a
+/// button pressed hundreds of times per hunt it reads as lag because there is no release. A spring
+/// overshoots back past 1 and lands, which is what "responsive" actually feels like on iOS.
 struct PressScaleStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            // The whole face darkens under the finger, not just the glyph on it — a button this
+            // size needs the press to be visible somewhere other than its edges.
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .animation(.snappy(duration: 0.18, extraBounce: 0.3), value: configuration.isPressed)
     }
 }
 
@@ -325,14 +385,7 @@ struct SpriteTile: View {
             Color.clear
         }
         .frame(width: size, height: size)
-        .background {
-            RadialGradient(
-                colors: [Palette.spriteTileInner.color, Palette.spriteTileOuter.color],
-                center: UnitPoint(x: 0.5, y: 0.42),
-                startRadius: 0,
-                endRadius: size * 0.72
-            )
-        }
+        .background(Palette.spriteTile.color)
         .clipShape(.rect(cornerRadius: Radii.sprite(size)))
         .accessibilityHidden(true)
     }

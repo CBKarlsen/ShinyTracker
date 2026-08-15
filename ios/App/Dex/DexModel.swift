@@ -176,11 +176,14 @@ final class DexModel {
             // overwriting a good snapshot with "nothing is blocked" would cache the degradation.
             if let status { await snapshots.save(status, as: .dex) }
         } catch {
-            if quiet || state == .ready {
-                // A snapshot is on screen — warn inline rather than replacing it with an error.
-                syncError = "Couldn't refresh the dex. \(userFacingMessage(for: error))"
-            } else {
-                state = .failed(userFacingMessage(for: error))
+            // A cancelled load was replaced by another one; that one decides the state.
+            if let message = userFacingMessage(for: error) {
+                if quiet || state == .ready {
+                    // A snapshot is on screen — warn inline rather than replacing it with an error.
+                    syncError = "Couldn't refresh the dex. \(message)"
+                } else {
+                    state = .failed(message)
+                }
             }
         }
     }
@@ -453,7 +456,9 @@ final class DexModel {
             }
         } catch {
             if wasRegistered { manualShinyIDs.insert(id) } else { manualShinyIDs.remove(id) }
-            syncError = "Couldn't save that. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't save that. \(message)"
+            }
         }
     }
 

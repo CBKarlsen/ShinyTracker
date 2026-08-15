@@ -1,3 +1,4 @@
+import ShinyTrackerAPI
 import ShinyTrackerUI
 import SwiftUI
 
@@ -7,6 +8,11 @@ import SwiftUI
 /// Two irreversible things live on one sheet on purpose, because that is where the design put
 /// them, and they are told apart by weight: found is the gold full-width button, abandon is a
 /// bare row of text that has to be tapped twice.
+///
+/// Phases live here too, and reached from ✦ rather than from a fifth control on the card: a phase
+/// starts the same way a find does — a shiny appeared — and only turns into a different action once
+/// you see it is the wrong species. The control row is also already full, and the answer to "where
+/// does the fifth button go" is usually that it doesn't.
 struct FoundSheet: View {
     /// A snapshot taken when the sheet opened. The card behind it is covered, so the count
     /// cannot move underneath.
@@ -17,8 +23,18 @@ struct FoundSheet: View {
     /// `s.abandonArm`. Sheet-local: dismissing disarms it, which is the behaviour you want.
     @State private var abandonArmed = false
     @State private var busy = false
+    /// Swaps this sheet to the species picker rather than stacking a second sheet on top of it.
+    @State private var phasing = false
 
     var body: some View {
+        if phasing {
+            PhasePicker(row: row, model: model, onCancel: { phasing = false }, onClose: onClose)
+        } else {
+            confirmBody
+        }
+    }
+
+    private var confirmBody: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 14) {
@@ -60,6 +76,11 @@ struct FoundSheet: View {
                     }
                 }
                 .buttonStyle(WideGoldButtonStyle())
+
+                // The other thing a shiny can be. Phrased as the species rather than as the
+                // jargon — "phase" is the record it writes, not the thing that just happened.
+                Button("A different shiny showed up") { phasing = true }
+                    .buttonStyle(SecondaryButtonStyle())
 
                 Button("Keep hunting") { onClose() }
                     .buttonStyle(SecondaryButtonStyle())
@@ -151,6 +172,138 @@ struct FoundSheet: View {
             if await operation() { onClose() }
             busy = false
         }
+    }
+}
+
+// MARK: - Phase
+
+/// Names the shiny that interrupted the hunt, then banks the phase.
+///
+/// A search rather than a picked-from-the-route list: the interrupter can be anything the encounter
+/// table can produce, and the hunter is looking straight at it.
+struct PhasePicker: View {
+    let row: HuntRow
+    let model: HuntListModel
+    let onCancel: () -> Void
+    let onClose: () -> Void
+
+    @State private var query = ""
+    @State private var results: [Pokemon] = []
+    @State private var searching = false
+    @State private var busy = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("What showed up?")
+                        .font(Typography.sheetHeadline)
+                        .tracking(Typography.sheetHeadlineTracking)
+                        .foregroundStyle(Palette.textPrimary.color)
+                    // Says the number out loud before it is spent. A phase is not undoable from
+                    // here, and the count is the thing it consumes.
+                    Text(
+                        """
+                        \(row.name) is at \(row.count.formatted(.number)) encounters. Logging a \
+                        phase banks that count against the shiny you pick and starts this hunt \
+                        again from zero.
+                        """
+                    )
+                    .font(Typography.stat)
+                    .lineSpacing(4)
+                    .foregroundStyle(Palette.textMuted.color)
+                }
+
+                TextField("Search species", text: $query)
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(Typography.primaryButton)
+                    .foregroundStyle(Palette.textPrimary.color)
+                    .padding(.horizontal, 14)
+                    .frame(height: 46)
+                    .background(Palette.field.color, in: .rect(cornerRadius: Radii.row))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radii.row)
+                            .strokeBorder(Palette.border.color, lineWidth: 1)
+                    )
+
+                if !results.isEmpty { resultList }
+                emptyHint
+
+                Button("Back") { onCancel() }
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 22)
+            .padding(.bottom, 34)
+            .disabled(busy)
+        }
+        .scrollIndicators(.hidden)
+        .presentationDetents([.large])
+        .presentationCornerRadius(Radii.sheet)
+        .presentationBackground(Palette.sheet.color)
+        .presentationDragIndicator(.visible)
+        // `.task(id:)` cancels the previous run on every keystroke, so the sleep below *is* the
+        // debounce — no timer, no cancellation bookkeeping of our own.
+        .task(id: query) { await search() }
+    }
+
+    private var resultList: some View {
+        VStack(spacing: 8) {
+            ForEach(results) { pokemon in
+                Button {
+                    busy = true
+                    Task {
+                        if await model.logPhase(row.id, pokemonID: pokemon.id) { onClose() }
+                        busy = false
+                    }
+                } label: {
+                    HStack(spacing: 13) {
+                        SpriteTile(pokemonID: pokemon.id, size: 40, served: pokemon.shinySpriteURL)
+                        Text(pokemon.name.capitalized)
+                            .font(Typography.listTitle)
+                            .foregroundStyle(Palette.textPrimary.color)
+                        Spacer(minLength: 8)
+                        Text((pokemon.types ?? []).map(\.capitalized).joined(separator: " · "))
+                            .font(Typography.stat)
+                            .foregroundStyle(Palette.textMuted.color)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 14)
+                    .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radii.row)
+                            .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                    )
+                    .contentShape(.rect)
+                }
+                .buttonStyle(PressScaleStyle())
+                .accessibilityLabel("Log \(pokemon.name.capitalized) as a phase")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var emptyHint: some View {
+        if results.isEmpty, !searching, query.trimmingCharacters(in: .whitespaces).count >= 2 {
+            Text("Nothing matches \"\(query)\". Try a different spelling.")
+                .font(Typography.hint)
+                .foregroundStyle(Palette.textMuted.color)
+        }
+    }
+
+    private func search() async {
+        let trimmed = query.trimmingCharacters(in: .whitespaces)
+        guard trimmed.count >= 2 else {
+            results = []
+            return
+        }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        searching = true
+        results = await model.searchPokemon(trimmed)
+        searching = false
     }
 }
 

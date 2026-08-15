@@ -239,7 +239,9 @@ final class NewHuntModel {
             Haptics.notify(.success)
             return true
         } catch {
-            self.error = "Couldn't start that hunt. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                self.error = "Couldn't start that hunt. \(message)"
+            }
             return false
         }
     }

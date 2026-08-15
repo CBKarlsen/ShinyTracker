@@ -44,8 +44,6 @@ public enum Palette {
     public static let screen = Swatch(0x060608)
     /// Ink on a gold/accent fill: `color:#060608`.
     public static let onAccent = Swatch(0x060608)
-    /// Warm bloom in the top-right: `radial-gradient(420px 260px at 78% -6%,#1d1a12 0%,…)`.
-    public static let glow = Swatch(0x1D1A12)
 
     // --- surfaces ---
     /// Cards, header buttons, history rows: `background:#111118`.
@@ -111,10 +109,14 @@ public enum Palette {
     public static let danger = Swatch(0xFF7373)
 
     // --- sprite tile ---
-    // `radial-gradient(circle at 50% 42%,#23232f 0%,#14141c 72%)` — the layer behind every
-    // sprite, so a row never renders as an empty hole while the image loads or 404s.
-    public static let spriteTileInner = Swatch(0x23232F)
-    public static let spriteTileOuter = Swatch(0x14141C)
+    /// The plate behind every sprite, so a row never renders as an empty hole while the image
+    /// loads or 404s.
+    ///
+    /// The prototype fills it with `radial-gradient(circle at 50% 42%,#23232f 0%,#14141c 72%)`.
+    /// Flat here, at the gradient's *centre* value rather than its average: the plate has to stay
+    /// legible on ``surfaceLive`` (#17151B) as well as on ``surface``, and the average (~#1B1B25)
+    /// disappears against the live card — the one card you look at most.
+    public static let spriteTile = Swatch(0x23232F)
 
 }
 

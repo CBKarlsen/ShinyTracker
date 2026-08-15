@@ -181,6 +181,33 @@ final class HuntListModel {
 
     func step(for id: UUID) -> Int { stepByHunt[id] ?? 1 }
 
+    /// Active hunting time to show for a row.
+    ///
+    /// D1: the client owns this number, so its clock is the truth whenever there is one, and the
+    /// server's total is the floor rather than the answer — another device may have counted while
+    /// this one was away, which is the same case ``HuntClock/raise(to:)`` exists for.
+    ///
+    /// Takes the row rather than an id so the card does not pay a lookup per render.
+    func elapsed(for row: HuntRow) -> Int {
+        max(clocks[row.id]?.totalSeconds ?? 0, row.detail.totalTimeSeconds)
+    }
+
+    /// Whether the next tap would still be banked as this same session.
+    ///
+    /// The same question ``HuntClock/record(at:idleThreshold:)`` asks, asked ahead of time: past
+    /// the threshold the gap stops being credited and the clock restarts, so the badge says
+    /// "paused" because the clock really has paused.
+    ///
+    /// ponytail: derived at render, not ticked. It goes stale in one direction — a card left
+    /// on screen keeps saying "counting" until something re-renders it — and every tap, refresh
+    /// and foreground re-renders. A `TimelineView` per visible card would fix that; it is not
+    /// worth a tick per second per card to correct a label nobody is looking at.
+    func isCounting(_ row: HuntRow) -> Bool {
+        guard let last = clocks[row.id]?.lastEncounterAt else { return false }
+        let threshold = HuntClock.idleThreshold(avgTimeSeconds: row.detail.avgTimeSeconds)
+        return Date().timeIntervalSince(last) <= threshold
+    }
+
     /// Whether this hunt has a write sitting in the queue. The UI's cue that counting happened —
     /// not that anything is wrong: the count and the buttons already read correctly regardless,
     /// so this exists only to acknowledge the queue, not to gate on it.
@@ -201,6 +228,16 @@ final class HuntListModel {
     /// Clears the permanent-failure banner. Nothing to undo server-side — those writes are already
     /// gone from the queue — this only stops telling the user about it.
     func dismissFailedWrites() { failedWrites = [] }
+
+    /// Species search for the phase picker. A passthrough to the client this model already owns —
+    /// naming the interrupting shiny is the only thing phase logging needs that counting does not,
+    /// and it is not worth a second model and a second client to ask one question.
+    ///
+    /// Online-only, and that is fine: unlike a count, there is nothing to lose by failing here.
+    /// Nothing is queued until a species is actually picked.
+    func searchPokemon(_ query: String) async -> [Pokemon] {
+        (try? await client.pokemon(search: query)) ?? []
+    }
 
     func cycleStep(_ id: UUID) {
         let steps = Self.steps
@@ -334,11 +371,16 @@ final class HuntListModel {
             // offline session go out on the same pull-to-refresh that reveals it is over.
             await drain()
         } catch {
-            if quiet || state == .ready {
-                // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
-                syncError = "Couldn't refresh your hunts. \(message(for: error))"
-            } else {
-                state = .failed(message(for: error))
+            // Nothing to say means say nothing — a cancelled load is one this app replaced, and the
+            // load that replaced it decides the state. Falling through to `.failed` here would put
+            // an error page over a refresh that is still in flight.
+            if let message = message(for: error) {
+                if quiet || state == .ready {
+                    // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
+                    syncError = "Couldn't refresh your hunts. \(message)"
+                } else {
+                    state = .failed(message)
+                }
             }
         }
     }
@@ -415,6 +457,16 @@ final class HuntListModel {
                 dropped.append(await dropPermanently(entry))
                 continue
             }
+            // A phase that has already gone out once is never sent again. `POST /hunts/{id}/phases`
+            // carries no `write_id` — the server has nothing to dedupe on, unlike every other write
+            // here — so a retry after a lost response banks a *second* phase and zeroes whatever has
+            // been counted since the first one landed. Losing the phase record is bad; silently
+            // deleting a hunter's encounters is worse, so this errs at the record and says so.
+            // ponytail: give the phase endpoint a write_id and this collapses into the normal retry.
+            if case .phase = entry.kind, entry.attempted {
+                dropped.append(await dropPermanently(entry))
+                continue
+            }
             // Marked and persisted BEFORE the request goes out. `attempted` means "may have reached
             // the server", not "was sent": a request can apply server-side with its response lost,
             // and an entry that survives a crash still looking unsent would be merged into by the
@@ -424,7 +476,20 @@ final class HuntListModel {
             queue.markAttempted(entry.id)
             await persist()
             do {
-                let saved = try await client.updateHunt(huntID: entry.huntID, request(for: entry))
+                // A phase is the one write that is not a PATCH: it archives the count the server
+                // finds on the row and resets it, which is a different endpoint and a different
+                // response type. Only the resulting count matters to either path.
+                let storedCount: Int
+                switch entry.kind {
+                case .phase(let pokemonID):
+                    storedCount = try await client.logPhase(
+                        huntID: entry.huntID, LogPhaseRequest(pokemonID: pokemonID)
+                    ).encounterCount
+                case .count, .found:
+                    storedCount = try await client.updateHunt(
+                        huntID: entry.huntID, request(for: entry)
+                    ).encounterCount
+                }
                 queue.remove(entry.id)
                 await persist()
                 if case .found = entry.kind {
@@ -441,7 +506,7 @@ final class HuntListModel {
                     // entry's own delta is no longer in it.
                     rows[index].count = HuntCountPolicy.reconciled(
                         local: rows[index].count,
-                        stored: saved.encounterCount + queue.pendingDelta(for: entry.huntID))
+                        stored: queue.projectedCount(from: storedCount, for: entry.huntID))
                     // The server has now confirmed a number for this row, so a later response that
                     // is lower than what is on screen can be recognised as stale.
                     serverBacked.insert(entry.huntID)
@@ -495,6 +560,13 @@ final class HuntListModel {
         await persist()
         let name = name(of: entry.huntID)
         guard case .count(let delta) = entry.kind else {
+            if case .phase = entry.kind {
+                // The screen already zeroed on the assumption this would land. Nothing is restored
+                // here on purpose: the phase may well have applied server-side (that is exactly why
+                // it is not retried), so the honest move is to say the record is unreliable and let
+                // the next refresh take whichever count the server actually holds.
+                return "\(name)'s phase couldn't be saved. Pull to refresh to see its real count."
+            }
             return "\(name) couldn't be marked found. It's still an active hunt."
         }
         if let index = rows.firstIndex(where: { $0.id == entry.huntID }) {
@@ -526,6 +598,13 @@ final class HuntListModel {
             // safe when the first response was lost.
             return UpdateHuntRequest(
                 status: .completed, encounterDelta: 0, writeID: entry.id, totalTimeSeconds: seconds)
+        case .phase:
+            // Unreachable — `drain` routes phases to `POST /hunts/{id}/phases` before it consults
+            // this. A zero-delta no-op rather than a trap: if that invariant ever breaks, a PATCH
+            // that changes nothing costs one wasted request, and a crash inside the drain would
+            // take the whole queue's session down with it.
+            return UpdateHuntRequest(
+                encounterDelta: 0, writeID: entry.id, totalTimeSeconds: seconds)
         }
     }
 
@@ -602,6 +681,32 @@ final class HuntListModel {
         return true
     }
 
+    /// Banks a phase: the wrong shiny turned up, so the count it took is archived against that
+    /// species and the hunt starts again from zero.
+    ///
+    /// Queued rather than sent, like counting and for the same reason — a phase is the moment a
+    /// hunt gets *interesting*, and telling a hunter to find signal first is how the record gets
+    /// lost. Ordering does the rest: the entry lands behind every count in front of it, so the
+    /// number the server archives is the one that was on screen.
+    ///
+    /// The count drops to zero here and not on the response. `WriteQueue.projectedCount` knows a
+    /// queued phase zeroes the row, so a refresh landing in between agrees with the screen instead
+    /// of resurrecting the count the phase just ended.
+    @discardableResult
+    func logPhase(_ id: UUID, pokemonID: Int) async -> Bool {
+        guard let index = rows.firstIndex(where: { $0.id == id }) else { return false }
+        queue.enqueue(.phase(pokemonID: pokemonID), for: id)
+        rows[index].count = 0
+        liveHuntID = id
+        syncError = nil
+        // The clock survives: a phase ends a count, not a hunt. Hours spent reaching the phase are
+        // still hours spent on this hunt, and the server keeps the max of what it is sent.
+        await persist()
+        Haptics.notify(.success)
+        scheduleDrain()
+        return true
+    }
+
     /// Deletes the hunt outright — no History row, nothing registered. There is no undo: the
     /// server has no soft delete, so the sheet arms this behind a second tap.
     ///
@@ -620,7 +725,9 @@ final class HuntListModel {
             Haptics.notify(.warning)
             return true
         } catch {
-            syncError = "Couldn't abandon that hunt. \(message(for: error))"
+            if let message = message(for: error) {
+                syncError = "Couldn't abandon that hunt. \(message)"
+            }
             return false
         }
     }
@@ -647,7 +754,7 @@ final class HuntListModel {
     /// server has not been told about. The sum lives in ``WriteQueue/pendingDelta(for:)``, where
     /// it is tested.
     private func restoredCount(for detail: HuntDetail) -> Int {
-        max(0, detail.encounterCount + queue.pendingDelta(for: detail.id))
+        queue.projectedCount(from: detail.encounterCount, for: detail.id)
     }
 
     /// Hunts the queue still owes a write for. Their on-screen count is newer than any response
@@ -660,10 +767,11 @@ final class HuntListModel {
         Set(queue.entries.filter { $0.kind == .found }.map(\.huntID))
     }
 
-    private func message(for error: any Error) -> String { userFacingMessage(for: error) }
+    private func message(for error: any Error) -> String? { userFacingMessage(for: error) }
 }
 
-/// Turns any error this app throws into something worth showing a user.
+/// Turns any error this app throws into something worth showing a user, or `nil` when there is
+/// nothing worth saying.
 ///
 /// Shared by the hunt list and the login screen, which previously disagreed: login
 /// used `localizedDescription` unconditionally. That matters because `APIError` and
@@ -673,7 +781,19 @@ final class HuntListModel {
 /// endpoint and server message those types exist to carry.
 ///
 /// `URLError` is the opposite case: no useful `description`, but a good localized one.
-func userFacingMessage(for error: any Error) -> String {
+///
+/// Cancellation returns `nil`. A cancelled request is not a failure — it is work this app
+/// superseded on purpose, by re-running a `.task(id:)`, leaving a screen, or starting the refresh
+/// that replaces it — and the thing that cancelled it is almost always about to produce the real
+/// answer. Reporting it produced "Couldn't refresh your hunts. cancelled", which names the user's
+/// hunts in a sentence about an internal detail they cannot act on. Optional rather than an empty
+/// string so a caller cannot accidentally render the prefix on its own.
+func userFacingMessage(for error: any Error) -> String? {
+    if error is CancellationError { return nil }
+    // URLSession reports the same thing its own way (`NSURLErrorCancelled`, -999) when the task is
+    // torn down rather than the Swift task, so both spellings have to be caught or the bug simply
+    // moves to whichever layer noticed first.
+    if let url = error as? URLError, url.code == .cancelled { return nil }
     if let api = error as? APIError { return api.description }
     if let expired = error as? SessionExpiredError { return expired.description }
     return error.localizedDescription

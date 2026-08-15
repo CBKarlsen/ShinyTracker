@@ -38,10 +38,12 @@ struct DexScreen: View {
                     segmentedControl
                         .padding(.horizontal, Metrics.screenPadding)
                         .padding(.bottom, 8)
-                        // Opaque, for the same reason the grid's pinned section headers are:
-                        // scrolled tiles pass under this strip, and the margin around the
-                        // control is transparent without it.
-                        .background(Palette.screen.color)
+                        // Hides the tiles passing under it, for the same reason the grid's pinned
+                        // section headers do — the margin around the control is transparent without
+                        // a background. A material rather than the flat fill it used to be, so the
+                        // collapsing large title dissolves under this strip instead of being clipped
+                        // by it. See the longer note on `HuntScreen`'s.
+                        .background(.bar)
                 }
         }
         .task {
@@ -221,9 +223,13 @@ struct DexScreen: View {
                 if let message = model.syncError ?? model.refusal {
                     Text(message)
                         .font(Typography.hint)
+                        // Same reason as HuntScreen's: a Dex screen must not print in Nuzlocke's
+                        // blue. The two tiers survive the change though — a `refusal` explains
+                        // something ("shiny locked in every game") and belongs with the hint it
+                        // sits beside, while a `syncError` is a failure and has to outrank it.
                         .foregroundStyle(
                             model.syncError == nil
-                                ? Palette.textSecondary.color : Palette.nuzlocke.color
+                                ? Palette.textMuted.color : Palette.textSecondary.color
                         )
                         .padding(.vertical, 6)
                         .padding(.horizontal, 2)
@@ -368,14 +374,7 @@ struct DexSprite: View {
             // The sprite plate, always. `Color.clear` left a hole while loading, which is what
             // makes a list look like it is still working after the text has arrived.
             RoundedRectangle(cornerRadius: Radii.sprite(size))
-                .fill(
-                    RadialGradient(
-                        colors: [Palette.spriteTileInner.color, Palette.spriteTileOuter.color],
-                        center: UnitPoint(x: 0.5, y: 0.42),
-                        startRadius: 0,
-                        endRadius: size * 0.72
-                    )
-                )
+                .fill(Palette.spriteTile.color)
             if let image {
                 Image(uiImage: image)
                     .resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated

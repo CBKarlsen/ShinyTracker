@@ -18,6 +18,11 @@ public struct PendingWrite: Codable, Equatable, Identifiable, Sendable {
     public enum Kind: Codable, Equatable, Sendable {
         case count(delta: Int)
         case found
+        /// An interrupting shiny: the wrong species turned up, so the hunt banks a phase and starts
+        /// again from zero. Carries only the species — the server reads the count it is archiving
+        /// off the row itself, which is exactly why this may never overtake the counts in front of
+        /// it in the queue.
+        case phase(pokemonID: Int)
     }
 }
 
@@ -44,11 +49,13 @@ public struct WriteQueue: Codable, Equatable, Sendable {
     /// Adds one write, coalescing it into the queue's tail when that's safe.
     ///
     /// Only a `.count` merges, and only into the *last* entry, and only when that entry is for the
-    /// same hunt, is itself a `.count`, and is not `attempted`. `.found` never merges — it isn't a
-    /// `.count`, so the same-kind check above already excludes it in both directions, as both the
-    /// thing being merged and the thing merged into. That is deliberate: a completion needs no
-    /// separate barrier case, because appending after a `.found` fails the "last entry is a .count"
-    /// check just as merging *through* one would.
+    /// same hunt, is itself a `.count`, and is not `attempted`. Neither `.found` nor `.phase` ever
+    /// merges — neither is a `.count`, so the same-kind check above already excludes them in both
+    /// directions, as both the thing being merged and the thing merged into. That is deliberate:
+    /// they need no separate barrier case, because appending after one fails the "last entry is a
+    /// .count" check just as merging *through* one would. For `.phase` that barrier is not a
+    /// nicety — the server archives whatever count it finds on the row, so a tap that slipped in
+    /// front of a phase would be banked into the wrong hunt life.
     public mutating func enqueue(_ kind: PendingWrite.Kind, for huntID: UUID) {
         if case .count(let delta) = kind,
             let last = entries.last,
@@ -69,21 +76,34 @@ public struct WriteQueue: Codable, Equatable, Sendable {
             PendingWrite(id: UUID(), huntID: huntID, kind: kind, attempted: false, failures: 0))
     }
 
-    /// How far ahead of the server this hunt's screen count is: the sum of every queued delta for
-    /// it.
+    /// What this hunt's screen should read, given the last count the server confirmed.
     ///
     /// The server's stored count only ever reflects the writes it has actually seen, so it is the
-    /// right number for a row only once this is added back. Both places that need it are places
-    /// where a count is taken from the server or from a snapshot — a drain's response, which is
-    /// blind to everything queued behind the entry that produced it, and a cached restore, whose
-    /// snapshot predates every queued tap by construction.
+    /// right number for a row only once the queue is added back. Both callers are places where a
+    /// count arrives from the server or from a snapshot — a drain's response, which is blind to
+    /// everything queued behind the entry that produced it, and a cached restore, whose snapshot
+    /// predates every queued tap by construction.
+    ///
+    /// Summing the deltas is not enough once a `.phase` can be queued: a phase zeroes the count
+    /// server-side, so every delta enqueued *before* one is already spent by the time the deltas
+    /// behind it apply. Adding all of them back would resurrect a phased-away count on every
+    /// refresh. So this reads back-to-front and stops at the most recent phase, whose reset makes
+    /// both the stored total and everything older than it irrelevant.
     ///
     /// A `.found` contributes nothing: a completion carries no encounters of its own.
-    public func pendingDelta(for huntID: UUID) -> Int {
-        entries.reduce(0) { total, entry in
-            guard entry.huntID == huntID, case .count(let delta) = entry.kind else { return total }
-            return total + delta
+    public func projectedCount(from stored: Int, for huntID: UUID) -> Int {
+        var pending = 0
+        for entry in entries.reversed() where entry.huntID == huntID {
+            switch entry.kind {
+            case .count(let delta):
+                pending += delta
+            case .phase:
+                return max(0, pending)
+            case .found:
+                continue
+            }
         }
+        return max(0, stored + pending)
     }
 
     /// Puts an older queue in front of this one.

@@ -60,7 +60,9 @@ struct YouScreen: View {
                 // `LocalizedError`, so `localizedDescription` silently degrades them to the
                 // generic "operation couldn't be completed". Same reason `LoginView` routes
                 // through it.
-                errorMessage = "Couldn't sign out — \(userFacingMessage(for: error))"
+                if let message = userFacingMessage(for: error) {
+                    errorMessage = "Couldn't sign out — \(message)"
+                }
             }
             signingOut = false
         }

@@ -207,7 +207,7 @@ private let huntB = UUID()
 /// The remainder a server response knows nothing about. An entry's response reflects that entry
 /// only, so reconciling a row against it without this puts the screen back to before everything
 /// still queued.
-@Test func pendingDeltaSumsOnlyThisHuntsQueuedCounts() {
+@Test func projectedCountAddsOnlyThisHuntsQueuedCounts() {
     var queue = WriteQueue()
     queue.enqueue(.count(delta: 5), for: huntA)
     let first = try! #require(queue.next)
@@ -216,13 +216,13 @@ private let huntB = UUID()
     queue.enqueue(.count(delta: 100), for: huntB)
     queue.enqueue(.found, for: huntA)      // a completion carries no encounters of its own
 
-    #expect(queue.pendingDelta(for: huntA) == 2)
-    #expect(queue.pendingDelta(for: huntB) == 100)
-    #expect(queue.pendingDelta(for: UUID()) == 0)
+    #expect(queue.projectedCount(from: 100, for: huntA) == 102)
+    #expect(queue.projectedCount(from: 0, for: huntB) == 100)
+    #expect(queue.projectedCount(from: 40, for: UUID()) == 40)
 }
 
 /// Drained entries are removed, so what remains is exactly what the server has not been told.
-@Test func pendingDeltaShrinksAsEntriesAreRemoved() {
+@Test func projectedCountShrinksAsEntriesAreRemoved() {
     var queue = WriteQueue()
     queue.enqueue(.count(delta: 5), for: huntA)
     let sent = try! #require(queue.next)
@@ -230,5 +230,46 @@ private let huntB = UUID()
     queue.enqueue(.count(delta: -3), for: huntA)
 
     queue.remove(sent.id)
-    #expect(queue.pendingDelta(for: huntA) == -3)
+    #expect(queue.projectedCount(from: 10, for: huntA) == 7)
+}
+
+/// A queued phase zeroes the row server-side, so nothing enqueued before it — and not the stored
+/// total either — survives into the number the screen should show. Without this a refresh landing
+/// between the phase and its drain resurrects the count the phase just ended.
+@Test func projectedCountIgnoresEverythingBeforeAQueuedPhase() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 50), for: huntA)
+    queue.enqueue(.phase(pokemonID: 19), for: huntA)
+    queue.enqueue(.count(delta: 3), for: huntA)
+
+    #expect(queue.projectedCount(from: 8_000, for: huntA) == 3)
+}
+
+/// A phase with nothing counted behind it leaves the hunt at zero, whatever the server still holds.
+@Test func projectedCountIsZeroDirectlyAfterAPhase() {
+    var queue = WriteQueue()
+    queue.enqueue(.phase(pokemonID: 19), for: huntA)
+
+    #expect(queue.projectedCount(from: 8_192, for: huntA) == 0)
+}
+
+/// One hunt's phase must not zero another's.
+@Test func projectedCountScopesThePhaseResetToItsOwnHunt() {
+    var queue = WriteQueue()
+    queue.enqueue(.phase(pokemonID: 19), for: huntA)
+    queue.enqueue(.count(delta: 7), for: huntB)
+
+    #expect(queue.projectedCount(from: 500, for: huntB) == 507)
+}
+
+/// A phase is a barrier: the server archives whatever count it finds on the row, so a tap made
+/// after one must never merge back through it into the entry in front.
+@Test func phaseNeverMergesAndBlocksCoalescingThroughIt() {
+    var queue = WriteQueue()
+    queue.enqueue(.count(delta: 5), for: huntA)
+    queue.enqueue(.phase(pokemonID: 19), for: huntA)
+    queue.enqueue(.count(delta: 3), for: huntA)
+
+    #expect(queue.entries.count == 3)
+    #expect(queue.entries.map(\.kind) == [.count(delta: 5), .phase(pokemonID: 19), .count(delta: 3)])
 }
