@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 interface UserRow {
 	id: string;
@@ -11,43 +12,56 @@ interface UserRow {
 }
 
 const API = API_BASE;
-function authHeaders(token: string) {
-	return {
-		Authorization: `Bearer ${token}`,
-		"Content-Type": "application/json",
-	};
-}
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export default function AdminUsers() {
-	const { token, userId } = useAuth();
+	const { token, userId, logout } = useAuth();
 	const [users, setUsers] = useState<UserRow[]>([]);
 	const [error, setError] = useState("");
 
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		setError("Your session expired — please sign in again.");
+	}, [logout]);
+
 	useEffect(() => {
-		fetch(`${API}/api/admin/users`, { headers: authHeaders(token!) })
+		authedFetch(`${API}/api/admin/users`, token, {}, handleSessionExpired)
 			.then((r) => r.json())
 			.then((d) => setUsers(d ?? []))
-			.catch(() => {});
-	}, [token]);
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
+			});
+	}, [token, handleSessionExpired]);
 
 	const toggleAdmin = async (user: UserRow) => {
 		if (user.id === userId && user.is_admin) {
 			setError("You cannot remove your own admin privileges");
 			return;
 		}
-		const res = await fetch(`${API}/api/admin/users/${user.id}`, {
-			method: "PATCH",
-			headers: authHeaders(token!),
-			body: JSON.stringify({ is_admin: !user.is_admin }),
-		});
-		if (!res.ok) {
-			const t = await res.text();
-			setError(t);
-			return;
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/users/${user.id}`,
+				token,
+				{
+					method: "PATCH",
+					headers: JSON_HEADERS,
+					body: JSON.stringify({ is_admin: !user.is_admin }),
+				},
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError(await res.text());
+				return;
+			}
+			setUsers((prev) =>
+				prev.map((u) =>
+					u.id === user.id ? { ...u, is_admin: !u.is_admin } : u,
+				),
+			);
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
+			setError("Failed to update user");
 		}
-		setUsers((prev) =>
-			prev.map((u) => (u.id === user.id ? { ...u, is_admin: !u.is_admin } : u)),
-		);
 	};
 
 	return (

@@ -31,8 +31,13 @@ targets:
     type: application
     platform: iOS
     sources:
+      # App/Assets.xcassets and App/PrivacyInfo.xcprivacy are picked up by this recursive path;
+      # the manifest needs `buildPhase: resources` spelled out because xcodegen does not know the
+      # .xcprivacy extension and would otherwise drop it out of the bundle entirely.
       - path: App
-        excludes: ["Config/**"]
+        excludes: ["Config/**", "PrivacyInfo.xcprivacy"]
+      - path: App/PrivacyInfo.xcprivacy
+        buildPhase: resources
     configFiles:
       Debug: App/Config/Secrets.xcconfig
       Release: App/Config/Secrets.xcconfig
@@ -50,7 +55,13 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # iPhone only. The design is a 390pt phone column throughout and iPad has never been
+        # run, let alone laid out — "1,2" shipped a universal binary whose iPad half nobody
+        # has ever seen. Widen it again when there is an iPad layout to widen it for.
+        TARGETED_DEVICE_FAMILY: "1"
+        # Without this the asset catalog compiles but no icon is assigned, and the upload is
+        # rejected for a missing 1024×1024 marketing icon.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
         # Sourced from Secrets.xcconfig (gitignored) rather than set here, so a personal
         # team id is never committed AND survives `xcodegen generate` — setting it in
@@ -72,6 +83,10 @@ targets:
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
         # Read by APIConfig.fromBundle().
         API_BASE_URL: $(API_BASE_URL)
+        # The app's only cryptography is HTTPS (URLSession) and the SHA-256 nonce hash for Sign
+        # in with Apple — both exempt. Declaring it here is what stops App Store Connect asking
+        # the export-compliance question on every single upload.
+        ITSAppUsesNonExemptEncryption: false
         # Permits cleartext HTTP to loopback / .local / private-range addresses ONLY,
         # so the simulator can reach a Go API running on localhost:8080 before the
         # service is deployed. This is NOT NSAllowsArbitraryLoads — public hosts still
@@ -90,11 +105,8 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        UISupportedInterfaceOrientations~ipad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
+        # The `~ipad` orientation list is gone with TARGETED_DEVICE_FAMILY: "1" — it described
+        # a device the binary no longer installs on.
     # NO `entitlements:` block on purpose. xcodegen would write CODE_SIGN_ENTITLEMENTS
     # into the target, which overrides the settings block above and makes the entitlement
     # unconditional. Instead App/ShinyTracker.entitlements is a checked-in file, applied
@@ -136,7 +148,8 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
+        # Must match the host app's — an extension wider than its container fails validation.
+        TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
         # Deliberately NOT $(ENTITLEMENTS_FILE): that file is the *app's*, and it carries Sign in

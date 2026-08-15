@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
@@ -10,6 +10,7 @@ import type {
 	Pokemon,
 	PokemonRoute,
 } from "../types/models";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import { getSpriteUrl, matchesSearch } from "../utils/pokemon";
 import DexDrawer from "./DexDrawer";
 import type { HuntDetail } from "./HistoricHunts";
@@ -36,8 +37,12 @@ const Collection: React.FC<{
 	onFocusHandled?: () => void;
 	onHuntStarted?: () => void;
 }> = ({ onStartHunt, focusPokemonId, onFocusHandled, onHuntStarted }) => {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const { showError } = useNotification();
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 	const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 	const [caughtIds, setCaughtIds] = useState<Set<number>>(new Set());
 	const [blocked, setBlocked] = useState<{
@@ -72,12 +77,13 @@ const Collection: React.FC<{
 			try {
 				const [pokeRes, huntsRes, statusRes, gamesRes] = await Promise.all([
 					fetch(`${API_BASE}/api/pokemon?limit=all`),
-					fetch(`${API_BASE}/api/hunts`, {
-						headers: { Authorization: `Bearer ${token}` },
-					}),
-					fetch(`${API_BASE}/api/dex/status`, {
-						headers: { Authorization: `Bearer ${token}` },
-					}),
+					authedFetch(`${API_BASE}/api/hunts`, token, {}, handleSessionExpired),
+					authedFetch(
+						`${API_BASE}/api/dex/status`,
+						token,
+						{},
+						handleSessionExpired,
+					),
 					fetch(`${API_BASE}/api/games`),
 				]);
 				if (pokeRes.ok && huntsRes.ok) {
@@ -103,6 +109,7 @@ const Collection: React.FC<{
 					setGames((await gamesRes.json()) || []);
 				}
 			} catch (err: unknown) {
+				if (err instanceof SessionExpiredError) return;
 				showError(
 					(err as Error).message || "Failed to fetch Pokedex information.",
 				);
@@ -112,7 +119,7 @@ const Collection: React.FC<{
 			}
 		};
 		fetchData();
-	}, [token]);
+	}, [token, handleSessionExpired, showError]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch the dex on every render
 	useEffect(() => {
@@ -260,6 +267,7 @@ const Collection: React.FC<{
 					<input
 						className="input"
 						placeholder="Search name or #…"
+						aria-label="Search Pokedex"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						style={{ width: 180 }}
@@ -408,6 +416,14 @@ const Collection: React.FC<{
 										key={`${s.key}-${e.pokemonId}`}
 										className={`dex-cell ${caught ? "caught" : e.state}`}
 										onClick={() => setDrawerId(e.pokemonId)}
+										onKeyDown={(ev) => {
+											if (ev.key === "Enter" || ev.key === " ") {
+												ev.preventDefault();
+												setDrawerId(e.pokemonId);
+											}
+										}}
+										role="button"
+										tabIndex={0}
 										title={label}
 									>
 										<img

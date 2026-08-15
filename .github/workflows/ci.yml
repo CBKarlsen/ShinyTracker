@@ -1,0 +1,170 @@
+name: CI
+
+# Every gate in this repo used to be a command someone had to remember to type,
+# and Railway deploys on push with nothing in front of it. This is that gate.
+#
+# Split into two jobs on purpose: `checks` runs on Ubuntu (free minutes) and
+# covers the two layers that deploy. `swift` needs a macOS runner, which bills
+# at 10x — it is worth it for 138 tests over the odds engine and the offline
+# write queue, but keep an eye on it if the free quota gets tight.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Go + web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      # Node 20+ is required, not optional: the Vite 8 toolchain crashes on
+      # Node 19 and below (`node:util` styleText), and `tsc -b` silently
+      # no-ops rather than failing, so a too-old Node reads as a green build.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: go build
+        working-directory: backend
+        run: go build ./...
+
+      - name: go vet
+        working-directory: backend
+        run: go vet ./...
+
+      - name: gofmt
+        working-directory: backend
+        run: |
+          unformatted=$(gofmt -l ./internal ./cmd)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt needed on:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go test
+        working-directory: backend
+        run: go test ./... -cover
+
+      - name: npm ci
+        working-directory: frontend
+        run: npm ci
+
+      - name: typecheck
+        working-directory: frontend
+        run: npx tsc -b
+
+      # config.ts throws at module load when PROD and VITE_API_URL is unset, so a
+      # misconfigured production bundle fails loudly instead of quietly pointing
+      # at localhost. Vite does not execute app code during a build, so the build
+      # would pass either way — but frontend/.env is gitignored and absent here,
+      # so without this the artifact CI produces is one that cannot boot. A dummy
+      # host keeps the step representative. Real value is a Railway build arg;
+      # see docs/DEPLOY.md.
+      - name: build
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://ci.invalid
+        run: npm run build
+
+      # The cross-language contract. shared/odds_anchors.json is the source of
+      # truth for every formula; Go asserts it in internal/calc/anchors_test.go,
+      # Swift in ShinyTrackerKit, and this is the web engine's half. All three
+      # must agree or the odds a user sees depend on which client they opened.
+      - name: odds anchors (web engine)
+        working-directory: frontend
+        run: npm run check:anchors
+
+      # Informational, NOT a gate. Biome reports ~162 pre-existing errors across
+      # the frontend (useButtonType, noExplicitAny, formatting) that predate this
+      # workflow. Gating on it would mean a permanently red build, which trains
+      # everyone to ignore CI — worse than no lint at all. The count is in the log
+      # so it stays visible; flip this to a real gate once the backlog is cleared.
+      - name: lint (informational)
+        working-directory: frontend
+        continue-on-error: true
+        run: npm run lint
+
+  swift:
+    name: Swift packages
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+
+      # Each package is tested on its own rather than via the app scheme: the
+      # app target has no test target, and these four are where the tested
+      # logic actually lives. ShinyTrackerKit's odds-anchor test walks up from
+      # #filePath to find shared/odds_anchors.json, so it only works inside a
+      # full checkout — which is what actions/checkout gives us.
+      - name: ShinyTrackerKit
+        working-directory: ios/ShinyTrackerKit
+        run: swift test
+
+      - name: ShinyTrackerAPI
+        working-directory: ios/ShinyTrackerAPI
+        run: swift test
+
+      - name: ShinyTrackerUI
+        working-directory: ios/ShinyTrackerUI
+        run: swift test
+
+      - name: ShinyTrackerAuth
+        working-directory: ios/ShinyTrackerAuth
+        run: swift test
+
+  # The app target itself. Separate from `swift` because it needs XcodeGen and
+  # a simulator SDK, and because it is the job most likely to break on an Xcode
+  # bump — keeping it apart makes that obvious from the job list alone.
+  ios-app:
+    name: iOS app builds
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_26.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The real Secrets.xcconfig is gitignored and holds the Supabase project
+      # coordinates and a signing team. CI only needs the project to COMPILE,
+      # so the checked-in example stands in. Do not add real secrets here —
+      # a build is not a signed archive, and CI has no reason to sign.
+      - name: Stub secrets
+        working-directory: ios
+        run: cp App/Config/Secrets.example.xcconfig App/Config/Secrets.xcconfig
+
+      - name: Generate project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build
+        working-directory: ios
+        run: |
+          xcodebuild \
+            -project ShinyTracker.xcodeproj \
+            -scheme ShinyTracker \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build

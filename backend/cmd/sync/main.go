@@ -1,10 +1,10 @@
 package main
 
 import (
-	"log"
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/casper/shinytracker/internal/services"
 	"github.com/joho/godotenv"
+	"log"
 )
 
 func main() {

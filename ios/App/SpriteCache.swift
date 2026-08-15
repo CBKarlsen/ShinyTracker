@@ -8,8 +8,12 @@ import UIKit
 /// external request — `sprite_url` points at PokeAPI's CDN and ``SpriteSource`` falls back to the
 /// same host — so the round trip is real.
 ///
-/// An actor rather than `NSCache`: the values are fetched asynchronously and two rows asking for
-/// the same URL at once must not both fetch it. `inFlight` is what makes the second one wait.
+/// An actor *around* `NSCache`, not instead of it. The actor is for the fetch: two rows asking for
+/// the same URL at once must not both hit the network, and `inFlight` is what makes the second one
+/// wait. The storage underneath is `NSCache` because a plain dictionary never gives anything back —
+/// scrolling the full dex decodes ~2,600 sprites and the app simply keeps them all, on the order of
+/// 100MB, until the system kills it. `NSCache` evicts under memory pressure by itself, which is the
+/// entire reason to use it here: no memory-warning observer, no LRU, no eviction policy to write.
 ///
 /// `UIKit` is imported unguarded, unlike ``Haptics``: this type's whole surface is `UIImage`, so a
 /// `#if canImport(UIKit)` would delete the method its only caller depends on rather than degrade.
@@ -19,11 +23,14 @@ import UIKit
 actor SpriteCache {
     static let shared = SpriteCache()
 
-    private var cached: [URL: UIImage] = [:]
+    // NSURL, not URL: NSCache keys must be objects. No countLimit or totalCostLimit is set on
+    // purpose — the system's own pressure signal is a better bound than any number picked here,
+    // and a hard cap would evict on a device with memory to spare.
+    private let cached = NSCache<NSURL, UIImage>()
     private var inFlight: [URL: Task<UIImage?, Never>] = [:]
 
     func image(for url: URL) async -> UIImage? {
-        if let hit = cached[url] { return hit }
+        if let hit = cached.object(forKey: url as NSURL) { return hit }
         if let running = inFlight[url] { return await running.value }
 
         let task = Task<UIImage?, Never> {
@@ -35,7 +42,7 @@ actor SpriteCache {
         inFlight[url] = nil
         // A miss is not cached: a sprite that 404s today may exist after the next backfill, and
         // the URLCache below already absorbs the repeated request cheaply.
-        if let image { cached[url] = image }
+        if let image { cached.setObject(image, forKey: url as NSURL) }
         return image
     }
 }

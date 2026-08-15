@@ -1,10 +1,11 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { API_BASE } from "../config";
 import { getShowdownGif } from "../utils/pokemon";
 import { defaultParamsFor } from "../utils/odds";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import type { Pokemon, PokemonRoute } from "../types/models";
 import { IcClose, IcPlus } from "./ui/icons";
 import { PokemonSearchStep } from "../features/new-hunt/PokemonSearchStep";
@@ -21,9 +22,19 @@ interface Props {
 	prefill?: { pokemon: Pokemon; route?: PokemonRoute } | null;
 }
 
-const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStarted, prefill }) => {
-	const { token } = useAuth();
+const NewHuntModal: React.FC<Props> = ({
+	open,
+	onClose,
+	onGoToGames,
+	onHuntStarted,
+	prefill,
+}) => {
+	const { token, logout } = useAuth();
 	const { showError } = useNotification();
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 	const [step, setStep] = useState(1);
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<Pokemon[]>([]);
@@ -40,8 +51,13 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 	// In the prefill path the chosen route already carries odds/eta/formula, so
 	// we skip the route fetch entirely (no flash, no double-fetch). It only runs
 	// once the user clicks "Change method".
-	const routeFetchId = prefill?.route && !changing ? null : (selectedPokemon?.id ?? null);
-	const { status, routes, loading: loadingRoutes } = usePokemonRoute(routeFetchId);
+	const routeFetchId =
+		prefill?.route && !changing ? null : (selectedPokemon?.id ?? null);
+	const {
+		status,
+		routes,
+		loading: loadingRoutes,
+	} = usePokemonRoute(routeFetchId);
 
 	const [recentPokemon, setRecentPokemon] = useState<Pokemon[]>([]);
 
@@ -62,38 +78,51 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 		// Fetch recent hunts lazily when the modal opens.
 		if (!token) return;
 		const controller = new AbortController();
-		fetch(`${API_BASE}/api/hunts`, {
-			headers: { Authorization: `Bearer ${token}` },
-			signal: controller.signal,
-		})
+		authedFetch(
+			`${API_BASE}/api/hunts`,
+			token,
+			{ signal: controller.signal },
+			handleSessionExpired,
+		)
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
-			.then((hunts: Array<{ pokemon_id: number; pokemon_name: string; sprite_url?: string; updated_at?: string; created_at?: string }>) => {
-				const seen = new Set<number>();
-				const recent: Pokemon[] = [];
-				// Sort by most-recent first (updated_at preferred, fallback created_at).
-				const sorted = [...hunts].sort((a, b) => {
-					const ta = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
-					const tb = new Date(b.updated_at ?? b.created_at ?? 0).getTime();
-					return tb - ta;
-				});
-				for (const h of sorted) {
-					if (seen.has(h.pokemon_id)) continue;
-					seen.add(h.pokemon_id);
-					// /api/hunts now carries the species' sprite, so the recent list shows
-					// one instead of leaving PokemonSearchStep to fall back to a blank.
-					recent.push({
-						id: h.pokemon_id,
-						name: h.pokemon_name,
-						sprite_url: h.sprite_url ?? "",
+			.then(
+				(
+					hunts: Array<{
+						pokemon_id: number;
+						pokemon_name: string;
+						sprite_url?: string;
+						updated_at?: string;
+						created_at?: string;
+					}>,
+				) => {
+					const seen = new Set<number>();
+					const recent: Pokemon[] = [];
+					// Sort by most-recent first (updated_at preferred, fallback created_at).
+					const sorted = [...hunts].sort((a, b) => {
+						const ta = new Date(a.updated_at ?? a.created_at ?? 0).getTime();
+						const tb = new Date(b.updated_at ?? b.created_at ?? 0).getTime();
+						return tb - ta;
 					});
-					if (recent.length >= 6) break;
-				}
-				setRecentPokemon(recent);
-			})
+					for (const h of sorted) {
+						if (seen.has(h.pokemon_id)) continue;
+						seen.add(h.pokemon_id);
+						// /api/hunts now carries the species' sprite, so the recent list shows
+						// one instead of leaving PokemonSearchStep to fall back to a blank.
+						recent.push({
+							id: h.pokemon_id,
+							name: h.pokemon_name,
+							sprite_url: h.sprite_url ?? "",
+						});
+						if (recent.length >= 6) break;
+					}
+					setRecentPokemon(recent);
+				},
+			)
 			.catch(() => {
 				if (!controller.signal.aborted) setRecentPokemon([]);
 			});
 		return () => controller.abort();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: handleSessionExpired is stable via useCallback but omitted to avoid re-running the fetch on unrelated identity changes
 	}, [open, token]);
 
 	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
@@ -113,7 +142,12 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 	// selectedRoute intentionally omitted: sets only the initial default.
 	useEffect(() => {
 		const prefillHasRoute = !!prefill?.route;
-		if ((!prefillHasRoute || changing) && !useCustomMethod && routes.length > 0 && !selectedRoute) {
+		if (
+			(!prefillHasRoute || changing) &&
+			!useCustomMethod &&
+			routes.length > 0 &&
+			!selectedRoute
+		) {
 			setSelectedRoute(routes[0]);
 			setHuntParams(defaultParamsFor(routes[0].formula_type));
 		}
@@ -138,32 +172,35 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
 		if (!selectedPokemon || !token) return;
-		fetch(`${API_BASE}/api/me/games`, {
-			headers: { Authorization: `Bearer ${token}` },
-		})
+		authedFetch(`${API_BASE}/api/me/games`, token, {}, handleSessionExpired)
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
 			.then((games) => setUserGameCount((games || []).length))
 			.catch(() => setUserGameCount(null));
+		// biome-ignore lint/correctness/useExhaustiveDependencies: handleSessionExpired is stable via useCallback but omitted to avoid re-running the fetch on unrelated identity changes
 	}, [selectedPokemon, token]);
 
 	const startHunt = async (route: PokemonRoute) => {
 		if (!selectedPokemon) return;
 		setStarting(true);
 		try {
-			const res = await fetch(`${API_BASE}/api/hunts`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts`,
+				token,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						hunt_method_id: route.method_id,
+						pokemon_id: route.evolve_from
+							? route.evolve_from.pokemon_id
+							: selectedPokemon.id,
+						game_id: route.game_id,
+						method_name: route.method_name,
+						hunt_parameters: huntParams,
+					}),
 				},
-				body: JSON.stringify({
-					hunt_method_id: route.method_id,
-					pokemon_id: route.evolve_from ? route.evolve_from.pokemon_id : selectedPokemon.id,
-					game_id: route.game_id,
-					method_name: route.method_name,
-					hunt_parameters: huntParams,
-				}),
-			});
+				handleSessionExpired,
+			);
 			if (res.ok) {
 				onHuntStarted?.();
 				onClose();
@@ -171,6 +208,10 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 				showError((await res.text()) || "Failed to start hunt.");
 			}
 		} catch (err: any) {
+			if (err instanceof SessionExpiredError) {
+				setStarting(false);
+				return;
+			}
 			showError(err.message || "Failed to start hunt.");
 		}
 		setStarting(false);
@@ -180,17 +221,19 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 		if (!selectedPokemon || !customMethodName.trim()) return;
 		setStarting(true);
 		try {
-			const res = await fetch(`${API_BASE}/api/hunts`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts`,
+				token,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						pokemon_id: selectedPokemon.id,
+						custom_method_name: customMethodName.trim(),
+					}),
 				},
-				body: JSON.stringify({
-					pokemon_id: selectedPokemon.id,
-					custom_method_name: customMethodName.trim(),
-				}),
-			});
+				handleSessionExpired,
+			);
 			if (res.ok) {
 				onHuntStarted?.();
 				onClose();
@@ -198,6 +241,10 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 				showError((await res.text()) || "Failed to start custom hunt.");
 			}
 		} catch (err: any) {
+			if (err instanceof SessionExpiredError) {
+				setStarting(false);
+				return;
+			}
 			showError(err.message || "Failed to start custom hunt.");
 		}
 		setStarting(false);
@@ -208,13 +255,32 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 		else if (selectedRoute) startHunt(selectedRoute);
 	};
 
+	// Escape closes the modal, matching ConfirmDialog/CommandSearch.
+	useEffect(() => {
+		if (!open) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [open, onClose]);
+
 	if (!open) return null;
 
 	const gifUrl = selectedPokemon ? getShowdownGif(selectedPokemon.name) : "";
 
 	return (
 		<div className="scrim" onClick={onClose}>
-			<div className="drawer" onClick={(e) => e.stopPropagation()}>
+			<div
+				className="drawer"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Start a new hunt"
+				onClick={(e) => e.stopPropagation()}
+			>
 				<div className="drawer-head">
 					<h2>Start a new hunt</h2>
 					<div
@@ -321,7 +387,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 										}}
 									>
 										{selectedPokemon.name}
-										{(selectedPokemon.is_legendary || selectedPokemon.is_mythical) && (
+										{(selectedPokemon.is_legendary ||
+											selectedPokemon.is_mythical) && (
 											<div
 												style={{
 													fontSize: 10,
@@ -372,7 +439,11 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 										<RouteList
 											routes={routes}
 											variant="select"
-											selectedKey={selectedRoute && !useCustomMethod ? routeKey(selectedRoute) : undefined}
+											selectedKey={
+												selectedRoute && !useCustomMethod
+													? routeKey(selectedRoute)
+													: undefined
+											}
 											onRouteClick={(r) => {
 												setSelectedRoute(r);
 												setUseCustomMethod(false);
@@ -381,64 +452,86 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 										/>
 									)}
 
-									{!loadingRoutes && userGameCount === 0 && routes.length === 0 && (
-										<div
-											className="empty"
-											style={{ textAlign: "center", padding: "20px 0" }}
-										>
-											<div style={{ marginBottom: 6 }}>
-												You haven't added any games yet.
-											</div>
-											<div className="t-label" style={{ marginBottom: 14 }}>
-												Add a game to your library to see available hunt methods.
-											</div>
-											{onGoToGames && (
-												<button className="btn gold" onClick={onGoToGames}>
-													Go to Game Library →
-												</button>
-											)}
-										</div>
-									)}
-
-									{!loadingRoutes && status === "not_in_your_games" && userGameCount !== null && userGameCount > 0 && (
-										<div
-											className="empty"
-											style={{ textAlign: "center", padding: "20px 0" }}
-										>
+									{!loadingRoutes &&
+										userGameCount === 0 &&
+										routes.length === 0 && (
 											<div
-												style={{ marginBottom: 6, textTransform: "capitalize" }}
+												className="empty"
+												style={{ textAlign: "center", padding: "20px 0" }}
 											>
-												{selectedPokemon.name} isn't available in your games.
+												<div style={{ marginBottom: 6 }}>
+													You haven't added any games yet.
+												</div>
+												<div className="t-label" style={{ marginBottom: 14 }}>
+													Add a game to your library to see available hunt
+													methods.
+												</div>
+												{onGoToGames && (
+													<button className="btn gold" onClick={onGoToGames}>
+														Go to Game Library →
+													</button>
+												)}
 											</div>
-											<div className="t-label" style={{ marginBottom: 14 }}>
-												Try adding a game that includes it, or it may be shiny-locked.
-											</div>
-											{onGoToGames && (
-												<button
-													className="btn ghost"
-													onClick={onGoToGames}
-													style={{ fontSize: 12 }}
+										)}
+
+									{!loadingRoutes &&
+										status === "not_in_your_games" &&
+										userGameCount !== null &&
+										userGameCount > 0 && (
+											<div
+												className="empty"
+												style={{ textAlign: "center", padding: "20px 0" }}
+											>
+												<div
+													style={{
+														marginBottom: 6,
+														textTransform: "capitalize",
+													}}
 												>
-													Manage games →
-												</button>
-											)}
-										</div>
-									)}
+													{selectedPokemon.name} isn't available in your games.
+												</div>
+												<div className="t-label" style={{ marginBottom: 14 }}>
+													Try adding a game that includes it, or it may be
+													shiny-locked.
+												</div>
+												{onGoToGames && (
+													<button
+														className="btn ghost"
+														onClick={onGoToGames}
+														style={{ fontSize: 12 }}
+													>
+														Manage games →
+													</button>
+												)}
+											</div>
+										)}
 
 									{!loadingRoutes && status === "locked_everywhere" && (
 										<div
 											className="empty"
-											style={{ textAlign: "center", padding: "20px 0", textTransform: "capitalize" }}
+											style={{
+												textAlign: "center",
+												padding: "20px 0",
+												textTransform: "capitalize",
+											}}
 										>
-											{selectedPokemon.name} is shiny-locked in every game it appears in — obtain it by trading or transferring from Pokémon HOME.
+											{selectedPokemon.name} is shiny-locked in every game it
+											appears in — obtain it by trading or transferring from
+											Pokémon HOME.
 										</div>
 									)}
 
-									{!loadingRoutes && status === "available" && routes.length === 0 && (
-										<div className="empty" style={{ textAlign: "center", padding: "20px 0" }}>
-											Available in your games, but no hunt method recorded yet.
-										</div>
-									)}
+									{!loadingRoutes &&
+										status === "available" &&
+										routes.length === 0 && (
+											<div
+												className="empty"
+												style={{ textAlign: "center", padding: "20px 0" }}
+											>
+												Available in your games, but no hunt method recorded
+												yet.
+											</div>
+										)}
 
 									{!loadingRoutes && (
 										<>
@@ -486,7 +579,8 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 
 									{selectedRoute?.evolve_from && !useCustomMethod && (
 										<div className="t-label" style={{ marginTop: 10 }}>
-											You'll hunt {selectedRoute.evolve_from.name}, then evolve into {selectedPokemon.name}.
+											You'll hunt {selectedRoute.evolve_from.name}, then evolve
+											into {selectedPokemon.name}.
 										</div>
 									)}
 								</>

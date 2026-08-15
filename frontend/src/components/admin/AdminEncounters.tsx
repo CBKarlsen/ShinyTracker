@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 interface Pokemon {
 	id: number;
@@ -20,16 +21,10 @@ interface HuntMethodRow {
 }
 
 const API = API_BASE;
-
-function authHeaders(token: string) {
-	return {
-		Authorization: `Bearer ${token}`,
-		"Content-Type": "application/json",
-	};
-}
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export default function AdminEncounters() {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<Pokemon[]>([]);
 	const [selected, setSelected] = useState<Pokemon | null>(null);
@@ -38,6 +33,11 @@ export default function AdminEncounters() {
 	const [editData, setEditData] = useState<Partial<HuntMethodRow>>({});
 	const [error, setError] = useState("");
 	const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		setError("Your session expired — please sign in again.");
+	}, [logout]);
 
 	useEffect(() => {
 		if (!query.trim()) {
@@ -58,44 +58,66 @@ export default function AdminEncounters() {
 		setResults([]);
 		setQuery(pokemon.name);
 		setEditId(null);
-		fetch(`${API}/api/admin/hunt-methods?pokemon_id=${pokemon.id}`, {
-			headers: authHeaders(token!),
-		})
+		authedFetch(
+			`${API}/api/admin/hunt-methods?pokemon_id=${pokemon.id}`,
+			token,
+			{},
+			handleSessionExpired,
+		)
 			.then((r) => r.json())
 			.then((d) => setHuntMethods(d ?? []))
-			.catch(() => {});
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
+			});
 	};
 
 	const saveEdit = async (id: number) => {
-		const res = await fetch(`${API}/api/admin/hunt-methods/${id}`, {
-			method: "PUT",
-			headers: authHeaders(token!),
-			body: JSON.stringify(editData),
-		});
-		if (!res.ok) {
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/hunt-methods/${id}`,
+				token,
+				{
+					method: "PUT",
+					headers: JSON_HEADERS,
+					body: JSON.stringify(editData),
+				},
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError("Failed to update");
+				return;
+			}
+			setHuntMethods((prev) =>
+				prev.map((e) =>
+					e.id === id ? ({ ...e, ...editData } as HuntMethodRow) : e,
+				),
+			);
+			setEditId(null);
+			setEditData({});
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			setError("Failed to update");
-			return;
 		}
-		setHuntMethods((prev) =>
-			prev.map((e) =>
-				e.id === id ? ({ ...e, ...editData } as HuntMethodRow) : e,
-			),
-		);
-		setEditId(null);
-		setEditData({});
 	};
 
 	const deleteEncounter = async (id: number) => {
 		if (!confirm("Delete this encounter?")) return;
-		const res = await fetch(`${API}/api/admin/hunt-methods/${id}`, {
-			method: "DELETE",
-			headers: authHeaders(token!),
-		});
-		if (!res.ok) {
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/hunt-methods/${id}`,
+				token,
+				{ method: "DELETE" },
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError("Failed to delete");
+				return;
+			}
+			setHuntMethods((prev) => prev.filter((e) => e.id !== id));
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			setError("Failed to delete");
-			return;
 		}
-		setHuntMethods((prev) => prev.filter((e) => e.id !== id));
 	};
 
 	return (
@@ -155,8 +177,8 @@ export default function AdminEncounters() {
 						style={{ padding: "0 16px 10px", color: "var(--ink-3)" }}
 					>
 						Read-only view of this Pokémon's derived availability. Editing or
-						deleting a row changes the global method definition (applies to every
-						Pokémon and game).
+						deleting a row changes the global method definition (applies to
+						every Pokémon and game).
 					</div>
 
 					<table className="method-table">
@@ -263,8 +285,12 @@ export default function AdminEncounters() {
 													<option value="static">Static</option>
 													<option value="radar_chain_gen4">Gen 4 Radar</option>
 													<option value="catch_combo_lgpe">Catch Combo</option>
-													<option value="outbreak_defeats_sv">SV Outbreaks</option>
-													<option value="chain_fishing_gen6">Gen 6 Chain Fishing</option>
+													<option value="outbreak_defeats_sv">
+														SV Outbreaks
+													</option>
+													<option value="chain_fishing_gen6">
+														Gen 6 Chain Fishing
+													</option>
 												</select>
 											</td>
 											<td style={{ display: "flex", gap: 6 }}>
@@ -297,12 +323,17 @@ export default function AdminEncounters() {
 											</td>
 											<td className="t-mono">{enc.avg_time_seconds}</td>
 											<td>
-												{enc.formula_type === "static" ? "Static" :
-												 enc.formula_type === "radar_chain_gen4" ? "Poké Radar" :
-												 enc.formula_type === "catch_combo_lgpe" ? "Catch Combo" :
-												 enc.formula_type === "outbreak_defeats_sv" ? "SV Outbreak" :
-												 enc.formula_type === "chain_fishing_gen6" ? "Gen 6 Chain Fishing" :
-												 enc.formula_type || "Static"}
+												{enc.formula_type === "static"
+													? "Static"
+													: enc.formula_type === "radar_chain_gen4"
+														? "Poké Radar"
+														: enc.formula_type === "catch_combo_lgpe"
+															? "Catch Combo"
+															: enc.formula_type === "outbreak_defeats_sv"
+																? "SV Outbreak"
+																: enc.formula_type === "chain_fishing_gen6"
+																	? "Gen 6 Chain Fishing"
+																	: enc.formula_type || "Static"}
 											</td>
 											<td style={{ display: "flex", gap: 6 }}>
 												<button

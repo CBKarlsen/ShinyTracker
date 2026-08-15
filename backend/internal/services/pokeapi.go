@@ -172,11 +172,14 @@ func SyncPokemonData() error {
 	_, _ = database.DB.Exec(context.Background(), "TRUNCATE TABLE hunt_methods CASCADE")
 
 	// Fetch up to Gen 9
-	resp, err := http.Get("https://pokeapi.co/api/v2/pokemon?limit=1025")
+	resp, err := httpClient.Get("https://pokeapi.co/api/v2/pokemon?limit=1025")
 	if err != nil {
 		return fmt.Errorf("failed to fetch list: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch list: unexpected status %d", resp.StatusCode)
+	}
 
 	var listResp PokeAPIListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
@@ -236,12 +239,16 @@ type PokeAPISpeciesResponse struct {
 func processPokemon(url string, parentPairs chan<- [2]int) {
 	time.Sleep(100 * time.Millisecond)
 
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch %s: %v", url, err)
 		return
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to fetch %s: unexpected status %d", url, resp.StatusCode)
+		return
+	}
 
 	var p PokeAPIPokemonResponse
 	if err := json.NewDecoder(resp.Body).Decode(&p); err != nil {
@@ -258,11 +265,11 @@ func processPokemon(url string, parentPairs chan<- [2]int) {
 	var isLegendary, isMythical bool
 	var evolvesFromID *int
 	if p.Species.URL != "" {
-		sResp, sErr := http.Get(p.Species.URL)
+		sResp, sErr := httpClient.Get(p.Species.URL)
 		if sErr == nil {
 			defer sResp.Body.Close()
 			var species PokeAPISpeciesResponse
-			if json.NewDecoder(sResp.Body).Decode(&species) == nil {
+			if sResp.StatusCode == http.StatusOK && json.NewDecoder(sResp.Body).Decode(&species) == nil {
 				isLegendary = species.IsLegendary
 				isMythical = species.IsMythical
 				if species.EvolvesFromSpecies != nil {
@@ -370,12 +377,16 @@ func syncWildEncounters(pokemonID int) {
 	time.Sleep(50 * time.Millisecond)
 
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%d/encounters", pokemonID)
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch encounters for %d: %v", pokemonID, err)
 		return
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to fetch encounters for %d: unexpected status %d", pokemonID, resp.StatusCode)
+		return
+	}
 
 	var encounters []PokeAPIEncounter
 	if err := json.NewDecoder(resp.Body).Decode(&encounters); err != nil {

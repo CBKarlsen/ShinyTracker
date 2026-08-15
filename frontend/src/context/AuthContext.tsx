@@ -1,6 +1,13 @@
 import type { Session } from "@supabase/supabase-js";
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { API_BASE } from "../config";
 import { supabase } from "../lib/supabase";
 
@@ -108,19 +115,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	// Kept for interface compatibility — no-op in the OAuth flow; callers that
 	// relied on this (old email/password Login) no longer exist, but other code
 	// that imports the shape won't break.
-	const login = (_newToken: string, _newUserId: string, _newUsername?: string) => {
-		// Session is managed entirely by supabase-js; nothing to do here.
-	};
+	const login = useCallback(
+		(_newToken: string, _newUserId: string, _newUsername?: string) => {
+			// Session is managed entirely by supabase-js; nothing to do here.
+		},
+		[],
+	);
 
-	const logout = async () => {
+	const logout = useCallback(async () => {
 		await supabase.auth.signOut();
 		// onAuthStateChange will fire and clear session/username/isAdmin.
-	};
+	}, []);
+
+	// Memoized for the same load-bearing reason as NotificationContext's: these
+	// are dependencies of fetching effects across the app. An unstable `logout`
+	// makes every `handleSessionExpired` unstable, which re-runs the effect that
+	// depends on it — and one of those effects raises a toast on failure, which
+	// re-renders a provider, which starts the loop again.
+	const value = useMemo(
+		() => ({ token, userId, username, isAdmin, loading, login, logout }),
+		[token, userId, username, isAdmin, loading, login, logout],
+	);
 
 	return (
-		<AuthContext.Provider
-			value={{ token, userId, username, isAdmin, loading, login, logout }}
-		>
+		<AuthContext.Provider value={value}>
 			{children}
 		</AuthContext.Provider>
 	);

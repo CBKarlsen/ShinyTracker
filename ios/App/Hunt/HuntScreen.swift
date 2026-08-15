@@ -35,11 +35,9 @@ struct HuntScreen: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .navigationTitle("Hunt")
                 .navigationSubtitle(huntSummary)
+                // No search button — see the note on `DexScreen`'s toolbar. It was inert, and an
+                // inert control is worse than an absent one.
                 .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {} label: { Image(systemName: "magnifyingglass") }
-                            .accessibilityLabel("Search the reference")
-                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
                             newHunt.open()
@@ -159,6 +157,10 @@ struct HuntScreen: View {
                         )
                         .contentShape(.rect)
                 }
+                // Selection is signalled by fill colour alone, which VoiceOver cannot see and a
+                // colour-blind user may not either. `DexScreen`'s identical control already
+                // carries this; without it both segments read as plain buttons.
+                .accessibilityAddTraits(on ? [.isSelected] : [])
             }
         }
         .padding(3)
@@ -457,7 +459,7 @@ struct GoldButtonStyle: ButtonStyle {
             .font(Typography.primaryButton)
             .foregroundStyle(Palette.onAccent)
             .padding(.horizontal, 22)
-            .frame(height: 46)
+            .frame(minHeight: 46)
             .background(Palette.hunt, in: .rect(cornerRadius: Radii.headerButton))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }

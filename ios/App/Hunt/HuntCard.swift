@@ -109,7 +109,7 @@ struct HuntCard: View {
                     .contentTransition(.numericText())
             }
             .padding(.horizontal, 11)
-            .frame(height: 30)
+            .frame(minHeight: 30)
             .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.badge))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.badge)
@@ -154,7 +154,7 @@ struct HuntCard: View {
         }
         .foregroundStyle(Palette.textMuted)
         .padding(.horizontal, 11)
-        .frame(height: 30)
+        .frame(minHeight: 30)
         .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.badge))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.badge)
@@ -229,7 +229,6 @@ struct HuntCard: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(row.count > 0 ? Palette.textSecondary : Palette.textDisabled)
             }
-            .frame(width: Metrics.controlNarrow)
             .disabled(row.count == 0)
             .buttonRepeatBehavior(.enabled)
             .accessibilityHint("Hold to keep removing.")
@@ -253,7 +252,7 @@ struct HuntCard: View {
                         .font(Typography.primaryButton)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: Metrics.controlHeight)
+                .frame(minHeight: Metrics.controlHeight)
                 .foregroundStyle(isLive ? Palette.onAccent : Palette.textSecondary)
                 .background(
                     isLive ? Palette.hunt : Palette.surfaceRaised,
@@ -301,7 +300,6 @@ struct HuntCard: View {
                     .font(Typography.chip)
                     .foregroundStyle(step > 1 ? Palette.hunt : Palette.textPrimary)
             }
-            .frame(width: Metrics.controlNarrow)
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.control)
                     .strokeBorder(
@@ -319,7 +317,6 @@ struct HuntCard: View {
                     .font(.system(size: 17))
                     .foregroundStyle(Palette.hunt)
             }
-            .frame(width: Metrics.controlNarrow)
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.control)
                     .strokeBorder(Palette.hunt.alpha(0x55), lineWidth: 1)
@@ -328,7 +325,16 @@ struct HuntCard: View {
         .padding(.top, 14)
     }
 
-    /// The shared shell of the three narrow controls: 42×54, `#181822`, `border-radius:15px`.
+    /// The shared shell of the three narrow controls: 44×54 minimum, `#181822`,
+    /// `border-radius:15px`.
+    ///
+    /// Both axes are minimums, not fixed sizes, and the width lives here rather than at the three
+    /// call sites. That ordering matters: a `.frame(minWidth:)` wrapped around a child that is
+    /// itself `maxWidth: .infinity` is infinitely flexible, so the HStack would split its width
+    /// evenly and the `+1` button — the one control that is supposed to take the leftover — would
+    /// shrink to a quarter of the row. Sizing to the content and flooring it at 44 keeps `+1`
+    /// greedy while letting "×10" at an accessibility text size push its own button wider instead
+    /// of truncating to "×1…".
     private func controlButton(
         label: String,
         action: @escaping () -> Void,
@@ -336,8 +342,8 @@ struct HuntCard: View {
     ) -> some View {
         Button(action: action) {
             content()
-                .frame(maxWidth: .infinity)
-                .frame(height: Metrics.controlHeight)
+                .padding(.horizontal, 6)
+                .frame(minWidth: Metrics.controlNarrow, minHeight: Metrics.controlHeight)
                 .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.control))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.control)

@@ -2762,6 +2762,66 @@ ul {
 	opacity: 1;
 }
 
+/* ── Crash screen (top-level error boundary) ── */
+.crash-screen {
+	min-height: 100vh;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+}
+.crash-card {
+	max-width: 480px;
+	width: 100%;
+	background: var(--bg-1);
+	border: 1px solid var(--line-1);
+	border-radius: var(--radius-lg);
+	padding: 40px 32px;
+	text-align: center;
+}
+.crash-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 16px;
+	background: var(--red-soft);
+	border: 1px solid var(--red);
+	color: var(--red);
+	font-size: 26px;
+	margin-bottom: 20px;
+}
+.crash-card h1 {
+	font-family: var(--font-display);
+	font-size: 20px;
+	font-weight: 600;
+	margin: 0 0 10px;
+	color: var(--ink-1);
+}
+.crash-card p {
+	color: var(--ink-3);
+	font-size: 13.5px;
+	line-height: 1.55;
+	margin: 0 0 16px;
+}
+.crash-detail {
+	font-family: var(--font-mono);
+	font-size: 11.5px;
+	color: var(--ink-2);
+	background: var(--bg-2);
+	border: 1px solid var(--line-1);
+	border-radius: var(--radius-sm);
+	padding: 10px 12px;
+	margin: 0 0 22px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	text-align: left;
+}
+.crash-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+}
+
 @keyframes slideDown {
 	from {
 		opacity: 0;

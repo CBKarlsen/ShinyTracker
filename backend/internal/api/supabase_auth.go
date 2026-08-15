@@ -46,10 +46,15 @@ var supabaseKeyfuncState struct {
 	cancel context.CancelFunc
 }
 
-// supabaseURLFromEnv returns the Supabase project URL, trimming any trailing
+// SupabaseURLFromEnv returns the Supabase project URL, trimming any trailing
 // slash so downstream concatenation is predictable. Returns an error if
 // SUPABASE_URL is unset — the server must not start without it.
-func supabaseURLFromEnv() (string, error) {
+//
+// Exported so main() can call it once at startup (see validateRequiredEnv);
+// previously SUPABASE_URL was only checked lazily on the first authenticated
+// request, so a typo'd value booted a healthy-looking server that 401ed
+// every user.
+func SupabaseURLFromEnv() (string, error) {
 	u := os.Getenv("SUPABASE_URL")
 	if u == "" {
 		return "", errors.New("SUPABASE_URL env var is required but not set")
@@ -81,7 +86,7 @@ func getSupabaseKeyfunc() (keyfunc.Keyfunc, error) {
 		return supabaseKeyfuncState.kf, nil
 	}
 
-	projectURL, err := supabaseURLFromEnv()
+	projectURL, err := SupabaseURLFromEnv()
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +130,7 @@ func ValidateSupabaseJWTWithClaims(tokenString string) (userID string, claims jw
 		return "", nil, fmt.Errorf("supabase jwt: keyfunc unavailable: %w", err)
 	}
 
-	projectURL, err := supabaseURLFromEnv()
+	projectURL, err := SupabaseURLFromEnv()
 	if err != nil {
 		return "", nil, fmt.Errorf("supabase jwt: %w", err)
 	}

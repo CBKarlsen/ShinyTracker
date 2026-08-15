@@ -31,6 +31,15 @@ func nicknameTooLong(nickname *string) bool {
 	return nickname != nil && utf8.RuneCountInString(*nickname) > maxNicknameLength
 }
 
+// maxCustomMethodNameLength mirrors maxNicknameLength: same unbounded TEXT
+// column, same free-text-from-a-user reasoning.
+const maxCustomMethodNameLength = 100
+
+// customMethodNameTooLong is the customMethodName analogue of nicknameTooLong.
+func customMethodNameTooLong(name string) bool {
+	return utf8.RuneCountInString(name) > maxCustomMethodNameLength
+}
+
 // loadPhasesForHunts fetches all phases for the given hunt IDs and groups them by hunt ID.
 func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]models.HuntPhase, error) {
 	result := make(map[string][]models.HuntPhase)
@@ -192,6 +201,10 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if nicknameTooLong(req.Nickname) {
 		http.Error(w, "nickname is too long", http.StatusBadRequest)
+		return
+	}
+	if customMethodNameTooLong(req.CustomMethodName) {
+		http.Error(w, "custom_method_name is too long", http.StatusBadRequest)
 		return
 	}
 

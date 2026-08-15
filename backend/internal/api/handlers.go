@@ -177,6 +177,15 @@ func SyncHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	go func() {
 		defer syncRunning.Store(false)
+		// This goroutine runs outside chi's Recoverer (that middleware only
+		// wraps the request that spawned it, which has already returned by the
+		// time a panic here could happen), so an unrecovered panic would take
+		// down the whole process.
+		defer func() {
+			if p := recover(); p != nil {
+				log.Printf("SyncPokemonData panic: %v", p)
+			}
+		}()
 		if err := services.SyncPokemonData(); err != nil {
 			log.Printf("SyncPokemonData error: %v", err)
 		}

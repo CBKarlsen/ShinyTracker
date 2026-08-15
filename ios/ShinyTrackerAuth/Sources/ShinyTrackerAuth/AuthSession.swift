@@ -133,9 +133,20 @@ public final class AuthSession {
         )
     }
 
-    public enum AppleSignInError: Error, Equatable {
+    /// `LocalizedError`, not bare `Error`. A plain Swift error reaches the user through
+    /// `localizedDescription`, which bridges via NSError and renders the type name back at them —
+    /// "The operation couldn't be completed. (ShinyTrackerAuth.AuthSession.AppleSignInError
+    /// error 0.)". `errorDescription` is the hook that replaces that with a sentence.
+    public enum AppleSignInError: Error, LocalizedError, Equatable {
         /// Apple returned an authorization without a usable identity token, or the nonce was lost.
         case missingIdentityToken
+
+        public var errorDescription: String? {
+            switch self {
+            case .missingIdentityToken:
+                "Apple didn't return a usable sign-in token. Try signing in again."
+            }
+        }
     }
 
     // MARK: - GitHub / Google (ASWebAuthenticationSession)

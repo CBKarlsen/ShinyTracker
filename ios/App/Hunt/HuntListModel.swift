@@ -1,4 +1,5 @@
 import ActivityKit
+import AuthenticationServices
 import Foundation
 import ShinyTrackerAPI
 import ShinyTrackerAuth
@@ -847,6 +848,13 @@ func userFacingMessage(for error: any Error) -> String? {
     // torn down rather than the Swift task, so both spellings have to be caught or the bug simply
     // moves to whichever layer noticed first.
     if let url = error as? URLError, url.code == .cancelled { return nil }
+    // The user dismissing a sign-in sheet is the third spelling of the same thing, and the one a
+    // tester hits first: tapping Cancel on Sign in with Apple threw `ASAuthorizationError.canceled`
+    // and the login screen answered with an error message, as though backing out had failed.
+    // Backing out is not a failure. `ASWebAuthenticationSessionError.canceledLogin` is the same
+    // moment on the GitHub and Google buttons, which route through the same `run` helper.
+    if let apple = error as? ASAuthorizationError, apple.code == .canceled { return nil }
+    if let web = error as? ASWebAuthenticationSessionError, web.code == .canceledLogin { return nil }
     if let api = error as? APIError { return api.description }
     if let expired = error as? SessionExpiredError { return expired.description }
     return error.localizedDescription

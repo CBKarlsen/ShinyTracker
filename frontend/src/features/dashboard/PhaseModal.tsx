@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IcClose } from "../../components/ui/icons";
 import { API_BASE } from "../../config";
+import { useAuth } from "../../context/AuthContext";
 import { useNotification } from "../../context/NotificationContext";
 import type { Hunt, PokemonOption } from "../../types/models";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 import { getSpriteUrl } from "../../utils/pokemon";
 
 function fmtNum(n: number) {
@@ -21,9 +23,15 @@ export function PhaseModal({
 	onSuccess: (updated: Hunt) => void;
 }) {
 	const { showSuccess, showError } = useNotification();
+	const { logout } = useAuth();
 	const [search, setSearch] = useState("");
 	const [options, setOptions] = useState<PokemonOption[]>([]);
 	const [submitting, setSubmitting] = useState(false);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 
 	useEffect(() => {
 		const timer = setTimeout(async () => {
@@ -40,14 +48,16 @@ export function PhaseModal({
 	const handleSelect = async (pokemon: PokemonOption) => {
 		setSubmitting(true);
 		try {
-			const res = await fetch(`${API_BASE}/api/hunts/${hunt.id}/phases`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/${hunt.id}/phases`,
+				token,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ pokemon_id: pokemon.id }),
 				},
-				body: JSON.stringify({ pokemon_id: pokemon.id }),
-			});
+				handleSessionExpired,
+			);
 			if (res.ok) {
 				const updated: Hunt = await res.json();
 				showSuccess("Phase logged — counter reset");
@@ -56,7 +66,14 @@ export function PhaseModal({
 				return; // component unmounts — don't touch state below
 			}
 			showError("Failed to log phase. Please try again.");
-		} catch {
+		} catch (err) {
+			if (err instanceof SessionExpiredError) {
+				// logout() unmounts this modal, but clear the flag anyway: every
+				// other exit path does, and a stuck `submitting` is a disabled
+				// button if the unmount is ever delayed.
+				setSubmitting(false);
+				return;
+			}
 			showError("Failed to log phase. Please try again.");
 		}
 		setSubmitting(false);

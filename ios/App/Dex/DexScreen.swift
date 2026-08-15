@@ -30,9 +30,12 @@ struct DexScreen: View {
                 // Where the header's count went. Empty until the dex loads, so the bar does not
                 // advertise "0 of 0" during the fetch.
                 .navigationSubtitle(model.state == .ready ? model.progressLabel : "")
+                // No search button until there is a Reference sheet behind it. It used to sit
+                // here inert "so the affordance does not move when it is built" — but a
+                // magnifying glass that does nothing is the first thing a tester taps, and a
+                // button that swallows the tap reads as a broken app, not as a placeholder.
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) { gameToolbarButton }
-                    ToolbarItem(placement: .topBarTrailing) { searchToolbarButton }
                 }
                 .safeAreaInset(edge: .top, spacing: 0) {
                     segmentedControl
@@ -84,15 +87,6 @@ struct DexScreen: View {
             }
         }
         .accessibilityLabel("Game: \(model.selectedGame?.title ?? "all your games")")
-    }
-
-    /// Still inert — the Reference sheet the prototype promised "from every header" is not built.
-    /// It keeps its place in the bar so the affordance does not move when it is.
-    private var searchToolbarButton: some View {
-        Button {} label: {
-            Image(systemName: "magnifyingglass")
-        }
-        .accessibilityLabel("Search the reference")
     }
 
     // MARK: Segmented control

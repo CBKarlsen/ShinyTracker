@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
@@ -7,6 +7,7 @@ import RouteList from "../features/routes/RouteList";
 import { startRouteHunt } from "../features/routes/startHunt";
 import { usePokemonRoute } from "../features/routes/usePokemonRoute";
 import type { Pokemon, PokemonRoute } from "../types/models";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import { defaultParamsFor, routeNeedsParams } from "../utils/odds";
 import { getSpriteUrl } from "../utils/pokemon";
 
@@ -27,13 +28,18 @@ const DexDrawer: React.FC<Props> = ({
 	onStartHunt,
 	onHuntStarted,
 }) => {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const { showError, showSuccess } = useNotification();
 	const { status, routes, loading, error } = usePokemonRoute(pokemon.id);
 
 	const bodyRef = useRef<HTMLDivElement>(null);
 	const [hasFade, setHasFade] = useState(false);
 	const startingRef = useRef(false);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: routes/status changes alter content height; re-run is intentional
 	useEffect(() => {
@@ -59,17 +65,20 @@ const DexDrawer: React.FC<Props> = ({
 	const markCaught = async () => {
 		onCaughtChange(pokemon.id, true);
 		try {
-			const res = await fetch(`${API_BASE}/api/hunts/manual`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/manual`,
+				token,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ pokemon_id: pokemon.id }),
 				},
-				body: JSON.stringify({ pokemon_id: pokemon.id }),
-			});
+				handleSessionExpired,
+			);
 			if (!res.ok) throw new Error();
-		} catch {
+		} catch (err) {
 			onCaughtChange(pokemon.id, false);
+			if (err instanceof SessionExpiredError) return;
 			showError("Failed to mark as caught.");
 		}
 	};
@@ -77,13 +86,16 @@ const DexDrawer: React.FC<Props> = ({
 	const removeCaught = async () => {
 		onCaughtChange(pokemon.id, false);
 		try {
-			const res = await fetch(`${API_BASE}/api/hunts/manual/${pokemon.id}`, {
-				method: "DELETE",
-				headers: { Authorization: `Bearer ${token}` },
-			});
+			const res = await authedFetch(
+				`${API_BASE}/api/hunts/manual/${pokemon.id}`,
+				token,
+				{ method: "DELETE" },
+				handleSessionExpired,
+			);
 			if (!res.ok) throw new Error();
-		} catch {
+		} catch (err) {
 			onCaughtChange(pokemon.id, true);
+			if (err instanceof SessionExpiredError) return;
 			showError("Failed to remove from dex.");
 		}
 	};
@@ -104,6 +116,7 @@ const DexDrawer: React.FC<Props> = ({
 				pokemon,
 				defaultParamsFor(route.formula_type),
 				token,
+				handleSessionExpired,
 			);
 			if (!res.ok)
 				throw new Error((await res.text()) || "Failed to start hunt.");
@@ -112,14 +125,30 @@ const DexDrawer: React.FC<Props> = ({
 			onClose();
 		} catch (err) {
 			startingRef.current = false;
+			if (err instanceof SessionExpiredError) return;
 			showError((err as Error).message || "Failed to start hunt.");
 		}
 	};
+
+	// Escape closes the drawer, matching ConfirmDialog/CommandSearch.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [onClose]);
 
 	return (
 		<div className="scrim" onClick={onClose}>
 			<div
 				className="drawer"
+				role="dialog"
+				aria-modal="true"
+				aria-label={pokemon.name}
 				onClick={(e) => e.stopPropagation()}
 				style={{ width: 360, padding: 0 }}
 			>

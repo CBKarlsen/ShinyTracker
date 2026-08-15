@@ -288,7 +288,7 @@ public struct HuntMethodDetail: Codable, Sendable, Equatable, Identifiable {
     }
 }
 
-/// `GET /api/user/{id}/games` — `models.UserGame`.
+/// `GET /api/me/games` — `models.UserGame`.
 public struct UserGame: Codable, Sendable, Equatable {
     public let userID: UUID
     public let gameID: Int
@@ -589,7 +589,7 @@ public struct LogPhaseRequest: Codable, Sendable, Equatable {
     }
 }
 
-/// `POST /api/user/{id}/games/{gameId}` — upserts ownership and the charm flag.
+/// `POST /api/me/games/{gameId}` — upserts ownership and the charm flag.
 public struct SetUserGameRequest: Codable, Sendable, Equatable {
     public let hasShinyCharm: Bool
 
