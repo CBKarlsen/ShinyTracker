@@ -22,7 +22,7 @@ interface Props {
 }
 
 const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStarted, prefill }) => {
-	const { token, userId } = useAuth();
+	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [step, setStep] = useState(1);
 	const [search, setSearch] = useState("");
@@ -137,14 +137,14 @@ const NewHuntModal: React.FC<Props> = ({ open, onClose, onGoToGames, onHuntStart
 
 	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
-		if (!selectedPokemon || !token || !userId) return;
-		fetch(`${API_BASE}/api/user/${userId}/games`, {
+		if (!selectedPokemon || !token) return;
+		fetch(`${API_BASE}/api/me/games`, {
 			headers: { Authorization: `Bearer ${token}` },
 		})
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
 			.then((games) => setUserGameCount((games || []).length))
 			.catch(() => setUserGameCount(null));
-	}, [selectedPokemon, token, userId]);
+	}, [selectedPokemon, token]);
 
 	const startHunt = async (route: PokemonRoute) => {
 		if (!selectedPokemon) return;

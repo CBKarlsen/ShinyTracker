@@ -5,10 +5,18 @@ import ShinyTrackerKit
 /// `backend/internal/api/` and the DDL in `backend/schema.sql`.
 ///
 /// Every type spells its `CodingKeys` out rather than using
-/// `JSONDecoder.keyDecodingStrategy = .convertFromSnakeCase`. That strategy also rewrites
-/// **dictionary** keys, so `hunt_parameters: {"chain_length": 30}` would decode as
-/// `chainLength` and every `params.int("chain_length", …)` lookup in `ShinyTrackerKit` would
-/// silently fall back to its default — wrong odds, no error. Explicit keys, no strategy.
+/// `JSONDecoder.keyDecodingStrategy = .convertFromSnakeCase`. Two reasons, and the second is
+/// the one that settles it:
+///
+/// 1. That strategy also rewrites **dictionary** keys, so `hunt_parameters: {"chain_length": 30}`
+///    would decode as `chainLength` and every `params.int("chain_length", …)` lookup in
+///    `ShinyTrackerKit` would silently fall back to its default — wrong odds, no error. A
+///    `.custom` strategy can carve out that one path, so on its own this is only a caveat.
+/// 2. 44 of the 141 mappings below are not snake↔camel at all. `pokemon_id` is `pokemonID`,
+///    `sprite_url` is `spriteURL`, `user_id` is `userID` — Swift's acronym casing, which the
+///    strategy spells `pokemonId` / `spriteUrl` / `userId`. Adopting it means renaming those
+///    properties at ~380 call sites across the app and both test suites, to end up with names
+///    the API Design Guidelines argue against. The 228 lines of `CodingKeys` are the cheaper half.
 ///
 /// The response types are `Codable` rather than `Decodable` because ``SnapshotStore`` writes them
 /// back out to disk. The encoding is never sent to the server — it re-reads its own files — so the

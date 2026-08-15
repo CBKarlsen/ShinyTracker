@@ -28,7 +28,7 @@ struct DexTileState: Equatable {
     var unavailable = false
     /// The line under the name.
     var sub = ""
-    var subColour: Color = Palette.textMuted.color
+    var subColour: Color = Palette.textMuted
 }
 
 /// The Dex mode: one grid of every species, three ways of reading it.
@@ -338,7 +338,7 @@ final class DexModel {
                 ? (isShinyLocked(id) ? "shiny locked" : outOfScopeNote)
                 : "#" + String(format: "%03d", id)
             tile.subColour = tile.unavailable
-                ? Palette.textMuted.color : Palette.textFaint.color
+                ? Palette.textMuted : Palette.textFaint
 
         case .living:
             tile.registered = livingIDs.contains(id)
@@ -348,11 +348,11 @@ final class DexModel {
                 tile.sub = outOfScopeNote
             } else if tile.locked && !livingOnlyIDs.contains(id) {
                 tile.sub = "Shiny — counts"
-                tile.subColour = Palette.hunt.color
+                tile.subColour = Palette.hunt
             } else {
                 tile.sub = tile.registered ? "Registered" : "Missing"
                 tile.subColour = tile.registered
-                    ? Palette.textSecondary.color : Palette.textMuted.color
+                    ? Palette.textSecondary : Palette.textMuted
             }
 
         case .shiny:
@@ -362,11 +362,11 @@ final class DexModel {
                 tile.sub = isShinyLocked(id) ? "shiny locked" : outOfScopeNote
             } else if let encounters = huntEncounters[id], tile.locked {
                 tile.sub = "\(encounters.formatted(.number)) enc"
-                tile.subColour = Palette.hunt.color
+                tile.subColour = Palette.hunt
             } else {
                 tile.sub = tile.registered ? "Registered" : "Missing"
                 tile.subColour = tile.registered
-                    ? Palette.hunt.color : Palette.textMuted.color
+                    ? Palette.hunt : Palette.textMuted
             }
         }
         return tile

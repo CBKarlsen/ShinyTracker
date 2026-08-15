@@ -5,108 +5,93 @@ import SwiftUI
 ///
 /// Every value here is a literal that appears in that file's inline styles. Nothing is
 /// derived from `frontend/src/index.css`: the native design is not the web design.
-///
-/// Colours keep their raw hex rather than becoming opaque `Color`s, because a `Color` cannot
-/// be compared back to the value it was built from — `DesignTokensTests` pins the hex so the
-/// palette cannot drift away from the prototype unnoticed.
 
 // MARK: - Colour
 
-/// One palette entry: the literal hex from the prototype, plus the `Color` built from it.
-public struct Swatch: Equatable, Sendable {
+extension Color {
     /// `0xRRGGBB`, exactly as written in the design file.
-    public let hex: UInt32
-
-    public init(_ hex: UInt32) { self.hex = hex }
-
-    /// Split out from ``color`` so the shift/mask is assertable — a built `Color` is opaque.
-    public var components: (red: Double, green: Double, blue: Double) {
-        (
-            Double((hex >> 16) & 0xFF) / 255,
-            Double((hex >> 8) & 0xFF) / 255,
-            Double(hex & 0xFF) / 255
+    public init(hex: UInt32) {
+        self.init(
+            red: Double((hex >> 16) & 0xFF) / 255,
+            green: Double((hex >> 8) & 0xFF) / 255,
+            blue: Double(hex & 0xFF) / 255
         )
-    }
-
-    public var color: Color {
-        let (r, g, b) = components
-        return Color(red: r, green: g, blue: b)
     }
 
     /// The prototype tints by appending two hex digits to the accent — `${accent}55`,
     /// `${accent}88`. Same thing, spelled as an alpha fraction.
-    public func alpha(_ byte: UInt8) -> Color { color.opacity(Double(byte) / 255) }
+    public func alpha(_ byte: UInt8) -> Color { opacity(Double(byte) / 255) }
 }
 
 public enum Palette {
     // --- ground ---
     /// The device body behind everything: `background:#060608`.
-    public static let screen = Swatch(0x060608)
+    public static let screen = Color(hex: 0x060608)
     /// Ink on a gold/accent fill: `color:#060608`.
-    public static let onAccent = Swatch(0x060608)
+    public static let onAccent = Color(hex: 0x060608)
 
     // --- surfaces ---
     /// Cards, header buttons, history rows: `background:#111118`.
-    public static let surface = Swatch(0x111118)
+    public static let surface = Color(hex: 0x111118)
     /// Controls sitting on a card — −, ×N, ✦, timer badge: `background:#181822`.
-    public static let surfaceRaised = Swatch(0x181822)
+    public static let surfaceRaised = Color(hex: 0x181822)
     /// The empty-state panel, darker than a card: `background:#0b0b10`.
-    public static let surfaceSunken = Swatch(0x0B0B10)
+    public static let surfaceSunken = Color(hex: 0x0B0B10)
     /// The emphasised (live) hunt card: `background:#17151b`.
-    public static let surfaceLive = Swatch(0x17151B)
+    public static let surfaceLive = Color(hex: 0x17151B)
     /// A block inside the species sheet — stats, weaknesses, locations: `background:#0f0f15`.
-    public static let surfaceBlock = Swatch(0x0F0F15)
+    public static let surfaceBlock = Color(hex: 0x0F0F15)
     /// The bottom sheet itself: `background:#141419`.
-    public static let sheet = Swatch(0x141419)
+    public static let sheet = Color(hex: 0x141419)
 
     // --- lines ---
     /// The 1px card outline and the progress track: `#1a1a22`.
-    public static let hairline = Swatch(0x1A1A22)
+    public static let hairline = Color(hex: 0x1A1A22)
     /// Control outlines: `inset 0 0 0 1px #25252f`.
-    public static let border = Swatch(0x25252F)
+    public static let border = Color(hex: 0x25252F)
     /// The ×N chip at step 1: `inset 0 0 0 1px #33333f`.
-    public static let borderChip = Swatch(0x33333F)
+    public static let borderChip = Color(hex: 0x33333F)
 
     // --- text ---
     /// Titles, species names, the count: `#f4f2ec`.
-    public static let textPrimary = Swatch(0xF4F2EC)
+    public static let textPrimary = Color(hex: 0xF4F2EC)
     /// The card meta line and inactive tab-bar glyphs: `#b6b5c0`.
-    public static let textSecondary = Swatch(0xB6B5C0)
+    public static let textSecondary = Color(hex: 0xB6B5C0)
     /// Labels, hints, odds, the segmented control's off state: `#8a8896`.
-    public static let textMuted = Swatch(0x8A8896)
+    public static let textMuted = Color(hex: 0x8A8896)
     /// The quietest tier — history timestamps, disclaimers: `#44444e`.
-    public static let textFaint = Swatch(0x44444E)
+    public static let textFaint = Color(hex: 0x44444E)
     /// − at count 0: `color:#3a3a44`.
-    public static let textDisabled = Swatch(0x3A3A44)
+    public static let textDisabled = Color(hex: 0x3A3A44)
 
     // --- mode accents: "Each mode owns a colour, so you always know where you are." ---
     /// Hunt. The default of the prototype's `accent` prop.
-    public static let hunt = Swatch(0xF5C661)
+    public static let hunt = Color(hex: 0xF5C661)
     /// Nuzlocke.
-    public static let nuzlocke = Swatch(0x7B9BFF)
+    public static let nuzlocke = Color(hex: 0x7B9BFF)
     /// Team.
-    public static let team = Swatch(0x6EE7A2)
+    public static let team = Color(hex: 0x6EE7A2)
     /// Dex — the same bone white as primary text.
-    public static let dex = Swatch(0xF4F2EC)
+    public static let dex = Color(hex: 0xF4F2EC)
 
     // --- base-stat bars: `v >= 90 ? '#6ee7a2' : v >= 60 ? '#f5c661' : '#ff7373'` ---
     /// A weak base stat. The only red in the palette; the other two tiers are ``team``/``hunt``.
-    public static let statLow = Swatch(0xFF7373)
+    public static let statLow = Color(hex: 0xFF7373)
 
     /// The bar colour for a stat value, per the prototype's ternary above.
-    public static func statBar(_ value: Int) -> Swatch {
+    public static func statBar(_ value: Int) -> Color {
         value >= 90 ? team : value >= 60 ? hunt : statLow
     }
 
     // --- sheets --- (the sheet background itself is ``sheet``, above)
     /// The search field inside a sheet: `background:#0d0d12`.
-    public static let field = Swatch(0x0D0D12)
+    public static let field = Color(hex: 0x0D0D12)
     /// The key/value panel on the Ready and confirm sheets: `background:#0f0f15`.
-    public static let detailPanel = Swatch(0x0F0F15)
+    public static let detailPanel = Color(hex: 0x0F0F15)
     /// The gold-glowing summary card on the Ready step: `background:#15131a`.
-    public static let confirmCard = Swatch(0x15131A)
+    public static let confirmCard = Color(hex: 0x15131A)
     /// The armed "this deletes the hunt" state: `color:#ff7373`.
-    public static let danger = Swatch(0xFF7373)
+    public static let danger = Color(hex: 0xFF7373)
 
     // --- sprite tile ---
     /// The plate behind every sprite, so a row never renders as an empty hole while the image
@@ -116,7 +101,7 @@ public enum Palette {
     /// Flat here, at the gradient's *centre* value rather than its average: the plate has to stay
     /// legible on ``surfaceLive`` (#17151B) as well as on ``surface``, and the average (~#1B1B25)
     /// disappears against the live card — the one card you look at most.
-    public static let spriteTile = Swatch(0x23232F)
+    public static let spriteTile = Color(hex: 0x23232F)
 
 }
 

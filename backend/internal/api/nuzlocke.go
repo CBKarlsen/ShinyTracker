@@ -186,8 +186,7 @@ func GetNuzlockeVersionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(versions)
+	writeJSON(w, versions)
 }
 
 // GetNuzlockeTimelineHandler returns the seeded reference timeline for one game
@@ -213,8 +212,7 @@ func GetNuzlockeTimelineHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(timeline)
+	writeJSON(w, timeline)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -260,8 +258,7 @@ func GetRunsHandler(w http.ResponseWriter, r *http.Request) {
 		runs = append(runs, run)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runs)
+	writeJSON(w, runs)
 }
 
 // CreateRunHandler starts a run for the caller: a game plus house rules.
@@ -366,8 +363,7 @@ func CreateRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(run)
+	writeJSON(w, run)
 }
 
 // loadOwnedRun loads a run's game_id/dupes_clause/nicknames_required, scoped
@@ -465,8 +461,7 @@ func GetRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(detail)
+	writeJSON(w, detail)
 }
 
 // UpdateRunHandler updates a run's status. Ending a run archives it
@@ -507,8 +502,7 @@ func UpdateRunHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(run)
+	writeJSON(w, run)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -658,8 +652,7 @@ func PutRunEncounterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	entryLog.LocationSlug = locationSlug
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(entryLog)
+	writeJSON(w, entryLog)
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -727,8 +720,7 @@ func PatchPartyMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(el)
+	writeJSON(w, el)
 }
 
 func boolPtr(b bool) *bool { return &b }
@@ -781,6 +773,5 @@ func PutBossProgressHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(models.NuzlockeBossProgress{BossSlug: bossSlug, Beaten: req.Beaten})
+	writeJSON(w, models.NuzlockeBossProgress{BossSlug: bossSlug, Beaten: req.Beaten})
 }

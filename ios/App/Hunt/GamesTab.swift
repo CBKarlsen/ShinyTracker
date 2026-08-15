@@ -22,9 +22,6 @@ final class GameLibraryModel {
 
     private let client: APIClient
     private let store: SnapshotStore
-    /// `GET /api/user/{id}/games` 403s unless the id is the caller's own, and this screen has no
-    /// `AuthSession` — the preview harness has no session at all. `/api/me` is the id's source.
-    private var userID: UUID?
 
     init(client: APIClient, store: SnapshotStore) {
         self.client = client
@@ -59,9 +56,8 @@ final class GameLibraryModel {
         // spinner replaces a screen that already has something to show.
         if !quiet, state != .ready { state = .loading }
         do {
-            let id = try await resolveUserID()
             async let all = client.games()
-            async let mine = client.userGames(userID: id)
+            async let mine = client.userGames()
             // Awaited into locals, not assigned straight to `games`/`owned`: if `all` succeeds
             // and `mine` then throws, assigning `games` first would leave a fresh games list
             // rendering against the still-cached `owned` map, so a game new since the snapshot
@@ -92,13 +88,6 @@ final class GameLibraryModel {
         }
     }
 
-    private func resolveUserID() async throws -> UUID {
-        if let userID { return userID }
-        let id = try await client.me().id
-        userID = id
-        return id
-    }
-
     // MARK: Reads
 
     func game(_ id: Int) -> Game? { games.first { $0.id == id } }
@@ -108,8 +97,8 @@ final class GameLibraryModel {
     /// Whether the charm is actually applying to this game's odds.
     ///
     /// The availability check is repeated here even though `ToggleUserGameHandler` rejects a
-    /// charm on a pre-B2W2 game: the same belt-and-braces `GetOddsHandler` applies, so a stale
-    /// row written before that guard existed can never inflate the odds shown.
+    /// charm on a pre-B2W2 game: the same belt-and-braces the dex/route handlers apply, so a
+    /// stale row written before that guard existed can never inflate the odds shown.
     func charmOn(_ gameID: Int) -> Bool { shinyCharmAvailable(gameID) && owned[gameID] == true }
 
     // MARK: Writes
@@ -121,11 +110,9 @@ final class GameLibraryModel {
         do {
             if isOwned {
                 try await client.setUserGame(
-                    userID: try resolveUserID(), gameID: gameID,
-                    SetUserGameRequest(hasShinyCharm: false)
-                )
+                    gameID: gameID, SetUserGameRequest(hasShinyCharm: false))
             } else {
-                try await client.removeUserGame(userID: try resolveUserID(), gameID: gameID)
+                try await client.removeUserGame(gameID: gameID)
             }
             Haptics.impact(.light)
         } catch {
@@ -144,9 +131,7 @@ final class GameLibraryModel {
         syncError = nil
         do {
             try await client.setUserGame(
-                userID: try resolveUserID(), gameID: gameID,
-                SetUserGameRequest(hasShinyCharm: !before)
-            )
+                gameID: gameID, SetUserGameRequest(hasShinyCharm: !before))
             Haptics.impact(.light)
         } catch {
             owned[gameID] = before
@@ -177,7 +162,7 @@ struct GamesTab: View {
         switch library.state {
         case .loading:
             ProgressView()
-                .tint(Palette.textMuted.color)
+                .tint(Palette.textMuted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         case .failed(let reason):
@@ -205,13 +190,13 @@ struct GamesTab: View {
                     )
                     .font(Typography.meta)
                     .lineSpacing(4)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .padding(.bottom, 4)
 
                     if let syncError = library.syncError {
                         Text(syncError)
                             .font(Typography.hint)
-                            .foregroundStyle(Palette.danger.color)
+                            .foregroundStyle(Palette.danger)
                     }
 
                     ForEach(library.games) { game in
@@ -240,13 +225,13 @@ struct GamesTab: View {
             } label: {
                 Image(systemName: owned ? "checkmark" : "plus")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle((owned ? Palette.hunt : Palette.textMuted).color)
+                    .foregroundStyle(owned ? Palette.hunt : Palette.textMuted)
                     .frame(width: 34, height: 34)
-                    .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: 11))
+                    .background(Palette.surfaceRaised, in: .rect(cornerRadius: 11))
                     .overlay(
                         RoundedRectangle(cornerRadius: 11)
                             .strokeBorder(
-                                owned ? Palette.hunt.alpha(0x55) : Palette.border.color,
+                                owned ? Palette.hunt.alpha(0x55) : Palette.border,
                                 lineWidth: 1
                             )
                     )
@@ -265,10 +250,10 @@ struct GamesTab: View {
                     VStack(alignment: .leading, spacing: 7) {
                         Text(game.title)
                             .font(Typography.listTitle)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                         Text("\(generationLabel(game.generation)) · base 1/\(game.baseOdds.formatted(.number))")
                             .font(Typography.stat)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                     }
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -282,11 +267,11 @@ struct GamesTab: View {
         }
         .padding(.vertical, 13)
         .padding(.horizontal, 15)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.listCard))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.listCard))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.listCard)
                 .strokeBorder(
-                    owned ? Palette.hunt.alpha(0x44) : Palette.hairline.color,
+                    owned ? Palette.hunt.alpha(0x44) : Palette.hairline,
                     lineWidth: 1
                 )
         )
@@ -309,19 +294,19 @@ struct CharmTag: View {
     var dimmed = false
 
     var body: some View {
-        let color: Swatch =
+        let color: Color =
             !hasCharm || dimmed ? Palette.textFaint : (charmOn ? Palette.hunt : Palette.textMuted)
         return Text(hasCharm ? (charmOn ? "Charm on" : "Charm off") : "No charm")
             .font(Typography.tag)
-            .foregroundStyle(color.color)
+            .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.tag)
                     .strokeBorder(
                         hasCharm && !dimmed
-                            ? (charmOn ? Palette.hunt.alpha(0x55) : Palette.border.color)
-                            : Palette.hairline.color,
+                            ? (charmOn ? Palette.hunt.alpha(0x55) : Palette.border)
+                            : Palette.hairline,
                         lineWidth: 1
                     )
             )

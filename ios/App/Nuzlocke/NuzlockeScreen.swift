@@ -85,7 +85,7 @@ struct NuzlockeScreen: View {
         switch model.state {
         case .loading:
             ProgressView()
-                .tint(Palette.textMuted.color)
+                .tint(Palette.textMuted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         case .failed(let reason):
@@ -127,12 +127,12 @@ struct NuzlockeScreen: View {
             LazyVStack(alignment: .leading, spacing: Metrics.cardGap) {
                 Text(model.runSummary)
                     .font(Typography.summary)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
 
                 if let message = model.syncError {
                     Text(message)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                        .foregroundStyle(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -144,7 +144,7 @@ struct NuzlockeScreen: View {
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .padding(.top, 6)
 
                 ForEach(model.chapters) { chapter in
@@ -168,7 +168,7 @@ struct NuzlockeScreen: View {
         .refreshable { await model.refresh() }
         .overlay {
             if model.loadingRun {
-                ProgressView().tint(Palette.textMuted.color)
+                ProgressView().tint(Palette.textMuted)
             }
         }
     }
@@ -201,20 +201,20 @@ struct NuzlockeScreen: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .semibold))
                     .rotationEffect(.degrees(expanded ? 90 : 0))
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
 
                 Text(chapter.title)
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle((isOpen ? Palette.nuzlocke : Palette.textMuted).color)
+                    .foregroundStyle(isOpen ? Palette.nuzlocke : Palette.textMuted)
 
                 Spacer(minLength: 0)
 
                 if !summary.isEmpty {
                     Text(summary)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.textFaint.color)
+                        .foregroundStyle(Palette.textFaint)
                 }
             }
             .padding(.vertical, 7)
@@ -238,25 +238,25 @@ struct NuzlockeScreen: View {
                         .font(Typography.blockLabel)
                         .tracking(Typography.blockLabelTracking)
                         .textCase(.uppercase)
-                        .foregroundStyle(Palette.nuzlocke.color)
+                        .foregroundStyle(Palette.nuzlocke)
                     Text(boss.place ?? boss.name)
                         .font(Typography.cardTitle)
                         .tracking(Typography.cardTitleTracking)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                     Text([boss.bossTitle, boss.name].compactMap { $0 }.joined(separator: " — "))
                         .font(Typography.meta)
-                        .foregroundStyle(Palette.textSecondary.color)
+                        .foregroundStyle(Palette.textSecondary)
                     if let squad = boss.squad, !squad.isEmpty {
                         Text(
                             "\(squad.count) Pokémon · up to Lv \(squad.map(\.level).max() ?? 0)"
                         )
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(Metrics.cardPadding)
-                .background(Palette.surfaceLive.color, in: .rect(cornerRadius: Radii.card))
+                .background(Palette.surfaceLive, in: .rect(cornerRadius: Radii.card))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.card)
                         .strokeBorder(Palette.nuzlocke.alpha(0x44), lineWidth: 1)
@@ -267,10 +267,10 @@ struct NuzlockeScreen: View {
         } else if !model.timeline.isEmpty {
             Text("Every seeded checkpoint is beaten.")
                 .font(Typography.meta)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
                 .padding(Metrics.cardPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.card))
+                .background(Palette.surface, in: .rect(cornerRadius: Radii.card))
         }
     }
 
@@ -290,29 +290,29 @@ struct NuzlockeScreen: View {
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.danger.color)
+                    .foregroundStyle(Palette.danger)
 
                 ForEach(gaps) { gap in
                     HStack(alignment: .top, spacing: 9) {
                         Text(gap.type.displayName)
                             .font(Typography.tag)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(
-                                gap.type.swatch.alpha(0x3D),
+                                gap.type.color.alpha(0x3D),
                                 in: .rect(cornerRadius: Radii.typeChip)
                             )
                         Text(sentence(for: gap))
                             .font(Typography.meta)
-                            .foregroundStyle(Palette.textSecondary.color)
+                            .foregroundStyle(Palette.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
             .padding(Metrics.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.card))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.card))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.card)
                     .strokeBorder(Palette.danger.alpha(0x44), lineWidth: 1)
@@ -341,7 +341,7 @@ struct NuzlockeScreen: View {
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 Spacer(minLength: 0)
                 // The counts were the whole representation of the box and the graveyard. They
                 // are the way into the roster now, where those Pokémon actually exist.
@@ -351,18 +351,18 @@ struct NuzlockeScreen: View {
                             // Nothing lost and nothing boxed yet: the counts would both be
                             // hidden, leaving a bare chevron with no idea what it opens.
                             Text("Roster")
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                         }
                         if !model.graveyard.isEmpty {
                             Text("\(model.graveyard.count) in graveyard")
-                                .foregroundStyle(Palette.danger.color)
+                                .foregroundStyle(Palette.danger)
                         }
                         if !model.boxed.isEmpty {
                             Text("\(model.boxed.count) boxed")
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                         }
                         Image(systemName: "chevron.right")
-                            .foregroundStyle(Palette.textFaint.color)
+                            .foregroundStyle(Palette.textFaint)
                     }
                     .font(Typography.hint)
                     .contentShape(.rect)
@@ -373,7 +373,7 @@ struct NuzlockeScreen: View {
             if model.party.isEmpty {
                 Text("Nothing alive in the party yet.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
             } else {
                 ScrollView(.horizontal) {
                     HStack(spacing: 8) {
@@ -387,10 +387,10 @@ struct NuzlockeScreen: View {
         }
         .padding(Metrics.cardPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.card))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.card))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.card)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
@@ -411,12 +411,12 @@ struct NuzlockeScreen: View {
                 )
                 Text(member.nickname ?? model.speciesName(for: member))
                     .font(Typography.tileSub)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
             }
             .frame(width: 72)
             .padding(.vertical, 9)
-            .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.tile))
+            .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.tile))
             .contentShape(.rect)
         }
         .accessibilityLabel(
@@ -436,11 +436,10 @@ struct NuzlockeScreen: View {
                 } else {
                     ZStack {
                         RoundedRectangle(cornerRadius: Radii.sprite(44))
-                            .fill(Palette.surfaceRaised.color)
+                            .fill(Palette.surfaceRaised)
                         Image(systemName: isCurrent ? "location.fill" : "circle.dashed")
                             .font(.system(size: 15))
-                            .foregroundStyle(
-                                (isCurrent ? Palette.nuzlocke : Palette.textFaint).color)
+                            .foregroundStyle(isCurrent ? Palette.nuzlocke : Palette.textFaint)
                     }
                     .frame(width: 44, height: 44)
                 }
@@ -448,11 +447,11 @@ struct NuzlockeScreen: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(rowTitle(entry, logged))
                         .font(Typography.listTitle)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                         .lineLimit(1)
                     Text(rowMeta(entry, logged, isCurrent: isCurrent))
                         .font(Typography.tileSub)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                         .lineLimit(1)
                 }
 
@@ -462,7 +461,7 @@ struct NuzlockeScreen: View {
                     let outcome = EncounterOutcome(logged)
                     Text(outcome.label)
                         .font(Typography.tag)
-                        .foregroundStyle(outcome.tint.color)
+                        .foregroundStyle(outcome.tint)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 5)
                         .background(outcome.tint.alpha(0x1F), in: .rect(cornerRadius: Radii.tag))
@@ -471,11 +470,11 @@ struct NuzlockeScreen: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.row))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.row)
                     .strokeBorder(
-                        isCurrent ? Palette.nuzlocke.alpha(0x55) : Palette.hairline.color,
+                        isCurrent ? Palette.nuzlocke.alpha(0x55) : Palette.hairline,
                         lineWidth: isCurrent ? 2 : 1
                     )
             )
@@ -509,7 +508,7 @@ struct NuzlockeScreen: View {
             Button { Task { await model.setBoss(entry.slug, beaten: !done) } } label: {
                 Image(systemName: done ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle((done ? Palette.nuzlocke : Palette.textFaint).color)
+                    .foregroundStyle(done ? Palette.nuzlocke : Palette.textFaint)
                     .frame(width: 44, height: 44)
                     .contentShape(.rect)
             }
@@ -521,20 +520,20 @@ struct NuzlockeScreen: View {
                     VStack(alignment: .leading, spacing: 5) {
                         Text(entry.name)
                             .font(Typography.listTitle)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                         Text(
                             [entry.bossTitle, entry.place].compactMap { $0 }
                                 .joined(separator: " · ")
                         )
                         .font(Typography.tileSub)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                         .lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     if let cap = entry.levelCap {
                         Text("CAP \(cap)")
                             .font(Typography.tag)
-                            .foregroundStyle(Palette.nuzlocke.color)
+                            .foregroundStyle(Palette.nuzlocke)
                     }
                 }
                 .contentShape(.rect)
@@ -543,11 +542,11 @@ struct NuzlockeScreen: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .frame(maxWidth: .infinity)
-        .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.row))
+        .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.row))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.row)
                 .strokeBorder(
-                    done ? Palette.nuzlocke.alpha(0x33) : Palette.border.color, lineWidth: 1)
+                    done ? Palette.nuzlocke.alpha(0x33) : Palette.border, lineWidth: 1)
         )
     }
 }
@@ -559,10 +558,10 @@ struct BlueButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Typography.primaryButton)
-            .foregroundStyle(Palette.onAccent.color)
+            .foregroundStyle(Palette.onAccent)
             .frame(maxWidth: .infinity)
             .frame(height: Metrics.controlHeight)
-            .background(Palette.nuzlocke.color, in: .rect(cornerRadius: Radii.control))
+            .background(Palette.nuzlocke, in: .rect(cornerRadius: Radii.control))
             .opacity(configuration.isPressed ? 0.82 : 1)
     }
 }
@@ -582,7 +581,7 @@ struct RunPickerSheet: View {
                 Text("Your runs")
                     .font(Typography.sheetTitle)
                     .tracking(Typography.sheetTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .padding(.bottom, 4)
 
                 ForEach(model.runs) { candidate in
@@ -594,30 +593,29 @@ struct RunPickerSheet: View {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text(candidate.gameTitle ?? "Run")
                                     .font(Typography.segmentOn)
-                                    .foregroundStyle(Palette.textPrimary.color)
+                                    .foregroundStyle(Palette.textPrimary)
                                 Text(
                                     candidate.startedAt
                                         .formatted(date: .abbreviated, time: .omitted)
                                 )
                                 .font(Typography.tileSub)
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                             }
                             Spacer(minLength: 0)
                             Text(candidate.isActive ? "Active" : "Ended")
                                 .font(Typography.tag)
                                 .foregroundStyle(
-                                    (candidate.isActive ? Palette.nuzlocke : Palette.textFaint)
-                                        .color)
+                                    candidate.isActive ? Palette.nuzlocke : Palette.textFaint)
                         }
                         .padding(.horizontal, 15)
                         .padding(.vertical, 13)
                         .frame(maxWidth: .infinity)
-                        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.block))
+                        .background(Palette.surface, in: .rect(cornerRadius: Radii.block))
                         .overlay(
                             RoundedRectangle(cornerRadius: Radii.block)
                                 .strokeBorder(
                                     candidate.id == model.run?.id
-                                        ? Palette.nuzlocke.alpha(0x55) : Palette.hairline.color,
+                                        ? Palette.nuzlocke.alpha(0x55) : Palette.hairline,
                                     lineWidth: candidate.id == model.run?.id ? 2 : 1
                                 )
                         )
@@ -635,16 +633,16 @@ struct RunPickerSheet: View {
                         dismiss()
                     }
                     .font(Typography.segmentOff)
-                    .foregroundStyle(Palette.danger.color)
+                    .foregroundStyle(Palette.danger)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 6)
                 }
             }
             .padding(18)
         }
-        .background(Palette.sheet.color)
+        .background(Palette.sheet)
         .presentationDetents([.medium, .large])
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .sheet(isPresented: $startingRun) {
             NewRunSheet(model: model)
         }
@@ -666,16 +664,16 @@ struct CheckpointSheet: View {
                     Text(boss.name)
                         .font(Typography.sheetTitle)
                         .tracking(Typography.sheetTitleTracking)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                     Text(
                         [boss.bossTitle, boss.place].compactMap { $0 }.joined(separator: " · ")
                     )
                     .font(Typography.meta)
-                    .foregroundStyle(Palette.textSecondary.color)
+                    .foregroundStyle(Palette.textSecondary)
                     if let cap = boss.levelCap {
                         Text("Level cap \(cap)")
                             .font(Typography.statStrong)
-                            .foregroundStyle(Palette.nuzlocke.color)
+                            .foregroundStyle(Palette.nuzlocke)
                     }
                 }
 
@@ -687,10 +685,10 @@ struct CheckpointSheet: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(member.pokemonName.capitalized)
                                     .font(Typography.listTitle)
-                                    .foregroundStyle(Palette.textPrimary.color)
+                                    .foregroundStyle(Palette.textPrimary)
                                 Text("Lv \(member.level) · \(member.ability)")
                                     .font(Typography.tileSub)
-                                    .foregroundStyle(Palette.textMuted.color)
+                                    .foregroundStyle(Palette.textMuted)
                             }
                             Spacer(minLength: 0)
                         }
@@ -705,7 +703,7 @@ struct CheckpointSheet: View {
                     }
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Palette.surfaceBlock.color, in: .rect(cornerRadius: Radii.block))
+                    .background(Palette.surfaceBlock, in: .rect(cornerRadius: Radii.block))
                 }
 
                 Button(model.isBeaten(boss.slug) ? "Mark not beaten" : "Beaten") {
@@ -717,18 +715,18 @@ struct CheckpointSheet: View {
             }
             .padding(18)
         }
-        .background(Palette.sheet.color)
+        .background(Palette.sheet)
         .presentationDetents([.medium, .large])
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
     }
 
     /// One move, tinted by its type. The seed capitalises move types ("Flying") and
     /// `PokemonType(slug:)` lowercases before matching, so they resolve with no translation step.
     private func moveChip(_ move: NuzlockeBossMove) -> some View {
-        let swatch = PokemonType(slug: move.type)?.swatch ?? Palette.textFaint
+        let swatch = PokemonType(slug: move.type)?.color ?? Palette.textFaint
         return Text(move.name)
             .font(Typography.tileSub)
-            .foregroundStyle(Palette.textPrimary.color)
+            .foregroundStyle(Palette.textPrimary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
             .background(swatch.alpha(0x2E), in: .rect(cornerRadius: Radii.typeChip))

@@ -150,11 +150,11 @@ struct HuntScreen: View {
                 Button { segment = tab } label: {
                     Text(tab.rawValue)
                         .font(on ? Typography.segmentOn : Typography.segmentOff)
-                        .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
+                        .foregroundStyle(on ? Palette.onAccent : Palette.textMuted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
-                            on ? Palette.textPrimary.color : .clear,
+                            on ? Palette.textPrimary : .clear,
                             in: .rect(cornerRadius: Radii.segmentItem)
                         )
                         .contentShape(.rect)
@@ -162,10 +162,10 @@ struct HuntScreen: View {
             }
         }
         .padding(3)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.segment))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.segment))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.segment)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
@@ -185,7 +185,7 @@ struct HuntScreen: View {
         switch model.state {
         case .loading:
             centered {
-                ProgressView().tint(Palette.textMuted.color)
+                ProgressView().tint(Palette.textMuted)
             }
 
         case .failed(let reason):
@@ -216,7 +216,7 @@ struct HuntScreen: View {
                         // gone; this one clears itself on the next tap.
                         Text(syncError)
                             .font(Typography.hint)
-                            .foregroundStyle(Palette.textSecondary.color)
+                            .foregroundStyle(Palette.textSecondary)
                             .padding(.horizontal, 2)
                     }
 
@@ -228,7 +228,7 @@ struct HuntScreen: View {
                         // out by DECISIONS.md D3), so the line says only what is true.
                         Text("Tap +1 to count, or hold to keep counting. ×N changes how many each tap adds.")
                             .font(Typography.hint)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                             .padding(.horizontal, 2)
                             .padding(.top, 2)
 
@@ -250,7 +250,7 @@ struct HuntScreen: View {
     private var historyList: some View {
         switch model.state {
         case .loading:
-            centered { ProgressView().tint(Palette.textMuted.color) }
+            centered { ProgressView().tint(Palette.textMuted) }
 
         case .failed(let reason):
             centered {
@@ -293,11 +293,11 @@ struct HuntScreen: View {
             ForEach(Array(model.failedWrites.enumerated()), id: \.offset) { _, message in
                 Text(message)
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.danger.color)
+                    .foregroundStyle(Palette.danger)
             }
             Button("Dismiss") { model.dismissFailedWrites() }
                 .font(Typography.hint)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
         }
         .padding(.horizontal, 2)
     }
@@ -335,10 +335,10 @@ struct HistoryRow: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text(row.name)
                     .font(Typography.listTitle)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 Text(meta)
                     .font(Typography.stat)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -346,19 +346,19 @@ struct HistoryRow: View {
             VStack(alignment: .trailing, spacing: 6) {
                 Text(row.count.formatted(.number))
                     .font(Typography.rowValue)
-                    .foregroundStyle(Palette.hunt.color)
+                    .foregroundStyle(Palette.hunt)
                 // `font:400 12px/1` — the quietest line on the row.
                 Text(formatElapsed(row.detail.totalTimeSeconds))
                     .font(.system(size: 12))
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
             }
         }
         .padding(.vertical, 11)
         .padding(.horizontal, 14)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.row))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.row)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(
@@ -394,14 +394,14 @@ struct StateBlock<Accessory: View>: View {
     let message: String
     /// The icon's tint. Defaults to Hunt's gold, because every caller but Nuzlocke is a Hunt
     /// screen — and a run screen must never show gold ("each mode owns a colour").
-    let tint: Swatch
+    let tint: Color
     @ViewBuilder var accessory: () -> Accessory
 
     init(
         symbol: String,
         title: String,
         body: String,
-        tint: Swatch = Palette.hunt,
+        tint: Color = Palette.hunt,
         @ViewBuilder accessory: @escaping () -> Accessory = { EmptyView() }
     ) {
         self.symbol = symbol
@@ -415,25 +415,25 @@ struct StateBlock<Accessory: View>: View {
         VStack(spacing: 0) {
             Image(systemName: symbol)
                 .font(.system(size: 26))
-                .foregroundStyle(tint.color.opacity(0.55))
+                .foregroundStyle(tint.opacity(0.55))
                 .frame(width: 64, height: 64)
-                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.iconTile))
+                .background(Palette.surface, in: .rect(cornerRadius: Radii.iconTile))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.iconTile)
-                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                        .strokeBorder(Palette.hairline, lineWidth: 1)
                 )
                 .padding(.bottom, 20)
 
             Text(title)
                 .font(Typography.emptyTitle)
                 .tracking(Typography.cardTitleTracking)
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
                 .padding(.bottom, 10)
 
             Text(message)
                 .font(Typography.emptyBody)
                 .lineSpacing(4)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 250)
 
@@ -442,10 +442,10 @@ struct StateBlock<Accessory: View>: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 52)
         .padding(.horizontal, 24)
-        .background(Palette.surfaceSunken.color, in: .rect(cornerRadius: Radii.panel))
+        .background(Palette.surfaceSunken, in: .rect(cornerRadius: Radii.panel))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.panel)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 }
@@ -455,10 +455,10 @@ struct GoldButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Typography.primaryButton)
-            .foregroundStyle(Palette.onAccent.color)
+            .foregroundStyle(Palette.onAccent)
             .padding(.horizontal, 22)
             .frame(height: 46)
-            .background(Palette.hunt.color, in: .rect(cornerRadius: Radii.headerButton))
+            .background(Palette.hunt, in: .rect(cornerRadius: Radii.headerButton))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }

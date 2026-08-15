@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,14 +16,19 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
-	authUserID := r.Header.Get("X-User-ID")
+// writeJSON sends v as the response body, 200 OK.
+//
+// Content-Type is set here rather than at 34 call sites, which is also how the
+// handlers that only called WriteHeader(StatusOK) stop answering with Go's
+// sniffed text/plain. Encode errors are dropped on purpose: they mean the
+// client hung up mid-write, and the status line has already gone out.
+func writeJSON(w http.ResponseWriter, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(v)
+}
 
-	if userID != authUserID {
-		http.Error(w, "Unauthorized access to user games", http.StatusForbidden)
-		return
-	}
+func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
+	userID := r.Header.Get("X-User-ID")
 
 	rows, err := database.DB.Query(context.Background(),
 		"SELECT game_id, has_shiny_charm FROM user_games WHERE user_id = $1", userID)
@@ -44,19 +48,12 @@ func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
 		userGames = append(userGames, ug)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userGames)
+	writeJSON(w, userGames)
 }
 
 func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	userID := r.Header.Get("X-User-ID")
 	gameIDStr := chi.URLParam(r, "gameId")
-	authUserID := r.Header.Get("X-User-ID")
-
-	if userID != authUserID {
-		http.Error(w, "Unauthorized access", http.StatusForbidden)
-		return
-	}
 
 	gameID, err := strconv.Atoi(gameIDStr)
 	if err != nil {
@@ -92,19 +89,12 @@ func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
+	writeJSON(w, map[string]string{"message": "success"})
 }
 
 func RemoveUserGameHandler(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	userID := r.Header.Get("X-User-ID")
 	gameID := chi.URLParam(r, "gameId")
-	authUserID := r.Header.Get("X-User-ID")
-
-	if userID != authUserID {
-		http.Error(w, "Unauthorized access", http.StatusForbidden)
-		return
-	}
 
 	_, err := database.DB.Exec(context.Background(),
 		"DELETE FROM user_games WHERE user_id = $1 AND game_id = $2",
@@ -114,8 +104,7 @@ func RemoveUserGameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "success"})
+	writeJSON(w, map[string]string{"message": "success"})
 }
 
 // MeHandler is the bootstrap endpoint called by the frontend on login.
@@ -145,8 +134,7 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(profile)
+	writeJSON(w, profile)
 }
 
 // usernameFromClaims derives the best display name from a Supabase JWT's
@@ -193,8 +181,11 @@ func SyncHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("SyncPokemonData error: %v", err)
 		}
 	}()
+	// Header before WriteHeader: after the status line is sent, setting one is a
+	// silent no-op. The only non-200 body in the package, hence no writeJSON.
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Sync started in background"})
+	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Sync started in background"})
 }
 
 func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
@@ -212,8 +203,7 @@ func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
 			games = append(games, g)
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(games)
+	writeJSON(w, games)
 }
 
 func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
@@ -251,8 +241,7 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 			pokemon = append(pokemon, p)
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pokemon)
+	writeJSON(w, pokemon)
 }
 
 type HuntMethodDetail struct {
@@ -276,13 +265,6 @@ type MethodDetail struct {
 	CharmRolls     int    `json:"charm_rolls"`
 	AvgTimeSeconds int    `json:"avg_time_seconds"`
 	FormulaType    string `json:"formula_type"`
-}
-
-type OddsResponse struct {
-	Fraction           string  `json:"fraction"`
-	Percentage         string  `json:"percentage"`
-	ExpectedEncounters int     `json:"expected_encounters"`
-	ETAHours           float64 `json:"eta_hours"`
 }
 
 // GetGamePokemonHandler returns the pokemon_id values obtainable in a given
@@ -318,8 +300,7 @@ func GetGamePokemonHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ids)
+	writeJSON(w, ids)
 }
 
 func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
@@ -362,69 +343,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	if methods == nil {
 		methods = []MethodDetail{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(methods)
-}
-
-func GetOddsHandler(w http.ResponseWriter, r *http.Request) {
-	huntMethodIDStr := r.URL.Query().Get("hunt_method_id")
-	if huntMethodIDStr == "" {
-		http.Error(w, "hunt_method_id is required", http.StatusBadRequest)
-		return
-	}
-	huntMethodID, err := strconv.Atoi(huntMethodIDStr)
-	if err != nil {
-		http.Error(w, "hunt_method_id must be an integer", http.StatusBadRequest)
-		return
-	}
-	shinyCharmParam := r.URL.Query().Get("shiny_charm") == "true"
-
-	var baseRolls, charmRolls, avgTimeSeconds, baseOdds, gameID int
-	var formulaType string
-	err = database.DB.QueryRow(context.Background(), `
-		SELECT e.base_rolls, e.charm_rolls, e.avg_time_seconds, g.base_odds, e.formula_type, g.id
-		FROM hunt_methods e
-		JOIN method_games mg ON e.id = mg.method_id
-		JOIN games g ON mg.game_id = g.id
-		WHERE e.id = $1
-		LIMIT 1
-	`, huntMethodID).Scan(&baseRolls, &charmRolls, &avgTimeSeconds, &baseOdds, &formulaType, &gameID)
-	if err != nil {
-		http.Error(w, "Hunt method not found", http.StatusNotFound)
-		return
-	}
-
-	// Guard: ignore a caller-supplied shiny_charm=true when the charm doesn't
-	// exist for this game, even if a stale DB flag somehow survived.
-	hasCharm := shinyCharmParam && calc.ShinyCharmAvailable(gameID)
-
-	base := calc.OddsConfig{
-		BaseOdds:       baseOdds,
-		BaseRolls:      baseRolls,
-		CharmRolls:     charmRolls,
-		AvgTimeSeconds: avgTimeSeconds,
-	}
-	// Use EffectiveOdds (mirrors route ranking) with best-case default params.
-	// This ensures formula-aware methods (chaining, SOS, DexNav, etc.) agree
-	// with the denominator shown in the route drawer / hunt-next panel.
-	expectedEncounters := calc.EffectiveOdds(formulaType, calc.DefaultParams(formulaType), base, hasCharm)
-	if expectedEncounters < 1 {
-		expectedEncounters = 1
-	}
-
-	// ETA mirrors routes.go: expected_encounters * avg_time_seconds / 3600.
-	etaHours := float64(expectedEncounters) * float64(avgTimeSeconds) / 3600.0
-	// Round to one decimal place (same rounding as the old handler).
-	etaHours = float64(int(etaHours*10+0.5)) / 10
-
-	resp := OddsResponse{
-		Fraction:           fmt.Sprintf("1/%d", expectedEncounters),
-		Percentage:         fmt.Sprintf("%.4f%%", float64(1)/float64(expectedEncounters)*100),
-		ExpectedEncounters: expectedEncounters,
-		ETAHours:           etaHours,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	writeJSON(w, methods)
 }
 
 func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
@@ -473,6 +392,5 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		methods = append(methods, m)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(methods)
+	writeJSON(w, methods)
 }

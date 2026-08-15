@@ -50,15 +50,16 @@ func NewRouter() *chi.Mux {
 		r.Get("/games/{id}/pokedex", GetGamePokedexHandler)
 		r.Get("/pokemon", GetPokemonHandler)
 		r.Get("/methods", GetMethodsHandler)
-		r.Get("/odds", GetOddsHandler)
 
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware)
 			r.Get("/me", MeHandler)
 
-			r.Get("/user/{id}/games", GetUserGamesHandler)
-			r.Post("/user/{id}/games/{gameId}", ToggleUserGameHandler)
-			r.Delete("/user/{id}/games/{gameId}", RemoveUserGameHandler)
+			// No user id in the path: it only ever had to equal the token's sub,
+			// so the token is the id. Nothing to compare, nothing to 403.
+			r.Get("/me/games", GetUserGamesHandler)
+			r.Post("/me/games/{gameId}", ToggleUserGameHandler)
+			r.Delete("/me/games/{gameId}", RemoveUserGameHandler)
 
 			r.Get("/hunts", GetHuntsHandler)
 			r.Post("/hunts", CreateHuntHandler)
@@ -71,7 +72,6 @@ func NewRouter() *chi.Mux {
 			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
 			r.Get("/stats", GetStatsHandler)
-			r.Get("/export", ExportHandler)
 
 			r.Get("/dex/status", DexStatusHandler)
 			r.Get("/dex/suggestions", DexSuggestionsHandler)

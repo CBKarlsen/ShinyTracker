@@ -178,18 +178,18 @@ public actor APIClient {
 
     // MARK: Owned games
 
-    /// The server 403s unless `userID` is the caller's own id (`AuthSession.userID`).
-    public func userGames(userID: UUID) async throws -> [UserGame] {
-        try await getList("api/user/\(id(userID))/games")
+    /// Scoped to the bearer token, like every other authenticated route — there is no
+    /// user id to pass, and so no id the server has to 403 for not being your own.
+    public func userGames() async throws -> [UserGame] {
+        try await getList("api/me/games")
     }
 
-    public func setUserGame(userID: UUID, gameID: Int, _ body: SetUserGameRequest) async throws {
-        try await sendDiscardingBody("POST", "api/user/\(id(userID))/games/\(gameID)", body: body)
+    public func setUserGame(gameID: Int, _ body: SetUserGameRequest) async throws {
+        try await sendDiscardingBody("POST", "api/me/games/\(gameID)", body: body)
     }
 
-    public func removeUserGame(userID: UUID, gameID: Int) async throws {
-        try await sendDiscardingBody(
-            "DELETE", "api/user/\(id(userID))/games/\(gameID)", body: noBody)
+    public func removeUserGame(gameID: Int) async throws {
+        try await sendDiscardingBody("DELETE", "api/me/games/\(gameID)", body: noBody)
     }
 
     // MARK: Hunts

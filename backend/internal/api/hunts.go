@@ -59,9 +59,6 @@ func loadPhasesForHunts(ctx context.Context, huntIDs []string) (map[string][]mod
 	return result, rows.Err()
 }
 
-// loadHuntsForUser fetches every hunt (with join details and phases) owned by
-// one user. Shared by GetHuntsHandler and ExportHandler so the export can't
-// drift from what the hunts list actually returns.
 // huntDetailQuery is the SELECT/FROM/JOIN shared by every read of a hunt with its
 // joined method, game and shiny-charm state. Callers append their own WHERE (and
 // ORDER BY). Keeping the column list in one place is the point: the hunts list and
@@ -138,8 +135,7 @@ func GetHuntsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hunts)
+	writeJSON(w, hunts)
 }
 
 // DeleteHuntHandler deletes a hunt owned by the calling user. Scoped by
@@ -166,8 +162,7 @@ func DeleteHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Hunt deleted successfully"})
+	writeJSON(w, map[string]string{"message": "Hunt deleted successfully"})
 }
 
 func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
@@ -254,8 +249,7 @@ func CreateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hunt)
+	writeJSON(w, hunt)
 }
 
 func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
@@ -322,19 +316,36 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Everything this UPDATE derives from prior state is read once, under a row
+	// lock, inside the transaction that will write it. Two clients on one hunt
+	// (D1 names phone + Apple Watch) is the case deltas exist for, and an
+	// unlocked read-modify-write lets the second request overwrite whatever the
+	// first just committed.
+	//
+	// The transaction is unconditional. The delta path needs one regardless —
+	// the dedupe row and the count it authorises commit together or not at all —
+	// and giving the absolute path the same lock costs a BEGIN and deletes the
+	// second read the delta path used to need.
+	tx, err := database.DB.Begin(context.Background())
+	if err != nil {
+		http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
+		return
+	}
+	// No-op once Commit has succeeded, so every early return below rolls back.
+	defer tx.Rollback(context.Background())
+
 	// The SELECT's column order and the Scan targets below are positionally
 	// coupled — pgx matches them by position, not by name, so an added column
 	// that lands in the wrong slot loads silently into the wrong variable
 	// instead of failing. Append new columns (and their scan target) last.
-	var prevUpdatedAt time.Time
-	var currentTotalTime int
-	var clientOwnsTime bool
+	var storedUpdatedAt time.Time
+	var storedTotalTime int
+	var storedOwnsTime bool
 	var huntParameters json.RawMessage
-	var storedCount int
-	err := database.DB.QueryRow(context.Background(),
-		`SELECT updated_at, total_time_seconds, client_owns_time, hunt_parameters, encounter_count FROM user_hunts WHERE id = $1 AND user_id = $2`,
-		huntID, userID).Scan(&prevUpdatedAt, &currentTotalTime, &clientOwnsTime, &huntParameters, &storedCount)
-	if err != nil {
+	var newEncounterCount int
+	if err := tx.QueryRow(context.Background(),
+		`SELECT encounter_count, updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+		huntID, userID).Scan(&newEncounterCount, &storedUpdatedAt, &storedTotalTime, &storedOwnsTime, &huntParameters); err != nil {
 		// Only "no such row" is a 404. Every other error here is the database
 		// being unreachable — a pooler reset, a paused project, a statement
 		// timeout — and the offline queue reads 404 as "this write can never
@@ -351,7 +362,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// D1 (docs/handoff/DECISIONS.md): total_time_seconds is client-authoritative
 	// once a client starts sending it — see calc.DecideTotalTime for the full
 	// derive/store/latch decision.
-	newTotalTime, newClientOwnsTime, err := calc.DecideTotalTime(currentTotalTime, clientOwnsTime, req.TotalTimeSeconds, time.Since(prevUpdatedAt))
+	newTotalTime, newClientOwnsTime, err := calc.DecideTotalTime(storedTotalTime, storedOwnsTime, req.TotalTimeSeconds, time.Since(storedUpdatedAt))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -370,54 +381,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// at all, and the clamp's only remaining effect was to silently discard
 	// the web's miscount undo, which lowers the count on purpose. Every write
 	// on this path is a deliberate action taken against an on-screen number.
-	var tx pgx.Tx
-	newEncounterCount := storedCount
 	if req.EncounterDelta != nil {
-		// The dedupe row and the count it authorises commit together or not at
-		// all. Two transactions leave a window where a crash between them either
-		// double-applies the delta or loses it.
-		tx, err = database.DB.Begin(context.Background())
-		if err != nil {
-			http.Error(w, "Failed to start transaction", http.StatusInternalServerError)
-			return
-		}
-		// No-op once Commit has succeeded, so every early return below rolls back.
-		defer tx.Rollback(context.Background())
-
-		// Re-read under a row lock rather than trusting the pre-transaction read:
-		// two clients on one hunt (D1 names phone + Apple Watch) is the case
-		// deltas exist for, and an unlocked read-modify-write lets the second
-		// request overwrite whatever the first just committed.
-		//
-		// Every value this UPDATE derives from prior state is re-read, not just
-		// the count. Re-reading the count alone would keep the encounters and
-		// still write a stale total_time_seconds and hunt_parameters over the
-		// other device's — losing its elapsed time and its chain length.
-		//
-		// Positionally coupled to its Scan targets, same as the SELECT above.
-		var lockedUpdatedAt time.Time
-		var lockedTotalTime int
-		var lockedOwnsTime bool
-		var lockedParameters json.RawMessage
-		if err := tx.QueryRow(context.Background(),
-			`SELECT encounter_count, updated_at, total_time_seconds, client_owns_time, hunt_parameters FROM user_hunts WHERE id = $1 AND user_id = $2 FOR UPDATE`,
-			huntID, userID).Scan(&newEncounterCount, &lockedUpdatedAt, &lockedTotalTime, &lockedOwnsTime, &lockedParameters); err != nil {
-			// Same split as the unlocked read above, and it matters more here:
-			// this is the delta path, so the caller is the offline queue itself.
-			if errors.Is(err, pgx.ErrNoRows) {
-				http.Error(w, "Hunt not found", http.StatusNotFound)
-				return
-			}
-			http.Error(w, "Failed to load hunt", http.StatusInternalServerError)
-			return
-		}
-		newTotalTime, newClientOwnsTime, err = calc.DecideTotalTime(lockedTotalTime, lockedOwnsTime, req.TotalTimeSeconds, time.Since(lockedUpdatedAt))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		huntParameters = lockedParameters
-
 		tag, err := tx.Exec(context.Background(),
 			`INSERT INTO hunt_writes (write_id, user_id, hunt_id) VALUES ($1, $2, $3) ON CONFLICT (write_id) DO NOTHING`,
 			*req.WriteID, userID, huntID)
@@ -442,21 +406,12 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	} else if req.EncounterCount != nil {
 		newEncounterCount = *req.EncounterCount
 	}
-	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < currentTotalTime {
-		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, currentTotalTime)
+	if req.TotalTimeSeconds != nil && *req.TotalTimeSeconds < storedTotalTime {
+		log.Printf("UpdateHunt: clamping total_time_seconds for hunt %s (submitted %d < stored %d), keeping stored", huntID, *req.TotalTimeSeconds, storedTotalTime)
 	}
 
 	if len(req.HuntParameters) > 0 {
 		huntParameters = req.HuntParameters
-	}
-
-	// The UPDATE has to run inside the delta's transaction when there is one, or
-	// the dedupe row and the count it authorises would not commit together.
-	var q interface {
-		QueryRow(context.Context, string, ...any) pgx.Row
-	} = database.DB
-	if tx != nil {
-		q = tx
 	}
 
 	// $1 binds newEncounterCount, not req.EncounterCount. On the delta path
@@ -467,7 +422,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// newEncounterCount still holds the stored count, so the row is rewritten
 	// with what it already had rather than having the delta applied twice.
 	var hunt models.UserHunt
-	err = q.QueryRow(context.Background(),
+	err = tx.QueryRow(context.Background(),
 		`UPDATE user_hunts
 		 SET encounter_count = $1, status = COALESCE($2, status), updated_at = CURRENT_TIMESTAMP, total_time_seconds = $3, client_owns_time = $4, hunt_parameters = $5, nickname = NULLIF(COALESCE($6, nickname), '')
 		 WHERE id = $7 AND user_id = $8
@@ -480,15 +435,12 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if tx != nil {
-		if err := tx.Commit(context.Background()); err != nil {
-			http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
-			return
-		}
+	if err := tx.Commit(context.Background()); err != nil {
+		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hunt)
+	writeJSON(w, hunt)
 }
 
 func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
@@ -582,8 +534,7 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		hunt.Phases = []models.HuntPhase{}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hunt)
+	writeJSON(w, hunt)
 }
 
 func ManualCatchHandler(w http.ResponseWriter, r *http.Request) {
@@ -610,8 +561,7 @@ func ManualCatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(hunt)
+	writeJSON(w, hunt)
 }
 
 func RemoveManualCatchHandler(w http.ResponseWriter, r *http.Request) {
@@ -628,8 +578,7 @@ func RemoveManualCatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Catch removed successfully"})
+	writeJSON(w, map[string]string{"message": "Catch removed successfully"})
 }
 
 // GameStatBreakdown is one game's slice of a user's stats. GameID/GameTitle
@@ -726,65 +675,5 @@ func GetStatsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
-}
-
-// UserExport is everything a user owns, for the GDPR-style data export.
-type UserExport struct {
-	Profile   any                     `json:"profile"`
-	UserGames []models.UserGame       `json:"user_games"`
-	Hunts     []models.UserHuntDetail `json:"hunts"`
-}
-
-// ExportHandler returns the calling user's profile, user_games, and hunts
-// (with phases) as one JSON blob. Never touches other users' rows or global
-// reference tables.
-func ExportHandler(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
-	ctx := context.Background()
-
-	var profile struct {
-		ID        string    `json:"id"`
-		Username  string    `json:"username"`
-		IsAdmin   bool      `json:"is_admin"`
-		CreatedAt time.Time `json:"created_at"`
-	}
-	if err := database.DB.QueryRow(ctx,
-		`SELECT id, username, is_admin, created_at FROM profiles WHERE id = $1`, userID).
-		Scan(&profile.ID, &profile.Username, &profile.IsAdmin, &profile.CreatedAt); err != nil {
-		http.Error(w, "Failed to load profile", http.StatusInternalServerError)
-		return
-	}
-
-	gameRows, err := database.DB.Query(ctx,
-		"SELECT game_id, has_shiny_charm FROM user_games WHERE user_id = $1", userID)
-	if err != nil {
-		http.Error(w, "Failed to load user games", http.StatusInternalServerError)
-		return
-	}
-	defer gameRows.Close()
-	userGames := []models.UserGame{}
-	for gameRows.Next() {
-		var ug models.UserGame
-		ug.UserID = userID
-		if err := gameRows.Scan(&ug.GameID, &ug.HasShinyCharm); err != nil {
-			continue
-		}
-		userGames = append(userGames, ug)
-	}
-	// An export that silently drops rows is worse than one that fails loudly.
-	if err := gameRows.Err(); err != nil {
-		http.Error(w, "Failed to load user games", http.StatusInternalServerError)
-		return
-	}
-
-	hunts, err := loadHuntsForUser(ctx, userID)
-	if err != nil {
-		http.Error(w, "Failed to load hunts", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(UserExport{Profile: profile, UserGames: userGames, Hunts: hunts})
+	writeJSON(w, resp)
 }

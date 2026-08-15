@@ -37,7 +37,7 @@ struct SpeciesSheet: View {
                         block("Couldn't load this species") {
                             Text(failure)
                                 .font(Typography.emptyBody)
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                         }
                     }
                     // Order from `mobile-app.dc.html` 1e — stats and the matchup read first,
@@ -62,8 +62,8 @@ struct SpeciesSheet: View {
             .scrollIndicators(.hidden)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.sheet.color)
-        .presentationBackground(Palette.sheet.color)
+        .background(Palette.sheet)
+        .presentationBackground(Palette.sheet)
         .presentationDetents([.large])
         .task(id: id) { await load() }
     }
@@ -92,15 +92,15 @@ struct SpeciesSheet: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("#" + String(format: "%03d", id))
                     .font(Typography.overline)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 Text((detail?.name ?? species.name).capitalized)
                     .font(Typography.sheetTitle)
                     .tracking(Typography.sheetTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .padding(.top, 6)
                 HStack(spacing: 5) {
                     ForEach(types, id: \.self) { type in
-                        typeChip(type.displayName, type.swatch)
+                        typeChip(type.displayName, type.color)
                     }
                 }
                 .padding(.top, 9)
@@ -111,9 +111,9 @@ struct SpeciesSheet: View {
             Button { dismiss() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Palette.textSecondary.color)
+                    .foregroundStyle(Palette.textSecondary)
                     .frame(width: 32, height: 32)
-                    .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: 11))
+                    .background(Palette.surfaceRaised, in: .rect(cornerRadius: 11))
                     .contentShape(.rect)
             }
             .accessibilityLabel("Close")
@@ -123,17 +123,17 @@ struct SpeciesSheet: View {
     }
 
     /// `padding:5px 9px;border-radius:7px;…;box-shadow:inset 0 0 0 1px ${color}55`
-    private func typeChip(_ label: String, _ swatch: Swatch) -> some View {
+    private func typeChip(_ label: String, _ tint: Color) -> some View {
         Text(label)
             .font(Typography.blockLabel)
             .tracking(0.06 * 11)
             .textCase(.uppercase)
-            .foregroundStyle(swatch.color)
+            .foregroundStyle(tint)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.typeChip)
-                    .strokeBorder(swatch.alpha(0x55), lineWidth: 1)
+                    .strokeBorder(tint.alpha(0x55), lineWidth: 1)
             )
     }
 
@@ -148,16 +148,16 @@ struct SpeciesSheet: View {
                 .font(Typography.blockLabel)
                 .tracking(Typography.blockLabelTracking)
                 .textCase(.uppercase)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
             content()
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Palette.surfaceBlock.color, in: .rect(cornerRadius: Radii.block))
+        .background(Palette.surfaceBlock, in: .rect(cornerRadius: Radii.block))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.block)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
@@ -170,11 +170,11 @@ struct SpeciesSheet: View {
                         HStack(alignment: .firstTextBaseline, spacing: 8) {
                             Text(ability.name)
                                 .font(Typography.statStrong)
-                                .foregroundStyle(Palette.textPrimary.color)
+                                .foregroundStyle(Palette.textPrimary)
                             if ability.isHidden {
                                 Text("hidden")
                                     .font(Typography.tileSub)
-                                    .foregroundStyle(Palette.textFaint.color)
+                                    .foregroundStyle(Palette.textFaint)
                             }
                         }
                     }
@@ -195,30 +195,30 @@ struct SpeciesSheet: View {
                             ?? "No seeded encounters. Evolve or trade for it."
                     )
                     .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 } else {
                     let shown = Array(detail.locations.prefix(12))
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(Array(shown.enumerated()), id: \.offset) { _, location in
                             HStack(alignment: .top, spacing: 9) {
                                 Circle()
-                                    .fill(Palette.hunt.color)
+                                    .fill(Palette.hunt)
                                     .frame(width: 5, height: 5)
                                     .padding(.top, 6)
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(prettify(location.area))
                                         .font(Typography.emptyBody)
-                                        .foregroundStyle(Palette.textPrimary.color)
+                                        .foregroundStyle(Palette.textPrimary)
                                     Text(meta(for: location))
                                         .font(Typography.tileSub)
-                                        .foregroundStyle(Palette.textMuted.color)
+                                        .foregroundStyle(Palette.textMuted)
                                 }
                             }
                         }
                         if detail.locations.count > shown.count {
                             Text("+\(detail.locations.count - shown.count) more")
                                 .font(Typography.tileSub)
-                                .foregroundStyle(Palette.textFaint.color)
+                                .foregroundStyle(Palette.textFaint)
                         }
                     }
                 }
@@ -271,7 +271,7 @@ struct SpeciesSheet: View {
                 Text(name.capitalized)
                     .font(Typography.tileSub)
                     .fontWeight(.semibold)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -280,13 +280,13 @@ struct SpeciesSheet: View {
             .padding(.bottom, 9)
             .frame(maxWidth: .infinity)
             .background(
-                (isCurrent ? Palette.surfaceLive : Palette.surface).color,
+                isCurrent ? Palette.surfaceLive : Palette.surface,
                 in: .rect(cornerRadius: 13)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 13)
                     .strokeBorder(
-                        isCurrent ? Palette.dex.alpha(0x33) : Palette.hairline.color,
+                        isCurrent ? Palette.dex.alpha(0x33) : Palette.hairline,
                         lineWidth: isCurrent ? 2 : 1
                     )
             )
@@ -304,7 +304,7 @@ struct SpeciesSheet: View {
                 if gameID == nil {
                     Text("Pick a game above to see its moveset.")
                         .font(Typography.emptyBody)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                 } else {
                     let levelUp = (detail.moves ?? [])
                         .filter { $0.method == "level-up" }
@@ -312,7 +312,7 @@ struct SpeciesSheet: View {
                     if levelUp.isEmpty {
                         Text("No moveset seeded for this game yet.")
                             .font(Typography.emptyBody)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                     } else {
                         VStack(spacing: 0) {
                             ForEach(Array(levelUp.enumerated()), id: \.element.id) { index, move in
@@ -321,7 +321,7 @@ struct SpeciesSheet: View {
                                     .overlay(alignment: .top) {
                                         if index > 0 {
                                             Rectangle()
-                                                .fill(Palette.hairline.color)
+                                                .fill(Palette.hairline)
                                                 .frame(height: 1)
                                         }
                                     }
@@ -338,20 +338,20 @@ struct SpeciesSheet: View {
             Text(move.level.map { "Lv \($0)" } ?? "—")
                 .font(Typography.tileName)
                 .monospacedDigit()
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
                 .frame(width: 42, alignment: .leading)
             Text(move.name)
                 .font(Typography.emptyBody)
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineLimit(1)
             if let type = PokemonType(slug: move.type) {
-                typeChip(type.displayName, type.swatch)
+                typeChip(type.displayName, type.color)
             }
             Text(move.power.map(String.init) ?? "—")
                 .font(Typography.statStrong)
                 .monospacedDigit()
-                .foregroundStyle(Palette.textSecondary.color)
+                .foregroundStyle(Palette.textSecondary)
                 .frame(minWidth: 26, alignment: .trailing)
         }
     }
@@ -365,18 +365,18 @@ struct SpeciesSheet: View {
                         HStack(spacing: 10) {
                             Text(stat.label)
                                 .font(Typography.overline)
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                                 .frame(width: 30, alignment: .leading)
                             Text("\(stat.value)")
                                 .font(Typography.statStrong)
                                 .monospacedDigit()
-                                .foregroundStyle(Palette.textPrimary.color)
+                                .foregroundStyle(Palette.textPrimary)
                                 .frame(width: 30, alignment: .trailing)
                             GeometryReader { geometry in
                                 ZStack(alignment: .leading) {
-                                    Capsule().fill(Palette.hairline.color)
+                                    Capsule().fill(Palette.hairline)
                                     Capsule()
-                                        .fill(Palette.statBar(stat.value).color)
+                                        .fill(Palette.statBar(stat.value))
                                         // `Math.min(v, 160) / 1.6` percent — 160 is a full bar.
                                         .frame(
                                             width: geometry.size.width
@@ -400,17 +400,17 @@ struct SpeciesSheet: View {
             if types.isEmpty {
                 Text("No types on this species, so there is nothing to compute.")
                     .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
             } else if matchups.isEmpty {
                 Text(empty)
                     .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
             } else {
                 // `flex-wrap:wrap;gap:6px`
                 FlowRow(spacing: 6) {
                     ForEach(matchups, id: \.type) { matchup in
                         typeChip(
-                            "\(matchup.type.displayName) \(matchup.label)", matchup.type.swatch)
+                            "\(matchup.type.displayName) \(matchup.label)", matchup.type.color)
                     }
                 }
             }

@@ -63,8 +63,7 @@ func DexStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if resp.LockedEverywhere == nil {
 		resp.LockedEverywhere = []int{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	writeJSON(w, resp)
 }
 
 // queryIntColumn runs a query whose first column is an int and returns all values.
@@ -249,8 +248,7 @@ func PokemonRouteHandler(w http.ResponseWriter, r *http.Request) {
 		resp.Routes = routes
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	writeJSON(w, resp)
 }
 
 // anyOwned reports whether any availability game is in the owned set.
@@ -363,7 +361,6 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ranks := make([]calc.SuggestionRank, 0, len(groups))
-	meta := map[int]*group{}
 	for pid, g := range groups {
 		routes := calc.RankDirectRoutes(g.cands)
 		if len(routes) == 0 {
@@ -374,7 +371,6 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 			HuntableGameCount: len(g.games),
 			Best:              routes[0],
 		})
-		meta[pid] = g
 	}
 
 	calc.RankSuggestions(ranks)
@@ -385,7 +381,7 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 
 	suggestions := make([]HuntSuggestion, 0, len(ranks))
 	for _, rk := range ranks {
-		g := meta[rk.PokemonID]
+		g := groups[rk.PokemonID]
 		suggestions = append(suggestions, HuntSuggestion{
 			PokemonID:         rk.PokemonID,
 			Name:              g.name,
@@ -396,8 +392,7 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := HuntSuggestionsResponse{TotalHuntable: total, Suggestions: suggestions}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	writeJSON(w, resp)
 }
 
 // PokemonLocationDetail is one row from pokemon_locations, with the game it
@@ -599,8 +594,7 @@ func PokemonDetailHandler(w http.ResponseWriter, r *http.Request) {
 		p.Abilities = []PokemonAbilityDetail{}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(p)
+	writeJSON(w, p)
 }
 
 // fetchAbilities returns a species' ability slots (regular + hidden), slot
@@ -734,8 +728,7 @@ func GetGamePokedexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(PokedexResponse{GameID: id, Dexes: dexes})
+	writeJSON(w, PokedexResponse{GameID: id, Dexes: dexes})
 }
 
 // fetchAncestors returns the pre-evolution line (nearest first) for a Pokemon.

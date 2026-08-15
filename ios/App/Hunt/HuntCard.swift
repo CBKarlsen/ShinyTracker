@@ -26,7 +26,7 @@ struct HuntCard: View {
         }
         .padding(Metrics.cardPadding)
         .background(
-            (isLive ? Palette.surfaceLive : Palette.surface).color,
+            isLive ? Palette.surfaceLive : Palette.surface,
             in: .rect(cornerRadius: Radii.card)
         )
         // `box-shadow: h.live ? '0 0 0 2px accent88, 0 0 38px -12px accent'
@@ -39,7 +39,7 @@ struct HuntCard: View {
         .overlay(
             RoundedRectangle(cornerRadius: Radii.card)
                 .strokeBorder(
-                    isLive ? Palette.hunt.alpha(0x88) : Palette.hairline.color,
+                    isLive ? Palette.hunt.alpha(0x88) : Palette.hairline,
                     lineWidth: isLive ? 2 : 1
                 )
         )
@@ -60,11 +60,11 @@ struct HuntCard: View {
                 Text(row.name)
                     .font(Typography.cardTitle)
                     .tracking(Typography.cardTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 if !row.meta.isEmpty {
                     Text(row.meta)
                         .font(Typography.meta)
-                        .foregroundStyle(Palette.textSecondary.color)
+                        .foregroundStyle(Palette.textSecondary)
                         .padding(.top, 6)
                 }
             }
@@ -74,7 +74,7 @@ struct HuntCard: View {
                 Text(row.count.formatted(.number))
                     .font(Typography.count)
                     .tracking(Typography.countTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     // The one thing the tap is *for*. Without this the number swaps in place and
                     // a tap that worked is indistinguishable from one that didn't register.
                     .contentTransition(.numericText(value: Double(row.count)))
@@ -82,7 +82,7 @@ struct HuntCard: View {
                 Text("ENCOUNTERS")
                     .font(Typography.overline)
                     .tracking(Typography.overlineTracking)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .padding(.top, 6)
             }
             .accessibilityElement(children: .ignore)
@@ -101,24 +101,24 @@ struct HuntCard: View {
             HStack(spacing: 6) {
                 // `border-radius:4px;background:currentColor` — the paused glyph is the filled dot.
                 Circle()
-                    .fill((counting ? Palette.hunt : Palette.textMuted).color)
+                    .fill(counting ? Palette.hunt : Palette.textMuted)
                     .frame(width: 8, height: 8)
                 Text(formatElapsed(model.elapsed(for: row)))
                     .font(Typography.badge)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .contentTransition(.numericText())
             }
             .padding(.horizontal, 11)
             .frame(height: 30)
-            .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.badge))
+            .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.badge))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.badge)
-                    .strokeBorder(Palette.border.color, lineWidth: 1)
+                    .strokeBorder(Palette.border, lineWidth: 1)
             )
 
             Text(counting ? "counting" : "paused")
                 .font(Typography.hint)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
 
             if model.hasPendingWrites(row.id) {
                 queuedBadge
@@ -152,13 +152,13 @@ struct HuntCard: View {
             Text(model.isWaitingToRetry ? "waiting" : "queued")
                 .font(Typography.badge)
         }
-        .foregroundStyle(Palette.textMuted.color)
+        .foregroundStyle(Palette.textMuted)
         .padding(.horizontal, 11)
         .frame(height: 30)
-        .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.badge))
+        .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.badge))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.badge)
-                .strokeBorder(Palette.border.color, lineWidth: 1)
+                .strokeBorder(Palette.border, lineWidth: 1)
         )
     }
 
@@ -170,9 +170,9 @@ struct HuntCard: View {
         if row.denominator != nil {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.hairline.color)
+                    Capsule().fill(Palette.hairline)
                     Capsule()
-                        .fill(Palette.hunt.color)
+                        .fill(Palette.hunt)
                         .frame(width: geometry.size.width * row.progressRatio)
                         // Grows with the count instead of jumping — same spring as the number, so
                         // the two halves of one tap move together.
@@ -190,17 +190,17 @@ struct HuntCard: View {
         HStack {
             Text(oddsLabel)
                 .font(Typography.stat)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
             Spacer(minLength: 8)
             if let denominator = row.denominator {
                 if row.count > denominator {
                     Text("past odds — keep going")
                         .font(Typography.statStrong)
-                        .foregroundStyle(Palette.hunt.color)
+                        .foregroundStyle(Palette.hunt)
                 } else if let probability = row.cumulativeProbability {
                     Text("\(probability * 100, specifier: "%.1f")% chance by now")
                         .font(Typography.stat)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                 }
             }
         }
@@ -227,9 +227,7 @@ struct HuntCard: View {
             } content: {
                 Image(systemName: "minus")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(
-                        (row.count > 0 ? Palette.textSecondary : Palette.textDisabled).color
-                    )
+                    .foregroundStyle(row.count > 0 ? Palette.textSecondary : Palette.textDisabled)
             }
             .frame(width: Metrics.controlNarrow)
             .disabled(row.count == 0)
@@ -256,14 +254,14 @@ struct HuntCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: Metrics.controlHeight)
-                .foregroundStyle((isLive ? Palette.onAccent : Palette.textSecondary).color)
+                .foregroundStyle(isLive ? Palette.onAccent : Palette.textSecondary)
                 .background(
-                    (isLive ? Palette.hunt : Palette.surfaceRaised).color,
+                    isLive ? Palette.hunt : Palette.surfaceRaised,
                     in: .rect(cornerRadius: Radii.control)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.control)
-                        .strokeBorder(isLive ? .clear : Palette.border.color, lineWidth: 1)
+                        .strokeBorder(isLive ? .clear : Palette.border, lineWidth: 1)
                 )
                 .contentShape(.rect)
             }
@@ -301,13 +299,13 @@ struct HuntCard: View {
             } content: {
                 Text("×\(step)")
                     .font(Typography.chip)
-                    .foregroundStyle((step > 1 ? Palette.hunt : Palette.textPrimary).color)
+                    .foregroundStyle(step > 1 ? Palette.hunt : Palette.textPrimary)
             }
             .frame(width: Metrics.controlNarrow)
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.control)
                     .strokeBorder(
-                        step > 1 ? Palette.hunt.alpha(0x55) : Palette.borderChip.color,
+                        step > 1 ? Palette.hunt.alpha(0x55) : Palette.borderChip,
                         lineWidth: 1
                     )
             )
@@ -319,7 +317,7 @@ struct HuntCard: View {
             } content: {
                 Image(systemName: "sparkles")
                     .font(.system(size: 17))
-                    .foregroundStyle(Palette.hunt.color)
+                    .foregroundStyle(Palette.hunt)
             }
             .frame(width: Metrics.controlNarrow)
             .overlay(
@@ -340,10 +338,10 @@ struct HuntCard: View {
             content()
                 .frame(maxWidth: .infinity)
                 .frame(height: Metrics.controlHeight)
-                .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.control))
+                .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.control))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.control)
-                        .strokeBorder(Palette.border.color, lineWidth: 1)
+                        .strokeBorder(Palette.border, lineWidth: 1)
                 )
                 .contentShape(.rect)
         }
@@ -385,7 +383,7 @@ struct SpriteTile: View {
             Color.clear
         }
         .frame(width: size, height: size)
-        .background(Palette.spriteTile.color)
+        .background(Palette.spriteTile)
         .clipShape(.rect(cornerRadius: Radii.sprite(size)))
         .accessibilityHidden(true)
     }

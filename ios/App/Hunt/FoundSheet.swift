@@ -43,11 +43,11 @@ struct FoundSheet: View {
                         Text("Found \(row.name)?")
                             .font(Typography.sheetHeadline)
                             .tracking(Typography.sheetHeadlineTracking)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                         if !row.meta.isEmpty {
                             Text(row.meta)
                                 .font(Typography.meta)
-                                .foregroundStyle(Palette.textMuted.color)
+                                .foregroundStyle(Palette.textMuted)
                         }
                     }
                 }
@@ -59,12 +59,12 @@ struct FoundSheet: View {
                 Text("This closes the hunt and moves it to History.")
                     .font(Typography.stat)
                     .lineSpacing(4)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
 
                 if let syncError = model.syncError {
                     Text(syncError)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                        .foregroundStyle(Palette.danger)
                 }
 
                 Button {
@@ -96,7 +96,7 @@ struct FoundSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDetents([.fraction(0.62)])
         .presentationCornerRadius(Radii.sheet)
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .presentationDragIndicator(.visible)
     }
 
@@ -114,24 +114,24 @@ struct FoundSheet: View {
         }
         .padding(.vertical, 14)
         .padding(.horizontal, 16)
-        .background(Palette.detailPanel.color, in: .rect(cornerRadius: Radii.listCard))
+        .background(Palette.detailPanel, in: .rect(cornerRadius: Radii.listCard))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.listCard)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
     private func stat(
-        _ label: String, _ value: String, color: Swatch, alignment: HorizontalAlignment = .leading
+        _ label: String, _ value: String, color: Color, alignment: HorizontalAlignment = .leading
     ) -> some View {
         VStack(alignment: alignment, spacing: 9) {
             Text(label)
                 .font(Typography.stat)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
             // `font:600 22px/1;font-variant-numeric:tabular-nums` — this pairing appears only here.
             Text(value)
                 .font(.system(size: 22, weight: .semibold).monospacedDigit())
-                .foregroundStyle(color.color)
+                .foregroundStyle(color)
         }
         .accessibilityElement(children: .combine)
     }
@@ -152,7 +152,7 @@ struct FoundSheet: View {
                     : "Abandon hunt — delete without registering"
             )
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle((abandonArmed ? Palette.danger : Palette.textMuted).color)
+            .foregroundStyle(abandonArmed ? Palette.danger : Palette.textMuted)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
             .overlay(
@@ -199,7 +199,7 @@ struct PhasePicker: View {
                     Text("What showed up?")
                         .font(Typography.sheetHeadline)
                         .tracking(Typography.sheetHeadlineTracking)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                     // Says the number out loud before it is spent. A phase is not undoable from
                     // here, and the count is the thing it consumes.
                     Text(
@@ -211,7 +211,7 @@ struct PhasePicker: View {
                     )
                     .font(Typography.stat)
                     .lineSpacing(4)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 }
 
                 TextField("Search species", text: $query)
@@ -219,13 +219,13 @@ struct PhasePicker: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .font(Typography.primaryButton)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .padding(.horizontal, 14)
                     .frame(height: 46)
-                    .background(Palette.field.color, in: .rect(cornerRadius: Radii.row))
+                    .background(Palette.field, in: .rect(cornerRadius: Radii.row))
                     .overlay(
                         RoundedRectangle(cornerRadius: Radii.row)
-                            .strokeBorder(Palette.border.color, lineWidth: 1)
+                            .strokeBorder(Palette.border, lineWidth: 1)
                     )
 
                 if !results.isEmpty { resultList }
@@ -242,7 +242,7 @@ struct PhasePicker: View {
         .scrollIndicators(.hidden)
         .presentationDetents([.large])
         .presentationCornerRadius(Radii.sheet)
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .presentationDragIndicator(.visible)
         // `.task(id:)` cancels the previous run on every keystroke, so the sleep below *is* the
         // debounce — no timer, no cancellation bookkeeping of our own.
@@ -263,18 +263,18 @@ struct PhasePicker: View {
                         SpriteTile(pokemonID: pokemon.id, size: 40, served: pokemon.shinySpriteURL)
                         Text(pokemon.name.capitalized)
                             .font(Typography.listTitle)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                         Spacer(minLength: 8)
                         Text((pokemon.types ?? []).map(\.capitalized).joined(separator: " · "))
                             .font(Typography.stat)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 14)
-                    .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+                    .background(Palette.surface, in: .rect(cornerRadius: Radii.row))
                     .overlay(
                         RoundedRectangle(cornerRadius: Radii.row)
-                            .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                            .strokeBorder(Palette.hairline, lineWidth: 1)
                     )
                     .contentShape(.rect)
                 }
@@ -289,7 +289,7 @@ struct PhasePicker: View {
         if results.isEmpty, !searching, query.trimmingCharacters(in: .whitespaces).count >= 2 {
             Text("Nothing matches \"\(query)\". Try a different spelling.")
                 .font(Typography.hint)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
         }
     }
 
@@ -312,13 +312,13 @@ struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(Palette.textSecondary.color)
+            .foregroundStyle(Palette.textSecondary)
             .frame(maxWidth: .infinity)
             .frame(height: 46)
-            .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.row))
+            .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.row))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.row)
-                    .strokeBorder(Palette.border.color, lineWidth: 1)
+                    .strokeBorder(Palette.border, lineWidth: 1)
             )
             .opacity(configuration.isPressed ? 0.85 : 1)
     }

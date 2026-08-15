@@ -19,58 +19,39 @@ enum NuzlockePreview {
     }
 
     static var requested: Fixture? {
-        argument(after: "-nuzlockePreview").flatMap(Fixture.init(rawValue:))
-    }
-
-    private static func argument(after flag: String) -> String? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else {
-            return nil
-        }
-        return arguments[index + 1]
+        PreviewHarness.argument("-nuzlockePreview").flatMap(Fixture.init(rawValue:))
     }
 
     static func client(_ fixture: Fixture) -> APIClient {
-        APIClient(
-            config: APIConfig(baseURL: URL(string: "https://preview.invalid")!),
-            auth: AuthProvider(accessToken: { _ in "preview" }, markExpired: {}),
-            transport: NuzlockeStubTransport(fixture: fixture)
-        )
-    }
-}
+        PreviewHarness.client { method, path, _ in
+            if fixture == .error, method == "GET" {
+                return (Data("runs: connection refused".utf8), 503)
+            }
 
-private struct NuzlockeStubTransport: HTTPTransport {
-    let fixture: NuzlockePreview.Fixture
-
-    func send(_ request: URLRequest) async throws -> (data: Data, status: Int) {
-        try? await Task.sleep(for: .milliseconds(200))
-
-        let path = request.url?.path ?? ""
-        let method = request.httpMethod ?? "GET"
-
-        if fixture == .error, method == "GET" {
-            return (Data("runs: connection refused".utf8), 503)
-        }
-
-        switch (method, path) {
-        case (_, "/api/games"):
-            return (Data(games.utf8), 200)
-        case (_, "/api/pokemon"):
-            return (Data(species.utf8), 200)
-        case (_, "/api/nuzlocke/versions"):
-            return (Data(#"[{"version":"platinum","starters":["chimchar","piplup","turtwig"]}]"#.utf8), 200)
-        case (_, "/api/nuzlocke/timeline"):
-            return (Data("[\(timelineEntries)]".utf8), 200)
-        case ("GET", "/api/runs"):
-            return (Data((fixture == .empty ? "[]" : "[\(run)]").utf8), 200)
-        case ("POST", "/api/runs"):
-            return (Data(run.utf8), 200)
-        case ("GET", let runPath) where runPath.hasPrefix("/api/runs/"):
-            return (Data(runDetail.utf8), 200)
-        default:
-            // Every write answers with the row it wrote; the encounter shape is the only one the
-            // screen re-reads, and PUT/PATCH both return it.
-            return (Data(writtenEncounter.utf8), 200)
+            switch (method, path) {
+            case (_, "/api/games"):
+                return (Data(games.utf8), 200)
+            case (_, "/api/pokemon"):
+                return (Data(species.utf8), 200)
+            case (_, "/api/nuzlocke/versions"):
+                return (
+                    Data(
+                        #"[{"version":"platinum","starters":["chimchar","piplup","turtwig"]}]"#
+                            .utf8), 200
+                )
+            case (_, "/api/nuzlocke/timeline"):
+                return (Data("[\(timelineEntries)]".utf8), 200)
+            case ("GET", "/api/runs"):
+                return (Data((fixture == .empty ? "[]" : "[\(run)]").utf8), 200)
+            case ("POST", "/api/runs"):
+                return (Data(run.utf8), 200)
+            case ("GET", let runPath) where runPath.hasPrefix("/api/runs/"):
+                return (Data(runDetail.utf8), 200)
+            default:
+                // Every write answers with the row it wrote; the encounter shape is the only one
+                // the screen re-reads, and PUT/PATCH both return it.
+                return (Data(writtenEncounter.utf8), 200)
+            }
         }
     }
 }

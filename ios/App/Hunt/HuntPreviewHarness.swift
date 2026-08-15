@@ -2,15 +2,9 @@
 import Foundation
 import ShinyTrackerAPI
 
-/// Renders the Hunt screen against canned responses, with no session and no server.
+/// Renders the Hunt screen against canned responses — see ``PreviewHarness`` for why and how.
 ///
-/// This exists because the screen is otherwise unverifiable: signing in needs a real Supabase
-/// session, so a simulator run shows the login screen and nothing about the design gets checked.
-/// It rides the `HTTPTransport` seam ``APIClient`` already has for its own tests — no production
-/// code changes shape to accommodate it, and the whole file is out of release builds.
-///
-/// Launch with `-huntPreview empty | hunts | error | custom` (Xcode scheme argument,
-/// `simctl launch`, or a `#Preview`).
+/// Launch with `-huntPreview empty | hunts | error | custom`.
 enum HuntPreview {
     enum Fixture: String {
         case empty, hunts, error
@@ -28,58 +22,38 @@ enum HuntPreview {
         case found
     }
 
-    static var requested: Fixture? { argument("-huntPreview").flatMap(Fixture.init) }
+    static var requested: Fixture? { PreviewHarness.argument("-huntPreview").flatMap(Fixture.init) }
 
-    static var route: Route? { argument("-huntPreviewOpen").flatMap(Route.init) }
+    static var route: Route? { PreviewHarness.argument("-huntPreviewOpen").flatMap(Route.init) }
 
-    private static func argument(_ name: String) -> String? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: name) else { return nil }
-        return arguments[safe: index + 1]
-    }
-
+    /// Routes by path, not by fixture: only `GET /api/hunts` differs between the fixtures, and
+    /// the new-hunt sheet needs the reference endpoints to answer in every one of them.
     static func client(_ fixture: Fixture) -> APIClient {
-        APIClient(
-            config: APIConfig(baseURL: URL(string: "https://preview.invalid")!),
-            auth: AuthProvider(accessToken: { _ in "preview" }, markExpired: {}),
-            transport: StubTransport(fixture: fixture)
-        )
-    }
-}
+        PreviewHarness.client(latency: .milliseconds(250)) { method, path, _ in
+            // Writes: every one of them answers success, so the optimistic paths are exercised
+            // without a rollback. Point the app at a real API to see the failure states.
+            if method == "PATCH" { return (Data(patchResponse.utf8), 200) }
+            if method == "POST", path.hasSuffix("/api/hunts") {
+                return (Data(patchResponse.utf8), 200)
+            }
+            if method == "POST" || method == "DELETE" {
+                return (Data(#"{"message":"success"}"#.utf8), 200)
+            }
 
-/// Routes by path, not by fixture: only `GET /api/hunts` differs between the fixtures, and the
-/// new-hunt sheet needs the reference endpoints to answer in every one of them.
-private struct StubTransport: HTTPTransport {
-    let fixture: HuntPreview.Fixture
+            if path == "/api/me/games" { return (Data(userGames.utf8), 200) }
+            if path == "/api/me" { return (Data(profile.utf8), 200) }
+            if path == "/api/games" { return (Data(games.utf8), 200) }
+            if path == "/api/pokemon" { return (Data(species.utf8), 200) }
+            // The same five methods for whichever species was asked about — enough to drive the
+            // game and method steps, and not a claim about what can be caught where.
+            if path == "/api/hunt-methods" { return (Data(huntMethods.utf8), 200) }
 
-    func send(_ request: URLRequest) async throws -> (data: Data, status: Int) {
-        // A beat of latency so the loading state is real rather than skipped.
-        try? await Task.sleep(for: .milliseconds(250))
-
-        let path = request.url?.path ?? ""
-        let method = request.httpMethod ?? "GET"
-
-        // Writes: every one of them answers success, so the optimistic paths are exercised
-        // without a rollback. Point the app at a real API to see the failure states.
-        if method == "PATCH" { return (Data(patchResponse.utf8), 200) }
-        if method == "POST", path.hasSuffix("/api/hunts") { return (Data(patchResponse.utf8), 200) }
-        if method == "POST" || method == "DELETE" {
-            return (Data(#"{"message":"success"}"#.utf8), 200)
-        }
-
-        if path.hasPrefix("/api/user/") { return (Data(userGames.utf8), 200) }
-        if path == "/api/me" { return (Data(profile.utf8), 200) }
-        if path == "/api/games" { return (Data(games.utf8), 200) }
-        if path == "/api/pokemon" { return (Data(species.utf8), 200) }
-        // The same five methods for whichever species was asked about — enough to drive the game
-        // and method steps, and not a claim about what can be caught where.
-        if path == "/api/hunt-methods" { return (Data(huntMethods.utf8), 200) }
-
-        switch fixture {
-        case .empty: return (Data("[]".utf8), 200)
-        case .hunts: return (Data(huntList.utf8), 200)
-        case .custom: return (Data("[\(customHunt)]".utf8), 200)
-        case .error: return (Data("hunts: connection refused".utf8), 503)
+            switch fixture {
+            case .empty: return (Data("[]".utf8), 200)
+            case .hunts: return (Data(huntList.utf8), 200)
+            case .custom: return (Data("[\(customHunt)]".utf8), 200)
+            case .error: return (Data("hunts: connection refused".utf8), 503)
+            }
         }
     }
 }
@@ -235,10 +209,4 @@ private let huntMethods = """
    "base_rolls": 1, "charm_rolls": 2, "formula_type": "outbreak_defeats_sv"}
 ]
 """
-
-private extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
-    }
-}
 #endif

@@ -28,14 +28,14 @@ struct HuntLiveActivity: Widget {
                 // without this the Lock Screen card would come up in light mode's colours while
                 // the app it belongs to is black.
                 .environment(\.colorScheme, .dark)
-                .activityBackgroundTint(Palette.screen.color)
-                .activitySystemActionForegroundColor(Palette.hunt.color)
+                .activityBackgroundTint(Palette.screen)
+                .activitySystemActionForegroundColor(Palette.hunt)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     Text(context.attributes.speciesName)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     count(context.state.count)
@@ -48,13 +48,13 @@ struct HuntLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image(systemName: "sparkles").foregroundStyle(Palette.hunt.color)
+                Image(systemName: "sparkles").foregroundStyle(Palette.hunt)
             } compactTrailing: {
                 Text(context.state.count.formatted(.number))
-                    .foregroundStyle(Palette.hunt.color)
+                    .foregroundStyle(Palette.hunt)
                     .monospacedDigit()
             } minimal: {
-                Image(systemName: "sparkles").foregroundStyle(Palette.hunt.color)
+                Image(systemName: "sparkles").foregroundStyle(Palette.hunt)
             }
         }
     }
@@ -68,15 +68,15 @@ struct HuntLiveActivity: Widget {
                     // Same cue as the card's timer badge: gold while the clock is still banking
                     // time, muted once the gap since the last encounter says the hunt has paused.
                     Circle()
-                        .fill((context.state.counting ? Palette.hunt : Palette.textMuted).color)
+                        .fill(context.state.counting ? Palette.hunt : Palette.textMuted)
                         .frame(width: 7, height: 7)
                     Text(context.attributes.speciesName)
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                 }
                 Text(context.attributes.meta)
                     .font(.system(size: 12))
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .lineLimit(1)
                 oddsLine(context.state)
             }
@@ -97,11 +97,11 @@ struct HuntLiveActivity: Widget {
                 .font(.system(size: 26, weight: .semibold))
                 .monospacedDigit()
                 .contentTransition(.numericText(value: Double(value)))
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
             Text("ENCOUNTERS")
                 .font(.system(size: 8, weight: .semibold))
                 .tracking(0.8)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
         }
     }
 
@@ -118,11 +118,11 @@ struct HuntLiveActivity: Widget {
                     + " · \(formatElapsed(state.elapsedSeconds))"
             )
             .font(.system(size: 12))
-            .foregroundStyle(Palette.textMuted.color)
+            .foregroundStyle(Palette.textMuted)
         } else {
             Text(formatElapsed(state.elapsedSeconds))
                 .font(.system(size: 12))
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
         }
     }
 
@@ -137,10 +137,10 @@ struct HuntLiveActivity: Widget {
             Text("+\(context.state.step)")
                 .font(.system(size: 15, weight: .bold))
                 .monospacedDigit()
-                .foregroundStyle(Palette.onAccent.color)
+                .foregroundStyle(Palette.onAccent)
                 .padding(.horizontal, 16)
                 .frame(height: 34)
-                .background(Palette.hunt.color, in: .capsule)
+                .background(Palette.hunt, in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(

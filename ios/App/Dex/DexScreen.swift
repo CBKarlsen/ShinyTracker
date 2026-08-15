@@ -109,7 +109,7 @@ struct DexScreen: View {
                 } label: {
                     Text(candidate.rawValue)
                         .font(on ? Typography.segmentOn : Typography.segmentOff)
-                        .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
+                        .foregroundStyle(on ? Palette.onAccent : Palette.textMuted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
@@ -122,15 +122,15 @@ struct DexScreen: View {
             }
         }
         .padding(3)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.segment))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.segment))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.segment)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
     private func accent(for view: DexModel.DexView) -> Color {
-        (view == .shiny ? Palette.hunt : Palette.dex).color
+        view == .shiny ? Palette.hunt : Palette.dex
     }
 
     // MARK: Progress
@@ -140,7 +140,7 @@ struct DexScreen: View {
         HStack(spacing: 12) {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.hairline.color)
+                    Capsule().fill(Palette.hairline)
                     Capsule()
                         .fill(accent(for: model.view))
                         .frame(width: geometry.size.width * model.progress)
@@ -151,7 +151,7 @@ struct DexScreen: View {
             Text(model.progress.formatted(.percent.precision(.fractionLength(0))))
                 .font(Typography.statStrong)
                 .monospacedDigit()
-                .foregroundStyle(Palette.textSecondary.color)
+                .foregroundStyle(Palette.textSecondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(model.registeredCount) of \(model.countedTotal) registered")
@@ -161,11 +161,11 @@ struct DexScreen: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(model.viewHint)
                 .font(Typography.meta)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
             if let note = model.scopeNote {
                 Text(note)
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -178,17 +178,17 @@ struct DexScreen: View {
         switch model.state {
         case .loading:
             ProgressView()
-                .tint(Palette.textMuted.color)
+                .tint(Palette.textMuted)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
         case .failed(let reason):
             VStack(spacing: 12) {
                 Text("Couldn't load the dex")
                     .font(Typography.emptyTitle)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 Text(reason)
                     .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .multilineTextAlignment(.center)
                 Button("Try again") { Task { await model.load() } }
                     .buttonStyle(GoldButtonStyle())
@@ -229,7 +229,7 @@ struct DexScreen: View {
                         // sits beside, while a `syncError` is a failure and has to outrank it.
                         .foregroundStyle(
                             model.syncError == nil
-                                ? Palette.textMuted.color : Palette.textSecondary.color
+                                ? Palette.textMuted : Palette.textSecondary
                         )
                         .padding(.vertical, 6)
                         .padding(.horizontal, 2)
@@ -249,12 +249,12 @@ struct DexScreen: View {
                             .font(Typography.blockLabel)
                             .tracking(Typography.blockLabelTracking)
                             .textCase(.uppercase)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                             .padding(.top, 6)
                             .padding(.bottom, 9)
                             .padding(.horizontal, 2)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Palette.screen.color)
+                            .background(Palette.screen)
                     }
                 }
             }
@@ -295,7 +295,7 @@ struct DexScreen: View {
                 )
                 Text(species.name.capitalized)
                     .font(Typography.tileName)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 Text(state.sub)
@@ -308,7 +308,7 @@ struct DexScreen: View {
             .padding(.bottom, 12)
             .padding(.horizontal, 6)
             .frame(maxWidth: .infinity)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.tile))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.tile))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.tile)
                     .strokeBorder(ring(state), lineWidth: state.registered && !state.unavailable && model.view != .browse ? 2 : 1)
@@ -317,7 +317,7 @@ struct DexScreen: View {
             .overlay(alignment: .topTrailing) {
                 if state.goldDot {
                     Circle()
-                        .fill(Palette.hunt.color)
+                        .fill(Palette.hunt)
                         .frame(width: 7, height: 7)
                         .padding(8)
                 }
@@ -332,7 +332,7 @@ struct DexScreen: View {
     /// `ring = un ? '#1a1a22' : on ? (shiny ? accent66 : '#f4f2ec33') : '#1a1a22'`
     private func ring(_ state: DexTileState) -> Color {
         guard state.registered, !state.unavailable, model.view != .browse else {
-            return Palette.hairline.color
+            return Palette.hairline
         }
         return model.view == .shiny ? Palette.hunt.alpha(0x66) : Palette.dex.alpha(0x33)
     }
@@ -374,7 +374,7 @@ struct DexSprite: View {
             // The sprite plate, always. `Color.clear` left a hole while loading, which is what
             // makes a list look like it is still working after the text has arrived.
             RoundedRectangle(cornerRadius: Radii.sprite(size))
-                .fill(Palette.spriteTile.color)
+                .fill(Palette.spriteTile)
             if let image {
                 Image(uiImage: image)
                     .resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
@@ -416,7 +416,7 @@ struct GamePickerSheet: View {
                 Text("Dex for which game?")
                     .font(Typography.sheetTitle)
                     .tracking(Typography.sheetTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .padding(.bottom, 4)
 
                 row(
@@ -433,9 +433,9 @@ struct GamePickerSheet: View {
             }
             .padding(18)
         }
-        .background(Palette.sheet.color)
+        .background(Palette.sheet)
         .presentationDetents([.medium, .large])
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
     }
 
     /// `background:#111118;border-radius:16px;padding:13px 15px` with a "Selected" tag.
@@ -450,16 +450,16 @@ struct GamePickerSheet: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(title)
                         .font(Typography.segmentOn)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                     Text(meta)
                         .font(Typography.tileSub)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                 }
                 Spacer(minLength: 0)
                 if isOn {
                     Text("Selected")
                         .font(Typography.statStrong)
-                        .foregroundStyle(Palette.textPrimary.color)
+                        .foregroundStyle(Palette.textPrimary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .overlay(
@@ -471,11 +471,11 @@ struct GamePickerSheet: View {
             .padding(.horizontal, 15)
             .padding(.vertical, 13)
             .frame(maxWidth: .infinity)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.block))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.block))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.block)
                     .strokeBorder(
-                        isOn ? Palette.dex.alpha(0x33) : Palette.hairline.color,
+                        isOn ? Palette.dex.alpha(0x33) : Palette.hairline,
                         lineWidth: isOn ? 2 : 1
                     )
             )

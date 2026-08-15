@@ -37,7 +37,7 @@ function fmtNum(n: number) {
 }
 
 const CollectionManager: React.FC = () => {
-	const { token, userId } = useAuth();
+	const { token } = useAuth();
 	const { showError } = useNotification();
 	const [games, setGames] = useState<Game[]>([]);
 	const [userGames, setUserGames] = useState<UserGame[]>([]);
@@ -51,7 +51,7 @@ const CollectionManager: React.FC = () => {
 			try {
 				const [gamesRes, userGamesRes] = await Promise.all([
 					fetch(`${API_BASE}/api/games`),
-					fetch(`${API_BASE}/api/user/${userId}/games`, {
+					fetch(`${API_BASE}/api/me/games`, {
 						headers: { Authorization: `Bearer ${token}` },
 					}),
 				]);
@@ -69,14 +69,14 @@ const CollectionManager: React.FC = () => {
 			}
 		};
 		fetchData();
-	}, [token, userId]);
+	}, [token]);
 
 	const doRemoveGame = async (gameId: number) => {
 		setPendingRemoveGameId(null);
 		setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
 		try {
 			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+				`${API_BASE}/api/me/games/${gameId}`,
 				{
 					method: "DELETE",
 					headers: { Authorization: `Bearer ${token}` },
@@ -104,7 +104,7 @@ const CollectionManager: React.FC = () => {
 		]);
 		try {
 			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+				`${API_BASE}/api/me/games/${gameId}`,
 				{
 					method: "POST",
 					headers: {
@@ -135,7 +135,7 @@ const CollectionManager: React.FC = () => {
 		);
 		try {
 			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+				`${API_BASE}/api/me/games/${gameId}`,
 				{
 					method: "POST",
 					headers: {

@@ -40,7 +40,7 @@ struct NewRunSheet: View {
                 Text("Set your rules")
                     .font(Typography.sheetTitle)
                     .tracking(Typography.sheetTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
 
                 gamePicker
                 versionPicker
@@ -51,7 +51,7 @@ struct NewRunSheet: View {
                 if let failure {
                     Text(failure)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                        .foregroundStyle(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -62,9 +62,9 @@ struct NewRunSheet: View {
             }
             .padding(18)
         }
-        .background(Palette.sheet.color)
+        .background(Palette.sheet)
         .presentationDetents([.large])
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .task { await loadGames() }
     }
 
@@ -76,7 +76,7 @@ struct NewRunSheet: View {
                 .font(Typography.blockLabel)
                 .tracking(Typography.blockLabelTracking)
                 .textCase(.uppercase)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
 
             Menu {
                 ForEach(games) { game in
@@ -86,24 +86,23 @@ struct NewRunSheet: View {
                 HStack(spacing: 10) {
                     Text(games.first { $0.id == gameID }?.title ?? "Pick a game")
                         .font(Typography.segmentOn)
-                        .foregroundStyle(
-                            (gameID == nil ? Palette.textMuted : Palette.textPrimary).color)
+                        .foregroundStyle(gameID == nil ? Palette.textMuted : Palette.textPrimary)
                     Spacer(minLength: 0)
                     if checking {
-                        ProgressView().tint(Palette.textMuted.color)
+                        ProgressView().tint(Palette.textMuted)
                     } else {
                         Text("›")
                             .font(Typography.segmentOn)
-                            .foregroundStyle(Palette.textFaint.color)
+                            .foregroundStyle(Palette.textFaint)
                     }
                 }
                 .padding(.horizontal, 14)
                 .frame(height: 46)
                 .frame(maxWidth: .infinity)
-                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.headerButton))
+                .background(Palette.surface, in: .rect(cornerRadius: Radii.headerButton))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.headerButton)
-                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                        .strokeBorder(Palette.hairline, lineWidth: 1)
                 )
             }
 
@@ -113,7 +112,7 @@ struct NewRunSheet: View {
             if let versions, versions.isEmpty, gameID != nil {
                 Text("No Nuzlocke route is seeded for this game yet.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.danger.color)
+                    .foregroundStyle(Palette.danger)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -129,7 +128,7 @@ struct NewRunSheet: View {
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 HStack(spacing: 2) {
                     ForEach(versions) { candidate in
                         let on = candidate == version
@@ -139,11 +138,11 @@ struct NewRunSheet: View {
                         } label: {
                             Text(candidate.version.capitalized)
                                 .font(on ? Typography.segmentOn : Typography.segmentOff)
-                                .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
+                                .foregroundStyle(on ? Palette.onAccent : Palette.textMuted)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                                 .background(
-                                    on ? Palette.nuzlocke.color : .clear,
+                                    on ? Palette.nuzlocke : .clear,
                                     in: .rect(cornerRadius: Radii.segmentItem)
                                 )
                                 .contentShape(.rect)
@@ -152,14 +151,14 @@ struct NewRunSheet: View {
                     }
                 }
                 .padding(3)
-                .background(Palette.surface.color, in: .rect(cornerRadius: Radii.segment))
+                .background(Palette.surface, in: .rect(cornerRadius: Radii.segment))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.segment)
-                        .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                        .strokeBorder(Palette.hairline, lineWidth: 1)
                 )
                 Text("Routes and trainers differ between versions.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
             }
         }
     }
@@ -175,7 +174,7 @@ struct NewRunSheet: View {
                     .font(Typography.blockLabel)
                     .tracking(Typography.blockLabelTracking)
                     .textCase(.uppercase)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 HStack(spacing: 8) {
                     ForEach(version.starters, id: \.self) { candidate in
                         let on = candidate == starter
@@ -184,16 +183,16 @@ struct NewRunSheet: View {
                             // and a sprite needs a dex id this screen has no reason to fetch.
                             Text(candidate.capitalized)
                                 .font(Typography.segmentOff)
-                                .foregroundStyle(Palette.textPrimary.color)
+                                .foregroundStyle(Palette.textPrimary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.tile))
+                            .background(Palette.surface, in: .rect(cornerRadius: Radii.tile))
                             .overlay(
                                 RoundedRectangle(cornerRadius: Radii.tile)
                                     .strokeBorder(
-                                        on ? Palette.nuzlocke.alpha(0x99) : Palette.hairline.color,
+                                        on ? Palette.nuzlocke.alpha(0x99) : Palette.hairline,
                                         lineWidth: on ? 2 : 1
                                     )
                             )
@@ -205,7 +204,7 @@ struct NewRunSheet: View {
                 Text("Your rival takes the starter that beats yours, and the rest of his team "
                      + "changes with it.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -264,19 +263,19 @@ struct NewRunSheet: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(title)
                     .font(Typography.segmentOn)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 Text(detail)
                     .font(Typography.tileSub)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(13)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.block))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.block))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.block)
-                    .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                    .strokeBorder(Palette.hairline, lineWidth: 1)
             )
             .contentShape(.rect)
         }
@@ -300,15 +299,15 @@ struct NewRunSheet: View {
                 isOn: $nicknamesRequired)
         }
         .padding(.horizontal, 15)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.block))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.block))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.block)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
     private var divider: some View {
-        Rectangle().fill(Palette.hairline.color).frame(height: 1)
+        Rectangle().fill(Palette.hairline).frame(height: 1)
     }
 
     private func toggle(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
@@ -316,13 +315,13 @@ struct NewRunSheet: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(Typography.segmentOn)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 Text(detail)
                     .font(Typography.tileSub)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
             }
         }
-        .tint(Palette.nuzlocke.color)
+        .tint(Palette.nuzlocke)
         .padding(.vertical, 13)
     }
 
