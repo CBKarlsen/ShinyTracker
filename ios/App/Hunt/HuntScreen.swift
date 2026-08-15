@@ -50,13 +50,7 @@ struct HuntScreen: View {
                         .accessibilityLabel("Start a new hunt")
                     }
                 }
-                // `safeAreaBar`, not `safeAreaInset`: a bar is chrome, and the system gives it the
-                // same treatment the navigation bar and tab bar already get — content blurs out
-                // underneath it as it scrolls. The inset version is just a view wedged into the
-                // safe area, so it had to paint its own opaque `Palette.screen` rectangle to stop
-                // cards showing through, and that rectangle is what made the strip read as a hard
-                // static block: the nav bar above it dissolved scrolling content, this clipped it.
-                .safeAreaBar(edge: .top) {
+                .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(alignment: .leading, spacing: Metrics.screenGap) {
                         // Above the segmented control, not inside the Active list: a failed
                         // completion's hunt has already left Active for History by the time it
@@ -69,6 +63,9 @@ struct HuntScreen: View {
                         segmentedControl
                     }
                     .padding(.horizontal, Metrics.screenPadding)
+                    .padding(.bottom, 8)
+                    // Opaque: scrolled cards pass beneath this strip.
+                    .background(Palette.screen.color)
                 }
         }
         .task { await model.appear() }
