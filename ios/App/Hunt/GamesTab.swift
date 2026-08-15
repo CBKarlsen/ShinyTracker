@@ -80,11 +80,14 @@ final class GameLibraryModel {
             await store.save(games, as: .games)
             await store.save(owned, as: .userGames)
         } catch {
-            if quiet || state == .ready {
-                // A snapshot is on screen — warn inline rather than replacing it with an error.
-                syncError = "Couldn't refresh your games. \(userFacingMessage(for: error))"
-            } else {
-                state = .failed(userFacingMessage(for: error))
+            // A cancelled load was replaced by another one; that one decides the state.
+            if let message = userFacingMessage(for: error) {
+                if quiet || state == .ready {
+                    // A snapshot is on screen — warn inline rather than replacing it with an error.
+                    syncError = "Couldn't refresh your games. \(message)"
+                } else {
+                    state = .failed(message)
+                }
             }
         }
     }
@@ -126,8 +129,12 @@ final class GameLibraryModel {
             }
             Haptics.impact(.light)
         } catch {
+            // The rollback happens either way — a cancelled write is still a write that did not
+            // land, so the optimistic change has to come back out even when there is nothing to say.
             owned[gameID] = before
-            syncError = "Couldn't update your library. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't update your library. \(message)"
+            }
         }
     }
 
@@ -143,7 +150,9 @@ final class GameLibraryModel {
             Haptics.impact(.light)
         } catch {
             owned[gameID] = before
-            syncError = "Couldn't update the Shiny Charm. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't update the Shiny Charm. \(message)"
+            }
         }
     }
 }

@@ -371,11 +371,16 @@ final class HuntListModel {
             // offline session go out on the same pull-to-refresh that reveals it is over.
             await drain()
         } catch {
-            if quiet || state == .ready {
-                // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
-                syncError = "Couldn't refresh your hunts. \(message(for: error))"
-            } else {
-                state = .failed(message(for: error))
+            // Nothing to say means say nothing — a cancelled load is one this app replaced, and the
+            // load that replaced it decides the state. Falling through to `.failed` here would put
+            // an error page over a refresh that is still in flight.
+            if let message = message(for: error) {
+                if quiet || state == .ready {
+                    // A snapshot is on screen. Cached hunts plus a quiet warning beat an error page.
+                    syncError = "Couldn't refresh your hunts. \(message)"
+                } else {
+                    state = .failed(message)
+                }
             }
         }
     }
@@ -720,7 +725,9 @@ final class HuntListModel {
             Haptics.notify(.warning)
             return true
         } catch {
-            syncError = "Couldn't abandon that hunt. \(message(for: error))"
+            if let message = message(for: error) {
+                syncError = "Couldn't abandon that hunt. \(message)"
+            }
             return false
         }
     }
@@ -760,10 +767,11 @@ final class HuntListModel {
         Set(queue.entries.filter { $0.kind == .found }.map(\.huntID))
     }
 
-    private func message(for error: any Error) -> String { userFacingMessage(for: error) }
+    private func message(for error: any Error) -> String? { userFacingMessage(for: error) }
 }
 
-/// Turns any error this app throws into something worth showing a user.
+/// Turns any error this app throws into something worth showing a user, or `nil` when there is
+/// nothing worth saying.
 ///
 /// Shared by the hunt list and the login screen, which previously disagreed: login
 /// used `localizedDescription` unconditionally. That matters because `APIError` and
@@ -773,7 +781,19 @@ final class HuntListModel {
 /// endpoint and server message those types exist to carry.
 ///
 /// `URLError` is the opposite case: no useful `description`, but a good localized one.
-func userFacingMessage(for error: any Error) -> String {
+///
+/// Cancellation returns `nil`. A cancelled request is not a failure — it is work this app
+/// superseded on purpose, by re-running a `.task(id:)`, leaving a screen, or starting the refresh
+/// that replaces it — and the thing that cancelled it is almost always about to produce the real
+/// answer. Reporting it produced "Couldn't refresh your hunts. cancelled", which names the user's
+/// hunts in a sentence about an internal detail they cannot act on. Optional rather than an empty
+/// string so a caller cannot accidentally render the prefix on its own.
+func userFacingMessage(for error: any Error) -> String? {
+    if error is CancellationError { return nil }
+    // URLSession reports the same thing its own way (`NSURLErrorCancelled`, -999) when the task is
+    // torn down rather than the Swift task, so both spellings have to be caught or the bug simply
+    // moves to whichever layer noticed first.
+    if let url = error as? URLError, url.code == .cancelled { return nil }
     if let api = error as? APIError { return api.description }
     if let expired = error as? SessionExpiredError { return expired.description }
     return error.localizedDescription

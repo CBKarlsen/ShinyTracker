@@ -64,8 +64,13 @@ struct HuntScreen: View {
                     }
                     .padding(.horizontal, Metrics.screenPadding)
                     .padding(.bottom, 8)
-                    // Opaque: scrolled cards pass beneath this strip.
-                    .background(Palette.screen.color)
+                    // A material, not a flat fill. Cards still have to be hidden as they pass under
+                    // this strip, but an opaque rectangle *clips* them at a hard edge — and the
+                    // collapsing large title hit that same edge, so it disappeared under the strip
+                    // instead of fading, while the navigation bar an inch above it dissolved
+                    // everything passing beneath. `.bar` is the material that bar is made of, so
+                    // the two now read as one piece of chrome rather than glass stacked on a slab.
+                    .background(.bar)
                 }
         }
         .task { await model.appear() }

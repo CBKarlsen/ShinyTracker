@@ -38,10 +38,12 @@ struct DexScreen: View {
                     segmentedControl
                         .padding(.horizontal, Metrics.screenPadding)
                         .padding(.bottom, 8)
-                        // Opaque, for the same reason the grid's pinned section headers are:
-                        // scrolled tiles pass under this strip, and the margin around the
-                        // control is transparent without it.
-                        .background(Palette.screen.color)
+                        // Hides the tiles passing under it, for the same reason the grid's pinned
+                        // section headers do — the margin around the control is transparent without
+                        // a background. A material rather than the flat fill it used to be, so the
+                        // collapsing large title dissolves under this strip instead of being clipped
+                        // by it. See the longer note on `HuntScreen`'s.
+                        .background(.bar)
                 }
         }
         .task {

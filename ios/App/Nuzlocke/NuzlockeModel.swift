@@ -137,11 +137,14 @@ final class NuzlockeModel {
             state = .ready
             await store.save(runs, as: .runs)
         } catch {
-            if quiet || state == .ready {
-                // A snapshot is on screen — warn inline rather than replacing it with an error.
-                syncError = "Couldn't refresh your runs. \(userFacingMessage(for: error))"
-            } else {
-                state = .failed(userFacingMessage(for: error))
+            // A cancelled load was replaced by another one; that one decides the state.
+            if let message = userFacingMessage(for: error) {
+                if quiet || state == .ready {
+                    // A snapshot is on screen — warn inline rather than replacing it with an error.
+                    syncError = "Couldn't refresh your runs. \(message)"
+                } else {
+                    state = .failed(message)
+                }
             }
         }
     }
@@ -156,7 +159,9 @@ final class NuzlockeModel {
             try await open(candidate)
             syncError = nil
         } catch {
-            syncError = "Couldn't open that run. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't open that run. \(message)"
+            }
         }
     }
 
@@ -454,7 +459,9 @@ final class NuzlockeModel {
             apply(saved)
             Haptics.impact(status == .fainted ? .rigid : .light)
         } catch {
-            syncError = "Couldn't move that Pokémon. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't move that Pokémon. \(message)"
+            }
         }
     }
 
@@ -475,7 +482,9 @@ final class NuzlockeModel {
             // in flight — including one the server has already accepted. Same rule the hunt
             // counter and the game library follow: a rollback touches only the row that failed.
             if isBeaten { beaten.remove(bossSlug) } else { beaten.insert(bossSlug) }
-            syncError = "Couldn't save that checkpoint. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't save that checkpoint. \(message)"
+            }
             rebuild()
         }
     }
@@ -493,7 +502,9 @@ final class NuzlockeModel {
             }
             Haptics.notify(.success)
         } catch {
-            syncError = "Couldn't update the run. \(userFacingMessage(for: error))"
+            if let message = userFacingMessage(for: error) {
+                syncError = "Couldn't update the run. \(message)"
+            }
         }
     }
 
