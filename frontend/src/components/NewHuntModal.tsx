@@ -123,7 +123,7 @@ const NewHuntModal: React.FC<Props> = ({
 			});
 		return () => controller.abort();
 		// biome-ignore lint/correctness/useExhaustiveDependencies: handleSessionExpired is stable via useCallback but omitted to avoid re-running the fetch on unrelated identity changes
-	}, [open, token]);
+	}, [open, token, handleSessionExpired]);
 
 	// When opened with prefill, jump to step 2 with the target Pokémon pre-selected.
 	// If a route was provided, select it directly from the prefill (no fetch needed).
@@ -151,7 +151,8 @@ const NewHuntModal: React.FC<Props> = ({
 			setSelectedRoute(routes[0]);
 			setHuntParams(defaultParamsFor(routes[0].formula_type));
 		}
-	}, [routes, prefill, useCustomMethod]); // eslint-disable-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: selectedRoute and changing are read but deliberately not depended on — this effect sets the INITIAL default only. Adding selectedRoute makes clearing the selection snap it back to routes[0], which is the behaviour the omission exists to prevent.
+	}, [routes, prefill, useCustomMethod]);
 
 	// Pokémon search
 	useEffect(() => {
@@ -167,7 +168,7 @@ const NewHuntModal: React.FC<Props> = ({
 			setLoadingSearch(false);
 		}, 300);
 		return () => clearTimeout(timer);
-	}, [search, open]);
+	}, [search, open, showError]);
 
 	// Fetch user game count (needed only to determine "no games" empty state).
 	useEffect(() => {
@@ -177,7 +178,7 @@ const NewHuntModal: React.FC<Props> = ({
 			.then((games) => setUserGameCount((games || []).length))
 			.catch(() => setUserGameCount(null));
 		// biome-ignore lint/correctness/useExhaustiveDependencies: handleSessionExpired is stable via useCallback but omitted to avoid re-running the fetch on unrelated identity changes
-	}, [selectedPokemon, token]);
+	}, [selectedPokemon, token, handleSessionExpired]);
 
 	const startHunt = async (route: PokemonRoute) => {
 		if (!selectedPokemon) return;

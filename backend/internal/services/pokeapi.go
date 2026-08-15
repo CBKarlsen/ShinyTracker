@@ -22,6 +22,29 @@ type PokeAPIListResponse struct {
 	} `json:"results"`
 }
 
+// rawGitHubSprites / jsDelivrSprites rewrite the sprite host on the way into the
+// database.
+//
+// PokeAPI answers with raw.githubusercontent.com URLs, which is a source-code
+// endpoint rather than a CDN: GitHub's ToS disallows using it as asset hosting
+// and it rate-limits under load, with no SLA. jsDelivr serves the same repo,
+// byte-identical, with a week-long cache.
+//
+// This has to happen HERE and not only in migration 022, because a re-seed
+// rewrites these columns from PokeAPI's response — so a migration alone would be
+// silently undone the next time anyone ran cmd/seed.
+const (
+	rawGitHubSprites = "https://raw.githubusercontent.com/PokeAPI/sprites/master/"
+	jsDelivrSprites  = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/"
+)
+
+// cdnSpriteURL swaps the host on a PokeAPI sprite URL. A URL from anywhere else
+// (or an empty one — PokeAPI genuinely returns null for some forms) is returned
+// untouched rather than mangled.
+func cdnSpriteURL(url string) string {
+	return strings.Replace(url, rawGitHubSprites, jsDelivrSprites, 1)
+}
+
 type PokeAPIPokemonResponse struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
@@ -285,7 +308,8 @@ func processPokemon(url string, parentPairs chan<- [2]int) {
 		`INSERT INTO pokemon (id, name, sprite_url, shiny_sprite_url, types, is_legendary, is_mythical)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, sprite_url = EXCLUDED.sprite_url, shiny_sprite_url = EXCLUDED.shiny_sprite_url, types = EXCLUDED.types, is_legendary = EXCLUDED.is_legendary, is_mythical = EXCLUDED.is_mythical`,
-		p.ID, p.Name, p.Sprites.FrontDefault, p.Sprites.FrontShiny, typesJSON, isLegendary, isMythical)
+		p.ID, p.Name, cdnSpriteURL(p.Sprites.FrontDefault), cdnSpriteURL(p.Sprites.FrontShiny),
+		typesJSON, isLegendary, isMythical)
 
 	if err != nil {
 		log.Printf("Failed to insert pokemon %s: %v", p.Name, err)

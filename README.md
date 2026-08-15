@@ -128,8 +128,19 @@ Honest state, so nobody rediscovers these the hard way:
   invisible.
 - **`e2e/` does not run.** It authenticates against `/api/auth/register` and
   `/api/auth/login`, which were deleted in the Supabase migration. See `e2e/README.md`.
-- **~162 open Biome lint errors** in `frontend/` (`useButtonType`, `noExplicitAny`,
-  formatting). CI runs `npm run lint` but does not gate on it — a permanently red build
-  teaches people to ignore CI. Clear the backlog, then make it a gate.
+- **~114 open Biome lint errors** in `frontend/`, down from 163. CI runs `npm run lint` but
+  does not gate on it — a permanently red build teaches people to ignore CI. What is left is
+  mostly `noExplicitAny` (37), the click-`div` a11y family (~45), `noSvgWithoutTitle` (22)
+  and CSS specificity (14). Roughly 18 of the count is pure formatting: `npm run format`
+  clears those whenever you want a noisy-but-safe diff.
+  - **`a11y/useButtonType` is `"off"` in `biome.json`** — deliberately, and this is the only
+    place that fact is written down, because Biome's config is strict JSON and rejects
+    comments. The rule guards a `<button>` defaulting to `type="submit"` inside a form. This
+    app has **zero** `<form>` elements and zero `onSubmit` handlers, so those 46 violations
+    guarded a failure that cannot occur. **Turn it back on the moment a real form appears.**
+  - Suppressions must be `biome-ignore`, not `eslint-disable`. The project does not run
+    eslint at all, so five `eslint-disable` comments were suppressing nothing — and Biome's
+    autofix duly overrode two documented decisions before anyone noticed. All five are
+    converted; do not add more.
 - **iOS is not App Store submittable** — it is TestFlight-shaped. Account deletion
   (Guideline 5.1.1(v)) does not exist at any layer, and the sprite-IP question is open.

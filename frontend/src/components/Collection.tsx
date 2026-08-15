@@ -70,7 +70,8 @@ const Collection: React.FC<{
 			setDrawerId(focusPokemonId);
 			onFocusHandled?.();
 		}
-	}, [focusPokemonId]); // eslint-disable-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: focusPokemonId is the only trigger; the other reads are the values being acted ON, and depending on them would re-run the scroll on every unrelated change.
+	}, [focusPokemonId]);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -153,7 +154,7 @@ const Collection: React.FC<{
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: focusPokemonId is the only trigger; the other reads are the values being acted ON, and depending on them would re-run the scroll on every unrelated change.
 	}, [gameView]);
 
 	if (loading) {

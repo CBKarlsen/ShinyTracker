@@ -1,10 +1,19 @@
 // The server is the preferred sprite source: sprite_url/shiny_sprite_url ride
 // along on pokemon, hunt and phase responses, so the host lives in the
-// database. ponytail: the hardcoded PokeAPI host survives only as the
-// fallback, because the shiny column is filled by migration 016's backfill —
-// a server that hasn't run it yet answers "". Mirrors ios/App/SpriteSource.swift.
+// database. ponytail: the hardcoded host survives only as the fallback, because
+// the shiny column is filled by migration 016's backfill — a server that hasn't
+// run it yet answers "". Mirrors ios/App/SpriteSource.swift.
+//
+// jsDelivr, not raw.githubusercontent.com. Same repo, byte-identical files
+// (verified by hash), but raw.githubusercontent is a source-code endpoint, not a
+// CDN: GitHub's ToS disallows using it as asset hosting and it rate-limits under
+// load, with no SLA. jsDelivr exists to serve GitHub content and caches for a
+// week. The served URLs move via migration 022; this is only the fallback.
+//
+// This does NOT change the copyright position — the artwork is still Nintendo's.
+// See README "Known gaps".
 const SPRITE_BASE =
-	"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/";
+	"https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/";
 
 export const getSpriteUrl = (
 	id: number,

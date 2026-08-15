@@ -45,7 +45,8 @@ export function usePokemonSearch(query: string): {
 			}
 		}, 200);
 		return () => clearTimeout(timer);
-	}, [query, token]); // eslint-disable-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: query and token are the trigger; the debounce timer owns the rest and re-running on its identity would reset the debounce every render.
+	}, [query, token]);
 
 	return { results, loading };
 }
