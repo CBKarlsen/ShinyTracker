@@ -10,9 +10,12 @@ import ShinyTrackerKit
 /// resolution lives here, next to the types it produces, where it is testable without a
 /// screen: the reference data is passed in, nothing is fetched.
 ///
-/// Both directions go through ``key(_:)``, which is what makes a round trip hold. Export
-/// emits `"Swords Dance"` when it knows the name and `"swords-dance"` when it does not, and
-/// import resolves both to the same slug.
+/// **Import only.** The Showdown paste format encodes EVs, IVs and Tera types; Champions has
+/// none of the three — it has one Stat Point pool, no IVs at all, and no Terastallization. A
+/// paste can be read into that shape with a well-defined conversion (see ``member(from:slot:detail:items:)``),
+/// but a Champions team cannot be honestly written back out as one: the result would advertise
+/// an EV spread and IVs the team does not have. So there is no `paste(...)` here, and there
+/// should not be one added back — restoring it re-introduces the lie.
 public enum ShowdownBridge {
     /// Showdown's own normalisation: lowercase, and drop everything that is not a letter or a
     /// digit. `"Urshifu-Rapid-Strike"`, `"urshifu-rapid-strike"` and `"Urshifu Rapid Strike"`
@@ -21,80 +24,12 @@ public enum ShowdownBridge {
         name.lowercased().filter { $0.isLetter || $0.isNumber }
     }
 
-    /// The 19 legal Tera types, Title-case — the casing `validTeraTypes` in
-    /// `backend/internal/api/teams.go` accepts. 18 elemental plus Stellar; a value outside this
-    /// set is a 400, so an unrecognised `Tera Type:` line becomes no Tera type rather than a
-    /// rejected import.
-    public static let teraTypes: Set<String> = [
-        "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting", "Poison", "Ground",
-        "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon", "Dark", "Steel", "Fairy",
-        "Stellar",
-    ]
-
-    // MARK: Export
-
-    /// Renders saved members as paste text.
-    ///
-    /// Every name that cannot be resolved falls back to its slug. That is deliberate: a paste
-    /// carrying `- swords-dance` is still usable by a human and still re-imports, whereas a
-    /// blank move line is neither.
-    public static func paste(
-        _ members: [TeamMember],
-        species: [Pokemon],
-        items: [Item],
-        details: [Int: PokemonDetail]
-    ) -> String {
-        let speciesNames = Dictionary(species.map { ($0.id, displayName($0.name)) }) { first, _ in first }
-        let itemNames = Dictionary(items.map { ($0.slug, $0.name) }) { first, _ in first }
-
-        return ShowdownPaste.export(
-            members.sorted { $0.slot < $1.slot }.map { member in
-                let detail = details[member.pokemonID]
-                let moveNames = Dictionary(
-                    (detail?.moves ?? []).map { ($0.slug, $0.name) }) { first, _ in first }
-                let abilityNames = Dictionary(
-                    (detail?.abilities ?? []).map { ($0.slug, $0.name) }) { first, _ in first }
-
-                return ShowdownPaste.ParsedSet(
-                    species: speciesNames[member.pokemonID]
-                        ?? detail.map { displayName($0.name) }
-                        ?? "#\(member.pokemonID)",
-                    nickname: exportableNickname(member.nickname),
-                    // Not modelled by `TeamMember`, so never emitted. See the round-trip note.
-                    gender: nil,
-                    item: member.itemSlug.flatMap { $0.isEmpty ? nil : (itemNames[$0] ?? $0) },
-                    ability: member.abilitySlug.isEmpty
-                        ? nil : (abilityNames[member.abilitySlug] ?? member.abilitySlug),
-                    level: member.level,
-                    teraType: member.teraType.flatMap { $0.isEmpty ? nil : $0 },
-                    nature: Nature(rawValue: member.nature) ?? .hardy,
-                    evs: spread(member.evs, fallback: 0),
-                    ivs: spread(member.ivs, fallback: 31),
-                    moves: member.moves.map { moveNames[$0] ?? $0 }
-                )
-            })
-    }
-
-    /// `great-tusk` → `Great-Tusk`. Hyphens are kept because they are what separates a form
-    /// (`Urshifu-Rapid-Strike`); ``key(_:)`` and Showdown's own importer both ignore them
-    /// either way, so the difference is cosmetic.
-    private static func displayName(_ slug: String) -> String {
-        slug.split(separator: "-").map(\.capitalized).joined(separator: "-")
-    }
-
-    /// A nickname is free text and the header line is positional: `Chomp (Garchomp) @ Item`.
-    /// A nickname carrying `(`, `)` or `@` would re-parse as a different species or a held
-    /// item, so it is dropped rather than allowed to corrupt the set it labels.
-    private static func exportableNickname(_ nickname: String?) -> String? {
-        guard let nickname, !nickname.isEmpty else { return nil }
-        return nickname.contains(where: { "()@".contains($0) }) ? nil : nickname
-    }
-
     // MARK: Import
 
     /// One parsed set as a member of `slot`, with every value the server would otherwise 400 on
-    /// already clamped: EVs to 252 per stat and 508 in total, IVs to 0–31, level to 1–100, moves
-    /// to four, Tera type to the legal 19, nature to its lowercase `rawValue`.
+    /// already clamped: stat points to 32 per stat and 66 in total, level to 1–100, moves to
+    /// four, nature to its lowercase `rawValue`. The paste's IV line and Tera type are discarded
+    /// outright — Champions has neither.
     ///
     /// `detail` is the species this set resolved to — its Scarlet/Violet learnset and its
     /// abilities are what turn `"Swords Dance"` into `"swords-dance"`. A move or ability the
@@ -110,6 +45,11 @@ public enum ShowdownBridge {
         let abilitySlugs = Dictionary((detail.abilities ?? []).map { (key($0.name), $0.slug) }) { first, _ in first }
         let itemSlugs = Dictionary(items.map { (key($0.name), $0.slug) }) { first, _ in first }
 
+        // Champions has no EVs and no IVs. A pasted mainline spread converts at Pokemon HOME's
+        // own rate; the paste's IV line is discarded entirely, because every Champions Pokemon
+        // calculates as though it had 31.
+        let points = StatPoints.fromEVs(set.evs)
+
         return TeamMember(
             slot: slot,
             pokemonID: detail.id,
@@ -121,12 +61,8 @@ public enum ShowdownBridge {
             abilitySlug: set.ability.map { abilitySlugs[key($0)] ?? slugify($0) }
                 ?? detail.abilities?.first?.slug ?? "",
             itemSlug: set.item.map { itemSlugs[key($0)] ?? slugify($0) },
-            teraType: set.teraType.flatMap { tera in
-                teraTypes.first { key($0) == key(tera) }
-            },
             level: min(100, max(1, set.level)),
-            evs: dictionary(cappedEVs(set.evs)),
-            ivs: dictionary(clamped(set.ivs, to: 0...31)),
+            statPoints: dictionary(cappedTotal(points)),
             moves: set.moves.prefix(4).map { moveSlugs[key($0)] ?? slugify($0) }
         )
     }
@@ -149,39 +85,25 @@ public enum ShowdownBridge {
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
-    /// 252 per stat, 508 in total — spent in `Stat.allCases` order, so an over-budget paste
-    /// keeps its HP and Attack investment and loses the tail rather than being rejected whole.
-    private static func cappedEVs(_ spread: StatSpread) -> StatSpread {
-        var capped = StatSpread.zero
-        var remaining = 508
+    /// `fromEVs` clamps each stat to 32 but not the total. A paste is untrusted input —
+    /// `ShowdownPaste.parse` does not validate it — so an over-cap spread can still exceed 66 in
+    /// aggregate; spent in `Stat.allCases` order, the same order the old EV clamp used, so the
+    /// result is deterministic.
+    private static func cappedTotal(_ points: StatPoints) -> StatPoints {
+        var capped = StatPoints.zero
+        var remaining = StatPoints.maxTotal
         for stat in Stat.allCases {
-            let value = max(0, min(spread[stat], 252, remaining))
+            let value = max(0, min(points[stat], remaining))
             capped[stat] = value
             remaining -= value
         }
         return capped
     }
 
-    private static func clamped(_ spread: StatSpread, to range: ClosedRange<Int>) -> StatSpread {
-        var result = spread
-        for stat in Stat.allCases {
-            result[stat] = min(range.upperBound, max(range.lowerBound, spread[stat]))
-        }
-        return result
-    }
-
-    // MARK: Spread conversion
+    // MARK: Wire conversion
 
     /// `hp/atk/def/spa/spd/spe` — `Stat.rawValue` is already the JSONB key the column holds.
-    private static func dictionary(_ spread: StatSpread) -> [String: Int] {
-        Dictionary(uniqueKeysWithValues: Stat.allCases.map { ($0.rawValue, spread[$0]) })
-    }
-
-    /// **Omitted IVs are 31, not 0.** A member row written before a column existed can be
-    /// missing a key, and defaulting it to zero would silently gut the set.
-    private static func spread(_ values: [String: Int], fallback: Int) -> StatSpread {
-        var spread = StatSpread()
-        for stat in Stat.allCases { spread[stat] = values[stat.rawValue] ?? fallback }
-        return spread
+    private static func dictionary(_ points: StatPoints) -> [String: Int] {
+        Dictionary(uniqueKeysWithValues: Stat.allCases.map { ($0.rawValue, points[$0]) })
     }
 }

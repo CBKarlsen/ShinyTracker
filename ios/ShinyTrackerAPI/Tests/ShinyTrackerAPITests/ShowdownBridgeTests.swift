@@ -4,9 +4,10 @@ import Testing
 
 @testable import ShinyTrackerAPI
 
-/// The property that matters is the round trip: a saved member exported to a paste, parsed back
-/// and resolved again must be the same member. `ShowdownPasteTests` pins the text format; this
-/// pins the name/slug translation sitting on top of it.
+/// `ShowdownBridge` is import-only: a Showdown paste resolves to a Champions `TeamMember`, with
+/// its EVs converted to Stat Points and its IVs and Tera type discarded. There is no export
+/// path to pin a round trip against — see the "Import only" note on `ShowdownBridge` itself for
+/// why not.
 
 private let garchomp = PokemonDetail(
     id: 445, name: "garchomp", spriteURL: "", shinySpriteURL: nil, types: ["dragon", "ground"],
@@ -31,35 +32,31 @@ private let items = [
     Item(slug: "life-orb", name: "Life Orb", spriteURL: "", description: ""),
 ]
 
-private let member = TeamMember(
-    slot: 1, pokemonID: 445, nickname: "Chomp", nature: "jolly", abilitySlug: "rough-skin",
-    itemSlug: "rocky-helmet", teraType: "Steel", level: 50,
-    evs: ["hp": 0, "atk": 252, "def": 0, "spa": 0, "spd": 4, "spe": 252],
-    ivs: ["hp": 31, "atk": 31, "def": 31, "spa": 0, "spd": 31, "spe": 31],
-    moves: ["earthquake", "dragon-claw", "stealth-rock", "swords-dance"])
-
 private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
     let sets = try ShowdownPaste.parse(text)
     return ShowdownBridge.member(from: sets[0], slot: slot, detail: garchomp, items: items)
 }
 
-@Test func exportedMemberRoundTrips() throws {
-    let text = ShowdownBridge.paste(
-        [member], species: [], items: items, details: [445: garchomp])
+/// A pasted Scarlet/Violet set converts to a Champions member: EVs become stat points at the
+/// HOME rate, IVs are discarded because Champions has none, and the Tera type is dropped
+/// because Champions has no Terastallization.
+@Test func aPastedSVSetConvertsToChampionsShape() throws {
+    let member = try reimport("""
+        Garchomp @ Rocky Helmet
+        Ability: Rough Skin
+        Tera Type: Steel
+        EVs: 252 Atk / 4 SpD / 252 Spe
+        Jolly Nature
+        IVs: 0 SpA
+        - Earthquake
+        """)
 
-    #expect(text.hasPrefix("Chomp (Garchomp) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50"))
-    #expect(text.contains("Tera Type: Steel"))
-    #expect(text.contains("- Swords Dance"))
-    #expect(try reimport(text) == member)
-}
-
-/// The fallback path: with no species list and no detail, every name is emitted as its slug —
-/// and the slug still resolves back, because both sides normalise the same way.
-@Test func slugFallbackStillRoundTrips() throws {
-    let text = ShowdownBridge.paste([member], species: [], items: [], details: [:])
-
-    #expect(text.contains("- swords-dance"))
-    #expect(try reimport(text) == member)
+    #expect(member.statPoints["atk"] == 32)
+    #expect(member.statPoints["spe"] == 32)
+    #expect(member.statPoints["spd"] == 1)
+    #expect(member.statPoints.values.reduce(0, +) == 65)
+    #expect(member.nature == "jolly")
+    #expect(member.itemSlug == "rocky-helmet")
 }
 
 /// A hand-written paste — display names throughout, no ids anywhere.
@@ -79,12 +76,13 @@ private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
     #expect(imported.itemSlug == "life-orb")
     #expect(imported.abilitySlug == "sand-veil")
     #expect(imported.moves == ["u-turn"])
-    // Lowercase on the wire, and the Tera type is normalised back to the legal Title-case.
+    // Lowercase on the wire. The paste's `Tera Type:` line is read but never carried into the
+    // member — Champions has no Terastallization.
     #expect(imported.nature == "adamant")
-    #expect(imported.teraType == "Steel")
 }
 
-/// Every value the server would answer with a 400 is clamped before it can be sent.
+/// Every value the server would answer with a 400 is clamped before it can be sent — including
+/// a stat point total over 66, which `StatPoints.fromEVs` does not clamp on its own.
 @Test func illegalValuesAreClamped() throws {
     let imported = try reimport(
         """
@@ -101,11 +99,14 @@ private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
         """)
 
     #expect(imported.level == 100)
-    #expect(imported.teraType == nil)
-    #expect(imported.evs["hp"] == 252)
-    #expect(imported.evs.values.reduce(0, +) <= 508)
-    #expect(imported.evs.values.allSatisfy { $0 <= 252 })
-    #expect(imported.ivs["atk"] == 31)
+    // hp and atk are spent first (`Stat.allCases` order), so they keep their full 32; def gets
+    // only what is left of the 66 budget, and spa is left with nothing.
+    #expect(imported.statPoints["hp"] == 32)
+    #expect(imported.statPoints["atk"] == 32)
+    #expect(imported.statPoints["def"] == 2)
+    #expect(imported.statPoints["spa"] == 0)
+    #expect(imported.statPoints.values.reduce(0, +) == 66)
+    #expect(imported.statPoints.values.allSatisfy { $0 <= 32 })
     #expect(imported.moves.count == 4)
     // No `Ability:` line, so the species' first ability stands in rather than an empty slug.
     #expect(imported.abilitySlug == "rough-skin")
@@ -127,15 +128,4 @@ private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
     #expect(imported.moves[0].unicodeScalars.count <= 50)
     // Truncation never leaves the trailing separator no real slug has.
     #expect(!imported.abilitySlug.hasSuffix("-"))
-}
-
-/// A nickname that would re-parse as a species or a held item is dropped, not exported.
-@Test func hostileNicknameIsNotExported() throws {
-    let hostile = TeamMember(
-        slot: 1, pokemonID: 445, nickname: "Chomp (Ditto) @ Leftovers", nature: "hardy",
-        abilitySlug: "rough-skin", level: 50, evs: [:], ivs: [:], moves: [])
-    let text = ShowdownBridge.paste([hostile], species: [], items: [], details: [445: garchomp])
-
-    #expect(text.hasPrefix("Garchomp\nAbility: Rough Skin"))
-    #expect(try reimport(text).pokemonID == 445)
 }
