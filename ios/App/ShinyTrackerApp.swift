@@ -52,6 +52,9 @@ struct RootView: View {
             } else if let fixture = NuzlockePreview.requested {
                 // Same, for a run. See NuzlockePreviewHarness.swift.
                 AppShell(preview: NuzlockePreview.client(fixture), mode: .nuzlocke)
+            } else if let fixture = TeamsPreview.requested {
+                // Same, for a team. See TeamsPreviewHarness.swift.
+                AppShell(preview: TeamsPreview.client(fixture), mode: .teams)
             } else if auth.isSignedIn {
                 AppShell(auth: auth)
             } else {

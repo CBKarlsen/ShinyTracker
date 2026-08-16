@@ -1,6 +1,7 @@
 import ShinyTrackerAPI
 import ShinyTrackerUI
 import SwiftUI
+import UIKit
 
 /// One team: a name and six slots. Tapping a slot opens ``MemberSheet``.
 ///
@@ -22,6 +23,10 @@ struct TeamEditorScreen: View {
     @State private var items: [Item] = []
     @State private var editingSlot: SlotEdit?
     @State private var saving = false
+    @State private var exporting = false
+    /// What the last export did, shown until the next edit — a clipboard write is invisible
+    /// otherwise, and "did that work?" is the only question a copy button raises.
+    @State private var exportNote: String?
     @State private var confirmingDelete = false
     @Environment(\.dismiss) private var dismiss
 
@@ -63,6 +68,13 @@ struct TeamEditorScreen: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
+                if let exportNote {
+                    Text(exportNote)
+                        .font(Typography.hint)
+                        .foregroundStyle(Palette.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 Button {
                     Task { await save() }
                 } label: {
@@ -86,6 +98,15 @@ struct TeamEditorScreen: View {
         .scrollIndicators(.hidden)
         .navigationTitle(team == nil ? "New team" : "Edit team")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await copyPaste() } } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .accessibilityLabel("Copy as a Showdown paste")
+                .disabled(members.isEmpty || exporting)
+            }
+        }
         .task {
             // Both lists are static reference data. `all: true` because the picker searches
             // locally: without every species the search would silently stop at the server's 50.
@@ -94,6 +115,7 @@ struct TeamEditorScreen: View {
             species = await allSpecies ?? []
             items = await allItems ?? []
         }
+        .onChange(of: slots) { exportNote = nil }
         .sheet(item: $editingSlot) { edit in
             MemberSheet(
                 client: client,
@@ -224,6 +246,37 @@ struct TeamEditorScreen: View {
         }
         if let tera = member.teraType, !tera.isEmpty { parts.append("Tera \(tera)") }
         return parts.joined(separator: " · ")
+    }
+
+    // MARK: Export
+
+    /// The six slots as Showdown paste text, on the clipboard.
+    ///
+    /// The species list and the item list are the ones this screen already loaded. Move and
+    /// ability *names* are not: they live on the species detail, which only the member sheet
+    /// fetches. So they are fetched here on the tap, in parallel and at most six of them, and a
+    /// request that fails costs that species its move names — ``ShowdownBridge/paste`` emits the
+    /// slug instead, which a human can still read and this app can still re-import.
+    private func copyPaste() async {
+        exporting = true
+        exportNote = nil
+        var details: [Int: PokemonDetail] = [:]
+        await withTaskGroup(of: PokemonDetail?.self) { group in
+            for id in Set(members.map(\.pokemonID)) {
+                group.addTask {
+                    try? await client.pokemonDetail(id: id, gameID: scarletVioletGameID)
+                }
+            }
+            for await detail in group {
+                if let detail { details[detail.id] = detail }
+            }
+        }
+        UIPasteboard.general.string = ShowdownBridge.paste(
+            members, species: species, items: items, details: details)
+        exporting = false
+        exportNote = members.count == 1
+            ? "Copied 1 set to the clipboard."
+            : "Copied \(members.count) sets to the clipboard."
     }
 
     // MARK: Save

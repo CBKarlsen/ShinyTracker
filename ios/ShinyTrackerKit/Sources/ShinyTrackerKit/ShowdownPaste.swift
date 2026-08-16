@@ -25,6 +25,28 @@ public enum ShowdownPaste {
         public var evs: StatSpread
         public var ivs: StatSpread
         public var moves: [String]
+
+        /// Spelled out because the synthesised memberwise initialiser is internal, and the
+        /// side that resolves names to ids — `ShowdownBridge` in `ShinyTrackerAPI` — builds
+        /// sets to export from another module.
+        public init(
+            species: String, nickname: String? = nil, gender: String? = nil, item: String? = nil,
+            ability: String? = nil, level: Int = 100, teraType: String? = nil,
+            nature: Nature = .hardy, evs: StatSpread = .zero, ivs: StatSpread = .maxIVs,
+            moves: [String] = []
+        ) {
+            self.species = species
+            self.nickname = nickname
+            self.gender = gender
+            self.item = item
+            self.ability = ability
+            self.level = level
+            self.teraType = teraType
+            self.nature = nature
+            self.evs = evs
+            self.ivs = ivs
+            self.moves = moves
+        }
     }
 
     public enum ParseError: Error, Equatable {

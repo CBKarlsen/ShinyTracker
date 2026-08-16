@@ -23,6 +23,10 @@ struct TeamsScreen: View {
     /// different string and shows again, which is the behaviour you want: dismissing one stale
     /// warning must not silence the next real one.
     @State private var dismissedError: String?
+    @State private var importing = false
+    /// What the last import skipped, if anything — shown in the same banner as a sync failure,
+    /// because "your team is here, minus two Pokémon" is exactly as important to see.
+    @State private var importNote: String?
 
     /// `Team` cannot be the navigation value: `navigationDestination(item:)` needs `Hashable` and
     /// `Team` holds `[TeamMember]`, which holds two dictionaries. The id is all the editor needs.
@@ -44,12 +48,23 @@ struct TeamsScreen: View {
             .navigationSubtitle(model.state == .ready ? subtitle : "")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { importing = true } label: {
+                        Image(systemName: "square.and.arrow.down")
+                    }
+                    .accessibilityLabel("Import a Showdown paste")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { editing = .new } label: { Image(systemName: "plus") }
                         .accessibilityLabel("New team")
                 }
             }
             .navigationDestination(item: $editing) { target in
                 TeamEditorScreen(model: model, client: client, team: team(for: target))
+            }
+            .sheet(isPresented: $importing) {
+                ImportPasteSheet(model: model, client: client) { note in
+                    importNote = note
+                }
             }
         }
         .task { await model.appear() }
@@ -68,9 +83,17 @@ struct TeamsScreen: View {
 
     /// Above the content, never instead of it: a refresh that failed still leaves the cached teams
     /// on screen, and replacing them with an error would throw away work the user can still edit.
+    /// An import outcome outranks a sync warning: it is the thing that just happened, and it is
+    /// the only place the skipped Pokémon are ever named.
+    private var bannerMessage: String? {
+        if let importNote { return importNote }
+        guard let message = model.syncError, message != dismissedError else { return nil }
+        return message
+    }
+
     @ViewBuilder
     private var syncBanner: some View {
-        if let message = model.syncError, message != dismissedError {
+        if let message = bannerMessage {
             HStack(alignment: .top, spacing: 8) {
                 Text(message)
                     .font(Typography.hint)
@@ -78,7 +101,9 @@ struct TeamsScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button { dismissedError = message } label: {
+                Button {
+                    if importNote != nil { importNote = nil } else { dismissedError = message }
+                } label: {
                     Image(systemName: "xmark")
                         .font(Typography.statStrong)
                         .foregroundStyle(Palette.textMuted)
