@@ -426,15 +426,21 @@ struct MemberSheet: View {
                             .font(Typography.overline)
                             .foregroundStyle(Palette.textMuted)
                             .frame(width: 34, alignment: .leading)
-                        // The label goes on the `Slider`, and the row is deliberately *not*
-                        // `.accessibilityElement(children: .combine)`: combining flattens the row
-                        // into one static element and takes the slider's adjustable action with
-                        // it, which would leave EVs unsettable under VoiceOver on the one screen
-                        // whose whole point is setting them.
+                        // The label and the value both go on the `Slider`, and the row is
+                        // deliberately *not* `.accessibilityElement(children: .combine)`:
+                        // combining flattens the row into one static element and takes the
+                        // slider's adjustable action with it, which would leave EVs unsettable
+                        // under VoiceOver on the one screen whose whole point is setting them.
+                        //
+                        // The explicit value is not redundant either. Left to itself a `Slider`
+                        // announces its position as a percentage of its range — "78%" — and the
+                        // number of points in a stat is the only figure anyone spreading 508 of
+                        // them can use.
                         Slider(value: evBinding(stat), in: 0...252, step: 4) {
                             Text("\(stat.showdownLabel) EVs")
                         }
                         .tint(Palette.team)
+                        .accessibilityValue("\(evs[stat])")
                         Text("\(evs[stat])")
                             .font(Typography.statStrong)
                             .monospacedDigit()
