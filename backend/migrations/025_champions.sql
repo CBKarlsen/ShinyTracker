@@ -6,7 +6,8 @@
 
 -- Champions is generation-ix per PokeAPI's version-group/champions. base_odds
 -- is irrelevant here — Champions has no wild encounters and no shiny hunting —
--- but the column is NOT NULL, so it takes the generation default.
+-- but the column is NOT NULL, so a value must be supplied. 4096 is a neutral
+-- placeholder that happens to match the table's DEFAULT.
 INSERT INTO games (id, title, generation, base_odds)
 VALUES (18, 'Pokemon Champions', 9, 4096)
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title;
