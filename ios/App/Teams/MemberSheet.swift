@@ -196,8 +196,11 @@ struct MemberSheet: View {
         guard let pokemonID, detail?.id != pokemonID else { return }
         failure = nil
         do {
-            // `game_id` is what makes `moves` the Scarlet/Violet learnset rather than null.
-            let loaded = try await client.pokemonDetail(id: pokemonID, gameID: scarletVioletGameID)
+            // Passing a `game_id` at all is what makes `moves` come back rather than null, and
+            // passing *this* one is what makes them Champions' moveset rather than another
+            // game's — the picker cannot tell the difference, so this argument is the only thing
+            // standing between the user and a set built from moves Champions does not have.
+            let loaded = try await client.pokemonDetail(id: pokemonID, gameID: championsGameID)
             detail = loaded
             if ability.isEmpty { ability = loaded.abilities?.first?.slug ?? "" }
         } catch {
@@ -358,7 +361,7 @@ struct MemberSheet: View {
     // MARK: Moves
 
     private var moves: some View {
-        TeamBlock("Moves · Scarlet/Violet learnset") {
+        TeamBlock("Moves · Champions moveset") {
             VStack(spacing: 0) {
                 ForEach(0..<4, id: \.self) { index in
                     if index > 0 { separator }
@@ -380,8 +383,9 @@ struct MemberSheet: View {
         learnset.first { $0.slug == slug }?.name ?? prettifySlug(slug)
     }
 
-    /// The species' real moveset for this game. The same move arrives once per learn method, so it
-    /// is deduplicated by slug — a picker does not care whether it came off a TM or a level-up.
+    /// The species' real moveset for this game. The same move can arrive once per learn method, so
+    /// it is deduplicated by slug — nothing here reads `method`, and in Champions there is nothing
+    /// to read: every move is `train`, because the game has no levelling and no TMs.
     private var learnset: [PokemonMove] {
         var seen = Set<String>()
         return (detail?.moves ?? [])

@@ -264,7 +264,7 @@ struct TeamEditorScreen: View {
         await withTaskGroup(of: PokemonDetail?.self) { group in
             for id in Set(members.map(\.pokemonID)) {
                 group.addTask {
-                    try? await client.pokemonDetail(id: id, gameID: scarletVioletGameID)
+                    try? await client.pokemonDetail(id: id, gameID: championsGameID)
                 }
             }
             for await detail in group {

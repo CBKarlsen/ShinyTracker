@@ -2,11 +2,15 @@ import ShinyTrackerAPI
 import ShinyTrackerUI
 import SwiftUI
 
-/// Scarlet/Violet is the only game a team can be built for in this slice, and the backend says so
-/// too — `scarletVioletGameID` in `backend/internal/api/teams.go`. It is the `game_id` the member
-/// sheet asks `GET /api/pokemon/{id}` for, which is what makes the move picker that game's real
-/// learnset rather than every move the species has ever learned.
-let scarletVioletGameID = 17
+/// Champions is the game a team is built for, and the backend says so too — `championsGameID` in
+/// `backend/internal/api/teams.go`, and the `games` row inserted by migration 025. It is the
+/// `game_id` the member sheet asks `GET /api/pokemon/{id}` for, which is what makes the move
+/// picker that game's real moveset rather than every move the species has ever learned.
+///
+/// 18, not 17: 17 is Scarlet/Violet, and the Champions movesets are seeded under 18. Getting this
+/// wrong does not fail loudly — the picker fills with a plausible *Scarlet/Violet* learnset for a
+/// team that cannot use it.
+let championsGameID = 18
 
 /// The Teams mode: every saved team, six sprites wide.
 ///

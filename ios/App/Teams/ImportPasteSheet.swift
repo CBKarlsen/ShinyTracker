@@ -188,9 +188,9 @@ struct ImportPasteSheet: View {
                 continue
             }
             do {
-                // The Scarlet/Violet learnset and this species' abilities — what turns
+                // The Champions moveset and this species' abilities — what turns
                 // "Swords Dance" into `swords-dance`.
-                let detail = try await client.pokemonDetail(id: match.id, gameID: scarletVioletGameID)
+                let detail = try await client.pokemonDetail(id: match.id, gameID: championsGameID)
                 members.append(
                     ShowdownBridge.member(
                         from: set, slot: members.count + 1, detail: detail, items: items))
