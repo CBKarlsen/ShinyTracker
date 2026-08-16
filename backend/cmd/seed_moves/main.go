@@ -1,5 +1,5 @@
-// cmd/seed_moves seeds base stats, abilities, and (Platinum + Scarlet/Violet
-// only) movesets from PokeAPI.
+// cmd/seed_moves seeds base stats, abilities, and (Platinum + Scarlet/Violet +
+// Champions only) movesets from PokeAPI.
 //
 // RUNBOOK: run after cmd/seed (needs the `pokemon` and `games` tables
 // populated) and after migrations/014_add_stats_abilities_moves.sql has been
@@ -38,7 +38,7 @@ func main() {
 	log.Println("Phase 2/3: abilities reference table")
 	abilityIDs, abilityCount, abilityErr := services.SeedAbilityReference(ctx)
 
-	log.Println("Phase 3/3: per-species stats, ability slots, and movesets (Platinum + Scarlet/Violet)")
+	log.Println("Phase 3/3: per-species stats, ability slots, and movesets (Platinum + Scarlet/Violet + Champions)")
 	speciesCount, speciesErr := services.SeedSpeciesStatsAndMoves(ctx, moveIDs, abilityIDs)
 
 	log.Printf("Done. moves=%d abilities=%d species_newly_seeded=%d", moveCount, abilityCount, speciesCount)

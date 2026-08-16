@@ -8,9 +8,15 @@ go run ./cmd/seed/main.go             # Seed Pokemon + encounters from PokeAPI
 go run ./cmd/seed_availability/main.go # Populate pokemon_availability table
 go run ./cmd/seed_fulldex/main.go     # Seed recommended methods from FullDexMethods.csv
 go run ./cmd/seed_locations/main.go     # Seed Gen 2-7 encounter locations from PokeAPI
-go run ./cmd/seed_moves/main.go         # Seed base stats, abilities (full) + Platinum/Scarlet-Violet movesets from PokeAPI
+go run ./cmd/seed_moves/main.go         # Seed base stats, abilities (full) + Platinum/Scarlet-Violet/Champions movesets from PokeAPI
 go run ./cmd/seed_items/main.go       # Seed held items from PokeAPI (after migration 023)
+go run ./cmd/seed_champions/main.go   # Champions species pool (after migration 025)
 ```
+
+`seed_items` and `seed_moves` are also re-run targets, not just first-run ones: after
+migration 025 they must both run again to pick up Mega Stones (`seed_items`, new
+`mega-stones` category) and Champions movesets (`seed_moves`, new `champions`
+version group).
 
 Anything that is one SQL statement is one `psql` call, not a `cmd/` tool:
 

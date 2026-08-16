@@ -205,12 +205,13 @@ func parseAbilitySlots(abilities []pokeAPIAbilitySlot) []AbilitySlotRef {
 }
 
 // movesetVersionGroups maps a PokeAPI version_group slug we seed to the
-// games.title row it belongs to. Only Platinum and Scarlet/Violet are seeded
-// so far, per spec -- adding another game later is additive: add an entry
-// here and re-run cmd/seed_moves, no schema change required.
+// games.title row it belongs to. Platinum, Scarlet/Violet, and Champions are
+// seeded so far, per spec -- adding another game later is additive: add an
+// entry here and re-run cmd/seed_moves, no schema change required.
 var movesetVersionGroups = map[string]string{
 	"platinum":       "Diamond/Pearl/Platinum",
 	"scarlet-violet": "Scarlet/Violet",
+	"champions":      "Pokemon Champions",
 }
 
 // normalizeLearnMethod maps PokeAPI's move-learn-method vocabulary onto ours
@@ -437,8 +438,8 @@ func seedOneAbility(ctx context.Context, name string) (int, error) {
 }
 
 // SeedSpeciesStatsAndMoves populates pokemon.{hp,attack,...}, pokemon_abilities,
-// and pokemon_moves (Platinum + Scarlet/Violet only) for every Pokemon that
-// does not yet have stats recorded.
+// and pokemon_moves (per movesetVersionGroups: Platinum, Scarlet/Violet,
+// Champions) for every Pokemon that does not yet have stats recorded.
 //
 // Resumability: pokemon.hp IS NULL is the on-disk checkpoint. A species is
 // only picked up here if hp is still unset, and hp is the LAST column written
@@ -534,7 +535,7 @@ func countPokemon(ctx context.Context) (int, error) {
 }
 
 // seedOneSpeciesMoveset fetches one species' full PokeAPI payload and writes
-// stats + ability slots + moveset (Platinum/Scarlet-Violet) inside a single
+// stats + ability slots + moveset (per movesetVersionGroups) inside a single
 // transaction, so a mid-species failure can never leave stats set but
 // abilities/moveset missing (or vice versa) -- see the SeedSpeciesStatsAndMoves
 // doc comment for how that makes the whole seeder resumable.
