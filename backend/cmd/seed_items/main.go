@@ -31,14 +31,18 @@ var heldItemCategories = []string{
 	"training", "species-specific", "type-protection", "picky-healing",
 }
 
-// Categories that hold competitively used berries but are not exclusively holdable
-// items: "medicine" is where Sitrus and Lum live alongside Potions and Revives,
-// "in-a-pinch" is the pinch berries (Salac, Liechi, Custap), "other" the damage-
-// reflect berries (Jaboca, Rowap, Kee, Maranga). Only names ending in -berry are
-// taken, so a future Potion landing in "medicine" is not offered as a held item.
+// Categories holding competitively used berries: "medicine" is the status-cure and
+// healing berries (Sitrus, Lum, Chesto), "in-a-pinch" the pinch berries (Salac,
+// Liechi, Custap), "other" the damage-reflect ones (Jaboca, Rowap, Kee, Maranga).
 //
-// Without these, importing any ordinary VGC set holding a Sitrus Berry stored a slug
-// the items table did not carry, so the item could never be picked in the UI.
+// Only names ending in -berry are taken. As of this writing all three categories are
+// in fact berries-only — Potions live in "healing" and Revives in "revival", verified
+// against the live API — so the filter defends against a future recategorisation
+// rather than against today's contents. Cheap insurance: without it, one Potion moved
+// into "medicine" would silently appear in the held-item picker.
+//
+// Without these categories, importing any ordinary VGC set holding a Sitrus Berry
+// stored a slug the items table did not carry, so the item could never be picked.
 var berryOnlyCategories = []string{"medicine", "in-a-pinch", "other"}
 
 const berrySuffix = "-berry"
