@@ -192,6 +192,29 @@ public actor APIClient {
         try await sendDiscardingBody("DELETE", "api/me/games/\(gameID)", body: noBody)
     }
 
+    // MARK: Teams
+
+    public func teams() async throws -> [Team] {
+        try await getList("api/me/teams")
+    }
+
+    public func createTeam(_ body: CreateTeamRequest) async throws -> Team {
+        try await send("POST", "api/me/teams", body: body)
+    }
+
+    public func updateTeam(id teamID: UUID, _ body: UpdateTeamRequest) async throws -> Team {
+        try await send("PATCH", "api/me/teams/\(id(teamID))", body: body)
+    }
+
+    public func deleteTeam(id teamID: UUID) async throws {
+        try await sendDiscardingBody("DELETE", "api/me/teams/\(id(teamID))", body: noBody)
+    }
+
+    /// Public reference data, like `games()` and `methods()`.
+    public func items() async throws -> [Item] {
+        try await getList("api/items")
+    }
+
     // MARK: Hunts
 
     public func hunts() async throws -> [HuntDetail] {

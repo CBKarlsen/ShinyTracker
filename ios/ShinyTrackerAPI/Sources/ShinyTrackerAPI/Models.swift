@@ -967,3 +967,113 @@ public struct BossProgressRequest: Codable, Sendable, Equatable {
 
     public init(beaten: Bool) { self.beaten = beaten }
 }
+
+// MARK: - Teams
+
+/// `GET /api/me/teams` — `api.TeamPayload`.
+public struct Team: Codable, Sendable, Equatable, Identifiable {
+    public let id: UUID
+    public let name: String
+    /// Always 17 (Scarlet/Violet) in this slice. Carried so a later game does not need
+    /// a migration over live rows.
+    public let gameID: Int
+    public let members: [TeamMember]
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, members
+        case gameID = "game_id"
+    }
+}
+
+/// One slot of a team — `api.TeamMemberPayload`.
+///
+/// `evs` and `ivs` are `[String: Int]` rather than a typed spread because they cross the
+/// wire as JSONB and the keys are the closed set `hp/atk/def/spa/spd/spe`. Callers convert
+/// to `ShinyTrackerKit.StatSpread` at the edge.
+public struct TeamMember: Codable, Sendable, Equatable, Identifiable {
+    public let slot: Int
+    public let pokemonID: Int
+    public let nickname: String?
+    public let nature: String
+    public let abilitySlug: String
+    public let itemSlug: String?
+    public let teraType: String?
+    public let level: Int
+    public let evs: [String: Int]
+    public let ivs: [String: Int]
+    public let moves: [String]
+
+    public var id: Int { slot }
+
+    public init(
+        slot: Int, pokemonID: Int, nickname: String? = nil, nature: String,
+        abilitySlug: String, itemSlug: String? = nil, teraType: String? = nil,
+        level: Int, evs: [String: Int], ivs: [String: Int], moves: [String]
+    ) {
+        self.slot = slot
+        self.pokemonID = pokemonID
+        self.nickname = nickname
+        self.nature = nature
+        self.abilitySlug = abilitySlug
+        self.itemSlug = itemSlug
+        self.teraType = teraType
+        self.level = level
+        self.evs = evs
+        self.ivs = ivs
+        self.moves = moves
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case slot, nickname, nature, level, evs, ivs, moves
+        case pokemonID = "pokemon_id"
+        case abilitySlug = "ability_slug"
+        case itemSlug = "item_slug"
+        case teraType = "tera_type"
+    }
+}
+
+/// `GET /api/items` — public reference data.
+public struct Item: Codable, Sendable, Equatable, Identifiable {
+    public let slug: String
+    public let name: String
+    public let spriteURL: String
+    public let description: String
+
+    public var id: String { slug }
+
+    enum CodingKeys: String, CodingKey {
+        case slug, name, description
+        case spriteURL = "sprite_url"
+    }
+}
+
+/// `POST /api/me/teams`.
+public struct CreateTeamRequest: Codable, Sendable, Equatable {
+    public let name: String
+    public let members: [TeamMember]
+
+    public init(name: String, members: [TeamMember]) {
+        self.name = name
+        self.members = members
+    }
+}
+
+/// `PATCH /api/me/teams/{id}`.
+///
+/// `members` is `Optional` on purpose, not the plain array the task brief first sketched.
+/// `UpdateTeamHandler` decodes it into a `*[]TeamMemberPayload` specifically so "absent" (leave
+/// the roster alone — a bare rename) and "present but `[]`" (clear it) are distinguishable on
+/// the wire; a plain `[TeamMember]` here would have no way to encode "absent" and every rename
+/// would ship the current members overwritten with nothing, wiping the team. Same shape as
+/// ``LogEncounterRequest/isBoxed`` for the same reason. Swift's synthesised encoder omits a nil
+/// `Optional` field entirely rather than writing `null`, which is exactly what the handler reads
+/// as "leave it alone".
+public struct UpdateTeamRequest: Codable, Sendable, Equatable {
+    public let name: String?
+    public let members: [TeamMember]?
+
+    public init(name: String? = nil, members: [TeamMember]? = nil) {
+        self.name = name
+        self.members = members
+    }
+}
