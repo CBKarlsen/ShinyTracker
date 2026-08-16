@@ -1,7 +1,7 @@
 import Foundation
 import ShinyTrackerAPI
 
-/// Saved Scarlet/Violet teams.
+/// Saved Champions teams.
 ///
 /// Reads are cached through `SnapshotStore` so a cold launch draws something before the
 /// network answers, matching `HuntListModel` and `DexModel`. Writes are online-only in

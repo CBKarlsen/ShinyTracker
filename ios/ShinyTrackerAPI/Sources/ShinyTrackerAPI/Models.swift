@@ -974,8 +974,9 @@ public struct BossProgressRequest: Codable, Sendable, Equatable {
 public struct Team: Codable, Sendable, Equatable, Identifiable {
     public let id: UUID
     public let name: String
-    /// Always 17 (Scarlet/Violet) in this slice. Carried so a later game does not need
-    /// a migration over live rows.
+    /// Always 18 (Champions) in this slice — the id `championsGameID` sends and the one
+    /// `backend/internal/api/teams.go` writes. Carried so a later game does not need a
+    /// migration over live rows.
     public let gameID: Int
     public let members: [TeamMember]
 

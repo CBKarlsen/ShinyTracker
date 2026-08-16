@@ -132,7 +132,7 @@ struct AppShell: View {
     @State private var nuzlocke: NuzlockeModel
     @State private var teams: TeamsModel
     /// The Teams screens fetch their own reference data — the species list, the item list and one
-    /// species' Scarlet/Violet learnset — none of which belongs in ``TeamsModel``, whose job is the
+    /// species' Champions learnset — none of which belongs in ``TeamsModel``, whose job is the
     /// saved teams. So the shell keeps the client it already builds rather than a fifth model.
     private let client: APIClient
     /// Only the You tab needs it, and only to sign out. Optional because the three DEBUG

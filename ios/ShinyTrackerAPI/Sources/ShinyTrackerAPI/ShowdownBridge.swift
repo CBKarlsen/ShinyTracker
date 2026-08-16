@@ -31,7 +31,7 @@ public enum ShowdownBridge {
     /// four, nature to its lowercase `rawValue`. The paste's IV line and Tera type are discarded
     /// outright — Champions has neither.
     ///
-    /// `detail` is the species this set resolved to — its Scarlet/Violet learnset and its
+    /// `detail` is the species this set resolved to — its Champions learnset (game 18) and its
     /// abilities are what turn `"Swords Dance"` into `"swords-dance"`. A move or ability the
     /// learnset does not have is slugified rather than dropped: it is information the paste
     /// carried, the column is free text, and the editor renders an unknown slug readably.
