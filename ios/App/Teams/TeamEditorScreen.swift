@@ -129,8 +129,12 @@ struct TeamEditorScreen: View {
     }
 
     /// Capped as it is typed, like ``NewHuntModel/nickname``: the server rejects anything over 100
-    /// characters with a 400, and finding that out on Save would lose the edit. Counted in
-    /// Characters, matching the runes the Go side counts, so an emoji costs one either way.
+    /// characters with a 400, and finding that out on Save would lose the edit.
+    ///
+    /// Counted in **unicode scalars**, because that is what the Go side counts (`utf8.RuneCount`).
+    /// Swift's `Character` is a grapheme cluster and is not the same unit: 🇳🇴 is one Character and
+    /// two runes, 👨‍👩‍👧‍👦 is one and seven — so a name capped at 100 Characters can still 400. Trimmed a
+    /// whole Character at a time so the cap never severs a cluster into a dangling joiner.
     private var nameField: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text("TEAM NAME")
@@ -154,9 +158,7 @@ struct TeamEditorScreen: View {
                 )
                 .accessibilityLabel("Team name")
                 .onChange(of: name) {
-                    if name.count > Self.nameLimit {
-                        name = String(name.prefix(Self.nameLimit))
-                    }
+                    while name.unicodeScalars.count > Self.nameLimit { name.removeLast() }
                 }
         }
     }

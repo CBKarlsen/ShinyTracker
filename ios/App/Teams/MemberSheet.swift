@@ -26,6 +26,8 @@ struct MemberSheet: View {
     /// The id, not the `Pokemon`: `TeamMember` carries only an id, and this sheet must open
     /// correctly even if the editor's species fetch has not landed yet.
     @State private var pokemonID: Int?
+    /// What ``pokemonID`` was before "Change" emptied it. See ``choose(_:)``.
+    @State private var previousID: Int?
     @State private var query = ""
     @State private var detail: PokemonDetail?
     @State private var failure: String?
@@ -178,16 +180,23 @@ struct MemberSheet: View {
 
     /// A different species has a different learnset and different abilities, so both are dropped
     /// rather than carried over into a set they may not be legal in.
+    ///
+    /// "the same species" is compared against ``previousID`` as well, because "Change" clears
+    /// `pokemonID` to get back to the search — without it, tapping Change, changing your mind and
+    /// tapping the same Pokémon would wipe the ability and all four moves.
     private func choose(_ id: Int) {
-        guard id != pokemonID else { return }
+        let before = pokemonID ?? previousID
+        previousID = nil
         pokemonID = id
+        guard id != before else { return }
         ability = ""
         moveSlots = [nil, nil, nil, nil]
         detail = nil
     }
 
     private func loadDetail() async {
-        guard let pokemonID else { return }
+        // Already loaded — the nil-and-back-again of a cancelled "Change" must not refetch.
+        guard let pokemonID, detail?.id != pokemonID else { return }
         failure = nil
         do {
             // `game_id` is what makes `moves` the Scarlet/Violet learnset rather than null.
@@ -249,7 +258,10 @@ struct MemberSheet: View {
                 }
             }
             Spacer(minLength: 0)
-            Button("Change") { pokemonID = nil }
+            Button("Change") {
+                previousID = pokemonID
+                pokemonID = nil
+            }
                 .font(Typography.summary)
                 .foregroundStyle(Palette.team)
                 .frame(minHeight: Metrics.controlNarrow)
@@ -404,7 +416,9 @@ struct MemberSheet: View {
     /// The remaining budget is the headline, because "how many do I have left" is the only
     /// question anyone asks while spreading EVs.
     private var evBlock: some View {
-        TeamBlock("EVs · \(508 - evs.total) of 508 left") {
+        // `max(0, …)` because a row written before the server validated spreads can still load at
+        // over 508, and "−30 of 508 left" reads as a bug rather than as an over-budget set.
+        TeamBlock("EVs · \(max(0, 508 - evs.total)) of 508 left") {
             VStack(spacing: 10) {
                 ForEach(Stat.allCases, id: \.self) { stat in
                     HStack(spacing: 10) {
@@ -412,17 +426,23 @@ struct MemberSheet: View {
                             .font(Typography.overline)
                             .foregroundStyle(Palette.textMuted)
                             .frame(width: 34, alignment: .leading)
-                        Slider(value: evBinding(stat), in: 0...252, step: 4)
-                            .tint(Palette.team)
+                        // The label goes on the `Slider`, and the row is deliberately *not*
+                        // `.accessibilityElement(children: .combine)`: combining flattens the row
+                        // into one static element and takes the slider's adjustable action with
+                        // it, which would leave EVs unsettable under VoiceOver on the one screen
+                        // whose whole point is setting them.
+                        Slider(value: evBinding(stat), in: 0...252, step: 4) {
+                            Text("\(stat.showdownLabel) EVs")
+                        }
+                        .tint(Palette.team)
                         Text("\(evs[stat])")
                             .font(Typography.statStrong)
                             .monospacedDigit()
                             .foregroundStyle(Palette.textPrimary)
                             .frame(width: 34, alignment: .trailing)
+                            // Already spoken as the slider's value.
+                            .accessibilityHidden(true)
                     }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("\(stat.showdownLabel) EVs")
-                    .accessibilityValue("\(evs[stat])")
                 }
             }
         }
@@ -694,7 +714,10 @@ struct SlugPicker: View {
     }
 
     private func row(_ entry: SlugRow, slug: String?) -> some View {
-        let isSelected = slug.map(selected.contains) ?? false
+        // The "None" row (`slug == nil`) is the selected one when nothing is chosen — otherwise
+        // "No item" sits unticked while it is exactly what is in force, which is the same
+        // colour-alone failure the tick exists to avoid.
+        let isSelected = slug.map(selected.contains) ?? selected.isEmpty
         return Button {
             choose(slug)
             dismiss()
