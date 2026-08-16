@@ -11,8 +11,10 @@ import SwiftUI
 /// - **Tera type** is Title-case and there are **19** of them: the 18 elemental types plus
 ///   `Stellar`, which is legal in Scarlet/Violet since The Indigo Disk.
 /// - **EVs** cannot be pushed past 252 in one stat or 508 in total — see ``cappedEV(_:for:)``.
-///   The Go handler and `PokemonSet.validate()` enforce the same caps; this one exists so the
-///   user is never allowed to build a set the other two would reject.
+///   There are exactly three guards on that rule and they all agree on 252/508: `evSpreadValid`
+///   in `backend/internal/api/teams.go`, `ShowdownBridge.cappedEVs` on the paste-import path,
+///   and this one. This is the only one that acts before the user commits, so it exists so the
+///   user is never allowed to build a set the handler would reject.
 struct MemberSheet: View {
     let client: APIClient
     /// The whole species list, fetched once by the editor — the search below is a local filter.
@@ -146,7 +148,7 @@ struct MemberSheet: View {
                 ForEach(results) { candidate in
                     Button { choose(candidate.id) } label: {
                         HStack(spacing: 13) {
-                            SpriteTile(pokemonID: candidate.id, size: 44)
+                            SpriteTile(pokemonID: candidate.id, size: 44, shiny: false)
                             VStack(alignment: .leading, spacing: 7) {
                                 Text(candidate.name.capitalized)
                                     .font(Typography.listTitle)
@@ -245,7 +247,7 @@ struct MemberSheet: View {
 
     private var header: some View {
         HStack(spacing: 13) {
-            SpriteTile(pokemonID: pokemonID ?? 0, size: Metrics.cardSprite)
+            SpriteTile(pokemonID: pokemonID ?? 0, size: Metrics.cardSprite, shiny: false)
             VStack(alignment: .leading, spacing: 8) {
                 Text(name)
                     .font(Typography.sheetHeadline)

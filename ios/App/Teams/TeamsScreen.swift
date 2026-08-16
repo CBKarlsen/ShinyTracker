@@ -214,7 +214,7 @@ struct TeamsScreen: View {
                 HStack(spacing: 6) {
                     ForEach(1...6, id: \.self) { slot in
                         if let member = team.members.first(where: { $0.slot == slot }) {
-                            SpriteTile(pokemonID: member.pokemonID, size: 44)
+                            SpriteTile(pokemonID: member.pokemonID, size: 44, shiny: false)
                         } else {
                             EmptySlotPlate(size: 44)
                         }

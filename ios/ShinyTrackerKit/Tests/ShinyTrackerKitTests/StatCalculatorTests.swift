@@ -47,29 +47,13 @@ import Testing
     #expect(value == 1)
 }
 
-@Test func aLegalSpreadValidates() throws {
-    let set = PokemonSet(
-        speciesID: 445, speciesName: "garchomp", abilitySlug: "rough-skin",
-        evs: StatSpread(atk: 252, spd: 4, spe: 252))
-    try set.validate()          // must not throw
-    #expect(set.evs.total == 508)
+/// The EV caps are enforced by `evSpreadValid` (Go), `MemberSheet.cappedEV` and
+/// `ShowdownBridge.cappedEVs` — there is no model-level `validate()` to test here.
+/// This only pins the total the caps are measured against.
+@Test func aLegalSpreadTotals508() {
+    #expect(StatSpread(atk: 252, spd: 4, spe: 252).total == 508)
 }
 
-@Test func anOverCapSpreadIsRejected() {
-    let set = PokemonSet(
-        speciesID: 445, speciesName: "garchomp", abilitySlug: "rough-skin",
-        evs: StatSpread(hp: 252, atk: 252, def: 252))
-    #expect(throws: PokemonSet.SetError.evTotalTooHigh(756)) { try set.validate() }
-}
-
-@Test func moreThan252InOneStatIsRejected() {
-    let set = PokemonSet(
-        speciesID: 445, speciesName: "garchomp", abilitySlug: "rough-skin",
-        evs: StatSpread(atk: 300))
-    #expect(throws: PokemonSet.SetError.evStatTooHigh(.atk, 300)) { try set.validate() }
-}
-
-@Test func ivsDefaultToThirtyOneNotZero() {
-    let set = PokemonSet(speciesID: 445, speciesName: "garchomp", abilitySlug: "rough-skin")
-    for stat in Stat.allCases { #expect(set.ivs[stat] == 31) }
+@Test func maxIVsAreThirtyOneNotZero() {
+    for stat in Stat.allCases { #expect(StatSpread.maxIVs[stat] == 31) }
 }

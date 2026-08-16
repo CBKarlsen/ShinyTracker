@@ -134,11 +134,12 @@ public enum ShowdownBridge {
     /// `Swords Dance` → `swords-dance`, the shape every real slug already has.
     ///
     /// Truncated to 50 unicode scalars, because that is the cap `validateMembers` in
-    /// `backend/internal/api/teams.go` applies to `ability_slug` and to every move slug, and
-    /// this is the one value on the import path that comes from the paste as free text. Real
-    /// slugs run well under it; junk in an `Ability:` line does not, and an unbounded one would
-    /// 400 the whole save — the failure every other clamp here exists to prevent. `item_slug`
-    /// has no server-side length check, so it is left alone.
+    /// `backend/internal/api/teams.go` applies to `ability_slug`, `item_slug` and every move
+    /// slug, and this is the one value on the import path that comes from the paste as free
+    /// text. Real slugs run well under it; junk in an `Ability:` line does not, and an
+    /// unbounded one would 400 the whole save — the failure every other clamp here exists to
+    /// prevent. An item the catalogue does not hold still gets a manufactured slug, which the
+    /// server stores as free text: `item_slug` has had no foreign key since migration 024.
     private static func slugify(_ name: String) -> String {
         let cleaned = name.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" }
         let slug = String(cleaned).split(separator: "-").joined(separator: "-")

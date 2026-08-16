@@ -194,7 +194,7 @@ struct TeamEditorScreen: View {
         return Button { editingSlot = SlotEdit(id: index + 1) } label: {
             HStack(spacing: 13) {
                 if let member {
-                    SpriteTile(pokemonID: member.pokemonID, size: 44)
+                    SpriteTile(pokemonID: member.pokemonID, size: 44, shiny: false)
                 } else {
                     EmptySlotPlate(size: 44)
                 }
