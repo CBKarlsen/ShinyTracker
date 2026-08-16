@@ -47,24 +47,32 @@ func ivSpreadValid(ivs map[string]int) bool {
 	return true
 }
 
-// validNatures is the closed set of the game's 25 natures. Nature is stored as
-// free TEXT (no FK, no CHECK), so this is the only thing standing between the
-// column and arbitrary user text.
+// validNatures is the closed set of the game's 25 natures, lowercase to match
+// Nature.rawValue in ios/ShinyTrackerKit/Sources/ShinyTrackerKit/Nature.swift
+// exactly -- that enum is Codable with no custom encoder, so it puts its
+// rawValue on the wire as-is. Nature is stored as free TEXT (no FK, no CHECK),
+// so this is the only thing standing between the column and arbitrary user
+// text. Keep in sync with Nature.swift by hand; there is no shared source.
 var validNatures = map[string]bool{
-	"Hardy": true, "Lonely": true, "Brave": true, "Adamant": true, "Naughty": true,
-	"Bold": true, "Docile": true, "Relaxed": true, "Impish": true, "Lax": true,
-	"Timid": true, "Hasty": true, "Serious": true, "Jolly": true, "Naive": true,
-	"Modest": true, "Mild": true, "Quiet": true, "Bashful": true, "Rash": true,
-	"Calm": true, "Gentle": true, "Sassy": true, "Careful": true, "Quirky": true,
+	"hardy": true, "lonely": true, "brave": true, "adamant": true, "naughty": true,
+	"bold": true, "docile": true, "relaxed": true, "impish": true, "lax": true,
+	"timid": true, "hasty": true, "serious": true, "jolly": true, "naive": true,
+	"modest": true, "mild": true, "quiet": true, "bashful": true, "rash": true,
+	"calm": true, "gentle": true, "sassy": true, "careful": true, "quirky": true,
 }
 
-// validTeraTypes is the closed set of the 18 elemental types. Same reasoning as
+// validTeraTypes is the closed set of legal Tera Types. Same reasoning as
 // validNatures: tera_type is free TEXT with no FK.
+//
+// 19 entries, not 18: Stellar was added in The Indigo Disk and is legal and
+// competitively current (Terapagos has it natively; Tera Shards can grant it
+// to anything). It is not one of the 18 elemental types on the type chart --
+// do not "clean this up" back down to 18.
 var validTeraTypes = map[string]bool{
 	"Normal": true, "Fire": true, "Water": true, "Electric": true, "Grass": true,
 	"Ice": true, "Fighting": true, "Poison": true, "Ground": true, "Flying": true,
 	"Psychic": true, "Bug": true, "Rock": true, "Ghost": true, "Dragon": true,
-	"Dark": true, "Steel": true, "Fairy": true,
+	"Dark": true, "Steel": true, "Fairy": true, "Stellar": true,
 }
 
 // maxAbilitySlugLength and maxMoveSlugLength bound the two other free-text
