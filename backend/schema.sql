@@ -519,13 +519,11 @@ CREATE TABLE IF NOT EXISTS team_members (
     -- catalogue does not hold, and losing the whole team over it is worse than storing
     -- a slug that does not join. Bounded at 50 runes by validateMembers.
     item_slug    TEXT,
-    tera_type    TEXT,
     level        SMALLINT NOT NULL DEFAULT 50 CHECK (level BETWEEN 1 AND 100),
-    -- Read and written as a whole spread, never queried per stat — same reasoning
-    -- that put hunt_parameters in JSONB. The 508 total cannot be expressed as a
-    -- cheap CHECK over JSONB, so it is enforced in the handler and the client.
-    evs          JSONB NOT NULL DEFAULT '{}'::jsonb,
-    ivs          JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Champions' unified Stat Points: 66 total, 32 per stat. Read and written
+    -- as a whole spread, never queried per stat. The caps cannot be expressed
+    -- as a cheap CHECK over JSONB and are enforced in the handler and client.
+    stat_points  JSONB NOT NULL DEFAULT '{}'::jsonb,
     moves        TEXT[] NOT NULL DEFAULT '{}',
     UNIQUE (team_id, slot)
 );
