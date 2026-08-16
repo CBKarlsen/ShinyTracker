@@ -30,8 +30,15 @@ func writeJSON(w http.ResponseWriter, v any) {
 func GetUserGamesHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 
-	rows, err := database.DB.Query(context.Background(),
-		"SELECT game_id, has_shiny_charm FROM user_games WHERE user_id = $1", userID)
+	// Same supports_hunting filter as GetGamesHandler. A library row for a
+	// battle-only game could only have been added before that flag existed, and
+	// leaving it in the response would count toward the collection total while
+	// rendering no card the user could click to remove it.
+	rows, err := database.DB.Query(context.Background(), `
+		SELECT ug.game_id, ug.has_shiny_charm
+		FROM user_games ug
+		JOIN games g ON g.id = ug.game_id AND g.supports_hunting
+		WHERE ug.user_id = $1`, userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch user games", http.StatusInternalServerError)
 		return

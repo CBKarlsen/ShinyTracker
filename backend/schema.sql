@@ -93,9 +93,11 @@ CREATE TABLE IF NOT EXISTS games (
     title TEXT NOT NULL,
     generation INTEGER NOT NULL,
     base_odds INTEGER NOT NULL DEFAULT 4096,
-    -- FALSE for the games with no breeding (LGPE, Legends: Arceus). Live since
-    -- before the migrations directory existed; recorded here so a from-scratch
-    -- rebuild does not break admin.go and cmd/seed, which both read it.
+    -- Set FALSE by an operator (PATCH /api/admin/games) for the games with no
+    -- breeding -- LGPE and Legends: Arceus. Nothing seeds it, so a from-scratch
+    -- rebuild starts every game TRUE and needs those two set by hand. Live since
+    -- before the migrations directory existed; recorded here so a rebuild does
+    -- not break admin.go and cmd/seed, which both read it.
     supports_breeding BOOLEAN NOT NULL DEFAULT TRUE,
     -- FALSE for battle-only titles (Pokemon Champions): they carry availability
     -- and moveset rows for the team builder, but have no overworld to hunt in.
