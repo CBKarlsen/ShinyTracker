@@ -215,10 +215,14 @@ var movesetVersionGroups = map[string]string{
 }
 
 // normalizeLearnMethod maps PokeAPI's move-learn-method vocabulary onto ours
-// (level-up/tm/egg/tutor). PokeAPI's "machine" bucket covers both TMs and
-// TRs/HMs, which we call "tm". Anything else (Stadium-era curiosities,
-// Colosseum/XD purification, form-change, zygarde-cube, ...) is not one of
-// our four categories and is reported not-ok so the caller skips it.
+// (level-up/tm/egg/tutor/train). PokeAPI's "machine" bucket covers both TMs
+// and TRs/HMs, which we call "tm". "train" is Champions-only: that game is
+// battle-only (no overworld, no levelling, no TMs), so every move a
+// Champions Pokemon has is acquired by training rather than any of the other
+// four methods -- see migrations/026_train_learn_method.sql. Anything else
+// (Stadium-era curiosities, Colosseum/XD purification, form-change,
+// zygarde-cube, ...) is not one of our five categories and is reported
+// not-ok so the caller skips it.
 func normalizeLearnMethod(pokeAPIMethod string) (string, bool) {
 	switch pokeAPIMethod {
 	case "level-up":
@@ -229,6 +233,8 @@ func normalizeLearnMethod(pokeAPIMethod string) (string, bool) {
 		return "egg", true
 	case "tutor":
 		return "tutor", true
+	case "train":
+		return "train", true
 	default:
 		return "", false
 	}

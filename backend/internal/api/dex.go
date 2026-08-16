@@ -446,7 +446,7 @@ type PokemonMoveDetail struct {
 	Accuracy    *int   `json:"accuracy"`
 	PP          int    `json:"pp"`
 	Effect      string `json:"effect"`
-	Method      string `json:"method"` // level-up | tm | egg | tutor
+	Method      string `json:"method"` // level-up | tm | egg | tutor | train (train is Champions-only: every move there is trained, not learned by any of the other four methods)
 	Level       *int   `json:"level"`
 }
 

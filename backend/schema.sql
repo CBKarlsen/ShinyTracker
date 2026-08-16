@@ -70,16 +70,19 @@ CREATE TABLE IF NOT EXISTS moves (
 -- pokemon_moves: moveset differs by game, so game_id is a required dimension
 -- (do not flatten to one row per pokemon+move). method is normalized in the
 -- seeder from PokeAPI's move-learn-method vocabulary ("machine" -> "tm").
--- Only Diamond/Pearl/Platinum (version_group "platinum") and Scarlet/Violet
--- (version_group "scarlet-violet") are seeded so far -- see cmd/seed_moves.
--- Adding another game is additive: no schema change required.
+-- Diamond/Pearl/Platinum ("platinum"), Scarlet/Violet ("scarlet-violet") and
+-- Pokemon Champions ("champions") are seeded so far -- see cmd/seed_moves.
+-- Adding another game is additive: no schema change required, UNLESS it
+-- introduces a learn method outside {level-up, tm, egg, tutor, train} -- see
+-- migrations/026_train_learn_method.sql for why 'train' (Champions has no
+-- levelling and no TMs; every move there is trained) needed one.
 CREATE TABLE IF NOT EXISTS pokemon_moves (
     id         SERIAL PRIMARY KEY,
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     move_id    INTEGER NOT NULL REFERENCES moves(id) ON DELETE CASCADE,
     game_id    INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    method     TEXT NOT NULL CHECK (method IN ('level-up', 'tm', 'egg', 'tutor')),
-    level      INTEGER, -- level-up only; NULL for tm/egg/tutor
+    method     TEXT NOT NULL CHECK (method IN ('level-up', 'tm', 'egg', 'tutor', 'train')),
+    level      INTEGER, -- level-up only; NULL for tm/egg/tutor/train
     UNIQUE NULLS NOT DISTINCT (pokemon_id, move_id, game_id, method, level)
 );
 
