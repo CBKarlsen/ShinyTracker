@@ -173,7 +173,7 @@ struct TeamsScreen: View {
                     StateBlock(
                         symbol: "square.grid.3x2",
                         title: "No teams yet",
-                        body: "Six slots, natures, EVs and moves — built against the Scarlet/Violet learnsets.",
+                        body: "Six slots, natures, stat points and moves — built against the Champions learnsets.",
                         tint: Palette.team
                     ) {
                         Button("Build a team") { editing = .new }

@@ -43,7 +43,7 @@ struct ImportPasteSheet: View {
                     }
 
                     Text(
-                        "Six sets at most. Anything the Scarlet/Violet dex doesn't have is named back to you rather than dropped quietly."
+                        "Six sets at most. EV spreads become stat points, and IVs and Tera types are dropped — Champions has none of them. Anything the Champions dex doesn't have is named back to you rather than dropped quietly."
                     )
                     .font(Typography.hint)
                     .foregroundStyle(Palette.textMuted)
@@ -180,6 +180,10 @@ struct ImportPasteSheet: View {
 
         var members: [TeamMember] = []
         var unresolved: [String] = []
+        // Champions has no EVs. A pasted spread is converted, not carried, so a mainline team
+        // arrives with a different allocation than the paste asked for — said out loud, because
+        // silently reinterpreting someone's spread is the same failure as silently dropping a set.
+        var converted = 0
         for set in kept {
             guard let match = species.first(where: {
                 ShowdownBridge.key($0.name) == ShowdownBridge.key(set.species)
@@ -194,6 +198,7 @@ struct ImportPasteSheet: View {
                 members.append(
                     ShowdownBridge.member(
                         from: set, slot: members.count + 1, detail: detail, items: items))
+                if set.evs.total > 0 { converted += 1 }
             } catch {
                 // A network failure mid-resolve aborts before anything is created, rather than
                 // saving a team that is quietly missing the sets the request did not reach.
@@ -205,6 +210,13 @@ struct ImportPasteSheet: View {
         if !unresolved.isEmpty {
             warnings.append(
                 "No match for \(unresolved.joined(separator: ", ")) — check the spelling, or the form name.")
+        }
+        if converted > 0 {
+            warnings.append(
+                converted == 1
+                    ? "Champions has no EVs: that set's spread was converted to stat points at Pokémon HOME's rate."
+                    : "Champions has no EVs: the spreads on \(converted) sets were converted to stat points at Pokémon HOME's rate."
+            )
         }
         guard !members.isEmpty else {
             failure = (warnings + ["Nothing in that paste could be matched to a Pokémon."])
