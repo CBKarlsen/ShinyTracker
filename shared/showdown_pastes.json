@@ -1,0 +1,82 @@
+{
+  "cases": [
+    {
+      "name": "full set with every optional element",
+      "paste": "Garchomp (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nTera Type: Steel\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\nIVs: 0 SpA\n- Earthquake\n- Dragon Claw\n- Stealth Rock\n- Swords Dance",
+      "expected": [
+        {
+          "species": "Garchomp", "nickname": null, "gender": "M",
+          "item": "Rocky Helmet", "ability": "Rough Skin",
+          "level": 50, "teraType": "Steel", "nature": "jolly",
+          "evs": {"hp": 0, "atk": 252, "def": 0, "spa": 0, "spd": 4, "spe": 252},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 0, "spd": 31, "spe": 31},
+          "moves": ["Earthquake", "Dragon Claw", "Stealth Rock", "Swords Dance"]
+        }
+      ]
+    },
+    {
+      "name": "bare minimum — species only",
+      "paste": "Gholdengo",
+      "expected": [
+        {
+          "species": "Gholdengo", "nickname": null, "gender": null,
+          "item": null, "ability": null, "level": 100, "teraType": null,
+          "nature": "hardy",
+          "evs": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+          "moves": []
+        }
+      ]
+    },
+    {
+      "name": "nickname with the species in parentheses",
+      "paste": "Chomp (Garchomp) (M) @ Life Orb\nAbility: Rough Skin\n- Earthquake",
+      "expected": [
+        {
+          "species": "Garchomp", "nickname": "Chomp", "gender": "M",
+          "item": "Life Orb", "ability": "Rough Skin", "level": 100,
+          "teraType": null, "nature": "hardy",
+          "evs": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+          "moves": ["Earthquake"]
+        }
+      ]
+    },
+    {
+      "name": "hyphenated form name is not mistaken for a nickname",
+      "paste": "Urshifu-Rapid-Strike @ Choice Scarf\nAbility: Unseen Fist\n- Surging Strikes\n- Close Combat\n- U-turn\n- Aqua Jet",
+      "expected": [
+        {
+          "species": "Urshifu-Rapid-Strike", "nickname": null, "gender": null,
+          "item": "Choice Scarf", "ability": "Unseen Fist", "level": 100,
+          "teraType": null, "nature": "hardy",
+          "evs": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+          "moves": ["Surging Strikes", "Close Combat", "U-turn", "Aqua Jet"]
+        }
+      ]
+    },
+    {
+      "name": "two sets separated by a blank line, CRLF endings",
+      "paste": "Amoonguss @ Sitrus Berry\r\nAbility: Regenerator\r\n- Spore\r\n\r\nRillaboom @ Assault Vest\r\nAbility: Grassy Surge\r\n- Grassy Glide",
+      "expected": [
+        {
+          "species": "Amoonguss", "nickname": null, "gender": null,
+          "item": "Sitrus Berry", "ability": "Regenerator", "level": 100,
+          "teraType": null, "nature": "hardy",
+          "evs": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+          "moves": ["Spore"]
+        },
+        {
+          "species": "Rillaboom", "nickname": null, "gender": null,
+          "item": "Assault Vest", "ability": "Grassy Surge", "level": 100,
+          "teraType": null, "nature": "hardy",
+          "evs": {"hp": 0, "atk": 0, "def": 0, "spa": 0, "spd": 0, "spe": 0},
+          "ivs": {"hp": 31, "atk": 31, "def": 31, "spa": 31, "spd": 31, "spe": 31},
+          "moves": ["Grassy Glide"]
+        }
+      ]
+    }
+  ]
+}

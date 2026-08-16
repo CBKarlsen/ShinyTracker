@@ -34,6 +34,9 @@ public struct SnapshotKey: Hashable, Sendable {
     /// ever changes, this key must be migrated (decode the old shape, write the new one), never
     /// dropped with a `schemaVersion` bump. See the note on `SnapshotStore.schemaVersion`.
     public static let pendingWrites = SnapshotKey("pending-writes")
+    /// Saved teams. Cache only — the server is the source of truth, and unlike
+    /// `.pendingWrites` nothing here is the only copy of anything.
+    public static let teams = SnapshotKey("teams")
 
     /// `uuidString.lowercased()` is `[0-9a-f-]` only, so this cannot produce a traversing path.
     public static func run(_ id: UUID) -> SnapshotKey {

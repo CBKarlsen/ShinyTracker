@@ -697,3 +697,50 @@ private let runDetailJSON = """
     let json = try #require(String(data: JSONEncoder().encode(body), encoding: .utf8))
     #expect(!json.contains("\"status\""))
 }
+
+// MARK: - Teams
+
+@Test func decodesATeamWithMembers() throws {
+    let json = """
+        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Reg H core","game_id":17,
+         "members":[
+           {"slot":1,"pokemon_id":445,"nickname":null,"nature":"jolly",
+            "ability_slug":"rough-skin","item_slug":"rocky-helmet","tera_type":"Steel",
+            "level":50,"evs":{"atk":252,"spe":252,"spd":4},
+            "ivs":{"spa":0},"moves":["earthquake","dragon-claw"]}]}
+        """
+    let team = try JSONDecoder().decode(Team.self, from: Data(json.utf8))
+    #expect(team.name == "Reg H core")
+    #expect(team.gameID == 17)
+    #expect(team.members.count == 1)
+    #expect(team.members[0].pokemonID == 445)
+    #expect(team.members[0].evs["atk"] == 252)
+    #expect(team.members[0].ivs["spa"] == 0)
+    #expect(team.members[0].moves == ["earthquake", "dragon-claw"])
+}
+
+/// A team with no members must decode as an empty array, not fail. Go sends `[]` here
+/// because the handler initialises the slice, but a null must not be fatal either.
+@Test func decodesATeamWithNoMembers() throws {
+    let json = """
+        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Empty","game_id":17,"members":[]}
+        """
+    let team = try JSONDecoder().decode(Team.self, from: Data(json.utf8))
+    #expect(team.members.isEmpty)
+}
+
+/// The bug the brief warned against: `UpdateTeamHandler` decodes `members` into a
+/// `*[]TeamMemberPayload`, so "absent" (leave the roster alone) and "present but `[]`" (clear
+/// it) must stay distinguishable on the wire. A bare rename — `members: nil` — must omit the
+/// key entirely, never send `"members":null` and never send `"members":[]`, or every rename
+/// from this client would wipe the team's roster server-side.
+@Test func updateTeamBodyOmitsAbsentMembersButSendsAnExplicitEmptyArray() throws {
+    let rename = UpdateTeamRequest(name: "New name")
+    let renameJSON = try #require(String(data: JSONEncoder().encode(rename), encoding: .utf8))
+    #expect(renameJSON.contains("\"name\":\"New name\""))
+    #expect(!renameJSON.contains("members"))
+
+    let clear = UpdateTeamRequest(members: [])
+    let clearJSON = try #require(String(data: JSONEncoder().encode(clear), encoding: .utf8))
+    #expect(clearJSON.contains("\"members\":[]"))
+}

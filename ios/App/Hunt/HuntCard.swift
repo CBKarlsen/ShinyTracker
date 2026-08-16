@@ -381,9 +381,12 @@ struct SpriteTile: View {
     let size: CGFloat
     /// `shiny_sprite_url` off the hunt row, when the caller has one.
     var served: String?
+    /// Hunt and Dex show shiny sprites — that is the whole point of both. Teams does not:
+    /// a `TeamMember` carries no shiny flag, and the shiny bridge is a later sub-project.
+    var shiny: Bool = true
 
     var body: some View {
-        AsyncImage(url: SpriteSource.url(id: pokemonID, shiny: true, served: served)) { image in
+        AsyncImage(url: SpriteSource.url(id: pokemonID, shiny: shiny, served: served)) { image in
             image.resizable().interpolation(.none).scaledToFit()   // image-rendering:pixelated
         } placeholder: {
             Color.clear

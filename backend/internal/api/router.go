@@ -103,6 +103,7 @@ func NewRouter() *chi.Mux {
 		r.Get("/games/{id}/pokedex", GetGamePokedexHandler)
 		r.Get("/pokemon", GetPokemonHandler)
 		r.Get("/methods", GetMethodsHandler)
+		r.Get("/items", GetItemsHandler)
 
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware)
@@ -113,6 +114,12 @@ func NewRouter() *chi.Mux {
 			r.Get("/me/games", GetUserGamesHandler)
 			r.Post("/me/games/{gameId}", ToggleUserGameHandler)
 			r.Delete("/me/games/{gameId}", RemoveUserGameHandler)
+
+			r.Get("/me/teams", GetTeamsHandler)
+			r.Post("/me/teams", CreateTeamHandler)
+			r.Get("/me/teams/{id}", GetTeamHandler)
+			r.Patch("/me/teams/{id}", UpdateTeamHandler)
+			r.Delete("/me/teams/{id}", DeleteTeamHandler)
 
 			r.Get("/hunts", GetHuntsHandler)
 			r.Post("/hunts", CreateHuntHandler)
