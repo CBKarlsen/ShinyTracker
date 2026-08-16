@@ -98,7 +98,9 @@ private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
         - U-turn
         """)
 
-    #expect(imported.level == 100)
+    // The paste's `Level:` line is ignored outright rather than clamped: Champions auto-levels
+    // to 50, and 50 is what `MemberSheet` shows as "set by the game".
+    #expect(imported.level == 50)
     // hp and atk are spent first (`Stat.allCases` order), so they keep their full 32; def gets
     // only what is left of the 66 budget, and spa is left with nothing.
     #expect(imported.statPoints["hp"] == 32)

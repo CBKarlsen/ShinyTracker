@@ -27,9 +27,9 @@ public enum ShowdownBridge {
     // MARK: Import
 
     /// One parsed set as a member of `slot`, with every value the server would otherwise 400 on
-    /// already clamped: stat points to 32 per stat and 66 in total, level to 1–100, moves to
-    /// four, nature to its lowercase `rawValue`. The paste's IV line and Tera type are discarded
-    /// outright — Champions has neither.
+    /// already clamped: stat points to 32 per stat and 66 in total, moves to four, nature to its
+    /// lowercase `rawValue`. The paste's level, IV line and Tera type are discarded outright —
+    /// Champions auto-levels to 50 and has neither of the other two.
     ///
     /// `detail` is the species this set resolved to — its Champions learnset (game 18) and its
     /// abilities are what turn `"Swords Dance"` into `"swords-dance"`. A move or ability the
@@ -61,7 +61,10 @@ public enum ShowdownBridge {
             abilitySlug: set.ability.map { abilitySlugs[key($0)] ?? slugify($0) }
                 ?? detail.abilities?.first?.slug ?? "",
             itemSlug: set.item.map { itemSlugs[key($0)] ?? slugify($0) },
-            level: min(100, max(1, set.level)),
+            // Champions auto-levels every Pokemon to 50, so the paste's level is not a value
+            // this can honour — and `ParsedSet.level` defaults to 100 when the paste has no
+            // `Level:` line, which is most of them.
+            level: 50,
             statPoints: dictionary(cappedTotal(points)),
             moves: set.moves.prefix(4).map { moveSlugs[key($0)] ?? slugify($0) }
         )
