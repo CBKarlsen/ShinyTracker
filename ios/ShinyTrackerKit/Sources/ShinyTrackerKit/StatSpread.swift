@@ -1,6 +1,11 @@
 import Foundation
 
 /// A spread of six values — EVs, IVs, or computed stats.
+///
+/// This models a *mainline* spread. Champions has no EVs or IVs — see
+/// `StatPoints` — but `StatSpread` stays because the Showdown paste parser
+/// still produces mainline EV/IV spreads from a paste, and `StatPoints.fromEVs`
+/// consumes the EV one to convert an imported team.
 public struct StatSpread: Codable, Equatable, Sendable {
     public var hp: Int
     public var atk: Int
@@ -38,10 +43,6 @@ public struct StatSpread: Codable, Equatable, Sendable {
     }
 
     public static let zero = StatSpread()
-
-    /// The default IV spread. **Omitted IVs are 31, not 0** — getting this backwards is
-    /// the most common way a Showdown parser silently corrupts a set.
-    public static let maxIVs = StatSpread(hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31)
 
     public var total: Int { Stat.allCases.reduce(0) { $0 + self[$1] } }
 }

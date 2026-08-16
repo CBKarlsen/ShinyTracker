@@ -53,7 +53,3 @@ import Testing
 @Test func aLegalSpreadTotals508() {
     #expect(StatSpread(atk: 252, spd: 4, spe: 252).total == 508)
 }
-
-@Test func maxIVsAreThirtyOneNotZero() {
-    for stat in Stat.allCases { #expect(StatSpread.maxIVs[stat] == 31) }
-}

@@ -10,6 +10,12 @@ import Foundation
 /// Behaviour is pinned by `shared/showdown_pastes.json`, the same way `odds_anchors.json`
 /// pins the odds engine.
 public enum ShowdownPaste {
+    /// The default IV spread for a paste. **Omitted IVs are 31, not 0** — getting this
+    /// backwards is the most common way a Showdown parser silently corrupts a set. This
+    /// is a fact about the paste format, not about Champions (which has no IVs at all —
+    /// see `StatPoints`), so it lives here rather than on `StatSpread`.
+    public static let defaultPasteIVs = StatSpread(hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31)
+
     /// One set as it appears in a paste: names, not ids. Resolving "Iron Valiant" to a
     /// species id and "Swords Dance" to a move slug needs the database, which this package
     /// deliberately cannot reach.
@@ -32,7 +38,7 @@ public enum ShowdownPaste {
         public init(
             species: String, nickname: String? = nil, gender: String? = nil, item: String? = nil,
             ability: String? = nil, level: Int = 100, teraType: String? = nil,
-            nature: Nature = .hardy, evs: StatSpread = .zero, ivs: StatSpread = .maxIVs,
+            nature: Nature = .hardy, evs: StatSpread = .zero, ivs: StatSpread = ShowdownPaste.defaultPasteIVs,
             moves: [String] = []
         ) {
             self.species = species
@@ -88,9 +94,9 @@ public enum ShowdownPaste {
             } else if let value = strip(line, prefix: "EVs: ") {
                 set.evs = try parseSpread(value, into: .zero)
             } else if let value = strip(line, prefix: "IVs: ") {
-                // Base is maxIVs: a paste lists only the stats it changes, and every
-                // stat it omits is 31.
-                set.ivs = try parseSpread(value, into: .maxIVs)
+                // Base is defaultPasteIVs: a paste lists only the stats it changes, and
+                // every stat it omits is 31.
+                set.ivs = try parseSpread(value, into: defaultPasteIVs)
             } else if line.hasSuffix(" Nature") {
                 let name = String(line.dropLast(" Nature".count))
                 guard let nature = Nature(rawValue: name.lowercased()) else {
@@ -138,7 +144,7 @@ public enum ShowdownPaste {
         return ParsedSet(
             species: species, nickname: nickname, gender: gender, item: item,
             ability: nil, level: 100, teraType: nil, nature: .hardy,
-            evs: .zero, ivs: .maxIVs, moves: [])
+            evs: .zero, ivs: defaultPasteIVs, moves: [])
     }
 
     /// `252 Atk / 4 SpD / 252 Spe`
