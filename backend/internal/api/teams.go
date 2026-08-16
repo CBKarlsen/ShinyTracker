@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"unicode/utf8"
 
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/go-chi/chi/v5"
@@ -44,6 +45,37 @@ func ivSpreadValid(ivs map[string]int) bool {
 		}
 	}
 	return true
+}
+
+// validNatures is the closed set of the game's 25 natures. Nature is stored as
+// free TEXT (no FK, no CHECK), so this is the only thing standing between the
+// column and arbitrary user text.
+var validNatures = map[string]bool{
+	"Hardy": true, "Lonely": true, "Brave": true, "Adamant": true, "Naughty": true,
+	"Bold": true, "Docile": true, "Relaxed": true, "Impish": true, "Lax": true,
+	"Timid": true, "Hasty": true, "Serious": true, "Jolly": true, "Naive": true,
+	"Modest": true, "Mild": true, "Quiet": true, "Bashful": true, "Rash": true,
+	"Calm": true, "Gentle": true, "Sassy": true, "Careful": true, "Quirky": true,
+}
+
+// validTeraTypes is the closed set of the 18 elemental types. Same reasoning as
+// validNatures: tera_type is free TEXT with no FK.
+var validTeraTypes = map[string]bool{
+	"Normal": true, "Fire": true, "Water": true, "Electric": true, "Grass": true,
+	"Ice": true, "Fighting": true, "Poison": true, "Ground": true, "Flying": true,
+	"Psychic": true, "Bug": true, "Rock": true, "Ghost": true, "Dragon": true,
+	"Dark": true, "Steel": true, "Fairy": true,
+}
+
+// maxAbilitySlugLength and maxMoveSlugLength bound the two other free-text
+// columns team_members writes with no FK behind them (ability_slug, moves).
+// PokeAPI slugs run well under this; it exists to stop an oversized payload,
+// not to fit real data tightly.
+const maxAbilitySlugLength = 50
+const maxMoveSlugLength = 50
+
+func slugTooLong(s string, max int) bool {
+	return utf8.RuneCountInString(s) > max
 }
 
 type TeamMemberPayload struct {
@@ -87,8 +119,25 @@ func validateMembers(members []TeamMemberPayload) string {
 		if m.PokemonID <= 0 {
 			return "pokemon_id is required"
 		}
+		if nicknameTooLong(m.Nickname) {
+			return "nickname is too long"
+		}
+		if !validNatures[m.Nature] {
+			return "nature must be a real nature"
+		}
+		if slugTooLong(m.AbilitySlug, maxAbilitySlugLength) {
+			return "ability_slug is too long"
+		}
+		if m.TeraType != nil && !validTeraTypes[*m.TeraType] {
+			return "tera_type must be a real type"
+		}
 		if len(m.Moves) > 4 {
 			return "a Pokemon knows at most four moves"
+		}
+		for _, mv := range m.Moves {
+			if slugTooLong(mv, maxMoveSlugLength) {
+				return "a move name is too long"
+			}
 		}
 		if m.Level < 1 || m.Level > 100 {
 			return "level must be between 1 and 100"
@@ -244,9 +293,12 @@ func UpdateTeamHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("X-User-ID")
 	teamID := chi.URLParam(r, "id")
 
+	// Members is a pointer to a slice, not a plain slice: "key absent" (leave the
+	// roster alone) and "key present but []" (clear it) have to be distinguishable
+	// on the wire, and a nil slice and an empty slice decode identically otherwise.
 	var req struct {
-		Name    *string             `json:"name"`
-		Members []TeamMemberPayload `json:"members"`
+		Name    *string              `json:"name"`
+		Members *[]TeamMemberPayload `json:"members"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -256,9 +308,11 @@ func UpdateTeamHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name must be 1 to 100 characters", http.StatusBadRequest)
 		return
 	}
-	if msg := validateMembers(req.Members); msg != "" {
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+	if req.Members != nil {
+		if msg := validateMembers(*req.Members); msg != "" {
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
 	}
 
 	tx, err := database.DB.Begin(context.Background())
@@ -283,17 +337,21 @@ func UpdateTeamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Members are replaced wholesale. A team is edited as a unit, six slots are small,
-	// and per-slot patching invents the merge problem the encounter-delta work already
-	// showed is expensive to get right.
-	if _, err := tx.Exec(context.Background(),
-		`DELETE FROM team_members WHERE team_id = $1`, teamID); err != nil {
-		http.Error(w, "Failed to replace members", http.StatusInternalServerError)
-		return
-	}
-	if err := insertMembers(context.Background(), tx, teamID, req.Members); err != nil {
-		http.Error(w, "Failed to save team members", http.StatusInternalServerError)
-		return
+	// Members are replaced wholesale, but only when the caller sent a members key at
+	// all. An absent members field means "leave the roster alone" (e.g. a bare rename);
+	// only an explicit "members": [...] — including "[]" to clear it — touches rows.
+	// A team is edited as a unit, six slots are small, and per-slot patching invents
+	// the merge problem the encounter-delta work already showed is expensive to get right.
+	if req.Members != nil {
+		if _, err := tx.Exec(context.Background(),
+			`DELETE FROM team_members WHERE team_id = $1`, teamID); err != nil {
+			http.Error(w, "Failed to replace members", http.StatusInternalServerError)
+			return
+		}
+		if err := insertMembers(context.Background(), tx, teamID, *req.Members); err != nil {
+			http.Error(w, "Failed to save team members", http.StatusInternalServerError)
+			return
+		}
 	}
 	if err := tx.Commit(context.Background()); err != nil {
 		http.Error(w, "Failed to commit transaction", http.StatusInternalServerError)
