@@ -1,0 +1,13 @@
+-- 024: team_members.item_slug is free text, not a foreign key.
+--
+-- 023 declared item_slug as REFERENCES items(slug). That is wrong for the import path:
+-- a Showdown paste can legitimately name an item the catalogue does not hold (cmd/seed_items
+-- fetches only the competitively relevant PokeAPI categories, and PokeAPI itself lags new
+-- SV items), and ShowdownBridge deliberately synthesises a slug for anything it cannot
+-- resolve. Under the FK a single Sitrus Berry aborts insertMembers, and the user loses a
+-- whole six-set import with a 500 that names nothing.
+--
+-- Storing a slug that does not join is strictly better than losing the team. The column is
+-- bounded at 50 runes by validateMembers in internal/api/teams.go, the same guard that
+-- stands behind ability_slug and moves, which have never had an FK either.
+ALTER TABLE team_members DROP CONSTRAINT IF EXISTS team_members_item_slug_fkey;

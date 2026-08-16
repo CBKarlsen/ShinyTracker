@@ -515,7 +515,10 @@ CREATE TABLE IF NOT EXISTS team_members (
     nickname     TEXT,
     nature       TEXT NOT NULL,
     ability_slug TEXT NOT NULL,
-    item_slug    TEXT REFERENCES items(slug),
+    -- Free text, not an FK (migration 024): an imported paste can name an item the
+    -- catalogue does not hold, and losing the whole team over it is worse than storing
+    -- a slug that does not join. Bounded at 50 runes by validateMembers.
+    item_slug    TEXT,
     tera_type    TEXT,
     level        SMALLINT NOT NULL DEFAULT 50 CHECK (level BETWEEN 1 AND 100),
     -- Read and written as a whole spread, never queried per stat — same reasoning

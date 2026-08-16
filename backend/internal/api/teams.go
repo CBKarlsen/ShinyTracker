@@ -75,12 +75,16 @@ var validTeraTypes = map[string]bool{
 	"Dark": true, "Steel": true, "Fairy": true, "Stellar": true,
 }
 
-// maxAbilitySlugLength and maxMoveSlugLength bound the two other free-text
-// columns team_members writes with no FK behind them (ability_slug, moves).
-// PokeAPI slugs run well under this; it exists to stop an oversized payload,
-// not to fit real data tightly.
+// maxAbilitySlugLength, maxMoveSlugLength and maxItemSlugLength bound the three
+// free-text columns team_members writes with no FK behind them (ability_slug,
+// moves, item_slug). PokeAPI slugs run well under this; it exists to stop an
+// oversized payload, not to fit real data tightly.
+//
+// item_slug lost its FK in migration 024 -- an imported paste can name an item the
+// catalogue does not hold -- so this length check is now the only thing bounding it.
 const maxAbilitySlugLength = 50
 const maxMoveSlugLength = 50
+const maxItemSlugLength = 50
 
 func slugTooLong(s string, max int) bool {
 	return utf8.RuneCountInString(s) > max
@@ -135,6 +139,9 @@ func validateMembers(members []TeamMemberPayload) string {
 		}
 		if slugTooLong(m.AbilitySlug, maxAbilitySlugLength) {
 			return "ability_slug is too long"
+		}
+		if m.ItemSlug != nil && slugTooLong(*m.ItemSlug, maxItemSlugLength) {
+			return "item_slug is too long"
 		}
 		if m.TeraType != nil && !validTeraTypes[*m.TeraType] {
 			return "tera_type must be a real type"

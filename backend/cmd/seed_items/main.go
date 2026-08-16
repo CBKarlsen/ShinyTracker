@@ -4,7 +4,8 @@
 // upsert on the slug, which is PokeAPI's own stable identifier.
 //
 // Only the competitively relevant categories are fetched. PokeAPI carries ~2000 items
-// including every berry, TM and key item; a team builder needs the ~100 a set can hold.
+// including every TM, key item and cooking berry; a team builder needs the ~130 a set
+// can hold.
 package main
 
 import (
@@ -14,17 +15,33 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/casper/shinytracker/internal/database"
 	"github.com/joho/godotenv"
 )
 
-// PokeAPI item categories a held item can come from.
+// PokeAPI item categories a held item can come from, taken whole.
+// (type-protection is the resist berries, picky-healing the Figy line -- both are
+// entirely holdable, so no filtering is needed there.)
 var heldItemCategories = []string{
 	"held-items", "choice", "type-enhancement", "bad-held-items",
 	"training", "species-specific", "type-protection", "picky-healing",
 }
+
+// Categories that hold competitively used berries but are not exclusively holdable
+// items: "medicine" is where Sitrus and Lum live alongside Potions and Revives,
+// "in-a-pinch" is the pinch berries (Salac, Liechi, Custap), "other" the damage-
+// reflect berries (Jaboca, Rowap, Kee, Maranga). Only names ending in -berry are
+// taken, so a future Potion landing in "medicine" is not offered as a held item.
+//
+// Without these, importing any ordinary VGC set holding a Sitrus Berry stored a slug
+// the items table did not carry, so the item could never be picked in the UI.
+var berryOnlyCategories = []string{"medicine", "in-a-pinch", "other"}
+
+const berrySuffix = "-berry"
 
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
@@ -69,7 +86,9 @@ func run() int {
 	total := 0
 	attempted := 0
 
-	for _, category := range heldItemCategories {
+	categories := append(append([]string{}, heldItemCategories...), berryOnlyCategories...)
+	for _, category := range categories {
+		berriesOnly := slices.Contains(berryOnlyCategories, category)
 		url := fmt.Sprintf("https://pokeapi.co/api/v2/item-category/%s", category)
 		var cat categoryResponse
 		if err := getJSON(url, &cat); err != nil {
@@ -80,6 +99,9 @@ func run() int {
 		}
 
 		for _, ref := range cat.Items {
+			if berriesOnly && !strings.HasSuffix(ref.Name, berrySuffix) {
+				continue
+			}
 			if seen[ref.Name] {
 				continue
 			}
@@ -145,7 +167,9 @@ func upsert(item itemResponse) error {
 		 ON CONFLICT (slug) DO UPDATE SET
 		   name = EXCLUDED.name,
 		   sprite_url = EXCLUDED.sprite_url,
-		   description = EXCLUDED.description`,
+		   -- Several newer SV items ship with no English effect_entries. Keep whatever
+		   -- description a prior run stored rather than blanking it on every re-run.
+		   description = COALESCE(NULLIF(EXCLUDED.description, ''), items.description)`,
 		item.Name, displayName, item.Sprites.Default, description)
 	return err
 }
