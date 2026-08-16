@@ -82,14 +82,15 @@ struct ScreenBackground: View {
 
 // MARK: - Shell
 
-/// The four modes. "Each mode owns a colour, so you always know where you are."
+/// The modes. "Each mode owns a colour, so you always know where you are."
 ///
 /// Reference is deliberately absent: it is a search sheet reachable from every header, not a
-/// mode — "that keeps the nav at four labelled slots".
+/// mode — "that keeps the nav at labelled slots".
 enum AppMode: String, CaseIterable, Identifiable {
     case hunt = "Hunt"
     case nuzlocke = "Nuzlocke"
     case dex = "Dex"
+    case teams = "Teams"
     case you = "You"
 
     var id: Self { self }
@@ -99,6 +100,7 @@ enum AppMode: String, CaseIterable, Identifiable {
         case .hunt: Palette.hunt
         case .nuzlocke: Palette.nuzlocke
         case .dex: Palette.dex
+        case .teams: Palette.team
         // No mode colour of its own — the You tab is chrome, not a hunting mode.
         case .you: Palette.dex
         }
@@ -110,6 +112,8 @@ enum AppMode: String, CaseIterable, Identifiable {
         case .hunt: "sparkles"
         case .nuzlocke: "list.bullet.rectangle"
         case .dex: "square.split.1x2"
+        // Six cells, which is what a team is.
+        case .teams: "square.grid.3x2"
         case .you: "person.crop.circle"
         }
     }
@@ -123,6 +127,11 @@ struct AppShell: View {
     @State private var newHunt: NewHuntModel
     @State private var dex: DexModel
     @State private var nuzlocke: NuzlockeModel
+    @State private var teams: TeamsModel
+    /// The Teams screens fetch their own reference data — the species list, the item list and one
+    /// species' Scarlet/Violet learnset — none of which belongs in ``TeamsModel``, whose job is the
+    /// saved teams. So the shell keeps the client it already builds rather than a fifth model.
+    private let client: APIClient
     /// Only the You tab needs it, and only to sign out. Optional because the three DEBUG
     /// preview harnesses construct a shell with no session at all.
     private let auth: AuthSession?
@@ -157,6 +166,8 @@ struct AppShell: View {
             initialValue: DexModel(
                 client: client, store: .userDefaults(userID: userID), snapshots: snapshots))
         _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
+        _teams = State(initialValue: TeamsModel(client: client, store: snapshots))
+        self.client = client
         self.auth = auth
     }
 
@@ -176,6 +187,8 @@ struct AppShell: View {
         _newHunt = State(initialValue: NewHuntModel(client: client, library: library))
         _dex = State(initialValue: dex)
         _nuzlocke = State(initialValue: NuzlockeModel(client: client, store: snapshots))
+        _teams = State(initialValue: TeamsModel(client: client, store: snapshots))
+        self.client = client
         self.auth = nil
     }
     #endif
@@ -194,6 +207,9 @@ struct AppShell: View {
             }
             Tab(AppMode.dex.rawValue, systemImage: AppMode.dex.symbol, value: AppMode.dex) {
                 DexScreen(model: dex)
+            }
+            Tab(AppMode.teams.rawValue, systemImage: AppMode.teams.symbol, value: AppMode.teams) {
+                TeamsScreen(model: teams, client: client)
             }
             Tab(AppMode.you.rawValue, systemImage: AppMode.you.symbol, value: AppMode.you) {
                 YouScreen(auth: auth)
