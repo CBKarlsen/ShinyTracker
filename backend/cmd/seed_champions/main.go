@@ -35,7 +35,60 @@ type pokedexResponse struct {
 	} `json:"pokemon_entries"`
 }
 
+type speciesResponse struct {
+	Varieties []struct {
+		IsDefault bool `json:"is_default"`
+		Pokemon   struct {
+			Name string `json:"name"`
+		} `json:"pokemon"`
+	} `json:"varieties"`
+}
+
 func main() { os.Exit(run()) }
+
+// resolvePokemonID finds the pokemon table row for a Champions Pokedex
+// species entry. The Pokedex names the SPECIES; the pokemon table is keyed
+// on the PokeAPI pokemon name, which matches the species name for every
+// default form. It does not match for species whose default form is
+// suffixed (aegislash-shield, lycanroc-midday, ...), so a miss on the exact
+// name falls back to /pokemon-species/{name}'s varieties array and takes
+// the one PokeAPI marks is_default -- that is authoritative about which row
+// is the species' default form, unlike guessing from a name prefix.
+func resolvePokemonID(name string) (int, error) {
+	var pokemonID int
+	err := database.DB.QueryRow(context.Background(),
+		`SELECT id FROM pokemon WHERE name = $1`, name).Scan(&pokemonID)
+	if err == nil {
+		return pokemonID, nil
+	}
+
+	resp, httpErr := httpClient.Get(fmt.Sprintf("https://pokeapi.co/api/v2/pokemon-species/%s", name))
+	if httpErr != nil {
+		return 0, fmt.Errorf("exact name miss, species fetch failed: %w", httpErr)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("exact name miss, species fetch status %d", resp.StatusCode)
+	}
+
+	var species speciesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&species); err != nil {
+		return 0, fmt.Errorf("exact name miss, species decode failed: %w", err)
+	}
+
+	for _, v := range species.Varieties {
+		if !v.IsDefault {
+			continue
+		}
+		err := database.DB.QueryRow(context.Background(),
+			`SELECT id FROM pokemon WHERE name = $1`, v.Pokemon.Name).Scan(&pokemonID)
+		if err != nil {
+			return 0, fmt.Errorf("default variety %q has no pokemon row: %w", v.Pokemon.Name, err)
+		}
+		return pokemonID, nil
+	}
+	return 0, fmt.Errorf("species has no default variety")
+}
 
 func run() int {
 	_ = godotenv.Load()
@@ -65,15 +118,9 @@ func run() int {
 	seeded, missing := 0, 0
 	for _, entry := range dex.PokemonEntries {
 		name := entry.PokemonSpecies.Name
-		// The pokedex names SPECIES; our pokemon table is keyed on the PokeAPI
-		// pokemon name, which matches for every default form. A species whose
-		// default form is suffixed will not match, and is reported rather than
-		// silently skipped.
-		var pokemonID int
-		err := database.DB.QueryRow(context.Background(),
-			`SELECT id FROM pokemon WHERE name = $1`, name).Scan(&pokemonID)
+		pokemonID, err := resolvePokemonID(name)
 		if err != nil {
-			log.Printf("no pokemon row for champions species %q", name)
+			log.Printf("no pokemon row for champions species %q: %v", name, err)
 			missing++
 			continue
 		}
