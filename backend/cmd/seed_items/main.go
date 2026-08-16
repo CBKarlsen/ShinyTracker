@@ -55,6 +55,10 @@ type itemResponse struct {
 }
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	_ = godotenv.Load()
 	if err := database.ConnectDB(); err != nil {
 		log.Fatal(err)
@@ -70,6 +74,8 @@ func main() {
 		var cat categoryResponse
 		if err := getJSON(url, &cat); err != nil {
 			log.Printf("category %s: %v", category, err)
+			// ponytail: courtesy delay for category-level rate limits too
+			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 
@@ -99,8 +105,9 @@ func main() {
 	if total == 0 {
 		// ponytail: exit non-zero if seeding was wholly unsuccessful;
 		// upgrade to failure-rate-based thresholds if partial seeds become acceptable
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func getJSON(url string, into any) error {
