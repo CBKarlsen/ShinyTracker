@@ -140,4 +140,40 @@ public enum ShowdownPaste {
         guard line.hasPrefix(prefix) else { return nil }
         return String(line.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
     }
+
+    /// Renders sets back to paste text. Every default is omitted, because a paste
+    /// bloated with zero lines is one no human will read and one that diffs badly
+    /// against the source it came from.
+    public static func export(_ sets: [ParsedSet]) -> String {
+        sets.map(exportOne).joined(separator: "\n\n")
+    }
+
+    private static func exportOne(_ set: ParsedSet) -> String {
+        var lines: [String] = []
+
+        var header = set.nickname.map { "\($0) (\(set.species))" } ?? set.species
+        if let gender = set.gender { header += " (\(gender))" }
+        if let item = set.item { header += " @ \(item)" }
+        lines.append(header)
+
+        if let ability = set.ability { lines.append("Ability: \(ability)") }
+        if set.level != 100 { lines.append("Level: \(set.level)") }
+        if let tera = set.teraType { lines.append("Tera Type: \(tera)") }
+
+        if let evs = spreadLine(set.evs, omitting: 0) { lines.append("EVs: \(evs)") }
+        if set.nature != .hardy { lines.append("\(set.nature.displayName) Nature") }
+        if let ivs = spreadLine(set.ivs, omitting: 31) { lines.append("IVs: \(ivs)") }
+
+        lines.append(contentsOf: set.moves.map { "- \($0)" })
+        return lines.joined(separator: "\n")
+    }
+
+    /// `252 Atk / 4 SpD / 252 Spe`, in `Stat.allCases` order so the same spread always
+    /// renders the same way. Returns nil when every value is the default.
+    private static func spreadLine(_ spread: StatSpread, omitting defaultValue: Int) -> String? {
+        let parts = Stat.allCases
+            .filter { spread[$0] != defaultValue }
+            .map { "\(spread[$0]) \($0.showdownLabel)" }
+        return parts.isEmpty ? nil : parts.joined(separator: " / ")
+    }
 }

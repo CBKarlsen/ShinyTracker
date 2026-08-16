@@ -91,3 +91,27 @@ private func spread(_ dict: [String: Int]) -> StatSpread {
         try ShowdownPaste.parse("Garchomp\nSparkly Nature")
     }
 }
+
+/// The property that actually matters. Parse-only tests pass happily while export
+/// silently drops the Tera type.
+@Test func everyFixtureCaseRoundTrips() throws {
+    for testCase in try loadCases() {
+        let parsed = try ShowdownPaste.parse(testCase.paste)
+        let exported = ShowdownPaste.export(parsed)
+        let reparsed = try ShowdownPaste.parse(exported)
+        #expect(reparsed == parsed, "\(testCase.name) did not round-trip:\n\(exported)")
+    }
+}
+
+@Test func exportOmitsEverythingThatIsDefault() throws {
+    let parsed = try ShowdownPaste.parse("Gholdengo")
+    // No item, no ability, no EV line, no nature line, no moves — a bare species
+    // must not export six lines of zeroes.
+    #expect(ShowdownPaste.export(parsed) == "Gholdengo")
+}
+
+@Test func exportWritesTheSpreadInStatOrder() throws {
+    let parsed = try ShowdownPaste.parse(
+        "Garchomp\nEVs: 252 Spe / 252 Atk\nJolly Nature")
+    #expect(ShowdownPaste.export(parsed).contains("EVs: 252 Atk / 252 Spe"))
+}
