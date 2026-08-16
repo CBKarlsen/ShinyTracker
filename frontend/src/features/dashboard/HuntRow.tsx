@@ -124,6 +124,14 @@ export function HuntRow({
 		<div
 			className="hunt-row hunt-row-clickable"
 			onClick={() => onPin(hunt.id)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					onPin(hunt.id);
+				}
+			}}
+			role="button"
+			tabIndex={0}
 			title="Promote to main hunt"
 		>
 			<div className="sprite-wrap">

@@ -1,14 +1,22 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useNotification } from "../../context/NotificationContext";
 import type { PokemonRouteResponse } from "../../types/models";
 import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 // Fetches GET /api/pokemon/{id}/route. Pass null to fetch nothing.
 export function usePokemonRoute(pokemonId: number | null) {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
+	const { showError } = useNotification();
 	const [data, setData] = useState<PokemonRouteResponse | null>(null);
 	const [loading, setLoading] = useState(pokemonId != null);
 	const [error, setError] = useState(false);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 
 	useEffect(() => {
 		if (pokemonId == null) {
@@ -18,14 +26,18 @@ export function usePokemonRoute(pokemonId: number | null) {
 		let active = true;
 		setLoading(true);
 		setError(false);
-		fetch(`${API_BASE}/api/pokemon/${pokemonId}/route`, {
-			headers: { Authorization: `Bearer ${token}` },
-		})
+		authedFetch(
+			`${API_BASE}/api/pokemon/${pokemonId}/route`,
+			token,
+			{},
+			handleSessionExpired,
+		)
 			.then((r) => (r.ok ? r.json() : Promise.reject()))
 			.then((d: PokemonRouteResponse) => {
 				if (active) setData(d);
 			})
-			.catch(() => {
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
 				if (active) setError(true);
 			})
 			.finally(() => {
@@ -34,7 +46,7 @@ export function usePokemonRoute(pokemonId: number | null) {
 		return () => {
 			active = false;
 		};
-	}, [pokemonId, token]);
+	}, [pokemonId, token, handleSessionExpired]);
 
 	return {
 		status: data?.status ?? null,

@@ -26,7 +26,7 @@ struct RosterSheet: View {
                 if model.party.isEmpty, model.boxed.isEmpty, model.graveyard.isEmpty {
                     Text("Nothing caught yet.")
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.textFaint.color)
+                        .foregroundStyle(Palette.textFaint)
                 }
             }
             .scrollContentBackground(.hidden)
@@ -53,7 +53,7 @@ struct RosterSheet: View {
 
     @ViewBuilder
     private func section(
-        _ title: String, _ members: [NuzlockeEncounterLog], tint: Swatch
+        _ title: String, _ members: [NuzlockeEncounterLog], tint: Color
     ) -> some View {
         if !members.isEmpty {
             Section {
@@ -62,7 +62,7 @@ struct RosterSheet: View {
                 }
             } header: {
                 Text("\(title) · \(members.count)")
-                    .foregroundStyle(tint.color)
+                    .foregroundStyle(tint)
             }
         }
     }
@@ -78,14 +78,14 @@ struct RosterSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(member.nickname ?? model.speciesName(for: member))
                     .font(Typography.summary)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
 
                 // Species as well as nickname: six runs in, "Gerald" alone does not tell you
                 // whether you are looking at the Staraptor.
                 Text(subtitle(for: member))
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .lineLimit(1)
             }
 

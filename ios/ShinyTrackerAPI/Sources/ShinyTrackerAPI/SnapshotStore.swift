@@ -81,17 +81,10 @@ public actor SnapshotStore {
             Envelope(version: Self.schemaVersion, value: value))
         else { return }
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        // Written to a sibling temp file and moved into place: a crash or a kill mid-write must
-        // leave the previous snapshot intact rather than a half-file that decodes into a
-        // plausible-but-wrong screen.
-        let destination = url(for: key)
-        let temporary = directory.appendingPathComponent("\(key.filename).writing")
-        do {
-            try data.write(to: temporary, options: writingOptions)
-            _ = try fileManager.replaceItemAt(destination, withItemAt: temporary)
-        } catch {
-            try? fileManager.removeItem(at: temporary)
-        }
+        // `.atomic` IS the sibling-temp-file-then-rename dance: a crash or a kill mid-write
+        // leaves the previous snapshot intact rather than a half-file that decodes into a
+        // plausible-but-wrong screen. Doing it again by hand around it bought nothing.
+        try? data.write(to: url(for: key), options: writingOptions)
     }
 
     public func load<T: Codable>(_ type: T.Type, as key: SnapshotKey) -> T? {

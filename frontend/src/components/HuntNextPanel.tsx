@@ -1,30 +1,41 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 import type {
 	HuntSuggestion,
 	HuntSuggestionsResponse,
 	Pokemon,
 	PokemonRoute,
 } from "../types/models";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 
 const HuntNextPanel: React.FC<{
 	onStart: (pokemon: Pokemon, route: PokemonRoute) => void;
 	onOpen: (pokemonId: number) => void;
 }> = ({ onStart, onOpen }) => {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
+	const { showError } = useNotification();
 	const [data, setData] = useState<HuntSuggestionsResponse | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 
 	useEffect(() => {
 		let cancelled = false;
 		setLoading(true);
 		setError(false);
-		fetch(`${API_BASE}/api/dex/suggestions`, {
-			headers: { Authorization: `Bearer ${token}` },
-		})
+		authedFetch(
+			`${API_BASE}/api/dex/suggestions`,
+			token,
+			{},
+			handleSessionExpired,
+		)
 			.then((res) => {
 				if (!res.ok) throw new Error("failed");
 				return res.json();
@@ -32,7 +43,8 @@ const HuntNextPanel: React.FC<{
 			.then((d: HuntSuggestionsResponse) => {
 				if (!cancelled) setData(d);
 			})
-			.catch(() => {
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
 				if (!cancelled) setError(true);
 			})
 			.finally(() => {
@@ -41,7 +53,7 @@ const HuntNextPanel: React.FC<{
 		return () => {
 			cancelled = true;
 		};
-	}, [token]);
+	}, [token, handleSessionExpired]);
 
 	if (error) return null;
 

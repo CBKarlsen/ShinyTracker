@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 interface Pokemon {
 	id: number;
@@ -14,21 +15,21 @@ interface AvailRow {
 }
 
 const API = API_BASE;
-function authHeaders(token: string) {
-	return {
-		Authorization: `Bearer ${token}`,
-		"Content-Type": "application/json",
-	};
-}
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export default function AdminAvailability() {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const [query, setQuery] = useState("");
 	const [results, setResults] = useState<Pokemon[]>([]);
 	const [selected, setSelected] = useState<Pokemon | null>(null);
 	const [availability, setAvailability] = useState<AvailRow[]>([]);
 	const [error, setError] = useState("");
 	const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		setError("Your session expired — please sign in again.");
+	}, [logout]);
 
 	useEffect(() => {
 		if (!query.trim()) {
@@ -48,34 +49,49 @@ export default function AdminAvailability() {
 		setSelected(pokemon);
 		setResults([]);
 		setQuery(pokemon.name);
-		fetch(`${API}/api/admin/availability?pokemon_id=${pokemon.id}`, {
-			headers: authHeaders(token!),
-		})
+		authedFetch(
+			`${API}/api/admin/availability?pokemon_id=${pokemon.id}`,
+			token,
+			{},
+			handleSessionExpired,
+		)
 			.then((r) => r.json())
 			.then((d) => setAvailability(d ?? []))
-			.catch(() => {});
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
+			});
 	};
 
 	const toggle = async (gameId: number, current: boolean) => {
 		if (!selected) return;
-		const res = await fetch(`${API}/api/admin/availability`, {
-			method: "PUT",
-			headers: authHeaders(token!),
-			body: JSON.stringify({
-				pokemon_id: selected.id,
-				game_id: gameId,
-				available: !current,
-			}),
-		});
-		if (!res.ok) {
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/availability`,
+				token,
+				{
+					method: "PUT",
+					headers: JSON_HEADERS,
+					body: JSON.stringify({
+						pokemon_id: selected.id,
+						game_id: gameId,
+						available: !current,
+					}),
+				},
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError("Failed to update availability");
+				return;
+			}
+			setAvailability((prev) =>
+				prev.map((a) =>
+					a.game_id === gameId ? { ...a, available: !current } : a,
+				),
+			);
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			setError("Failed to update availability");
-			return;
 		}
-		setAvailability((prev) =>
-			prev.map((a) =>
-				a.game_id === gameId ? { ...a, available: !current } : a,
-			),
-		);
 	};
 
 	return (

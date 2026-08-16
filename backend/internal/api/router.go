@@ -1,13 +1,48 @@
 package api
 
 import (
+	"context"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/casper/shinytracker/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
+
+// maxRequestBodyBytes caps every request body. This is a JSON API with no file
+// uploads; 1MB is generous for the largest expected payload (hunt_parameters
+// JSONB) and cheap insurance against a client (or attacker) streaming an
+// unbounded body into a handler's json.Decoder.
+const maxRequestBodyBytes = 1 << 20 // 1MB
+
+// limitBodySize wraps every request body in http.MaxBytesReader so an oversize
+// body fails fast inside the handler's Decode call (400) instead of being
+// read in full first.
+func limitBodySize(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodyBytes)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// healthzHandler pings the DB pool so Railway (or any prober) can tell a
+// "process is up but DB is unreachable" state apart from actually healthy.
+// Unauthenticated by design — it's infra plumbing, not user data.
+func healthzHandler(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	if database.DB == nil || database.DB.Ping(ctx) != nil {
+		w.WriteHeader(http.StatusServiceUnavailable)
+		writeJSON(w, map[string]string{"status": "unavailable"})
+		return
+	}
+	writeJSON(w, map[string]string{"status": "ok"})
+}
 
 // corsAllowedOrigins reads CORS_ALLOWED_ORIGINS (comma-separated) from env.
 // Falls back to http://localhost:5173 for local dev when the var is unset.
@@ -35,6 +70,22 @@ func NewRouter() *chi.Mux {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	// Below http.Server's WriteTimeout (30s, cmd/api/main.go) on purpose: this
+	// middleware writes a 504 only in a deferred check after the handler returns,
+	// so at equal deadlines the connection can be reset before that response
+	// flushes and the client gets nothing instead of a status.
+	//
+	// ponytail: this bounds far less than it looks like it does. chi's Timeout
+	// only cancels r.Context(); it cannot preempt a running handler. Almost every
+	// query in this package passes context.Background() rather than r.Context()
+	// (59 call sites to 4), so a hung query is NOT bounded here — WriteTimeout is
+	// the real ceiling today. Thread r.Context() through the DB calls to make this
+	// middleware mean what it says.
+	//
+	// SyncHandler is unaffected either way: it launches its goroutine against
+	// context.Background() and returns 202 immediately.
+	r.Use(middleware.Timeout(25 * time.Second))
+	r.Use(limitBodySize)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   corsAllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -44,21 +95,24 @@ func NewRouter() *chi.Mux {
 		MaxAge:           300,
 	}))
 
+	r.Get("/healthz", healthzHandler)
+
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/games", GetGamesHandler)
 		r.Get("/games/{id}/pokemon", GetGamePokemonHandler)
 		r.Get("/games/{id}/pokedex", GetGamePokedexHandler)
 		r.Get("/pokemon", GetPokemonHandler)
 		r.Get("/methods", GetMethodsHandler)
-		r.Get("/odds", GetOddsHandler)
 
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware)
 			r.Get("/me", MeHandler)
 
-			r.Get("/user/{id}/games", GetUserGamesHandler)
-			r.Post("/user/{id}/games/{gameId}", ToggleUserGameHandler)
-			r.Delete("/user/{id}/games/{gameId}", RemoveUserGameHandler)
+			// No user id in the path: it only ever had to equal the token's sub,
+			// so the token is the id. Nothing to compare, nothing to 403.
+			r.Get("/me/games", GetUserGamesHandler)
+			r.Post("/me/games/{gameId}", ToggleUserGameHandler)
+			r.Delete("/me/games/{gameId}", RemoveUserGameHandler)
 
 			r.Get("/hunts", GetHuntsHandler)
 			r.Post("/hunts", CreateHuntHandler)
@@ -71,7 +125,6 @@ func NewRouter() *chi.Mux {
 			r.Get("/hunt-methods", GetHuntMethodsHandler)
 
 			r.Get("/stats", GetStatsHandler)
-			r.Get("/export", ExportHandler)
 
 			r.Get("/dex/status", DexStatusHandler)
 			r.Get("/dex/suggestions", DexSuggestionsHandler)

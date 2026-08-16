@@ -87,7 +87,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						onChange={(e) =>
 							setHuntParams({
 								...huntParams,
-								sparkling_power: parseInt(e.target.value) || 0,
+								sparkling_power: parseInt(e.target.value, 10) || 0,
 							})
 						}
 					>
@@ -115,7 +115,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						onChange={(e) =>
 							setHuntParams({
 								...huntParams,
-								chain_length: parseInt(e.target.value) || 0,
+								chain_length: parseInt(e.target.value, 10) || 0,
 							})
 						}
 					/>
@@ -148,7 +148,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						onChange={(e) =>
 							setHuntParams({
 								...huntParams,
-								chain_length: parseInt(e.target.value) || 0,
+								chain_length: parseInt(e.target.value, 10) || 0,
 							})
 						}
 					/>
@@ -170,7 +170,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 							onChange={(e) =>
 								setHuntParams({
 									...huntParams,
-									search_level: parseInt(e.target.value) || 0,
+									search_level: parseInt(e.target.value, 10) || 0,
 								})
 							}
 						/>
@@ -189,7 +189,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 							onChange={(e) =>
 								setHuntParams({
 									...huntParams,
-									chain_length: parseInt(e.target.value) || 0,
+									chain_length: parseInt(e.target.value, 10) || 0,
 								})
 							}
 						/>
@@ -213,7 +213,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						onChange={(e) =>
 							setHuntParams({
 								...huntParams,
-								number_battled: Math.max(0, parseInt(e.target.value) || 0),
+								number_battled: Math.max(0, parseInt(e.target.value, 10) || 0),
 							})
 						}
 					/>
@@ -231,7 +231,7 @@ export function HuntParametersEditor({ formulaType, huntParams, setHuntParams, i
 						onChange={(e) =>
 							setHuntParams({
 								...huntParams,
-								sparkling_power: parseInt(e.target.value) || 0,
+								sparkling_power: parseInt(e.target.value, 10) || 0,
 							})
 						}
 					>

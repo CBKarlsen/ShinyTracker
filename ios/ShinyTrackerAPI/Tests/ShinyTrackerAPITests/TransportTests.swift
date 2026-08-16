@@ -94,23 +94,25 @@ private let profileJSON = """
 
 @Test func sendsQueryItemsAndLowercasesPathUUIDs() async throws {
     let transport = StubTransport([
-        .response(status: 200, body: "[]"), .response(status: 200, body: "[]"),
+        .response(status: 200, body: #"{"message":"success"}"#),
+        .response(status: 200, body: "[]"),
         .response(status: 200, body: "[]"),
     ])
     let auth = AuthSpy()
     let client = await makeClient(transport, auth)
-    // Uppercase on purpose: UUID.uuidString is uppercase, but GetUserGamesHandler compares the
-    // path id to the lowercase JWT sub, so an uppercase id would 403.
-    let userID = UUID(uuidString: "0B3C9A7E-1D2F-4A5B-8C6D-7E8F9A0B1C2D")!
+    // Uppercase on purpose: UUID.uuidString is uppercase, and the lowercase form is what the
+    // rest of the app logs, caches and keys the write queue by — an id that changes case
+    // between requests is one that cannot be matched by eye.
+    let huntID = UUID(uuidString: "0B3C9A7E-1D2F-4A5B-8C6D-7E8F9A0B1C2D")!
 
-    _ = try await client.userGames(userID: userID)
+    try await client.deleteHunt(huntID: huntID)
     _ = try await client.huntMethods(pokemonID: 25)
     _ = try await client.pokemon(search: "eevee", all: true)
 
     let urls = await transport.requests.compactMap { $0.url?.absoluteString }
     #expect(
         urls == [
-            "https://api.test.invalid/api/user/0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d/games",
+            "https://api.test.invalid/api/hunts/0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d",
             "https://api.test.invalid/api/hunt-methods?pokemon_id=25",
             "https://api.test.invalid/api/pokemon?q=eevee&limit=all",
         ])
@@ -191,7 +193,7 @@ private let profileJSON = """
     let client = await makeClient(transport, auth)
 
     await #expect(throws: APIError.self) {
-        try await client.userGames(userID: UUID())
+        try await client.userGames()
     }
     #expect(await transport.requests.count == 1)
     #expect(await auth.expiredCount == 0)
@@ -260,11 +262,7 @@ private let profileJSON = """
     let auth = AuthSpy()
     let client = await makeClient(transport, auth)
 
-    try await client.setUserGame(
-        userID: UUID(uuidString: "0b3c9a7e-1d2f-4a5b-8c6d-7e8f9a0b1c2d")!,
-        gameID: 34,
-        SetUserGameRequest(hasShinyCharm: true)
-    )
+    try await client.setUserGame(gameID: 34, SetUserGameRequest(hasShinyCharm: true))
 
     let request = try #require(await transport.requests.first)
     #expect(request.httpMethod == "POST")

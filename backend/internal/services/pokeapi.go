@@ -22,6 +22,29 @@ type PokeAPIListResponse struct {
 	} `json:"results"`
 }
 
+// rawGitHubSprites / jsDelivrSprites rewrite the sprite host on the way into the
+// database.
+//
+// PokeAPI answers with raw.githubusercontent.com URLs, which is a source-code
+// endpoint rather than a CDN: GitHub's ToS disallows using it as asset hosting
+// and it rate-limits under load, with no SLA. jsDelivr serves the same repo,
+// byte-identical, with a week-long cache.
+//
+// This has to happen HERE and not only in migration 022, because a re-seed
+// rewrites these columns from PokeAPI's response — so a migration alone would be
+// silently undone the next time anyone ran cmd/seed.
+const (
+	rawGitHubSprites = "https://raw.githubusercontent.com/PokeAPI/sprites/master/"
+	jsDelivrSprites  = "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/"
+)
+
+// cdnSpriteURL swaps the host on a PokeAPI sprite URL. A URL from anywhere else
+// (or an empty one — PokeAPI genuinely returns null for some forms) is returned
+// untouched rather than mangled.
+func cdnSpriteURL(url string) string {
+	return strings.Replace(url, rawGitHubSprites, jsDelivrSprites, 1)
+}
+
 type PokeAPIPokemonResponse struct {
 	ID      int    `json:"id"`
 	Name    string `json:"name"`
@@ -172,11 +195,14 @@ func SyncPokemonData() error {
 	_, _ = database.DB.Exec(context.Background(), "TRUNCATE TABLE hunt_methods CASCADE")
 
 	// Fetch up to Gen 9
-	resp, err := http.Get("https://pokeapi.co/api/v2/pokemon?limit=1025")
+	resp, err := httpClient.Get("https://pokeapi.co/api/v2/pokemon?limit=1025")
 	if err != nil {
 		return fmt.Errorf("failed to fetch list: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to fetch list: unexpected status %d", resp.StatusCode)
+	}
 
 	var listResp PokeAPIListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
@@ -236,12 +262,16 @@ type PokeAPISpeciesResponse struct {
 func processPokemon(url string, parentPairs chan<- [2]int) {
 	time.Sleep(100 * time.Millisecond)
 
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch %s: %v", url, err)
 		return
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to fetch %s: unexpected status %d", url, resp.StatusCode)
+		return
+	}
 
 	var p PokeAPIPokemonResponse
 	if err := json.NewDecoder(resp.Body).Decode(&p); err != nil {
@@ -258,11 +288,11 @@ func processPokemon(url string, parentPairs chan<- [2]int) {
 	var isLegendary, isMythical bool
 	var evolvesFromID *int
 	if p.Species.URL != "" {
-		sResp, sErr := http.Get(p.Species.URL)
+		sResp, sErr := httpClient.Get(p.Species.URL)
 		if sErr == nil {
 			defer sResp.Body.Close()
 			var species PokeAPISpeciesResponse
-			if json.NewDecoder(sResp.Body).Decode(&species) == nil {
+			if sResp.StatusCode == http.StatusOK && json.NewDecoder(sResp.Body).Decode(&species) == nil {
 				isLegendary = species.IsLegendary
 				isMythical = species.IsMythical
 				if species.EvolvesFromSpecies != nil {
@@ -278,7 +308,8 @@ func processPokemon(url string, parentPairs chan<- [2]int) {
 		`INSERT INTO pokemon (id, name, sprite_url, shiny_sprite_url, types, is_legendary, is_mythical)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)
 		 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, sprite_url = EXCLUDED.sprite_url, shiny_sprite_url = EXCLUDED.shiny_sprite_url, types = EXCLUDED.types, is_legendary = EXCLUDED.is_legendary, is_mythical = EXCLUDED.is_mythical`,
-		p.ID, p.Name, p.Sprites.FrontDefault, p.Sprites.FrontShiny, typesJSON, isLegendary, isMythical)
+		p.ID, p.Name, cdnSpriteURL(p.Sprites.FrontDefault), cdnSpriteURL(p.Sprites.FrontShiny),
+		typesJSON, isLegendary, isMythical)
 
 	if err != nil {
 		log.Printf("Failed to insert pokemon %s: %v", p.Name, err)
@@ -370,12 +401,16 @@ func syncWildEncounters(pokemonID int) {
 	time.Sleep(50 * time.Millisecond)
 
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%d/encounters", pokemonID)
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		log.Printf("Failed to fetch encounters for %d: %v", pokemonID, err)
 		return
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Failed to fetch encounters for %d: unexpected status %d", pokemonID, resp.StatusCode)
+		return
+	}
 
 	var encounters []PokeAPIEncounter
 	if err := json.NewDecoder(resp.Body).Decode(&encounters); err != nil {

@@ -69,8 +69,7 @@ func AdminGetHuntMethods(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		result = []row{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	writeJSON(w, result)
 }
 
 func AdminUpdateHuntMethod(w http.ResponseWriter, r *http.Request) {
@@ -164,8 +163,7 @@ func AdminGetGames(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		result = []gameRow{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	writeJSON(w, result)
 }
 
 func AdminCreateGame(w http.ResponseWriter, r *http.Request) {
@@ -193,8 +191,7 @@ func AdminCreateGame(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create game", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]int{"id": id})
+	writeJSON(w, map[string]int{"id": id})
 }
 
 func AdminUpdateGame(w http.ResponseWriter, r *http.Request) {
@@ -304,8 +301,7 @@ func AdminGetAvailability(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		result = []availRow{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	writeJSON(w, result)
 }
 
 func AdminSetAvailability(w http.ResponseWriter, r *http.Request) {
@@ -371,8 +367,7 @@ func AdminGetUsers(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		result = []userRow{}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	writeJSON(w, result)
 }
 
 func AdminPatchUser(w http.ResponseWriter, r *http.Request) {

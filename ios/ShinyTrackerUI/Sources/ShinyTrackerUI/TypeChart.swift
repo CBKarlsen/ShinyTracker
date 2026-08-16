@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// The 18 types, their prototype colours, and the gen-6+ damage chart.
 ///
@@ -24,26 +24,26 @@ public enum PokemonType: String, CaseIterable, Sendable {
     public var displayName: String { rawValue.capitalized }
 
     /// `TYPE_COLORS` from the prototype, verbatim.
-    public var swatch: Swatch {
+    public var color: Color {
         switch self {
-        case .normal: Swatch(0x9A9A7C)
-        case .fire: Swatch(0xE08A4C)
-        case .water: Swatch(0x6D94D6)
-        case .grass: Swatch(0x7DBA6A)
-        case .electric: Swatch(0xD9C24F)
-        case .rock: Swatch(0xB1A04E)
-        case .ground: Swatch(0xD4B56A)
-        case .flying: Swatch(0x9D8FD8)
-        case .poison: Swatch(0xA973C9)
-        case .psychic: Swatch(0xE07A9A)
-        case .dark: Swatch(0x8A7A6A)
-        case .ghost: Swatch(0x8571B5)
-        case .bug: Swatch(0xA8B545)
-        case .ice: Swatch(0x8FD0D0)
-        case .fighting: Swatch(0xC45F4C)
-        case .steel: Swatch(0xA8A8C0)
-        case .dragon: Swatch(0x7A6ADB)
-        case .fairy: Swatch(0xDD99C6)
+        case .normal: Color(hex: 0x9A9A7C)
+        case .fire: Color(hex: 0xE08A4C)
+        case .water: Color(hex: 0x6D94D6)
+        case .grass: Color(hex: 0x7DBA6A)
+        case .electric: Color(hex: 0xD9C24F)
+        case .rock: Color(hex: 0xB1A04E)
+        case .ground: Color(hex: 0xD4B56A)
+        case .flying: Color(hex: 0x9D8FD8)
+        case .poison: Color(hex: 0xA973C9)
+        case .psychic: Color(hex: 0xE07A9A)
+        case .dark: Color(hex: 0x8A7A6A)
+        case .ghost: Color(hex: 0x8571B5)
+        case .bug: Color(hex: 0xA8B545)
+        case .ice: Color(hex: 0x8FD0D0)
+        case .fighting: Color(hex: 0xC45F4C)
+        case .steel: Color(hex: 0xA8A8C0)
+        case .dragon: Color(hex: 0x7A6ADB)
+        case .fairy: Color(hex: 0xDD99C6)
         }
     }
 }

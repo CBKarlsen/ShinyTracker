@@ -1,6 +1,6 @@
 import { Alert, Snackbar } from "@mui/material";
 import type React from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 interface NotificationContextType {
 	showError: (message: string) => void;
@@ -19,23 +19,39 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 		"success",
 	);
 
-	const showError = (msg: string) => {
+	// Every one of these is memoized, and so is the context value below. That is
+	// not a micro-optimisation — it is load-bearing.
+	//
+	// These functions are dependencies of `useEffect`s that fetch. Unmemoized,
+	// each one is a new closure on every render of this provider, so the value
+	// object is new too, so every consumer's effect re-runs. An effect whose
+	// catch block calls `showError` then loops forever: fetch fails → toast →
+	// provider re-renders → identity changes → effect re-runs → fetch fails.
+	// Callers used to work around this by omitting them from dependency arrays,
+	// which is a lint suppression at every call site instead of a fix at the one
+	// place that causes it. `setState` setters are stable, so [] is correct here.
+	const showError = useCallback((msg: string) => {
 		setMessage(msg);
 		setSeverity("error");
 		setOpen(true);
-	};
+	}, []);
 
-	const showSuccess = (msg: string) => {
+	const showSuccess = useCallback((msg: string) => {
 		setMessage(msg);
 		setSeverity("success");
 		setOpen(true);
-	};
+	}, []);
 
-	const showInfo = (msg: string) => {
+	const showInfo = useCallback((msg: string) => {
 		setMessage(msg);
 		setSeverity("info");
 		setOpen(true);
-	};
+	}, []);
+
+	const value = useMemo(
+		() => ({ showError, showSuccess, showInfo }),
+		[showError, showSuccess, showInfo],
+	);
 
 	const handleClose = (
 		_event?: React.SyntheticEvent | Event,
@@ -48,7 +64,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 	};
 
 	return (
-		<NotificationContext.Provider value={{ showError, showSuccess, showInfo }}>
+		<NotificationContext.Provider value={value}>
 			{children}
 			<Snackbar
 				open={open}

@@ -1,8 +1,9 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import { shinyCharmAvailable } from "../utils/games";
 import { ConfirmDialog } from "./ui/ConfirmDialog";
 import { SparkSm } from "./ui/icons";
@@ -37,7 +38,7 @@ function fmtNum(n: number) {
 }
 
 const CollectionManager: React.FC = () => {
-	const { token, userId } = useAuth();
+	const { token, logout } = useAuth();
 	const { showError } = useNotification();
 	const [games, setGames] = useState<Game[]>([]);
 	const [userGames, setUserGames] = useState<UserGame[]>([]);
@@ -46,14 +47,22 @@ const CollectionManager: React.FC = () => {
 		null,
 	);
 
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
+
 	useEffect(() => {
 		const fetchData = async () => {
 			try {
 				const [gamesRes, userGamesRes] = await Promise.all([
 					fetch(`${API_BASE}/api/games`),
-					fetch(`${API_BASE}/api/user/${userId}/games`, {
-						headers: { Authorization: `Bearer ${token}` },
-					}),
+					authedFetch(
+						`${API_BASE}/api/me/games`,
+						token,
+						{},
+						handleSessionExpired,
+					),
 				]);
 				if (gamesRes.ok && userGamesRes.ok) {
 					setGames(await gamesRes.json());
@@ -62,6 +71,7 @@ const CollectionManager: React.FC = () => {
 					showError("Failed to fetch game library information.");
 				}
 			} catch (err: any) {
+				if (err instanceof SessionExpiredError) return;
 				showError(err.message || "Failed to fetch game library information.");
 				console.error(err);
 			} finally {
@@ -69,21 +79,21 @@ const CollectionManager: React.FC = () => {
 			}
 		};
 		fetchData();
-	}, [token, userId]);
+	}, [token, handleSessionExpired, showError]);
 
 	const doRemoveGame = async (gameId: number) => {
 		setPendingRemoveGameId(null);
 		setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
 		try {
-			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
-				{
-					method: "DELETE",
-					headers: { Authorization: `Bearer ${token}` },
-				},
+			const res = await authedFetch(
+				`${API_BASE}/api/me/games/${gameId}`,
+				token,
+				{ method: "DELETE" },
+				handleSessionExpired,
 			);
 			if (!res.ok) throw new Error("Could not remove game ownership.");
 		} catch (err: any) {
+			if (err instanceof SessionExpiredError) return;
 			setUserGames((prev) => [
 				...prev,
 				{ game_id: gameId, has_shiny_charm: false },
@@ -103,19 +113,19 @@ const CollectionManager: React.FC = () => {
 			{ game_id: gameId, has_shiny_charm: false },
 		]);
 		try {
-			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/me/games/${gameId}`,
+				token,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
+					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ has_shiny_charm: false }),
 				},
+				handleSessionExpired,
 			);
 			if (!res.ok) throw new Error("Could not add game ownership.");
 		} catch (err: any) {
+			if (err instanceof SessionExpiredError) return;
 			setUserGames((prev) => prev.filter((ug) => ug.game_id !== gameId));
 			showError(err.message || "Failed to add game.");
 		}
@@ -134,19 +144,19 @@ const CollectionManager: React.FC = () => {
 			),
 		);
 		try {
-			const res = await fetch(
-				`${API_BASE}/api/user/${userId}/games/${gameId}`,
+			const res = await authedFetch(
+				`${API_BASE}/api/me/games/${gameId}`,
+				token,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${token}`,
-					},
+					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ has_shiny_charm: newCharm }),
 				},
+				handleSessionExpired,
 			);
 			if (!res.ok) throw new Error("Could not update Shiny Charm status.");
 		} catch (err: any) {
+			if (err instanceof SessionExpiredError) return;
 			setUserGames((prev) =>
 				prev.map((ug) =>
 					ug.game_id === gameId ? { ...ug, has_shiny_charm: currentCharm } : ug,

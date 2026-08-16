@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNotification } from "../context/NotificationContext";
 import { shinyCharmAvailable } from "../utils/games";
 import { calcCumulativeOdds, calculateOdds } from "../utils/odds";
 import { API_BASE } from "../config";
@@ -48,6 +49,7 @@ const getBaseOdds = (gameTitle: string) => {
 };
 
 export default function OddsCalculator() {
+	const { showError } = useNotification();
 	const [games, setGames] = useState<Game[]>([]);
 	const [gameId, setGameId] = useState<number | "">("");
 	const [methods, setMethods] = useState<MethodItem[]>([]);
@@ -56,13 +58,15 @@ export default function OddsCalculator() {
 	const [encounters, setEncounters] = useState<number>(0);
 	const [odds, setOdds] = useState<OddsResult | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch on every render
 	useEffect(() => {
 		fetch(`${API_BASE}/api/games`)
-			.then((r) => r.json())
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
 			.then(setGames)
-			.catch(() => {});
+			.catch(() => showError("Failed to load games."));
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch on every render
 	useEffect(() => {
 		if (!gameId) {
 			setMethods([]);
@@ -71,9 +75,12 @@ export default function OddsCalculator() {
 			return;
 		}
 		fetch(`${API_BASE}/api/methods?game_id=${gameId}`)
-			.then((r) => r.json())
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
 			.then((data: MethodItem[]) => setMethods(data ?? []))
-			.catch(() => {});
+			.catch(() => {
+				setMethods([]);
+				showError("Failed to load hunt methods.");
+			});
 		setHuntMethodId("");
 		setOdds(null);
 	}, [gameId]);
@@ -225,7 +232,11 @@ export default function OddsCalculator() {
 					</div>
 
 					<label
-						title={!charmAllowed ? "Shiny Charm doesn't exist in this game" : undefined}
+						title={
+							!charmAllowed
+								? "Shiny Charm doesn't exist in this game"
+								: undefined
+						}
 						style={{
 							display: "flex",
 							alignItems: "center",
@@ -239,14 +250,21 @@ export default function OddsCalculator() {
 							checked={shinyCharm}
 							disabled={!charmAllowed}
 							onChange={(e) => setShinyCharm(e.target.checked)}
-							style={{ accentColor: "var(--gold)", width: 15, height: 15, cursor: charmAllowed ? "pointer" : "not-allowed" }}
+							style={{
+								accentColor: "var(--gold)",
+								width: 15,
+								height: 15,
+								cursor: charmAllowed ? "pointer" : "not-allowed",
+							}}
 						/>
 						<span style={{ fontSize: 13 }}>Shiny Charm</span>
-						{effectiveCharm && selectedMethod && selectedMethod.charm_rolls > 0 && (
-							<span className="charm-pill">
-								+{selectedMethod.charm_rolls} rolls
-							</span>
-						)}
+						{effectiveCharm &&
+							selectedMethod &&
+							selectedMethod.charm_rolls > 0 && (
+								<span className="charm-pill">
+									+{selectedMethod.charm_rolls} rolls
+								</span>
+							)}
 					</label>
 
 					{selectedMethod && (

@@ -5,15 +5,6 @@ import (
 	"time"
 )
 
-type User struct {
-	ID           string    `json:"id"`
-	Username     string    `json:"username"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	IsAdmin      bool      `json:"is_admin"`
-	CreatedAt    time.Time `json:"created_at"`
-}
-
 type Pokemon struct {
 	ID             int             `json:"id"`
 	Name           string          `json:"name"`
@@ -35,17 +26,6 @@ type UserGame struct {
 	UserID        string `json:"user_id"`
 	GameID        int    `json:"game_id"`
 	HasShinyCharm bool   `json:"has_shiny_charm"`
-}
-
-type HuntMethod struct {
-	ID             int    `json:"id"`
-	PokemonID      int    `json:"pokemon_id"`
-	GameID         int    `json:"game_id"`
-	MethodName     string `json:"method_name"`
-	AvgTimeSeconds int    `json:"avg_time_seconds"`
-	BaseRolls      int    `json:"base_rolls"`
-	CharmRolls     int    `json:"charm_rolls"`
-	FormulaType    string `json:"formula_type"`
 }
 
 type UserHunt struct {

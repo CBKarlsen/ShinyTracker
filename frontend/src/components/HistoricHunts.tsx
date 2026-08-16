@@ -1,7 +1,9 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
+import { authedFetch, SessionExpiredError } from "../utils/authedFetch";
 import { getSpriteUrl } from "../utils/pokemon";
 import { SparkSm } from "./ui/icons";
 
@@ -37,16 +39,25 @@ function fmtHM(s: number) {
 }
 
 const HistoricHunts: React.FC = () => {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
+	const { showError } = useNotification();
 	const [hunts, setHunts] = useState<HuntDetail[]>([]);
 	const [loading, setLoading] = useState(true);
+
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		showError("Your session expired — please sign in again.");
+	}, [logout, showError]);
 
 	useEffect(() => {
 		const fetchHunts = async () => {
 			try {
-				const res = await fetch(`${API_BASE}/api/hunts`, {
-					headers: { Authorization: `Bearer ${token}` },
-				});
+				const res = await authedFetch(
+					`${API_BASE}/api/hunts`,
+					token,
+					{},
+					handleSessionExpired,
+				);
 				if (res.ok) {
 					const data = (await res.json()) || [];
 					// Manual overrides (collection-only "mark as caught") are not real
@@ -61,13 +72,14 @@ const HistoricHunts: React.FC = () => {
 					);
 				}
 			} catch (err) {
+				if (err instanceof SessionExpiredError) return;
 				console.error(err);
 			} finally {
 				setLoading(false);
 			}
 		};
 		fetchHunts();
-	}, [token]);
+	}, [token, handleSessionExpired]);
 
 	if (loading) {
 		return (

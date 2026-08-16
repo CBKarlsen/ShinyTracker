@@ -20,41 +20,56 @@ enum DexPreview {
     }
 
     static var requested: Fixture? {
-        argument(after: "-dexPreview").flatMap(Fixture.init(rawValue:))
+        PreviewHarness.argument("-dexPreview").flatMap(Fixture.init(rawValue:))
     }
 
     /// `-dexView living|shiny` — which segment to start on, so each state is screenshottable
     /// without a way to tap in `simctl`.
     static var initialView: DexModel.DexView? {
-        guard let raw = argument(after: "-dexView")?.lowercased() else { return nil }
+        guard let raw = PreviewHarness.argument("-dexView")?.lowercased() else { return nil }
         return DexModel.DexView.allCases.first { $0.rawValue.lowercased() == raw }
     }
 
     /// `-dexSpecies 443` — open that species' sheet as soon as the grid has loaded.
     static var openSpeciesID: Int? {
-        argument(after: "-dexSpecies").flatMap(Int.init)
+        PreviewHarness.argument("-dexSpecies").flatMap(Int.init)
     }
 
     /// `-dexGame 4` — start with a game picked, which scopes the completion bar's denominator as
     /// well as locations and movesets.
     static var initialGameID: Int? {
-        argument(after: "-dexGame").flatMap(Int.init)
-    }
-
-    private static func argument(after flag: String) -> String? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: flag), index + 1 < arguments.count else {
-            return nil
-        }
-        return arguments[index + 1]
+        PreviewHarness.argument("-dexGame").flatMap(Int.init)
     }
 
     static func client(_ fixture: Fixture) -> APIClient {
-        APIClient(
-            config: APIConfig(baseURL: URL(string: "https://preview.invalid")!),
-            auth: AuthProvider(accessToken: { _ in "preview" }, markExpired: {}),
-            transport: DexStubTransport(fixture: fixture)
-        )
+        PreviewHarness.client { method, path, request in
+            if fixture == .error, method == "GET" {
+                return (Data("pokemon: connection refused".utf8), 503)
+            }
+
+            switch (method, path) {
+            case ("POST", "/api/hunts/manual"):
+                return (Data(manualHunt.utf8), 200)
+            case ("DELETE", _):
+                return (Data(#"{"message":"Catch removed successfully"}"#.utf8), 200)
+            case (_, "/api/games"):
+                return (Data(games.utf8), 200)
+            case (_, let gamePath) where gamePath.hasPrefix("/api/games/")
+                && gamePath.hasSuffix("/pokemon"):
+                return (Data(gameAvailability(fixture).utf8), 200)
+            case (_, "/api/hunts"):
+                return (Data(hunts.utf8), 200)
+            case (_, "/api/dex/status"):
+                return (Data(dexStatus.utf8), 200)
+            case (_, "/api/pokemon"):
+                return (Data(speciesList(fixture).utf8), 200)
+            default:
+                // /api/pokemon/{id}
+                let id = Int(path.split(separator: "/").last ?? "") ?? 443
+                let asked = request.url?.query?.contains("game_id") ?? false
+                return (Data(detail(id: id, withMoves: asked).utf8), 200)
+            }
+        }
     }
 }
 
@@ -94,44 +109,6 @@ private let seededSpecies: [(id: Int, name: String, types: [String])] = [
     (999, "gimmighoul", ["ghost"]),
 ]
 
-private struct DexStubTransport: HTTPTransport {
-    let fixture: DexPreview.Fixture
-
-    func send(_ request: URLRequest) async throws -> (data: Data, status: Int) {
-        // A beat of latency so the loading state is real rather than skipped.
-        try? await Task.sleep(for: .milliseconds(200))
-
-        let path = request.url?.path ?? ""
-        let method = request.httpMethod ?? "GET"
-
-        if fixture == .error, method == "GET" {
-            return (Data("pokemon: connection refused".utf8), 503)
-        }
-
-        switch (method, path) {
-        case ("POST", "/api/hunts/manual"):
-            return (Data(manualHunt.utf8), 200)
-        case ("DELETE", _):
-            return (Data(#"{"message":"Catch removed successfully"}"#.utf8), 200)
-        case (_, "/api/games"):
-            return (Data(games.utf8), 200)
-        case (_, let gamePath) where gamePath.hasPrefix("/api/games/")
-            && gamePath.hasSuffix("/pokemon"):
-            return (Data(gameAvailability(fixture).utf8), 200)
-        case (_, "/api/hunts"):
-            return (Data(hunts.utf8), 200)
-        case (_, "/api/dex/status"):
-            return (Data(dexStatus.utf8), 200)
-        case (_, "/api/pokemon"):
-            return (Data(speciesList(fixture).utf8), 200)
-        default:
-            // /api/pokemon/{id}
-            let id = Int(path.split(separator: "/").last ?? "") ?? 443
-            let asked = request.url?.query?.contains("game_id") ?? false
-            return (Data(detail(id: id, withMoves: asked).utf8), 200)
-        }
-    }
-}
 
 /// `pokemon_availability` for whichever game `-dexGame` picked. Gen 1–4 only, and Jirachi
 /// dropped from it: the fixture needs one species that is in your library but *not* in this

@@ -547,7 +547,7 @@ enum EncounterOutcome {
         }
     }
 
-    var tint: Swatch {
+    var tint: Color {
         switch self {
         case .party: Palette.nuzlocke
         case .boxed: Palette.textMuted

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE } from "../../config";
+import { authedFetch, SessionExpiredError } from "../../utils/authedFetch";
 
 interface GameRow {
 	id: number;
@@ -11,15 +12,10 @@ interface GameRow {
 }
 
 const API = API_BASE;
-function authHeaders(token: string) {
-	return {
-		Authorization: `Bearer ${token}`,
-		"Content-Type": "application/json",
-	};
-}
+const JSON_HEADERS = { "Content-Type": "application/json" };
 
 export default function AdminGames() {
-	const { token } = useAuth();
+	const { token, logout } = useAuth();
 	const [games, setGames] = useState<GameRow[]>([]);
 	const [editId, setEditId] = useState<number | null>(null);
 	const [editData, setEditData] = useState<Partial<GameRow>>({});
@@ -32,42 +28,65 @@ export default function AdminGames() {
 	});
 	const [error, setError] = useState("");
 
+	const handleSessionExpired = useCallback(() => {
+		logout();
+		setError("Your session expired — please sign in again.");
+	}, [logout]);
+
 	useEffect(() => {
-		fetch(`${API}/api/admin/games`, { headers: authHeaders(token!) })
+		authedFetch(`${API}/api/admin/games`, token, {}, handleSessionExpired)
 			.then((r) => r.json())
 			.then((d) => setGames(d ?? []))
-			.catch(() => {});
-	}, [token]);
+			.catch((err) => {
+				if (err instanceof SessionExpiredError) return;
+			});
+	}, [token, handleSessionExpired]);
 
 	const saveEdit = async (id: number) => {
-		const res = await fetch(`${API}/api/admin/games/${id}`, {
-			method: "PUT",
-			headers: authHeaders(token!),
-			body: JSON.stringify(editData),
-		});
-		if (!res.ok) {
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/games/${id}`,
+				token,
+				{
+					method: "PUT",
+					headers: JSON_HEADERS,
+					body: JSON.stringify(editData),
+				},
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError("Failed to update game");
+				return;
+			}
+			setGames((prev) =>
+				prev.map((g) => (g.id === id ? ({ ...g, ...editData } as GameRow) : g)),
+			);
+			setEditId(null);
+			setEditData({});
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
 			setError("Failed to update game");
-			return;
 		}
-		setGames((prev) =>
-			prev.map((g) => (g.id === id ? ({ ...g, ...editData } as GameRow) : g)),
-		);
-		setEditId(null);
-		setEditData({});
 	};
 
 	const deleteGame = async (id: number) => {
 		if (!confirm("Delete this game?")) return;
-		const res = await fetch(`${API}/api/admin/games/${id}`, {
-			method: "DELETE",
-			headers: authHeaders(token!),
-		});
-		if (!res.ok) {
-			const t = await res.text();
-			setError(t);
-			return;
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/games/${id}`,
+				token,
+				{ method: "DELETE" },
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError(await res.text());
+				return;
+			}
+			setGames((prev) => prev.filter((g) => g.id !== id));
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
+			setError("Failed to delete game");
 		}
-		setGames((prev) => prev.filter((g) => g.id !== id));
 	};
 
 	const addGame = async () => {
@@ -81,25 +100,30 @@ export default function AdminGames() {
 			base_odds: Number(newRow.base_odds),
 			supports_breeding: newRow.supports_breeding,
 		};
-		const res = await fetch(`${API}/api/admin/games`, {
-			method: "POST",
-			headers: authHeaders(token!),
-			body: JSON.stringify(body),
-		});
-		if (!res.ok) {
-			const t = await res.text();
-			setError(t);
-			return;
+		try {
+			const res = await authedFetch(
+				`${API}/api/admin/games`,
+				token,
+				{ method: "POST", headers: JSON_HEADERS, body: JSON.stringify(body) },
+				handleSessionExpired,
+			);
+			if (!res.ok) {
+				setError(await res.text());
+				return;
+			}
+			const { id } = await res.json();
+			setGames((prev) => [...prev, { ...body, id }]);
+			setAdding(false);
+			setNewRow({
+				title: "",
+				generation: "1",
+				base_odds: "4096",
+				supports_breeding: false,
+			});
+		} catch (err) {
+			if (err instanceof SessionExpiredError) return;
+			setError("Failed to add game");
 		}
-		const { id } = await res.json();
-		setGames((prev) => [...prev, { ...body, id }]);
-		setAdding(false);
-		setNewRow({
-			title: "",
-			generation: "1",
-			base_odds: "4096",
-			supports_breeding: false,
-		});
 	};
 
 	return (

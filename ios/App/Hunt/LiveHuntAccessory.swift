@@ -27,12 +27,12 @@ struct LiveHuntAccessory: View {
                         )
                         Text(row.name)
                             .font(Typography.summary)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                             .lineLimit(1)
                         Spacer(minLength: 4)
                         Text(row.count.formatted())
                             .font(Typography.badge)
-                            .foregroundStyle(Palette.textSecondary.color)
+                            .foregroundStyle(Palette.textSecondary)
                     }
                     .contentShape(.rect)
                 }
@@ -47,7 +47,7 @@ struct LiveHuntAccessory: View {
                         .symbolEffect(.bounce.up, options: .speed(1.6), value: row.count)
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(Palette.hunt.color)
+                .foregroundStyle(Palette.hunt)
                 // Holds like the card's `+`, so counting from another tab is not the worse one.
                 // Unlike the card there is no `−` beside it, so an overshoot here is corrected on
                 // the Hunt tab rather than in place — tapping the row above opens it.

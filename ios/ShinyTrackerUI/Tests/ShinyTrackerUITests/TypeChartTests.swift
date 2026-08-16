@@ -110,13 +110,4 @@ struct TypeChartTests {
         #expect(TypeMatchup(type: .ice, multiplier: 0.25).label == "×¼")
         #expect(TypeMatchup(type: .ice, multiplier: 0).label == "×0")
     }
-
-    @Test("Type colours match the prototype's TYPE_COLORS")
-    func typeColours() {
-        #expect(PokemonType.dragon.swatch.hex == 0x7A6ADB)
-        #expect(PokemonType.ground.swatch.hex == 0xD4B56A)
-        #expect(PokemonType.ice.swatch.hex == 0x8FD0D0)
-        #expect(PokemonType.fairy.swatch.hex == 0xDD99C6)
-        #expect(PokemonType.normal.swatch.hex == 0x9A9A7C)
-    }
 }

@@ -99,7 +99,19 @@ export function PokemonSearchStep({
 					search.length === 0 &&
 					!showRecent && <div className="empty">Type to search</div>}
 				{options.map((p) => (
-					<div key={p.id} className="row" onClick={() => onSelect(p)}>
+					<div
+						key={p.id}
+						className="row"
+						onClick={() => onSelect(p)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								onSelect(p);
+							}
+						}}
+						role="button"
+						tabIndex={0}
+					>
 						<img src={getSpriteUrl(p.id, false, p.sprite_url)} alt={p.name} />
 						<div className="nm">{p.name}</div>
 						<div className="id">#{String(p.id).padStart(4, "0")}</div>

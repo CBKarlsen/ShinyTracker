@@ -33,9 +33,9 @@ var gameTitleMap = map[string]string{
 	"Ultra Sun":  "Ultra Sun/Ultra Moon",
 	"Ultra Moon": "Ultra Sun/Ultra Moon",
 	// Gen 8
-	"Pokémon Sword":    "Sword/Shield",
-	"Legends: Arceus":  "Legends: Arceus",
-	"Pokémon GO":       "", // no DB entry for GO — handled specially
+	"Pokémon Sword":   "Sword/Shield",
+	"Legends: Arceus": "Legends: Arceus",
+	"Pokémon GO":      "", // no DB entry for GO — handled specially
 	// Gen 9
 	"Scarlet": "Scarlet/Violet",
 }
@@ -48,9 +48,9 @@ var nameOverrides = map[string]string{
 	"Nidoran♀":         "nidoran-f",
 	"Nidoran♂":         "nidoran-m",
 	"Farfetch'd":       "farfetchd",
-	"Farfetch'd-Galar": "farfetchd",  // regional form → base id
+	"Farfetch'd-Galar": "farfetchd", // regional form → base id
 	"Mr. Mime":         "mr-mime",
-	"Mr. Mime-Galar":   "mr-mime",     // regional form → base id
+	"Mr. Mime-Galar":   "mr-mime", // regional form → base id
 	"Mr. Rime":         "mr-rime",
 	"Mime Jr.":         "mime-jr",
 	"Ho-Oh":            "ho-oh",

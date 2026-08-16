@@ -41,13 +41,13 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		token, ok := strings.CutPrefix(authHeader, "Bearer ")
+		if !ok || token == "" {
 			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
 
-		userID, claims, err := ValidateSupabaseJWTWithClaims(parts[1])
+		userID, claims, err := ValidateSupabaseJWTWithClaims(token)
 		if err != nil {
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return

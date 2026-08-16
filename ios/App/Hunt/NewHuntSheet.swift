@@ -268,7 +268,7 @@ struct NewHuntSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .presentationDetents([.fraction(model.step.height)])
         .presentationCornerRadius(Radii.sheet)
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .presentationDragIndicator(.visible)
     }
 
@@ -281,14 +281,14 @@ struct NewHuntSheet: View {
                 Text(model.step.title)
                     .font(Typography.cardTitle)
                     .tracking(Typography.cardTitleTracking)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 Spacer(minLength: 8)
                 Button { dismiss() } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Palette.textSecondary.color)
+                        .foregroundStyle(Palette.textSecondary)
                         .frame(width: 32, height: 32)
-                        .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: Radii.badge))
+                        .background(Palette.surfaceRaised, in: .rect(cornerRadius: Radii.badge))
                         .contentShape(.rect)
                 }
                 .accessibilityLabel("Close")
@@ -297,7 +297,7 @@ struct NewHuntSheet: View {
             if !model.step.hint.isEmpty {
                 Text(model.step.hint)
                     .font(Typography.meta)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .padding(.top, 8)
             }
 
@@ -307,14 +307,14 @@ struct NewHuntSheet: View {
                         Button { model.jump(to: crumb.step) } label: {
                             Text(crumb.label)
                                 .font(Typography.summary)
-                                .foregroundStyle(Palette.textSecondary.color)
+                                .foregroundStyle(Palette.textSecondary)
                                 .padding(.horizontal, 11)
                                 .padding(.vertical, 6)
                                 // `border-radius:9px;background:#181822` — used only here.
-                                .background(Palette.surfaceRaised.color, in: .rect(cornerRadius: 9))
+                                .background(Palette.surfaceRaised, in: .rect(cornerRadius: 9))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 9)
-                                        .strokeBorder(Palette.border.color, lineWidth: 1)
+                                        .strokeBorder(Palette.border, lineWidth: 1)
                                 )
                         }
                         .accessibilityLabel("Change \(crumb.label)")
@@ -354,21 +354,21 @@ struct NewHuntSheet: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16))
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 TextField("Search Pokémon", text: $model.query)
                     .font(.system(size: 17))
-                    .foregroundStyle(Palette.textPrimary.color)
-                    .tint(Palette.hunt.color)
+                    .foregroundStyle(Palette.textPrimary)
+                    .tint(Palette.hunt)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .submitLabel(.search)
             }
             .padding(.horizontal, 14)
             .frame(height: 46)
-            .background(Palette.field.color, in: .rect(cornerRadius: Radii.headerButton))
+            .background(Palette.field, in: .rect(cornerRadius: Radii.headerButton))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.headerButton)
-                    .strokeBorder(Palette.border.color, lineWidth: 1)
+                    .strokeBorder(Palette.border, lineWidth: 1)
             )
             .padding(.horizontal, 18)
             .padding(.top, 14)
@@ -391,7 +391,7 @@ struct NewHuntSheet: View {
                             ?? "Nothing matches \"\(model.query)\". Try a different spelling."
                     )
                     .font(Typography.emptyBody)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 26)
@@ -404,7 +404,7 @@ struct NewHuntSheet: View {
     private var gameStep: some View {
         stepList {
             if model.loadingMethods {
-                ProgressView().tint(Palette.textMuted.color).frame(maxWidth: .infinity).padding(.top, 26)
+                ProgressView().tint(Palette.textMuted).frame(maxWidth: .infinity).padding(.top, 26)
             } else if model.gameOptions.isEmpty {
                 // The dead end that actually happens: `GET /api/hunt-methods` joins `user_games`,
                 // so an empty library answers nothing for every species. Name the fix.
@@ -422,10 +422,10 @@ struct NewHuntSheet: View {
                             VStack(alignment: .leading, spacing: 7) {
                                 Text(option.game.title)
                                     .font(Typography.listTitle)
-                                    .foregroundStyle(Palette.textPrimary.color)
+                                    .foregroundStyle(Palette.textPrimary)
                                 Text(gameMeta(option))
                                     .font(Typography.stat)
-                                    .foregroundStyle(Palette.textMuted.color)
+                                    .foregroundStyle(Palette.textMuted)
                             }
                             // A Button label centres wrapped text by default, which reads as a
                             // stray indent on every two-line game title.
@@ -439,10 +439,10 @@ struct NewHuntSheet: View {
                         }
                         .padding(.vertical, 13)
                         .padding(.horizontal, 15)
-                        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.listCard))
+                        .background(Palette.surface, in: .rect(cornerRadius: Radii.listCard))
                         .overlay(
                             RoundedRectangle(cornerRadius: Radii.listCard)
-                                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                                .strokeBorder(Palette.hairline, lineWidth: 1)
                         )
                         .contentShape(.rect)
                     }
@@ -473,7 +473,7 @@ struct NewHuntSheet: View {
             Text("Odds and pace only — nothing here is recommended over anything else.")
                 .font(Typography.stat)
                 .lineSpacing(4)
-                .foregroundStyle(Palette.textFaint.color)
+                .foregroundStyle(Palette.textFaint)
                 .padding(.horizontal, 2)
                 .padding(.top, 4)
         }
@@ -486,7 +486,7 @@ struct NewHuntSheet: View {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 Text(method.methodName)
                     .font(Typography.listTitle)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .multilineTextAlignment(.leading)
                 Spacer(minLength: 8)
                 // The qualifier is not decoration: without it "1 / 200" reads as this
@@ -494,38 +494,38 @@ struct NewHuntSheet: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(denominator.map { "1 / \($0.formatted(.number))" } ?? "Odds unknown")
                         .font(Typography.oddsValue)
-                        .foregroundStyle(Palette.hunt.color)
+                        .foregroundStyle(Palette.hunt)
                         .lineLimit(1)
                     if let note = model.oddsNote(for: method) {
                         Text(note)
                             .font(Typography.stat)
-                            .foregroundStyle(Palette.textMuted.color)
+                            .foregroundStyle(Palette.textMuted)
                             .lineLimit(1)
                     }
                 }
             }
 
-            Divider().overlay(Palette.hairline.color)
+            Divider().overlay(Palette.hairline)
 
             HStack(spacing: 10) {
                 Text("~\(method.avgTimeSeconds)s per encounter")
                     .font(Typography.stat)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
                 Spacer(minLength: 8)
                 if let denominator {
                     Text("\(formatElapsed(denominator * method.avgTimeSeconds)) to expected")
                         .font(Typography.summary)
-                        .foregroundStyle(Palette.textSecondary.color)
+                        .foregroundStyle(Palette.textSecondary)
                         .lineLimit(1)
                 }
             }
         }
         .padding(.vertical, 13)
         .padding(.horizontal, 15)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.listCard))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.listCard))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.listCard)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
         .contentShape(.rect)
     }
@@ -554,15 +554,15 @@ struct NewHuntSheet: View {
                         Text(species.name.capitalized)
                             .font(Typography.sheetHeadline)
                             .tracking(Typography.sheetHeadlineTracking)
-                            .foregroundStyle(Palette.textPrimary.color)
+                            .foregroundStyle(Palette.textPrimary)
                         Text("\(game.title) · \(method.methodName)")
                             .font(Typography.meta)
-                            .foregroundStyle(Palette.textSecondary.color)
+                            .foregroundStyle(Palette.textSecondary)
                     }
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.confirmCard.color, in: .rect(cornerRadius: 18))
+                .background(Palette.confirmCard, in: .rect(cornerRadius: 18))
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
                         .strokeBorder(Palette.hunt.alpha(0x55), lineWidth: 1)
@@ -576,7 +576,7 @@ struct NewHuntSheet: View {
                 if let error = model.error {
                     Text(error)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                        .foregroundStyle(Palette.danger)
                 }
 
                 Spacer(minLength: 0)
@@ -609,20 +609,20 @@ struct NewHuntSheet: View {
             Text("NICKNAME · OPTIONAL")
                 .font(Typography.overline)
                 .tracking(Typography.overlineTracking)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
 
             TextField("Name your \(species.name.capitalized)", text: $model.nickname)
                 .font(.system(size: 17))
-                .foregroundStyle(Palette.textPrimary.color)
-                .tint(Palette.hunt.color)
+                .foregroundStyle(Palette.textPrimary)
+                .tint(Palette.hunt)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
                 .padding(.horizontal, 14)
                 .frame(height: 46)
-                .background(Palette.field.color, in: .rect(cornerRadius: Radii.headerButton))
+                .background(Palette.field, in: .rect(cornerRadius: Radii.headerButton))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.headerButton)
-                        .strokeBorder(Palette.border.color, lineWidth: 1)
+                        .strokeBorder(Palette.border, lineWidth: 1)
                 )
                 .accessibilityLabel("Nickname, optional")
         }
@@ -678,7 +678,7 @@ struct NewHuntSheet: View {
         Text(message)
             .font(Typography.emptyBody)
             .lineSpacing(4)
-            .foregroundStyle(Palette.textMuted.color)
+            .foregroundStyle(Palette.textMuted)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 26)
@@ -691,25 +691,25 @@ struct NewHuntSheet: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text(title)
                     .font(Typography.listTitle)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                 if !subtitle.isEmpty {
                     Text(subtitle)
                         .font(Typography.stat)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                 }
             }
             .multilineTextAlignment(.leading)
             .frame(maxWidth: .infinity, alignment: .leading)
             Image(systemName: "chevron.right")
                 .font(.system(size: 13))
-                .foregroundStyle(Palette.textFaint.color)
+                .foregroundStyle(Palette.textFaint)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 13)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.row))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.row))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.row)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
         .contentShape(.rect)
     }
@@ -743,11 +743,11 @@ struct DetailPanel: View {
                 HStack {
                     Text(row.key)
                         .font(Typography.rowLabel)
-                        .foregroundStyle(Palette.textMuted.color)
+                        .foregroundStyle(Palette.textMuted)
                     Spacer(minLength: 10)
                     Text(row.value)
                         .font(Typography.rowValue)
-                        .foregroundStyle((row.accent ? Palette.hunt : Palette.textPrimary).color)
+                        .foregroundStyle(row.accent ? Palette.hunt : Palette.textPrimary)
                 }
                 .padding(.vertical, 14)
                 .padding(.horizontal, 16)
@@ -755,15 +755,15 @@ struct DetailPanel: View {
 
                 if index < rows.count - 1 {
                     Rectangle()
-                        .fill(Palette.hairline.color)
+                        .fill(Palette.hairline)
                         .frame(height: 1)
                 }
             }
         }
-        .background(Palette.detailPanel.color, in: .rect(cornerRadius: Radii.listCard))
+        .background(Palette.detailPanel, in: .rect(cornerRadius: Radii.listCard))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.listCard)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 }
@@ -774,10 +774,10 @@ struct WideGoldButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(Typography.primaryButton)
-            .foregroundStyle(Palette.onAccent.color)
+            .foregroundStyle(Palette.onAccent)
             .frame(maxWidth: .infinity)
             .frame(height: 52)
-            .background(Palette.hunt.color, in: .rect(cornerRadius: Radii.listCard))
+            .background(Palette.hunt, in: .rect(cornerRadius: Radii.listCard))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }

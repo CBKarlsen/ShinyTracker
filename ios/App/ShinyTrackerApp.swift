@@ -76,7 +76,7 @@ struct RootView: View {
 /// tell of a generated interface. The gold belongs on the hunt, not on the wallpaper.
 struct ScreenBackground: View {
     var body: some View {
-        Palette.screen.color.ignoresSafeArea()
+        Palette.screen.ignoresSafeArea()
     }
 }
 
@@ -94,7 +94,7 @@ enum AppMode: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var accent: Swatch {
+    var accent: Color {
         switch self {
         case .hunt: Palette.hunt
         case .nuzlocke: Palette.nuzlocke
@@ -200,7 +200,7 @@ struct AppShell: View {
             }
         }
         // The selected tab keeps its mode colour — native chrome, not generic chrome.
-        .tint(mode.accent.color)
+        .tint(mode.accent)
         .tabBarMinimizeBehavior(.onScrollDown)
         .tabViewBottomAccessory {
             LiveHuntAccessory(model: hunts) { mode = .hunt }
@@ -229,7 +229,7 @@ struct LoginView: View {
         VStack(spacing: 20) {
             Text("ShinyTracker")
                 .font(Typography.screenTitle)
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
 
             SignInWithAppleButton(
                 .signIn,
@@ -245,12 +245,12 @@ struct LoginView: View {
             if auth.isSessionExpired {
                 Text("Session expired — sign in again.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textMuted.color)
+                    .foregroundStyle(Palette.textMuted)
             }
             if let errorMessage {
                 Text(errorMessage)
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.nuzlocke.color)
+                    .foregroundStyle(Palette.nuzlocke)
                     .multilineTextAlignment(.center)
             }
         }

@@ -48,7 +48,7 @@ struct EncounterSheet: View {
                 if let failure {
                     Text(failure)
                         .font(Typography.hint)
-                        .foregroundStyle(Palette.danger.color)
+                        .foregroundStyle(Palette.danger)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -59,9 +59,9 @@ struct EncounterSheet: View {
             }
             .padding(18)
         }
-        .background(Palette.sheet.color)
+        .background(Palette.sheet)
         .presentationDetents([.large])
-        .presentationBackground(Palette.sheet.color)
+        .presentationBackground(Palette.sheet)
         .onAppear(perform: preload)
     }
 
@@ -79,13 +79,13 @@ struct EncounterSheet: View {
             Text(location.name)
                 .font(Typography.sheetTitle)
                 .tracking(Typography.sheetTitleTracking)
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
             Text(
                 model.run?.dupesClause == true
                     ? "One encounter · dupes clause on" : "One encounter"
             )
             .font(Typography.meta)
-            .foregroundStyle(Palette.textMuted.color)
+            .foregroundStyle(Palette.textMuted)
         }
     }
 
@@ -101,11 +101,11 @@ struct EncounterSheet: View {
                 } label: {
                     Text(candidate.rawValue.capitalized)
                         .font(on ? Typography.segmentOn : Typography.segmentOff)
-                        .foregroundStyle((on ? Palette.onAccent : Palette.textMuted).color)
+                        .foregroundStyle(on ? Palette.onAccent : Palette.textMuted)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(
-                            on ? Palette.nuzlocke.color : .clear,
+                            on ? Palette.nuzlocke : .clear,
                             in: .rect(cornerRadius: Radii.segmentItem)
                         )
                         .contentShape(.rect)
@@ -114,10 +114,10 @@ struct EncounterSheet: View {
             }
         }
         .padding(3)
-        .background(Palette.surface.color, in: .rect(cornerRadius: Radii.segment))
+        .background(Palette.surface, in: .rect(cornerRadius: Radii.segment))
         .overlay(
             RoundedRectangle(cornerRadius: Radii.segment)
-                .strokeBorder(Palette.hairline.color, lineWidth: 1)
+                .strokeBorder(Palette.hairline, lineWidth: 1)
         )
     }
 
@@ -127,12 +127,12 @@ struct EncounterSheet: View {
                 .font(Typography.blockLabel)
                 .tracking(Typography.blockLabelTracking)
                 .textCase(.uppercase)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
 
             if pool.isEmpty {
                 Text("This route has no seeded encounter pool.")
                     .font(Typography.hint)
-                    .foregroundStyle(Palette.textFaint.color)
+                    .foregroundStyle(Palette.textFaint)
             }
 
             LazyVGrid(
@@ -160,22 +160,22 @@ struct EncounterSheet: View {
                 DexSprite(pokemonID: option.pokemonID, size: 50, served: option.spriteURL)
                 Text(option.pokemonName.capitalized)
                     .font(Typography.tileName)
-                    .foregroundStyle(Palette.textPrimary.color)
+                    .foregroundStyle(Palette.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 if dupe {
                     Text("dupe")
                         .font(Typography.tileSub)
-                        .foregroundStyle(Palette.textFaint.color)
+                        .foregroundStyle(Palette.textFaint)
                 }
             }
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
-            .background(Palette.surface.color, in: .rect(cornerRadius: Radii.tile))
+            .background(Palette.surface, in: .rect(cornerRadius: Radii.tile))
             .overlay(
                 RoundedRectangle(cornerRadius: Radii.tile)
                     .strokeBorder(
-                        on ? Palette.nuzlocke.alpha(0x99) : Palette.hairline.color,
+                        on ? Palette.nuzlocke.alpha(0x99) : Palette.hairline,
                         lineWidth: on ? 2 : 1
                     )
             )
@@ -191,18 +191,18 @@ struct EncounterSheet: View {
                 .font(Typography.blockLabel)
                 .tracking(Typography.blockLabelTracking)
                 .textCase(.uppercase)
-                .foregroundStyle(Palette.textMuted.color)
+                .foregroundStyle(Palette.textMuted)
             TextField("", text: $nickname, prompt: Text("Required by this run's rules"))
                 .font(Typography.segmentOn)
-                .foregroundStyle(Palette.textPrimary.color)
+                .foregroundStyle(Palette.textPrimary)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 14)
                 .frame(height: 46)
-                .background(Palette.field.color, in: .rect(cornerRadius: Radii.headerButton))
+                .background(Palette.field, in: .rect(cornerRadius: Radii.headerButton))
                 .overlay(
                     RoundedRectangle(cornerRadius: Radii.headerButton)
-                        .strokeBorder(Palette.border.color, lineWidth: 1)
+                        .strokeBorder(Palette.border, lineWidth: 1)
                 )
         }
     }

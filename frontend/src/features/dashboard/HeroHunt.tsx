@@ -218,7 +218,7 @@ export function HeroHunt({
 		if (!localStorage.getItem(sessionKey) && !manualPaused) {
 			localStorage.setItem(sessionKey, String(Date.now() - sessionSec * 1000));
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// biome-ignore lint/correctness/useExhaustiveDependencies: first-mount stamp only. sessionSec ticks every second, so depending on it would re-run this every second for a guard that is already false after the first pass.
 	}, []);
 
 	const [lastPing, setLastPing] = useState(Date.now());

@@ -201,15 +201,41 @@ Checked against Bulbapedia and found accurate:
 
 **Done 2026-08-10:** findings 1, 2, 3, 4, 6, 9, and the fixture half of 8
 (`shared/odds_anchors.json` + `internal/calc/anchors_test.go`, asserted in Go and verified
-against the TS engine). Seed JSON changed — **the live DB still needs a re-seed**, and per
-`backend/CLAUDE.md` `cmd/seed` must run LAST or `method_availability` ends up empty.
+against the TS engine).
+
+**Corrected 2026-08-15 — this section had been wrong on three counts.** It was written in
+the *same commit* (`b2c7659`) that shipped the fixes it described as pending, and was never
+revisited. Verified against the live database, not against this document:
+
+- ~~"the live DB still needs a re-seed"~~ — **it does not.** All 35 `hunt_methods` rows were
+  diffed field-by-field against `seeds/hunt_methods.json`: 0 differences, 0 missing, 0
+  orphans. `method_games` and `method_availability` reflect the corrected values too.
+- ~~Finding 5 still open~~ — **done.** `masuda_method_gen4` (5 rolls, not 6) is live with 194
+  DPPt and 163 HGSS `method_availability` rows. It shipped in the same commit.
+- ~~Finding 8's remaining half still open~~ — **done.** `ShinyTrackerKit`'s
+  `OddsAnchorsTests.swift` reads `shared/odds_anchors.json` directly. All three engines are
+  now anchored to the fixture rather than to each other.
 
 **Still open:**
 
-1. Finding 5 — Masuda for DPPt / HGSS. The gap a Gen 4 breeder hits in their first session.
-   Note it is **5 rolls**, not 6; the sixth arrived in Gen 5.
-2. Finding 8, remaining half — the Swift engine must consume `shared/odds_anchors.json` rather
-   than being checked against the Go or TS implementations.
-3. Finding 7 — `run_away` product decision, no user-visible defect.
+1. Finding 7 — `run_away` product decision, no user-visible defect.
+2. **New, found 2026-08-15:** 60 `(pokemon, game)` pairs are legally available, not
+   shiny-locked, and have zero `pokemon_game_encounter` row, so no method at all. This is
+   the "BDSP Ramanas Park" gap generalised — it also covers DPPt Arceus, HGSS Azelf, ORAS
+   Jirachi, the BW/B2W2 event legendaries, SM/USUM Magearna and Marshadow, SwSh Keldeo and
+   all nine transferable Ultra Beasts, SV Meloetta, and PLA Phione. Underlying question is a
+   product one: should "available in this game" mean *huntable here* or *dex-completable
+   here via transfer*? The data currently conflates the two.
+3. **New, found 2026-08-15:** GSC and RSE/FRLG have **no egg-kind method row at all**. Masuda
+   did not exist before Gen 4 and no plain "Breeding" method was ever seeded for them, so
+   the 15 baby Pokémon (Pichu, Cleffa, Igglybuff, Tyrogue, Elekid, Magby, Azurill, Wynaut,
+   Bonsly, Mime Jr., Happiny, Munchlax, Mantyke, Budew, Chingling) have correct
+   `kind='egg'` encounter rows and no way to hunt them. Fix is one seed row —
+   `breeding_pregen4`, `static`, `base_rolls: 1`, `charm_rolls: 0`, `requires_kind: 'egg'`.
 
 Nothing here touches the hunt flow, live chain handling, or the lock table.
+
+> **A note on this section's history.** It claimed work was pending that had already
+> shipped, and a reader acting on it would have re-seeded a database that was already
+> correct. If you fix something listed here, update this section in a *later* commit than
+> the fix, or it will happen again.

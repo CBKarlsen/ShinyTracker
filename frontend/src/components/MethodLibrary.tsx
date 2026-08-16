@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_BASE } from "../config";
+import { useNotification } from "../context/NotificationContext";
 
 interface Game {
 	id: number;
@@ -29,27 +30,33 @@ function fmtTime(seconds: number) {
 }
 
 export default function MethodLibrary() {
+	const { showError } = useNotification();
 	const [games, setGames] = useState<Game[]>([]);
 	const [gameId, setGameId] = useState<number | "">("");
 	const [methods, setMethods] = useState<MethodRow[]>([]);
 	const [loading, setLoading] = useState(true);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch on every render
 	useEffect(() => {
 		fetch(`${API_BASE}/api/games`)
-			.then((r) => r.json())
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
 			.then(setGames)
-			.catch(() => {});
+			.catch(() => showError("Failed to load games."));
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: showError is a context value that changes identity every render; including it would refetch on every render
 	useEffect(() => {
 		setLoading(true);
 		const url = gameId
 			? `${API_BASE}/api/methods?game_id=${gameId}`
 			: `${API_BASE}/api/methods`;
 		fetch(url)
-			.then((r) => r.json())
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
 			.then((data: MethodRow[]) => setMethods(data ?? []))
-			.catch(() => setMethods([]))
+			.catch(() => {
+				setMethods([]);
+				showError("Failed to load hunt methods.");
+			})
 			.finally(() => setLoading(false));
 	}, [gameId]);
 
@@ -171,7 +178,8 @@ function MethodTable({ rows }: { rows: MethodRow[] }) {
 									{m.formula_type === "radar_chain_gen4" && "Gen 4 PokéRadar"}
 									{m.formula_type === "catch_combo_lgpe" && "LGPE Catch Combo"}
 									{m.formula_type === "outbreak_defeats_sv" && "SV Outbreak"}{" "}
-									{m.formula_type === "chain_fishing_gen6" && "Gen 6 Chain Fishing"}{" "}
+									{m.formula_type === "chain_fishing_gen6" &&
+										"Gen 6 Chain Fishing"}{" "}
 									scaling
 								</div>
 							)}

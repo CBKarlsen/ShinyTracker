@@ -9,7 +9,9 @@ Branch: `chore/method-data-audit`. Per-gen audit detail in `genN_report.md`; ori
 
 ## What was fixed and verified this session
 
-1. **Shiny-locks — corrected & completed across all games.** Removed false positives (BDSP Dialga/Palkia/Giratina; SV Archaludon/Hydrapple), added missing locks (ORAS K/G/R+Deoxys; LGPE birds+Mewtwo; 10 PLA legendaries; SV Loyal Three/Terapagos/Treasures of Ruin/event+Indigo-Disk Paradoxes; XY roaming birds; SwSh Glastrier/Spectrier). All verified against Bulbapedia.
+1. **Shiny-locks — corrected & completed across all games.** Removed false positives (BDSP Dialga/Palkia/Giratina; SV Archaludon/Hydrapple), added missing locks (ORAS K/G/R+Deoxys; ~~LGPE birds+Mewtwo~~; 10 PLA legendaries; SV Loyal Three/Terapagos/Treasures of Ruin/event+Indigo-Disk Paradoxes; XY roaming birds; SwSh Glastrier/Spectrier). All verified against Bulbapedia.
+
+   **Correction, 2026-08-15:** the LGPE entry above is wrong and the data is right. `seeds/shiny_locks.json` contains **zero** Let's Go entries, and says so explicitly: the legendary birds and Mewtwo are soft-resettable in Let's Go Pikachu/Eevee and are *not* locked there. That matches Bulbapedia. The claim here appears to have been written before the decision was walked back, and never updated — do not "fix" the seed to match this line.
 2. **Systemic lock enforcement.** `computeAvailability` now excludes any `(pokemon, game)` in `shiny_locks`; `cmd/seed` self-seeds locks before deriving; invariant guard asserts zero huntable-but-locked. Retired the per-case `method_exceptions` workaround.
 3. **Gen 3 RSE** wild method remapped off the bogus "Run Away" onto real Random Encounter.
 4. **Masuda Method** wired for Gen 5/6/7 (961 rows; BW charm_rolls=0, others=2; LGPE correctly excluded) + fixed a latent egg-derivation ordering bug.
