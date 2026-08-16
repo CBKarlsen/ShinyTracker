@@ -92,7 +92,11 @@ CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     generation INTEGER NOT NULL,
-    base_odds INTEGER NOT NULL DEFAULT 4096
+    base_odds INTEGER NOT NULL DEFAULT 4096,
+    -- FALSE for battle-only titles (Pokemon Champions): they carry availability
+    -- and moveset rows for the team builder, but have no overworld to hunt in.
+    -- Every hunt-facing query filters on this instead of hardcoding an id.
+    supports_hunting BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- user_games: user_id is a plain UUID (Supabase Auth sub); no FK to a local

@@ -401,8 +401,11 @@ func deriveEggEncounters(ctx context.Context) {
 		-- breedable — the base form's own can_breed is often false for babies.
 		JOIN pokemon m ON m.id = f.member_id AND m.can_breed = true
 		JOIN pokemon_availability pa ON pa.pokemon_id = f.member_id
-		-- Restrict to games where breeding is possible (excludes LGPE and PLA).
-		JOIN games g ON g.id = pa.game_id AND g.supports_breeding = true
+		-- Restrict to games where breeding is possible (excludes LGPE and PLA),
+		-- and to games you can hunt in at all — a battle-only title's availability
+		-- rows exist for the team builder, so fanning egg encounters onto them
+		-- would invent a hunt route in a game with no overworld.
+		JOIN games g ON g.id = pa.game_id AND g.supports_breeding = true AND g.supports_hunting
 		ON CONFLICT DO NOTHING
 	`)
 	if err != nil {

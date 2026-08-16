@@ -77,15 +77,24 @@ func ToggleUserGameHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = database.DB.Exec(context.Background(),
-		`INSERT INTO user_games (user_id, game_id, has_shiny_charm) 
-		 VALUES ($1, $2, $3) 
-		 ON CONFLICT (user_id, game_id) 
+	// SELECT ... FROM games rather than VALUES: /api/games no longer offers
+	// battle-only titles, but the route is still reachable by id, and a library
+	// entry for a game with zero hunt methods would render as a 208-species dex
+	// advertised at 1/4096. Inserts nothing (and 400s below) for a game that is
+	// unhuntable or does not exist.
+	tag, err := database.DB.Exec(context.Background(),
+		`INSERT INTO user_games (user_id, game_id, has_shiny_charm)
+		 SELECT $1, $2, $3 FROM games WHERE id = $2 AND supports_hunting
+		 ON CONFLICT (user_id, game_id)
 		 DO UPDATE SET has_shiny_charm = EXCLUDED.has_shiny_charm`,
 		userID, gameID, req.HasShinyCharm)
 
 	if err != nil {
 		http.Error(w, "Failed to update user game", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "Game cannot be added to your library", http.StatusBadRequest)
 		return
 	}
 
@@ -197,8 +206,12 @@ func SyncHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{"message": "Sync started in background"})
 }
 
+// GetGamesHandler lists the games you can hunt in — this feeds the library
+// picker, the Dex game filter and the new-hunt sheet, so a battle-only title
+// (supports_hunting = false) must not reach it. The team builder reaches
+// Champions by its id through the catalogue routes instead.
 func GetGamesHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := database.DB.Query(context.Background(), "SELECT id, title, generation, base_odds FROM games ORDER BY id ASC")
+	rows, err := database.DB.Query(context.Background(), "SELECT id, title, generation, base_odds FROM games WHERE supports_hunting ORDER BY id ASC")
 	if err != nil {
 		http.Error(w, "Failed to fetch games", http.StatusInternalServerError)
 		return

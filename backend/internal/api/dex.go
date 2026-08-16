@@ -29,9 +29,14 @@ func DexStatusHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	// Available somewhere, but zero owned-game availability.
+	//
+	// Both aggregates join games to drop battle-only titles: Champions carries a
+	// pokemon_availability row for each of its 208 species, and counting those as
+	// places you could obtain a shiny makes both denominators lie.
 	notInGames, err := queryIntColumn(ctx, `
 		SELECT pa.pokemon_id
 		FROM pokemon_availability pa
+		JOIN games g ON g.id = pa.game_id AND g.supports_hunting
 		GROUP BY pa.pokemon_id
 		HAVING COUNT(*) FILTER (
 			WHERE pa.game_id IN (SELECT game_id FROM user_games WHERE user_id = $1)
@@ -42,10 +47,13 @@ func DexStatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Available in >=1 game and locked in all of them (global).
+	// Available in >=1 game and locked in all of them (global). Without the
+	// supports_hunting join, Champions' unlocked availability row would break the
+	// "locked in every game" equality for Koraidon and Miraidon.
 	lockedEverywhere, err := queryIntColumn(ctx, `
 		SELECT pa.pokemon_id
 		FROM pokemon_availability pa
+		JOIN games g ON g.id = pa.game_id AND g.supports_hunting
 		LEFT JOIN shiny_locks sl
 		  ON sl.pokemon_id = pa.pokemon_id AND sl.game_id = pa.game_id
 		GROUP BY pa.pokemon_id
@@ -168,8 +176,13 @@ func PokemonRouteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ctx := context.Background()
 
-	availGames, err := queryIntColumn(ctx,
-		`SELECT game_id FROM pokemon_availability WHERE pokemon_id = $1`, pokemonID)
+	// Same reason as DexStatusHandler: an availability row in a battle-only game
+	// has no lock row, and IsLockedEverywhere would read that as "obtainable
+	// unlocked somewhere" for a species that is locked in every real game.
+	availGames, err := queryIntColumn(ctx, `
+		SELECT pa.game_id FROM pokemon_availability pa
+		JOIN games g ON g.id = pa.game_id AND g.supports_hunting
+		WHERE pa.pokemon_id = $1`, pokemonID)
 	if err != nil {
 		http.Error(w, "Failed to load availability", http.StatusInternalServerError)
 		return
