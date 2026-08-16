@@ -111,6 +111,24 @@ private func reimport(_ text: String, slot: Int = 1) throws -> TeamMember {
     #expect(imported.abilitySlug == "rough-skin")
 }
 
+/// `ability_slug` and every move slug are capped at 50 runes by `validateMembers`, and both are
+/// free text straight off the paste when the learnset does not recognise them. Unbounded, they
+/// are the one untrusted value left that would 400 the save.
+@Test func junkAbilityAndMoveSlugsAreCappedAtFifty() throws {
+    let junk = String(repeating: "wobbuffet ", count: 12)
+    let imported = try reimport(
+        """
+        Garchomp
+        Ability: \(junk)
+        - \(junk)
+        """)
+
+    #expect(imported.abilitySlug.unicodeScalars.count <= 50)
+    #expect(imported.moves[0].unicodeScalars.count <= 50)
+    // Truncation never leaves the trailing separator no real slug has.
+    #expect(!imported.abilitySlug.hasSuffix("-"))
+}
+
 /// A nickname that would re-parse as a species or a held item is dropped, not exported.
 @Test func hostileNicknameIsNotExported() throws {
     let hostile = TeamMember(

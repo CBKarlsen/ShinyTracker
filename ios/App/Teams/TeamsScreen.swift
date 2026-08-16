@@ -67,7 +67,14 @@ struct TeamsScreen: View {
                 }
             }
         }
-        .task { await model.appear() }
+        .task {
+            // The note belongs to the screen it was raised on and no longer than that. Left
+            // standing it would outrank — and so hide — every sync failure that followed it,
+            // which is the same "one stale warning silences the next real one" failure
+            // `dismissedError` is keyed by message to avoid.
+            importNote = nil
+            await model.appear()
+        }
     }
 
     private var subtitle: String {
@@ -179,7 +186,12 @@ struct TeamsScreen: View {
             .padding(.horizontal, Metrics.screenPadding)
         }
         .scrollIndicators(.hidden)
-        .refreshable { await model.refresh() }
+        // Same reason as the `.task` above: a refresh is the next event, and whatever it has to
+        // say outranks what the last import had to say.
+        .refreshable {
+            importNote = nil
+            await model.refresh()
+        }
     }
 
     private func row(_ team: Team) -> some View {

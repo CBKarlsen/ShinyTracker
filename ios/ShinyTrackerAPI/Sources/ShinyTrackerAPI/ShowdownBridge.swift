@@ -132,9 +132,20 @@ public enum ShowdownBridge {
     }
 
     /// `Swords Dance` → `swords-dance`, the shape every real slug already has.
+    ///
+    /// Truncated to 50 unicode scalars, because that is the cap `validateMembers` in
+    /// `backend/internal/api/teams.go` applies to `ability_slug` and to every move slug, and
+    /// this is the one value on the import path that comes from the paste as free text. Real
+    /// slugs run well under it; junk in an `Ability:` line does not, and an unbounded one would
+    /// 400 the whole save — the failure every other clamp here exists to prevent. `item_slug`
+    /// has no server-side length check, so it is left alone.
     private static func slugify(_ name: String) -> String {
         let cleaned = name.lowercased().map { $0.isLetter || $0.isNumber ? $0 : "-" }
-        return String(cleaned).split(separator: "-").joined(separator: "-")
+        let slug = String(cleaned).split(separator: "-").joined(separator: "-")
+        // Trimmed after truncating, so a cut landing on a separator does not leave a trailing
+        // hyphen that no real slug has.
+        return String(String.UnicodeScalarView(slug.unicodeScalars.prefix(50)))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
     /// 252 per stat, 508 in total — spent in `Stat.allCases` order, so an over-budget paste
