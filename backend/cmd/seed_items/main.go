@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/casper/shinytracker/internal/database"
@@ -62,6 +63,7 @@ func main() {
 
 	seen := map[string]bool{}
 	total := 0
+	attempted := 0
 
 	for _, category := range heldItemCategories {
 		url := fmt.Sprintf("https://pokeapi.co/api/v2/item-category/%s", category)
@@ -76,23 +78,29 @@ func main() {
 				continue
 			}
 			seen[ref.Name] = true
+			attempted++
 
 			var item itemResponse
 			if err := getJSON(ref.URL, &item); err != nil {
 				log.Printf("item %s: %v", ref.Name, err)
-				continue
-			}
-
-			if err := upsert(item); err != nil {
+			} else if err := upsert(item); err != nil {
 				log.Printf("upsert %s: %v", ref.Name, err)
-				continue
+			} else {
+				total++
 			}
-			total++
+			// ponytail: sleep on every item iteration, not just successful paths,
+			// so rate-limit errors self-heal rather than cascade
 			time.Sleep(100 * time.Millisecond) // same courtesy delay as cmd/seed
 		}
 	}
 
-	log.Printf("seeded %d items", total)
+	failed := attempted - total
+	log.Printf("seeded %d items (%d attempted, %d failed)", total, attempted, failed)
+	if total == 0 {
+		// ponytail: exit non-zero if seeding was wholly unsuccessful;
+		// upgrade to failure-rate-based thresholds if partial seeds become acceptable
+		os.Exit(1)
+	}
 }
 
 func getJSON(url string, into any) error {
