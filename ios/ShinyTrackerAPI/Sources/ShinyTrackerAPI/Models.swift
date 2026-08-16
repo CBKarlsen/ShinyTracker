@@ -163,7 +163,7 @@ public struct PokemonMove: Codable, Sendable, Equatable, Identifiable {
     public let accuracy: Int?
     public let pp: Int
     public let effect: String
-    /// `level-up` | `tm` | `egg` | `tutor`.
+    /// `level-up` | `tm` | `egg` | `tutor` | `train`.
     public let method: String
     public let level: Int?
 
@@ -987,9 +987,9 @@ public struct Team: Codable, Sendable, Equatable, Identifiable {
 
 /// One slot of a team — `api.TeamMemberPayload`.
 ///
-/// `evs` and `ivs` are `[String: Int]` rather than a typed spread because they cross the
-/// wire as JSONB and the keys are the closed set `hp/atk/def/spa/spd/spe`. Callers convert
-/// to `ShinyTrackerKit.StatSpread` at the edge.
+/// Champions replaces EVs and IVs with one Stat Point pool (66 total, 32 per stat) and has
+/// no IVs. It also has no Terastallization — its gimmick is Mega Evolution, and a Mega Stone
+/// is a held item, so `itemSlug` already carries it.
 public struct TeamMember: Codable, Sendable, Equatable, Identifiable {
     public let slot: Int
     public let pokemonID: Int
@@ -997,18 +997,19 @@ public struct TeamMember: Codable, Sendable, Equatable, Identifiable {
     public let nature: String
     public let abilitySlug: String
     public let itemSlug: String?
-    public let teraType: String?
     public let level: Int
-    public let evs: [String: Int]
-    public let ivs: [String: Int]
+    /// Champions' unified allocation: 66 points, 32 per stat. Crosses the wire
+    /// as `[String: Int]` keyed by `Stat.rawValue`, the same closed set the
+    /// JSONB column holds. There is no IV spread — Champions has no IVs.
+    public let statPoints: [String: Int]
     public let moves: [String]
 
     public var id: Int { slot }
 
     public init(
         slot: Int, pokemonID: Int, nickname: String? = nil, nature: String,
-        abilitySlug: String, itemSlug: String? = nil, teraType: String? = nil,
-        level: Int, evs: [String: Int], ivs: [String: Int], moves: [String]
+        abilitySlug: String, itemSlug: String? = nil,
+        level: Int, statPoints: [String: Int], moves: [String]
     ) {
         self.slot = slot
         self.pokemonID = pokemonID
@@ -1016,19 +1017,17 @@ public struct TeamMember: Codable, Sendable, Equatable, Identifiable {
         self.nature = nature
         self.abilitySlug = abilitySlug
         self.itemSlug = itemSlug
-        self.teraType = teraType
         self.level = level
-        self.evs = evs
-        self.ivs = ivs
+        self.statPoints = statPoints
         self.moves = moves
     }
 
     enum CodingKeys: String, CodingKey {
-        case slot, nickname, nature, level, evs, ivs, moves
+        case slot, nickname, nature, level, moves
         case pokemonID = "pokemon_id"
         case abilitySlug = "ability_slug"
         case itemSlug = "item_slug"
-        case teraType = "tera_type"
+        case statPoints = "stat_points"
     }
 }
 

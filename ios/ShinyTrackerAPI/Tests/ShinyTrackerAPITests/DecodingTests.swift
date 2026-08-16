@@ -702,21 +702,19 @@ private let runDetailJSON = """
 
 @Test func decodesATeamWithMembers() throws {
     let json = """
-        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Reg H core","game_id":17,
+        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Reg M-A core","game_id":18,
          "members":[
            {"slot":1,"pokemon_id":445,"nickname":null,"nature":"jolly",
-            "ability_slug":"rough-skin","item_slug":"rocky-helmet","tera_type":"Steel",
-            "level":50,"evs":{"atk":252,"spe":252,"spd":4},
-            "ivs":{"spa":0},"moves":["earthquake","dragon-claw"]}]}
+            "ability_slug":"rough-skin","item_slug":"garchompite",
+            "level":50,"stat_points":{"atk":32,"spe":32,"spd":2},
+            "moves":["earthquake","dragon-claw"]}]}
         """
     let team = try JSONDecoder().decode(Team.self, from: Data(json.utf8))
-    #expect(team.name == "Reg H core")
-    #expect(team.gameID == 17)
-    #expect(team.members.count == 1)
-    #expect(team.members[0].pokemonID == 445)
-    #expect(team.members[0].evs["atk"] == 252)
-    #expect(team.members[0].ivs["spa"] == 0)
-    #expect(team.members[0].moves == ["earthquake", "dragon-claw"])
+    #expect(team.gameID == 18)
+    #expect(team.members[0].statPoints["atk"] == 32)
+    #expect(team.members[0].statPoints.values.reduce(0, +) == 66)
+    // A Mega Stone is just a held item — there is no separate field for it.
+    #expect(team.members[0].itemSlug == "garchompite")
 }
 
 /// A team with no members must decode as an empty array, not fail. Go sends `[]` here
