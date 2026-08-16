@@ -1,6 +1,5 @@
 import Foundation
 import ShinyTrackerAPI
-import SwiftUI
 
 /// Saved Scarlet/Violet teams.
 ///
@@ -55,8 +54,14 @@ final class TeamsModel {
         }
     }
 
-    /// Creates a new team, or replaces an existing one's members wholesale.
-    func save(id: UUID?, name: String, members: [TeamMember]) async {
+    /// Creates a new team, or updates an existing one.
+    ///
+    /// `members: nil` on an update omits the key entirely, which the server reads as "leave the
+    /// existing members untouched" — so a rename-only caller must pass `nil`, not `[]`; an empty
+    /// array is an explicit "replace with no members" and would wipe the roster. `CreateTeamRequest`
+    /// has no such ambiguity: a new team has no existing members to preserve, so its `members` stays
+    /// non-optional.
+    func save(id: UUID?, name: String, members: [TeamMember]?) async {
         syncError = nil
         do {
             let saved: Team
@@ -68,7 +73,7 @@ final class TeamsModel {
                     teams.insert(saved, at: 0)
                 }
             } else {
-                saved = try await client.createTeam(CreateTeamRequest(name: name, members: members))
+                saved = try await client.createTeam(CreateTeamRequest(name: name, members: members ?? []))
                 teams.insert(saved, at: 0)
             }
             await store.save(teams, as: .teams)
