@@ -721,7 +721,7 @@ private let runDetailJSON = """
 /// because the handler initialises the slice, but a null must not be fatal either.
 @Test func decodesATeamWithNoMembers() throws {
     let json = """
-        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Empty","game_id":17,"members":[]}
+        {"id":"aaaaaaaa-0000-4000-8000-00000000aaaa","name":"Empty","game_id":18,"members":[]}
         """
     let team = try JSONDecoder().decode(Team.self, from: Data(json.utf8))
     #expect(team.members.isEmpty)

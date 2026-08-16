@@ -8,6 +8,10 @@
 -- is irrelevant here — Champions has no wild encounters and no shiny hunting —
 -- but the column is NOT NULL, so a value must be supplied. 4096 is a neutral
 -- placeholder that happens to match the table's DEFAULT.
+-- Assumes production's games id sequence: id 18 is free there. This is NOT
+-- replay-safe against a from-scratch rebuild — SeedGames creates only 16 games,
+-- so a rebuilt database gives id 18 to some other title and the DO UPDATE would
+-- rename it to Champions instead of failing.
 INSERT INTO games (id, title, generation, base_odds)
 VALUES (18, 'Pokemon Champions', 9, 4096)
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title;

@@ -47,9 +47,10 @@ import Testing
     #expect(value == 1)
 }
 
-/// The EV caps are enforced by `evSpreadValid` (Go), `MemberSheet.cappedEV` and
-/// `ShowdownBridge.cappedEVs` — there is no model-level `validate()` to test here.
-/// This only pins the total the caps are measured against.
+/// `StatSpread` is the mainline paste type — Champions teams hold `StatPoints` instead — so
+/// nothing in this app validates an EV spread any more. What still matters is that a legal
+/// mainline spread adds up to 508, because that is the number `StatPoints.fromEVs` converts
+/// against when a paste comes in.
 @Test func aLegalSpreadTotals508() {
     #expect(StatSpread(atk: 252, spd: 4, spe: 252).total == 508)
 }
