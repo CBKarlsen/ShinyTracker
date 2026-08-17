@@ -8,13 +8,14 @@ import SwiftUI
 /// Every value this sheet can produce is one the server accepts. That is deliberate at three
 /// specific points, because each has already been a real bug:
 /// - **Nature** goes over the wire as `Nature.rawValue` — lowercase. `displayName` is for reading.
-/// - **Tera type** is Title-case and there are **19** of them: the 18 elemental types plus
-///   `Stellar`, which is legal in Scarlet/Violet since The Indigo Disk.
-/// - **EVs** cannot be pushed past 252 in one stat or 508 in total — see ``cappedEV(_:for:)``.
-///   There are exactly three guards on that rule and they all agree on 252/508: `evSpreadValid`
-///   in `backend/internal/api/teams.go`, `ShowdownBridge.cappedEVs` on the paste-import path,
-///   and this one. This is the only one that acts before the user commits, so it exists so the
-///   user is never allowed to build a set the handler would reject.
+/// - **Level** is not editable. Champions auto-levels every Pokémon to 50 in battle, so a stepper
+///   would edit a number the game overrides; the row states it and `save()` sends 50.
+/// - **Stat points** cannot be pushed past 32 in one stat or 66 in total — the slider is bound
+///   through ``StatPoints/capped(_:for:)``. There are exactly three guards on that rule and they
+///   all agree on 32/66: `statPointsValid` in `backend/internal/api/teams.go`,
+///   `ShowdownBridge.cappedTotal` on the paste-import path, and this one. This is the only one
+///   that acts before the user commits, so it exists so the user is never allowed to build a set
+///   the handler would reject.
 struct MemberSheet: View {
     let client: APIClient
     /// The whole species list, fetched once by the editor — the search below is a local filter.
@@ -36,12 +37,10 @@ struct MemberSheet: View {
 
     @State private var nature: Nature
     @State private var ability: String
+    /// Also where a Mega Stone is chosen — in Champions the gimmick is a held item, so there is
+    /// no separate control for it.
     @State private var itemSlug: String?
-    /// "" is "no Tera type" — the payload sends nil for it, because `""` is not one of the 19.
-    @State private var tera: String
-    @State private var level: Int
-    @State private var evs: StatSpread
-    @State private var ivs: StatSpread
+    @State private var statPoints: StatPoints
     /// Exactly four, so "at most four moves" cannot be violated in the first place.
     @State private var moveSlots: [String?]
 
@@ -76,11 +75,7 @@ struct MemberSheet: View {
         _nature = State(initialValue: existing.flatMap { Nature(rawValue: $0.nature) } ?? .hardy)
         _ability = State(initialValue: existing?.abilitySlug ?? "")
         _itemSlug = State(initialValue: existing?.itemSlug)
-        _tera = State(initialValue: existing?.teraType ?? "")
-        _level = State(initialValue: existing?.level ?? 50)
-        // Omitted IVs are 31, not 0 — the one default that silently corrupts a set if flipped.
-        _evs = State(initialValue: Self.spread(existing?.evs, fallback: 0))
-        _ivs = State(initialValue: Self.spread(existing?.ivs, fallback: 31))
+        _statPoints = State(initialValue: Self.points(existing?.statPoints))
         let known = existing?.moves ?? []
         _moveSlots = State(initialValue: (0..<4).map { $0 < known.count ? known[$0] : nil })
     }
@@ -201,8 +196,11 @@ struct MemberSheet: View {
         guard let pokemonID, detail?.id != pokemonID else { return }
         failure = nil
         do {
-            // `game_id` is what makes `moves` the Scarlet/Violet learnset rather than null.
-            let loaded = try await client.pokemonDetail(id: pokemonID, gameID: scarletVioletGameID)
+            // Passing a `game_id` at all is what makes `moves` come back rather than null, and
+            // passing *this* one is what makes them Champions' moveset rather than another
+            // game's — the picker cannot tell the difference, so this argument is the only thing
+            // standing between the user and a set built from moves Champions does not have.
+            let loaded = try await client.pokemonDetail(id: pokemonID, gameID: championsGameID)
             detail = loaded
             if ability.isEmpty { ability = loaded.abilities?.first?.slug ?? "" }
         } catch {
@@ -224,9 +222,7 @@ struct MemberSheet: View {
                 }
                 build
                 moves
-                evBlock
-                ivBlock
-                computed
+                statPointBlock
 
                 if existing != nil {
                     Button("Clear this slot", role: .destructive) {
@@ -284,7 +280,7 @@ struct MemberSheet: View {
             )
     }
 
-    /// Nature, ability, item, Tera and level. Each `Menu` wraps a `Picker`, which is what puts the
+    /// Nature, ability, item and level. Each `Menu` wraps a `Picker`, which is what puts the
     /// checkmark beside the current choice — selection is never signalled by colour alone.
     private var build: some View {
         TeamBlock("Build") {
@@ -317,6 +313,8 @@ struct MemberSheet: View {
 
                 separator
 
+                // Mega Stones live here too — Mega Evolution is Champions' gimmick and the stone
+                // is an ordinary held item, so this picker is the whole of it.
                 Button { picking = .item } label: {
                     fieldRow("Held item", itemLabel, chevron: "chevron.right")
                 }
@@ -324,34 +322,19 @@ struct MemberSheet: View {
 
                 separator
 
-                Menu {
-                    Picker("Tera type", selection: $tera) {
-                        Text("None").tag("")
-                        ForEach(Self.teraTypes, id: \.self) { type in
-                            Text(type).tag(type)
-                        }
-                    }
-                } label: {
-                    fieldRow("Tera type", tera.isEmpty ? "None" : tera)
-                }
-                .accessibilityLabel("Tera type, \(tera.isEmpty ? "none" : tera)")
-
-                separator
-
-                Stepper(value: $level, in: 1...100) {
-                    HStack {
-                        Text("Level")
-                            .font(Typography.rowLabel)
-                            .foregroundStyle(Palette.textMuted)
-                        Spacer(minLength: 10)
-                        Text("\(level)")
-                            .font(Typography.rowValue)
-                            .foregroundStyle(Palette.textPrimary)
-                    }
+                // Stated, not editable: Champions auto-levels to 50 in battle, so a stepper here
+                // would let the user set a number the game immediately overrides.
+                HStack(spacing: 10) {
+                    Text("Level")
+                        .font(Typography.rowLabel)
+                        .foregroundStyle(Palette.textMuted)
+                    Spacer(minLength: 10)
+                    Text("50 · set by the game")
+                        .font(Typography.rowValue)
+                        .foregroundStyle(Palette.textPrimary)
                 }
                 .frame(minHeight: Metrics.controlNarrow)
-                .accessibilityLabel("Level")
-                .accessibilityValue("\(level)")
+                .accessibilityElement(children: .combine)
             }
         }
     }
@@ -375,14 +358,10 @@ struct MemberSheet: View {
         return items.first { $0.slug == itemSlug }?.name ?? prettifySlug(itemSlug)
     }
 
-    /// 19: the 18 elemental types plus Stellar. `PokemonType.displayName` is already Title-case,
-    /// which is the casing `validTeraTypes` in `teams.go` accepts.
-    static let teraTypes: [String] = PokemonType.allCases.map(\.displayName) + ["Stellar"]
-
     // MARK: Moves
 
     private var moves: some View {
-        TeamBlock("Moves · Scarlet/Violet learnset") {
+        TeamBlock("Moves · Champions moveset") {
             VStack(spacing: 0) {
                 ForEach(0..<4, id: \.self) { index in
                     if index > 0 { separator }
@@ -404,8 +383,9 @@ struct MemberSheet: View {
         learnset.first { $0.slug == slug }?.name ?? prettifySlug(slug)
     }
 
-    /// The species' real moveset for this game. The same move arrives once per learn method, so it
-    /// is deduplicated by slug — a picker does not care whether it came off a TM or a level-up.
+    /// The species' real moveset for this game. The same move can arrive once per learn method, so
+    /// it is deduplicated by slug — nothing here reads `method`, and in Champions there is nothing
+    /// to read: every move is `train`, because the game has no levelling and no TMs.
     private var learnset: [PokemonMove] {
         var seen = Set<String>()
         return (detail?.moves ?? [])
@@ -413,14 +393,14 @@ struct MemberSheet: View {
             .sorted { $0.name < $1.name }
     }
 
-    // MARK: EVs
+    // MARK: Stat points
 
     /// The remaining budget is the headline, because "how many do I have left" is the only
-    /// question anyone asks while spreading EVs.
-    private var evBlock: some View {
+    /// question anyone asks while spending the pool.
+    private var statPointBlock: some View {
         // `max(0, …)` because a row written before the server validated spreads can still load at
-        // over 508, and "−30 of 508 left" reads as a bug rather than as an over-budget set.
-        TeamBlock("EVs · \(max(0, 508 - evs.total)) of 508 left") {
+        // over 66, and "−4 of 66 left" reads as a bug rather than as an over-budget set.
+        TeamBlock("Stat points · \(max(0, StatPoints.maxTotal - statPoints.total)) of \(StatPoints.maxTotal) left") {
             VStack(spacing: 10) {
                 ForEach(Stat.allCases, id: \.self) { stat in
                     HStack(spacing: 10) {
@@ -431,19 +411,23 @@ struct MemberSheet: View {
                         // The label and the value both go on the `Slider`, and the row is
                         // deliberately *not* `.accessibilityElement(children: .combine)`:
                         // combining flattens the row into one static element and takes the
-                        // slider's adjustable action with it, which would leave EVs unsettable
-                        // under VoiceOver on the one screen whose whole point is setting them.
+                        // slider's adjustable action with it, which would leave stat points
+                        // unsettable under VoiceOver on the one screen whose whole point is
+                        // setting them.
                         //
                         // The explicit value is not redundant either. Left to itself a `Slider`
                         // announces its position as a percentage of its range — "78%" — and the
-                        // number of points in a stat is the only figure anyone spreading 508 of
+                        // number of points in a stat is the only figure anyone spending 66 of
                         // them can use.
-                        Slider(value: evBinding(stat), in: 0...252, step: 4) {
-                            Text("\(stat.showdownLabel) EVs")
+                        //
+                        // `step: 1`, not the 4 the EV slider used: one stat point is the
+                        // meaningful unit in Champions, and 66 of them do not divide into steps.
+                        Slider(value: pointBinding(stat), in: 0...Double(StatPoints.maxPerStat), step: 1) {
+                            Text("\(stat.showdownLabel) stat points")
                         }
                         .tint(Palette.team)
-                        .accessibilityValue("\(evs[stat])")
-                        Text("\(evs[stat])")
+                        .accessibilityValue("\(statPoints[stat])")
+                        Text("\(statPoints[stat])")
                             .font(Typography.statStrong)
                             .monospacedDigit()
                             .foregroundStyle(Palette.textPrimary)
@@ -456,105 +440,14 @@ struct MemberSheet: View {
         }
     }
 
-    private func evBinding(_ stat: Stat) -> Binding<Double> {
+    /// The UI half of the 32/66 rule. The slider is bound through ``StatPoints/capped(_:for:)``,
+    /// so dragging past either cap simply stops — there is no state in which the user has built
+    /// something the handler will answer with a 400.
+    private func pointBinding(_ stat: Stat) -> Binding<Double> {
         Binding(
-            get: { Double(evs[stat]) },
-            set: { evs[stat] = cappedEV(Int($0.rounded()), for: stat) }
+            get: { Double(statPoints[stat]) },
+            set: { statPoints[stat] = statPoints.capped(Int($0.rounded()), for: stat) }
         )
-    }
-
-    /// The UI half of the 252/508 rule. The slider is bound through this, so dragging past either
-    /// cap simply stops — there is no state in which the user has built something the handler will
-    /// answer with a 400.
-    private func cappedEV(_ value: Int, for stat: Stat) -> Int {
-        let spentElsewhere = evs.total - evs[stat]
-        return max(0, min(value, 252, 508 - spentElsewhere))
-    }
-
-    // MARK: IVs
-
-    private var ivBlock: some View {
-        TeamBlock("IVs") {
-            VStack(spacing: 4) {
-                ForEach(Stat.allCases, id: \.self) { stat in
-                    Stepper(value: ivBinding(stat), in: 0...31) {
-                        HStack {
-                            Text(stat.showdownLabel)
-                                .font(Typography.rowLabel)
-                                .foregroundStyle(Palette.textMuted)
-                            Spacer(minLength: 10)
-                            Text("\(ivs[stat])")
-                                .font(Typography.rowValue)
-                                .foregroundStyle(Palette.textPrimary)
-                        }
-                    }
-                    .frame(minHeight: Metrics.controlNarrow)
-                    .accessibilityLabel("\(stat.showdownLabel) IVs")
-                    .accessibilityValue("\(ivs[stat])")
-                }
-            }
-        }
-    }
-
-    private func ivBinding(_ stat: Stat) -> Binding<Int> {
-        Binding(get: { ivs[stat] }, set: { ivs[stat] = max(0, min(31, $0)) })
-    }
-
-    // MARK: Computed stats
-
-    /// What the spread actually buys, from ``StatCalculator`` — the Gen 3+ formula, on device.
-    @ViewBuilder
-    private var computed: some View {
-        if let base = detail?.stats {
-            TeamBlock("Stats at level \(level)") {
-                FlowRow(spacing: 8) {
-                    ForEach(Stat.allCases, id: \.self) { stat in
-                        let value = StatCalculator.value(
-                            base: baseValue(stat, base),
-                            iv: ivs[stat],
-                            ev: evs[stat],
-                            level: level,
-                            nature: nature,
-                            stat: stat,
-                            speciesID: pokemonID
-                        )
-                        HStack(spacing: 5) {
-                            Text(stat.showdownLabel)
-                                .font(Typography.overline)
-                                .foregroundStyle(Palette.textMuted)
-                            Text("\(value)")
-                                .font(Typography.statStrong)
-                                .monospacedDigit()
-                                .foregroundStyle(natureTint(stat))
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Palette.surface, in: .rect(cornerRadius: Radii.tag))
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-            }
-        }
-    }
-
-    /// Green for the nature's boosted stat, red for the hindered one — the same two colours the
-    /// base-stat bars already use, so the pair reads as "better/worse" and not as decoration.
-    /// Never colour alone: the nature row above names both stats in text.
-    private func natureTint(_ stat: Stat) -> Color {
-        if stat == nature.raised { return Palette.team }
-        if stat == nature.lowered { return Palette.statLow }
-        return Palette.textPrimary
-    }
-
-    private func baseValue(_ stat: Stat, _ stats: PokemonStats) -> Int {
-        switch stat {
-        case .hp: stats.hp
-        case .atk: stats.attack
-        case .def: stats.defense
-        case .spa: stats.specialAttack
-        case .spd: stats.specialDefense
-        case .spe: stats.speed
-        }
     }
 
     // MARK: Pushed pickers
@@ -613,10 +506,9 @@ struct MemberSheet: View {
                 nature: nature.rawValue,
                 abilitySlug: ability,
                 itemSlug: itemSlug,
-                teraType: tera.isEmpty ? nil : tera,
-                level: level,
-                evs: dictionary(evs),
-                ivs: dictionary(ivs),
+                // Champions auto-levels to 50; there is nothing else this could legally be.
+                level: 50,
+                statPoints: dictionary(statPoints),
                 moves: moveSlots.compactMap { $0 }
             )
         )
@@ -624,15 +516,16 @@ struct MemberSheet: View {
     }
 
     /// `hp/atk/def/spa/spd/spe` — `Stat.rawValue` is already the JSONB key the column holds.
-    private func dictionary(_ spread: StatSpread) -> [String: Int] {
-        Dictionary(uniqueKeysWithValues: Stat.allCases.map { ($0.rawValue, spread[$0]) })
+    private func dictionary(_ points: StatPoints) -> [String: Int] {
+        Dictionary(uniqueKeysWithValues: Stat.allCases.map { ($0.rawValue, points[$0]) })
     }
 
-    private static func spread(_ values: [String: Int]?, fallback: Int) -> StatSpread {
-        guard let values else { return fallback == 31 ? .maxIVs : .zero }
-        var spread = StatSpread()
-        for stat in Stat.allCases { spread[stat] = values[stat.rawValue] ?? fallback }
-        return spread
+    /// Missing stats are 0 — an unspent pool, which is the only reading a Champions set has.
+    private static func points(_ values: [String: Int]?) -> StatPoints {
+        guard let values else { return .zero }
+        var points = StatPoints.zero
+        for stat in Stat.allCases { points[stat] = values[stat.rawValue] ?? 0 }
+        return points
     }
 
     // MARK: Row shell

@@ -103,6 +103,7 @@ func TestNormalizeLearnMethod(t *testing.T) {
 		{"machine", "tm", true}, // PokeAPI's TM/TR/HM bucket maps to our "tm"
 		{"egg", "egg", true},
 		{"tutor", "tutor", true},
+		{"train", "train", true}, // Champions' only learn method -- no levelling, no TMs
 		{"form-change", "", false},
 		{"stadium-surfing-pikachu", "", false},
 	}

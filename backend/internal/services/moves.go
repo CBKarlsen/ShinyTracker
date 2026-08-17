@@ -205,19 +205,24 @@ func parseAbilitySlots(abilities []pokeAPIAbilitySlot) []AbilitySlotRef {
 }
 
 // movesetVersionGroups maps a PokeAPI version_group slug we seed to the
-// games.title row it belongs to. Only Platinum and Scarlet/Violet are seeded
-// so far, per spec -- adding another game later is additive: add an entry
-// here and re-run cmd/seed_moves, no schema change required.
+// games.title row it belongs to. Platinum, Scarlet/Violet, and Champions are
+// seeded so far, per spec -- adding another game later is additive: add an
+// entry here and re-run cmd/seed_moves, no schema change required.
 var movesetVersionGroups = map[string]string{
 	"platinum":       "Diamond/Pearl/Platinum",
 	"scarlet-violet": "Scarlet/Violet",
+	"champions":      "Pokemon Champions",
 }
 
 // normalizeLearnMethod maps PokeAPI's move-learn-method vocabulary onto ours
-// (level-up/tm/egg/tutor). PokeAPI's "machine" bucket covers both TMs and
-// TRs/HMs, which we call "tm". Anything else (Stadium-era curiosities,
-// Colosseum/XD purification, form-change, zygarde-cube, ...) is not one of
-// our four categories and is reported not-ok so the caller skips it.
+// (level-up/tm/egg/tutor/train). PokeAPI's "machine" bucket covers both TMs
+// and TRs/HMs, which we call "tm". "train" is Champions-only: that game is
+// battle-only (no overworld, no levelling, no TMs), so every move a
+// Champions Pokemon has is acquired by training rather than any of the other
+// four methods -- see migrations/026_train_learn_method.sql. Anything else
+// (Stadium-era curiosities, Colosseum/XD purification, form-change,
+// zygarde-cube, ...) is not one of our five categories and is reported
+// not-ok so the caller skips it.
 func normalizeLearnMethod(pokeAPIMethod string) (string, bool) {
 	switch pokeAPIMethod {
 	case "level-up":
@@ -228,6 +233,8 @@ func normalizeLearnMethod(pokeAPIMethod string) (string, bool) {
 		return "egg", true
 	case "tutor":
 		return "tutor", true
+	case "train":
+		return "train", true
 	default:
 		return "", false
 	}
@@ -437,22 +444,62 @@ func seedOneAbility(ctx context.Context, name string) (int, error) {
 }
 
 // SeedSpeciesStatsAndMoves populates pokemon.{hp,attack,...}, pokemon_abilities,
-// and pokemon_moves (Platinum + Scarlet/Violet only) for every Pokemon that
-// does not yet have stats recorded.
+// and pokemon_moves (per movesetVersionGroups: Platinum, Scarlet/Violet,
+// Champions) for every Pokemon that does not yet have stats recorded, or that
+// is available in a target game but is still missing that game's moveset.
 //
-// Resumability: pokemon.hp IS NULL is the on-disk checkpoint. A species is
-// only picked up here if hp is still unset, and hp is the LAST column written
-// inside that species' transaction (see seedOneSpeciesMoveset) -- so a
-// species is either fully written (stats + abilities + both games' movesets)
-// or, if anything failed partway, left exactly as it was and picked up again
-// on the next run. There is no separate checkpoint file to go stale.
+// Resumability: two checkpoints, both re-derived from the DB every run rather
+// than a separate checkpoint file.
+//  1. pokemon.hp IS NULL -- this species has never been through
+//     seedOneSpeciesMoveset at all.
+//  2. pokemon_availability has a row for this species in a target game, but
+//     pokemon_moves does not -- this species already has stats (from an
+//     earlier run, targeting an earlier movesetVersionGroups) but is missing
+//     one of the CURRENT target games. Without this check, adding a game to
+//     movesetVersionGroups (e.g. Champions) reads every existing species as
+//     "already done" via checkpoint 1 alone and silently seeds nothing for
+//     the new game -- which is exactly how Champions shipped 0 rows the
+//     first time. Both checkpoints are scoped to movesetVersionGroups' game
+//     ids, not the whole games table, which is also why this depends on
+//     pokemon_availability already being populated for a new target game
+//     (cmd/seed_champions, or whichever seeder owns that game) -- a species
+//     with no availability row for game X never looks pending for X.
+//
+// hp is the LAST column written inside a species' transaction (see
+// seedOneSpeciesMoveset), so a species is either fully written for this run
+// (stats + abilities + every target game's moveset) or, if anything failed
+// partway, left exactly as it was and picked up again on the next run.
+//
+// ponytail: a species available in a target game for which PokeAPI genuinely
+// has zero moves stays pending forever under checkpoint 2 -- there is no row
+// to record "checked, found nothing", so it costs one extra HTTP call every
+// run. Cheap while it's rare (real Pokemon almost always learn something);
+// if the "N remaining" log stops shrinking to a stable count, add a sentinel
+// pokemon_moves row or a pokemon_moves_checked(pokemon_id, game_id) table.
 func SeedSpeciesStatsAndMoves(ctx context.Context, moveIDs, abilityIDs map[string]int) (int, error) {
 	gameIDs, err := loadTargetGameIDs(ctx)
 	if err != nil {
 		return 0, err
 	}
+	targetGameIDs := make([]int, 0, len(gameIDs))
+	for _, gid := range gameIDs {
+		targetGameIDs = append(targetGameIDs, gid)
+	}
 
-	rows, err := database.DB.Query(ctx, "SELECT id FROM pokemon WHERE hp IS NULL ORDER BY id")
+	rows, err := database.DB.Query(ctx, `
+		SELECT p.id FROM pokemon p
+		WHERE p.hp IS NULL
+		   OR EXISTS (
+		        SELECT 1 FROM pokemon_availability pa
+		        WHERE pa.pokemon_id = p.id
+		          AND pa.game_id = ANY($1)
+		          AND NOT EXISTS (
+		                SELECT 1 FROM pokemon_moves pm
+		                WHERE pm.pokemon_id = pa.pokemon_id AND pm.game_id = pa.game_id
+		          )
+		   )
+		ORDER BY p.id
+	`, targetGameIDs)
 	if err != nil {
 		return 0, fmt.Errorf("failed to list pending pokemon: %w", err)
 	}
@@ -480,6 +527,7 @@ func SeedSpeciesStatsAndMoves(ctx context.Context, moveIDs, abilityIDs map[strin
 	var done int64
 	var mu sync.Mutex
 	var firstErr error
+	perGame := make(map[int]int, len(gameIDs)) // gameID -> moveset rows written this run
 
 	var wg sync.WaitGroup
 	for i := 0; i < movesWorkers; i++ {
@@ -488,7 +536,8 @@ func SeedSpeciesStatsAndMoves(ctx context.Context, moveIDs, abilityIDs map[strin
 			defer wg.Done()
 			for id := range jobs {
 				time.Sleep(100 * time.Millisecond)
-				if err := seedOneSpeciesMoveset(ctx, id, moveIDs, abilityIDs, gameIDs); err != nil {
+				counts, err := seedOneSpeciesMoveset(ctx, id, moveIDs, abilityIDs, gameIDs)
+				if err != nil {
 					log.Printf("Failed to seed species #%d: %v (will retry on next run)", id, err)
 					mu.Lock()
 					if firstErr == nil {
@@ -499,6 +548,9 @@ func SeedSpeciesStatsAndMoves(ctx context.Context, moveIDs, abilityIDs map[strin
 				}
 				mu.Lock()
 				done++
+				for gid, c := range counts {
+					perGame[gid] += c
+				}
 				mu.Unlock()
 			}
 		}()
@@ -506,6 +558,16 @@ func SeedSpeciesStatsAndMoves(ctx context.Context, moveIDs, abilityIDs map[strin
 	wg.Wait()
 
 	log.Printf("Species stats/abilities/moveset: %d/%d newly seeded this run.", done, len(ids))
+	// Per-game breakdown so a game silently getting 0 rows (this task's own
+	// bug: Champions read as "already done" and never fetched) shows up in
+	// the log instead of only in a database query.
+	idToTitle := make(map[int]string, len(gameIDs))
+	for title, id := range gameIDs {
+		idToTitle[id] = title
+	}
+	for gid, title := range idToTitle {
+		log.Printf("  %s: %d moveset rows written this run", title, perGame[gid])
+	}
 	if firstErr != nil {
 		return int(done), fmt.Errorf("one or more species failed to seed (see logs); re-run cmd/seed_moves to retry only the incomplete ones: %w", firstErr)
 	}
@@ -534,34 +596,36 @@ func countPokemon(ctx context.Context) (int, error) {
 }
 
 // seedOneSpeciesMoveset fetches one species' full PokeAPI payload and writes
-// stats + ability slots + moveset (Platinum/Scarlet-Violet) inside a single
+// stats + ability slots + moveset (per movesetVersionGroups) inside a single
 // transaction, so a mid-species failure can never leave stats set but
 // abilities/moveset missing (or vice versa) -- see the SeedSpeciesStatsAndMoves
-// doc comment for how that makes the whole seeder resumable.
-func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityIDs, gameIDs map[string]int) error {
+// doc comment for how that makes the whole seeder resumable. Returns the
+// number of pokemon_moves rows written, keyed by game id, so the caller can
+// log a per-game breakdown.
+func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityIDs, gameIDs map[string]int) (map[int]int, error) {
 	resp, err := httpClient.Get(fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%d", pokemonID))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
 	}
 	var sm pokeAPISpeciesMoveset
 	if err := json.NewDecoder(resp.Body).Decode(&sm); err != nil {
-		return fmt.Errorf("decode: %w", err)
+		return nil, fmt.Errorf("decode: %w", err)
 	}
 
 	stats, ok := parseBaseStats(sm.Stats)
 	if !ok {
-		return fmt.Errorf("incomplete stats payload")
+		return nil, fmt.Errorf("incomplete stats payload")
 	}
 	abilitySlots := parseAbilitySlots(sm.Abilities)
 	learn := parseMoveset(sm.Moves)
 
 	tx, err := database.DB.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback(ctx) // no-op once Commit succeeds
 
@@ -576,7 +640,7 @@ func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityI
 			VALUES ($1, $2, $3, $4)
 			ON CONFLICT (pokemon_id, slot) DO UPDATE SET ability_id = EXCLUDED.ability_id, is_hidden = EXCLUDED.is_hidden
 		`, pokemonID, abilityID, a.Slot, a.IsHidden); err != nil {
-			return fmt.Errorf("upsert ability slot %d: %w", a.Slot, err)
+			return nil, fmt.Errorf("upsert ability slot %d: %w", a.Slot, err)
 		}
 	}
 
@@ -590,7 +654,7 @@ func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityI
 	if _, err := tx.Exec(ctx,
 		`DELETE FROM pokemon_moves WHERE pokemon_id = $1 AND game_id = ANY($2)`,
 		pokemonID, targetGameIDs); err != nil {
-		return fmt.Errorf("clear moveset: %w", err)
+		return nil, fmt.Errorf("clear moveset: %w", err)
 	}
 
 	type dedupeKey struct {
@@ -599,6 +663,7 @@ func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityI
 		level          int
 	}
 	seen := make(map[dedupeKey]bool, len(learn))
+	perGame := make(map[int]int, len(gameIDs))
 	var copyRows [][]any
 	for _, e := range learn {
 		moveID, ok := moveIDs[e.MoveSlug]
@@ -624,6 +689,7 @@ func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityI
 			levelArg = *e.Level
 		}
 		copyRows = append(copyRows, []any{pokemonID, moveID, gameID, e.Method, levelArg})
+		perGame[gameID]++
 	}
 	if len(copyRows) > 0 {
 		if _, err := tx.CopyFrom(ctx,
@@ -631,21 +697,25 @@ func seedOneSpeciesMoveset(ctx context.Context, pokemonID int, moveIDs, abilityI
 			[]string{"pokemon_id", "move_id", "game_id", "method", "level"},
 			pgx.CopyFromRows(copyRows),
 		); err != nil {
-			return fmt.Errorf("insert moveset: %w", err)
+			return nil, fmt.Errorf("insert moveset: %w", err)
 		}
 	}
 
 	// hp is written LAST and is the resumability checkpoint (see
 	// SeedSpeciesStatsAndMoves): if the transaction fails to commit, hp stays
-	// NULL and this species is retried from scratch on the next run.
+	// NULL (or, for a species already past checkpoint 1, simply left as it
+	// was) and this species is retried on the next run.
 	if _, err := tx.Exec(ctx, `
 		UPDATE pokemon SET hp = $2, attack = $3, defense = $4, special_attack = $5, special_defense = $6, speed = $7
 		WHERE id = $1
 	`, pokemonID, stats.HP, stats.Attack, stats.Defense, stats.SpecialAttack, stats.SpecialDefense, stats.Speed); err != nil {
-		return fmt.Errorf("update stats: %w", err)
+		return nil, fmt.Errorf("update stats: %w", err)
 	}
 
-	return tx.Commit(ctx)
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return perGame, nil
 }
 
 // fetchAllNames fetches the complete name list for a PokeAPI resource kind

@@ -70,16 +70,19 @@ CREATE TABLE IF NOT EXISTS moves (
 -- pokemon_moves: moveset differs by game, so game_id is a required dimension
 -- (do not flatten to one row per pokemon+move). method is normalized in the
 -- seeder from PokeAPI's move-learn-method vocabulary ("machine" -> "tm").
--- Only Diamond/Pearl/Platinum (version_group "platinum") and Scarlet/Violet
--- (version_group "scarlet-violet") are seeded so far -- see cmd/seed_moves.
--- Adding another game is additive: no schema change required.
+-- Diamond/Pearl/Platinum ("platinum"), Scarlet/Violet ("scarlet-violet") and
+-- Pokemon Champions ("champions") are seeded so far -- see cmd/seed_moves.
+-- Adding another game is additive: no schema change required, UNLESS it
+-- introduces a learn method outside {level-up, tm, egg, tutor, train} -- see
+-- migrations/026_train_learn_method.sql for why 'train' (Champions has no
+-- levelling and no TMs; every move there is trained) needed one.
 CREATE TABLE IF NOT EXISTS pokemon_moves (
     id         SERIAL PRIMARY KEY,
     pokemon_id INTEGER NOT NULL REFERENCES pokemon(id) ON DELETE CASCADE,
     move_id    INTEGER NOT NULL REFERENCES moves(id) ON DELETE CASCADE,
     game_id    INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
-    method     TEXT NOT NULL CHECK (method IN ('level-up', 'tm', 'egg', 'tutor')),
-    level      INTEGER, -- level-up only; NULL for tm/egg/tutor
+    method     TEXT NOT NULL CHECK (method IN ('level-up', 'tm', 'egg', 'tutor', 'train')),
+    level      INTEGER, -- level-up only; NULL for tm/egg/tutor/train
     UNIQUE NULLS NOT DISTINCT (pokemon_id, move_id, game_id, method, level)
 );
 
@@ -89,7 +92,17 @@ CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
     generation INTEGER NOT NULL,
-    base_odds INTEGER NOT NULL DEFAULT 4096
+    base_odds INTEGER NOT NULL DEFAULT 4096,
+    -- Set FALSE by an operator (PATCH /api/admin/games) for the games with no
+    -- breeding -- LGPE and Legends: Arceus. Nothing seeds it, so a from-scratch
+    -- rebuild starts every game TRUE and needs those two set by hand. Live since
+    -- before the migrations directory existed; recorded here so a rebuild does
+    -- not break admin.go and cmd/seed, which both read it.
+    supports_breeding BOOLEAN NOT NULL DEFAULT TRUE,
+    -- FALSE for battle-only titles (Pokemon Champions): they carry availability
+    -- and moveset rows for the team builder, but have no overworld to hunt in.
+    -- Every hunt-facing query filters on this instead of hardcoding an id.
+    supports_hunting BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- user_games: user_id is a plain UUID (Supabase Auth sub); no FK to a local
@@ -519,13 +532,11 @@ CREATE TABLE IF NOT EXISTS team_members (
     -- catalogue does not hold, and losing the whole team over it is worse than storing
     -- a slug that does not join. Bounded at 50 runes by validateMembers.
     item_slug    TEXT,
-    tera_type    TEXT,
     level        SMALLINT NOT NULL DEFAULT 50 CHECK (level BETWEEN 1 AND 100),
-    -- Read and written as a whole spread, never queried per stat — same reasoning
-    -- that put hunt_parameters in JSONB. The 508 total cannot be expressed as a
-    -- cheap CHECK over JSONB, so it is enforced in the handler and the client.
-    evs          JSONB NOT NULL DEFAULT '{}'::jsonb,
-    ivs          JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Champions' unified Stat Points: 66 total, 32 per stat. Read and written
+    -- as a whole spread, never queried per stat. The caps cannot be expressed
+    -- as a cheap CHECK over JSONB and are enforced in the handler and client.
+    stat_points  JSONB NOT NULL DEFAULT '{}'::jsonb,
     moves        TEXT[] NOT NULL DEFAULT '{}',
     UNIQUE (team_id, slot)
 );

@@ -111,8 +111,13 @@ func healthReport(ctx context.Context) {
 	// A. Legally available but zero huntable methods. Many are evolution-only
 	// (you hunt the pre-evolution), but large per-game counts flag whole games
 	// with missing wild-encounter data (PokeAPI gap for Gen 1/2/5).
+	// Battle-only games are excluded: their availability rows scope a team-builder
+	// roster and are *supposed* to have no hunt method, so counting them here
+	// would bury the real gaps this section exists to surface.
 	fmt.Printf("\n--- A. Available but NO method (total %d) — likely missing wild data ---\n",
-		count(ctx, `SELECT COUNT(*) FROM pokemon_availability pa WHERE NOT EXISTS (
+		count(ctx, `SELECT COUNT(*) FROM pokemon_availability pa
+			JOIN games g ON g.id=pa.game_id AND g.supports_hunting
+			WHERE NOT EXISTS (
 			SELECT 1 FROM method_availability ma WHERE ma.pokemon_id=pa.pokemon_id AND ma.game_id=pa.game_id)`))
 	tw = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tw, "game\tgen\tmissing\tof_available\twild_rows_in_game")
@@ -122,7 +127,7 @@ func healthReport(ctx context.Context) {
 			SELECT 1 FROM method_availability ma WHERE ma.pokemon_id=pa.pokemon_id AND ma.game_id=pa.game_id)) AS missing,
 		  COUNT(*) AS of_available,
 		  (SELECT COUNT(*) FROM pokemon_game_encounter pge WHERE pge.game_id=g.id AND pge.kind='wild') AS wild_rows
-		FROM pokemon_availability pa JOIN games g ON g.id=pa.game_id
+		FROM pokemon_availability pa JOIN games g ON g.id=pa.game_id AND g.supports_hunting
 		GROUP BY g.id, g.title, g.generation ORDER BY missing DESC`))
 	tw.Flush()
 

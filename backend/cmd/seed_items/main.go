@@ -29,6 +29,9 @@ import (
 var heldItemCategories = []string{
 	"held-items", "choice", "type-enhancement", "bad-held-items",
 	"training", "species-specific", "type-protection", "picky-healing",
+	// Mega Stones. Champions' battle gimmick is Mega Evolution and the stone is
+	// a held item, so these belong in the same picker as Choice Band. 92 entries.
+	"mega-stones",
 }
 
 // Categories holding competitively used berries: "medicine" is the status-cure and

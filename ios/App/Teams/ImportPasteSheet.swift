@@ -43,7 +43,7 @@ struct ImportPasteSheet: View {
                     }
 
                     Text(
-                        "Six sets at most. Anything the Scarlet/Violet dex doesn't have is named back to you rather than dropped quietly."
+                        "Six sets at most. EV spreads become stat points, and IVs and Tera types are dropped — Champions has none of them. Anything the Champions dex doesn't have is named back to you rather than dropped quietly."
                     )
                     .font(Typography.hint)
                     .foregroundStyle(Palette.textMuted)
@@ -180,6 +180,18 @@ struct ImportPasteSheet: View {
 
         var members: [TeamMember] = []
         var unresolved: [String] = []
+        // Champions has no EVs. A pasted spread is converted, not carried, so a mainline team
+        // arrives with a different allocation than the paste asked for — said out loud, because
+        // silently reinterpreting someone's spread is the same failure as silently dropping a set.
+        var converted = 0
+        // Champions' two roster rules, the same pair `TeamEditorScreen` shows before Save. An
+        // ordinary mainline paste breaks them routinely — two Leftovers, or a species twice —
+        // and `validateMembers` rejects the whole team on either, which would throw away every
+        // set after six round-trips. So they are applied here and reported, not left to the 400.
+        var seenSpecies: Set<Int> = []
+        var seenItems: Set<String> = []
+        var duplicateSpecies: [String] = []
+        var clearedItems: [String] = []
         for set in kept {
             guard let match = species.first(where: {
                 ShowdownBridge.key($0.name) == ShowdownBridge.key(set.species)
@@ -187,13 +199,29 @@ struct ImportPasteSheet: View {
                 unresolved.append(set.species)
                 continue
             }
+            // A duplicate species has no salvage — a team can only hold one — so the later set
+            // goes. Checked before the fetch, since there is nothing to resolve it for.
+            guard seenSpecies.insert(match.id).inserted else {
+                duplicateSpecies.append(match.name.capitalized)
+                continue
+            }
             do {
-                // The Scarlet/Violet learnset and this species' abilities — what turns
+                // The Champions moveset and this species' abilities — what turns
                 // "Swords Dance" into `swords-dance`.
-                let detail = try await client.pokemonDetail(id: match.id, gameID: scarletVioletGameID)
-                members.append(
-                    ShowdownBridge.member(
-                        from: set, slot: members.count + 1, detail: detail, items: items))
+                let detail = try await client.pokemonDetail(id: match.id, gameID: championsGameID)
+                var member = ShowdownBridge.member(
+                    from: set, slot: members.count + 1, detail: detail, items: items)
+                // A duplicate item does have a salvage: the Pokémon keeps its slot holding
+                // nothing. `TeamMember` is immutable, so clearing one field is a rebuild.
+                if let item = member.itemSlug, !item.isEmpty, !seenItems.insert(item).inserted {
+                    clearedItems.append(items.first { $0.slug == item }?.name ?? prettifySlug(item))
+                    member = TeamMember(
+                        slot: member.slot, pokemonID: member.pokemonID, nickname: member.nickname,
+                        nature: member.nature, abilitySlug: member.abilitySlug, itemSlug: nil,
+                        level: member.level, statPoints: member.statPoints, moves: member.moves)
+                }
+                members.append(member)
+                if set.evs.total > 0 { converted += 1 }
             } catch {
                 // A network failure mid-resolve aborts before anything is created, rather than
                 // saving a team that is quietly missing the sets the request did not reach.
@@ -205,6 +233,27 @@ struct ImportPasteSheet: View {
         if !unresolved.isEmpty {
             warnings.append(
                 "No match for \(unresolved.joined(separator: ", ")) — check the spelling, or the form name.")
+        }
+        if !duplicateSpecies.isEmpty {
+            warnings.append(
+                duplicateSpecies.count == 1
+                    ? "Champions allows one of each species — the second \(duplicateSpecies[0]) was dropped."
+                    : "Champions allows one of each species — the repeats of \(duplicateSpecies.joined(separator: ", ")) were dropped."
+            )
+        }
+        if !clearedItems.isEmpty {
+            warnings.append(
+                clearedItems.count == 1
+                    ? "Champions allows one of each held item — the second \(clearedItems[0]) was cleared."
+                    : "Champions allows one of each held item — the repeats of \(clearedItems.joined(separator: ", ")) were cleared."
+            )
+        }
+        if converted > 0 {
+            warnings.append(
+                converted == 1
+                    ? "Champions has no EVs: that set's spread was converted to stat points at Pokémon HOME's rate."
+                    : "Champions has no EVs: the spreads on \(converted) sets were converted to stat points at Pokémon HOME's rate."
+            )
         }
         guard !members.isEmpty else {
             failure = (warnings + ["Nothing in that paste could be matched to a Pokémon."])

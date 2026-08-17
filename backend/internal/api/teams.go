@@ -12,39 +12,38 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// scarletVioletGameID is the only game this slice supports. Scarlet/Violet is the
-// only Switch title with moveset data seeded, and it is where current VGC is played.
-const scarletVioletGameID = 17
+// championsGameID is the game this builder targets. Champions is the official
+// competitive hub and the venue for VGC 2026; it draws its roster from Pokemon
+// HOME rather than from any single mainline game.
+const championsGameID = 18
 
-// validStats is the closed set of EV/IV keys, matching Stat.rawValue in ShinyTrackerKit.
+// validStats is the closed set of Stat Point keys, matching Stat.rawValue in ShinyTrackerKit.
 var validStats = map[string]bool{
 	"hp": true, "atk": true, "def": true, "spa": true, "spd": true, "spe": true,
 }
 
-// evSpreadValid enforces the game's own caps: 508 total, 252 per stat.
+// maxStatPointTotal and maxStatPointPerStat are Champions' caps. They replace
+// Scarlet/Violet's 508/252 EVs and its 0-31 IVs entirely — Champions has no
+// IVs at all, every Pokemon calculating as though it had 31 in every stat.
+const (
+	maxStatPointTotal   = 66
+	maxStatPointPerStat = 32
+)
+
+// statPointsValid enforces the pool and the per-stat cap.
 //
-// Also enforced in the Swift model and the UI. Triplication is deliberate: the
-// database cannot express "sum of JSONB values <= 508" cheaply, and a set that breaks
-// the cap exports to a paste Showdown rejects — a silent corruption of the one output
-// that has to interoperate.
-func evSpreadValid(evs map[string]int) bool {
+// Enforced here as well as in the Swift model and the UI: the database cannot
+// express "sum of JSONB values <= 66" cheaply, and a spread that breaks the cap
+// is one the game will not accept.
+func statPointsValid(sp map[string]int) bool {
 	total := 0
-	for stat, value := range evs {
-		if !validStats[stat] || value < 0 || value > 252 {
+	for stat, value := range sp {
+		if !validStats[stat] || value < 0 || value > maxStatPointPerStat {
 			return false
 		}
 		total += value
 	}
-	return total <= 508
-}
-
-func ivSpreadValid(ivs map[string]int) bool {
-	for stat, value := range ivs {
-		if !validStats[stat] || value < 0 || value > 31 {
-			return false
-		}
-	}
-	return true
+	return total <= maxStatPointTotal
 }
 
 // validNatures is the closed set of the game's 25 natures, lowercase to match
@@ -59,20 +58,6 @@ var validNatures = map[string]bool{
 	"timid": true, "hasty": true, "serious": true, "jolly": true, "naive": true,
 	"modest": true, "mild": true, "quiet": true, "bashful": true, "rash": true,
 	"calm": true, "gentle": true, "sassy": true, "careful": true, "quirky": true,
-}
-
-// validTeraTypes is the closed set of legal Tera Types. Same reasoning as
-// validNatures: tera_type is free TEXT with no FK.
-//
-// 19 entries, not 18: Stellar was added in The Indigo Disk and is legal and
-// competitively current (Terapagos has it natively; Tera Shards can grant it
-// to anything). It is not one of the 18 elemental types on the type chart --
-// do not "clean this up" back down to 18.
-var validTeraTypes = map[string]bool{
-	"Normal": true, "Fire": true, "Water": true, "Electric": true, "Grass": true,
-	"Ice": true, "Fighting": true, "Poison": true, "Ground": true, "Flying": true,
-	"Psychic": true, "Bug": true, "Rock": true, "Ghost": true, "Dragon": true,
-	"Dark": true, "Steel": true, "Fairy": true, "Stellar": true,
 }
 
 // maxAbilitySlugLength, maxMoveSlugLength and maxItemSlugLength bound the three
@@ -97,10 +82,8 @@ type TeamMemberPayload struct {
 	Nature      string         `json:"nature"`
 	AbilitySlug string         `json:"ability_slug"`
 	ItemSlug    *string        `json:"item_slug"`
-	TeraType    *string        `json:"tera_type"`
 	Level       int            `json:"level"`
-	EVs         map[string]int `json:"evs"`
-	IVs         map[string]int `json:"ivs"`
+	StatPoints  map[string]int `json:"stat_points"`
 	Moves       []string       `json:"moves"`
 }
 
@@ -120,6 +103,11 @@ func validateMembers(members []TeamMemberPayload) string {
 		return "a team holds at most six Pokemon"
 	}
 	slots := map[int]bool{}
+
+	// Champions' team rules. Neither exists in the mainline games, so neither
+	// was in the original Scarlet/Violet builder.
+	species := map[int]bool{}
+	items := map[string]bool{}
 	for _, m := range members {
 		if m.Slot < 1 || m.Slot > 6 {
 			return "slot must be between 1 and 6"
@@ -131,6 +119,10 @@ func validateMembers(members []TeamMemberPayload) string {
 		if m.PokemonID <= 0 {
 			return "pokemon_id is required"
 		}
+		if species[m.PokemonID] {
+			return "a team cannot hold two of the same species"
+		}
+		species[m.PokemonID] = true
 		if nicknameTooLong(m.Nickname) {
 			return "nickname is too long"
 		}
@@ -143,8 +135,12 @@ func validateMembers(members []TeamMemberPayload) string {
 		if m.ItemSlug != nil && slugTooLong(*m.ItemSlug, maxItemSlugLength) {
 			return "item_slug is too long"
 		}
-		if m.TeraType != nil && !validTeraTypes[*m.TeraType] {
-			return "tera_type must be a real type"
+		// Two members holding nothing is fine; two holding the SAME item is not.
+		if m.ItemSlug != nil && *m.ItemSlug != "" {
+			if items[*m.ItemSlug] {
+				return "two Pokemon cannot hold the same item"
+			}
+			items[*m.ItemSlug] = true
 		}
 		if len(m.Moves) > 4 {
 			return "a Pokemon knows at most four moves"
@@ -157,11 +153,8 @@ func validateMembers(members []TeamMemberPayload) string {
 		if m.Level < 1 || m.Level > 100 {
 			return "level must be between 1 and 100"
 		}
-		if !evSpreadValid(m.EVs) {
-			return "EVs exceed the 508 total or 252 per-stat cap"
-		}
-		if !ivSpreadValid(m.IVs) {
-			return "IVs must be between 0 and 31"
+		if !statPointsValid(m.StatPoints) {
+			return "stat points exceed the 66 pool or the 32 per-stat cap"
 		}
 	}
 	return ""
@@ -228,7 +221,7 @@ func loadTeams(ctx context.Context, userID, teamID string) ([]TeamPayload, error
 
 	memberRows, err := database.DB.Query(ctx,
 		`SELECT team_id, slot, pokemon_id, nickname, nature, ability_slug, item_slug,
-		        tera_type, level, evs, ivs, moves
+		        level, stat_points, moves
 		   FROM team_members WHERE team_id = ANY($1::uuid[]) ORDER BY team_id, slot`, ids)
 	if err != nil {
 		return nil, err
@@ -240,7 +233,7 @@ func loadTeams(ctx context.Context, userID, teamID string) ([]TeamPayload, error
 		var teamID string
 		var m TeamMemberPayload
 		if err := memberRows.Scan(&teamID, &m.Slot, &m.PokemonID, &m.Nickname, &m.Nature,
-			&m.AbilitySlug, &m.ItemSlug, &m.TeraType, &m.Level, &m.EVs, &m.IVs, &m.Moves); err != nil {
+			&m.AbilitySlug, &m.ItemSlug, &m.Level, &m.StatPoints, &m.Moves); err != nil {
 			return nil, err
 		}
 		byTeam[teamID] = append(byTeam[teamID], m)
@@ -283,7 +276,7 @@ func CreateTeamHandler(w http.ResponseWriter, r *http.Request) {
 	var teamID string
 	if err := tx.QueryRow(context.Background(),
 		`INSERT INTO teams (user_id, name, game_id) VALUES ($1, $2, $3) RETURNING id`,
-		userID, req.Name, scarletVioletGameID).Scan(&teamID); err != nil {
+		userID, req.Name, championsGameID).Scan(&teamID); err != nil {
 		http.Error(w, "Failed to create team", http.StatusInternalServerError)
 		return
 	}
@@ -383,13 +376,9 @@ func UpdateTeamHandler(w http.ResponseWriter, r *http.Request) {
 
 func insertMembers(ctx context.Context, tx pgx.Tx, teamID string, members []TeamMemberPayload) error {
 	for _, m := range members {
-		evs := m.EVs
-		if evs == nil {
-			evs = map[string]int{}
-		}
-		ivs := m.IVs
-		if ivs == nil {
-			ivs = map[string]int{}
+		statPoints := m.StatPoints
+		if statPoints == nil {
+			statPoints = map[string]int{}
 		}
 		moves := m.Moves
 		if moves == nil {
@@ -398,10 +387,10 @@ func insertMembers(ctx context.Context, tx pgx.Tx, teamID string, members []Team
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO team_members
 			   (team_id, slot, pokemon_id, nickname, nature, ability_slug, item_slug,
-			    tera_type, level, evs, ivs, moves)
-			 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+			    level, stat_points, moves)
+			 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 			teamID, m.Slot, m.PokemonID, m.Nickname, m.Nature, m.AbilitySlug,
-			m.ItemSlug, m.TeraType, m.Level, evs, ivs, moves); err != nil {
+			m.ItemSlug, m.Level, statPoints, moves); err != nil {
 			return err
 		}
 	}

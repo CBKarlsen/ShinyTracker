@@ -7,7 +7,7 @@ import ShinyTrackerAPI
 /// `HTTPTransport` seam.
 ///
 /// Launch with `-teamsPreview seeded | empty | error`:
-/// - `seeded` — one full six-slot Scarlet/Violet team, the fixture the screenshots come from.
+/// - `seeded` — one full six-slot Champions team, the fixture the screenshots come from.
 /// - `empty` — no teams at all, i.e. the "Build a team" state.
 /// - `error` — the load failure path.
 ///
@@ -64,8 +64,9 @@ private struct Entry {
     let nature: String
     let ability: String
     let item: String
-    let tera: String
-    let evs: [String: Int]
+    /// Champions' unified allocation — 65 of the 66 points, the total a fully-trained
+    /// mainline transfer arrives with.
+    let points: [String: Int]
     /// `(slug, name)` — four moves, which are also the four this species' picker offers first.
     let moves: [(String, String)]
 }
@@ -74,8 +75,8 @@ private let roster: [Entry] = [
     Entry(
         id: 984, name: "great-tusk", types: ["ground", "fighting"], base: [115, 131, 131, 53, 53, 87],
         abilities: [("protosynthesis", "Protosynthesis", false)],
-        nature: "jolly", ability: "protosynthesis", item: "booster-energy", tera: "Ground",
-        evs: ["hp": 4, "atk": 252, "def": 0, "spa": 0, "spd": 0, "spe": 252],
+        nature: "jolly", ability: "protosynthesis", item: "booster-energy",
+        points: ["hp": 1, "atk": 32, "def": 0, "spa": 0, "spd": 0, "spe": 32],
         moves: [
             ("headlong-rush", "Headlong Rush"), ("close-combat", "Close Combat"),
             ("ice-spinner", "Ice Spinner"), ("rapid-spin", "Rapid Spin"),
@@ -83,8 +84,8 @@ private let roster: [Entry] = [
     Entry(
         id: 1000, name: "gholdengo", types: ["steel", "ghost"], base: [87, 60, 95, 133, 91, 84],
         abilities: [("good-as-gold", "Good as Gold", false)],
-        nature: "timid", ability: "good-as-gold", item: "leftovers", tera: "Flying",
-        evs: ["hp": 252, "atk": 0, "def": 0, "spa": 4, "spd": 0, "spe": 252],
+        nature: "timid", ability: "good-as-gold", item: "leftovers",
+        points: ["hp": 32, "atk": 0, "def": 0, "spa": 1, "spd": 0, "spe": 32],
         moves: [
             ("make-it-rain", "Make It Rain"), ("shadow-ball", "Shadow Ball"),
             ("nasty-plot", "Nasty Plot"), ("thunder-wave", "Thunder Wave"),
@@ -92,8 +93,8 @@ private let roster: [Entry] = [
     Entry(
         id: 983, name: "kingambit", types: ["dark", "steel"], base: [100, 135, 120, 60, 85, 50],
         abilities: [("defiant", "Defiant", false), ("supreme-overlord", "Supreme Overlord", true)],
-        nature: "adamant", ability: "supreme-overlord", item: "black-glasses", tera: "Fire",
-        evs: ["hp": 252, "atk": 252, "def": 4, "spa": 0, "spd": 0, "spe": 0],
+        nature: "adamant", ability: "supreme-overlord", item: "black-glasses",
+        points: ["hp": 32, "atk": 32, "def": 1, "spa": 0, "spd": 0, "spe": 0],
         moves: [
             ("kowtow-cleave", "Kowtow Cleave"), ("sucker-punch", "Sucker Punch"),
             ("iron-head", "Iron Head"), ("swords-dance", "Swords Dance"),
@@ -101,8 +102,8 @@ private let roster: [Entry] = [
     Entry(
         id: 887, name: "dragapult", types: ["dragon", "ghost"], base: [88, 120, 75, 100, 75, 142],
         abilities: [("clear-body", "Clear Body", false), ("infiltrator", "Infiltrator", false)],
-        nature: "timid", ability: "infiltrator", item: "choice-specs", tera: "Ghost",
-        evs: ["hp": 0, "atk": 0, "def": 0, "spa": 252, "spd": 4, "spe": 252],
+        nature: "timid", ability: "infiltrator", item: "choice-specs",
+        points: ["hp": 0, "atk": 0, "def": 0, "spa": 32, "spd": 1, "spe": 32],
         moves: [
             ("shadow-ball", "Shadow Ball"), ("draco-meteor", "Draco Meteor"),
             ("u-turn", "U-turn"), ("flamethrower", "Flamethrower"),
@@ -110,8 +111,10 @@ private let roster: [Entry] = [
     Entry(
         id: 1006, name: "iron-valiant", types: ["fairy", "fighting"], base: [74, 130, 90, 120, 60, 116],
         abilities: [("quark-drive", "Quark Drive", false)],
-        nature: "naive", ability: "quark-drive", item: "booster-energy", tera: "Electric",
-        evs: ["hp": 0, "atk": 124, "def": 0, "spa": 132, "spd": 0, "spe": 252],
+        // Not a second Booster Energy: Champions forbids two slots holding the same item, and a
+        // fixture the screenshots come from has to be a team the editor would let you save.
+        nature: "naive", ability: "quark-drive", item: "life-orb",
+        points: ["hp": 0, "atk": 16, "def": 0, "spa": 17, "spd": 0, "spe": 32],
         moves: [
             ("moonblast", "Moonblast"), ("close-combat", "Close Combat"),
             ("knock-off", "Knock Off"), ("encore", "Encore"),
@@ -119,8 +122,8 @@ private let roster: [Entry] = [
     Entry(
         id: 591, name: "amoonguss", types: ["grass", "poison"], base: [114, 85, 70, 85, 80, 30],
         abilities: [("effect-spore", "Effect Spore", false), ("regenerator", "Regenerator", true)],
-        nature: "bold", ability: "regenerator", item: "black-sludge", tera: "Water",
-        evs: ["hp": 252, "atk": 0, "def": 252, "spa": 0, "spd": 4, "spe": 0],
+        nature: "bold", ability: "regenerator", item: "black-sludge",
+        points: ["hp": 32, "atk": 0, "def": 32, "spa": 0, "spd": 1, "spe": 0],
         moves: [
             ("spore", "Spore"), ("sludge-bomb", "Sludge Bomb"),
             ("giga-drain", "Giga Drain"), ("clear-smog", "Clear Smog"),
@@ -140,15 +143,14 @@ private let team: String = {
         """
         {"slot":\(index + 1),"pokemon_id":\(entry.id),"nickname":null,
          "nature":"\(entry.nature)","ability_slug":"\(entry.ability)",
-         "item_slug":"\(entry.item)","tera_type":"\(entry.tera)","level":50,
-         "evs":\(json(entry.evs)),
-         "ivs":{"hp":31,"atk":31,"def":31,"spa":31,"spd":31,"spe":31},
+         "item_slug":"\(entry.item)","level":50,
+         "stat_points":\(json(entry.points)),
          "moves":[\(entry.moves.map { "\"\($0.0)\"" }.joined(separator: ","))]}
         """
     }
     return """
         {"id":"cccccccc-0000-4000-8000-00000000cccc","name":"Regulation H",
-         "game_id":17,"members":[\(members.joined(separator: ","))]}
+         "game_id":18,"members":[\(members.joined(separator: ","))]}
         """
 }()
 
