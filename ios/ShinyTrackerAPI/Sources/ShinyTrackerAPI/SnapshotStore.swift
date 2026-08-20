@@ -99,6 +99,34 @@ public actor SnapshotStore {
         return envelope.value
     }
 
+    /// Read-modify-write as one indivisible step, for the key where a lost write is a lost hunt.
+    ///
+    /// `load` → mutate → `save` from *outside* the actor is two `await`s, and Swift actors are
+    /// **reentrant at every suspension point**. Two callers can therefore both load the same queue,
+    /// each append their own encounter, and the second save silently overwrite the first. The
+    /// Lock Screen's `+` on a killed app is exactly that shape: one independent `Task` per press,
+    /// presses hundreds of milliseconds apart.
+    ///
+    /// This body has no suspension point — `load` and `save` are synchronous methods on this actor
+    /// and the closure is not `async` — so nothing can interleave between the read and the write.
+    /// **Do not add an `await` here, and do not let a caller split it back into load-then-save**:
+    /// either one puts the hole straight back, and it is a hole that loses encounters without
+    /// leaving a trace.
+    ///
+    /// It serialises only callers sharing *this instance*. Two `SnapshotStore`s over one directory
+    /// are two isolation domains and race exactly as before, which is why `LiveHuntFallback` keeps
+    /// one around instead of constructing one per press.
+    public func mutate<T: Codable & Sendable>(
+        _ type: T.Type,
+        as key: SnapshotKey,
+        default initial: T,
+        _ change: @Sendable (inout T) -> Void
+    ) {
+        var value = load(type, as: key) ?? initial
+        change(&value)
+        save(value, as: key)
+    }
+
     /// Sign-out. Removes this user's snapshots and nobody else's.
     public func clear() {
         try? fileManager.removeItem(at: directory)

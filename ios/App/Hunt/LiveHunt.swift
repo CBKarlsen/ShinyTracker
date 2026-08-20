@@ -70,6 +70,41 @@ enum HuntActivityBridge {
             content: ActivityContent(state: state, staleDate: nil))
     }
 
+    /// Moves a running card on by `step`, with no model and no network.
+    ///
+    /// The killed-app route (``LiveHuntFallback``) has no `HuntListModel` to assemble a state from
+    /// and no session to fetch one with — but it does not need either. The number on screen is the
+    /// running activity's own content state, which the system kept while the process was dead, so
+    /// the press can read it, add its step and push it back.
+    ///
+    /// **Only the fields derived from the count move.** `cumulativeProbability` is `count`'s
+    /// function and would otherwise sit at the probability of a smaller hunt — the most visibly
+    /// wrong thing on the card after the count itself. The rest are deliberately carried through
+    /// untouched, because moving them here would mean inventing them:
+    /// - `elapsedSeconds` — the clock only banks time when an encounter is recorded *by the model*
+    ///   (D1), and the app is not running. No time was banked, so none is added.
+    /// - `counting` — the same clock's question, and answering it needs the hunt's cadence.
+    /// - `step` and `denominator` — owned by the model, which recomputes them from the hunt's
+    ///   parameters on the next `syncActivity()`. A chain method's denominator does drift from the
+    ///   count, and this path cannot honestly recompute it without `HuntDetail`.
+    ///
+    /// If no activity is running this is a no-op, and deliberately does not start one: requesting
+    /// an activity from a background launch is unreliable, and the queue append the caller has
+    /// already made is what actually matters.
+    static func advance(_ huntID: UUID, by step: Int) async {
+        guard
+            let running = Activity<HuntActivity>.activities.first(
+                where: { $0.attributes.huntID == huntID })
+        else { return }
+        var state = running.content.state
+        state.count += step
+        // Same expression as `HuntRow.cumulativeProbability`, on the two numbers the card carries.
+        if let denominator = state.denominator, denominator > 0, state.count > 0 {
+            state.cumulativeProbability = 1 - pow(1 - 1 / Double(denominator), Double(state.count))
+        }
+        await running.update(ActivityContent(state: state, staleDate: nil))
+    }
+
     static func endAll() async {
         for running in Activity<HuntActivity>.activities {
             await running.end(nil, dismissalPolicy: .immediate)

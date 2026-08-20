@@ -106,3 +106,51 @@ private let sample = Fixture(name: "gible", count: 2847, when: Date(timeInterval
     await store.save(clocks, as: .clocks)
     #expect(await store.load([UUID: HuntClock].self, as: .clocks) == clocks)
 }
+
+/// `mutate` must not lose a write when two callers arrive at once — the durable Lock Screen path
+/// appends one encounter per press, each from its own `Task`, and a lost append is an encounter
+/// the server never hears about.
+///
+/// This fails if `mutate` is ever split back into `load` then `save`: those are two awaits on a
+/// reentrant actor, so the presses interleave, each appends to the same loaded queue and the last
+/// save wins. Measured at 200 presses that loses well over half of them — it is not a rare race.
+@Test func concurrentMutatesDoNotLoseAWrite() async {
+    let store = SnapshotStore(userID: UUID(), containerDirectory: tempDirectory())
+    let hunt = UUID()
+    let presses = 200
+
+    await withTaskGroup(of: Void.self) { group in
+        for _ in 0..<presses {
+            group.addTask {
+                await store.mutate(WriteQueue.self, as: .pendingWrites, default: WriteQueue()) {
+                    $0.enqueue(.count(delta: 1), for: hunt)
+                }
+            }
+        }
+    }
+
+    let queue = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
+    #expect(queue.projectedCount(from: 0, for: hunt) == presses)
+}
+
+/// The control for the test above, and the reason it is written that way: the same 200 presses
+/// done as load-then-save from outside the actor lose writes. Kept as a test rather than a comment
+/// because a claim about a race that nothing runs is a claim that quietly stops being true.
+@Test func loadThenSaveFromOutsideTheActorLosesWrites() async {
+    let store = SnapshotStore(userID: UUID(), containerDirectory: tempDirectory())
+    let hunt = UUID()
+    let presses = 200
+
+    await withTaskGroup(of: Void.self) { group in
+        for _ in 0..<presses {
+            group.addTask {
+                var queue = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
+                queue.enqueue(.count(delta: 1), for: hunt)
+                await store.save(queue, as: .pendingWrites)
+            }
+        }
+    }
+
+    let queue = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
+    #expect(queue.projectedCount(from: 0, for: hunt) < presses)
+}

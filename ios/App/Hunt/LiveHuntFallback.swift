@@ -13,6 +13,12 @@ import ShinyTrackerKit
 /// The append is deliberately the same shape a tap makes: a `.count` delta into the same
 /// ``WriteQueue``, under the same key. The next launch's `restoreQueue()` finds it and drains it
 /// like any other entry — it does not need to know where it came from.
+///
+/// `@MainActor` for the store cache below, and it costs nothing: the only caller,
+/// ``LiveHuntCounter/count(_:by:)``, is already main-actor isolated, and so is the
+/// `ShinyTrackerApp.init()` that installs this as the fallback. No new isolation domain, no
+/// `nonisolated(unsafe)` static.
+@MainActor
 enum LiveHuntFallback {
     /// Where the signed-in user id is left for a launch that has no session yet.
     ///
@@ -28,14 +34,51 @@ enum LiveHuntFallback {
         UserDefaults.standard.set(id.uuidString, forKey: userIDKey)
     }
 
+    /// The one store every press of the `+` writes through, kept alive between presses.
+    ///
+    /// A fresh `SnapshotStore` per call would defeat ``SnapshotStore/mutate(_:as:default:_:)``
+    /// entirely: an actor serialises calls to *itself*, so two instances over the same directory
+    /// are two isolation domains and two presses can still interleave read-modify-write and lose
+    /// one. One instance, reused, is what makes the mutate atomic against the next press.
+    ///
+    /// Keyed by user id rather than a plain `static let`, because the id is read from
+    /// `UserDefaults` on every call and a sign-out followed by a sign-in changes it — a cached
+    /// store would otherwise keep appending this user's encounters into the previous user's
+    /// directory.
+    private static var cached: (userID: UUID, store: SnapshotStore)?
+
+    private static func store(for userID: UUID) -> SnapshotStore {
+        if let cached, cached.userID == userID { return cached.store }
+        let store = SnapshotStore(userID: userID)
+        cached = (userID, store)
+        return store
+    }
+
     static func count(_ huntID: UUID, by step: Int) async {
         guard let raw = UserDefaults.standard.string(forKey: userIDKey),
             let userID = UUID(uuidString: raw)
         else { return }
 
-        let store = SnapshotStore(userID: userID)
-        var queue = await store.load(WriteQueue.self, as: .pendingWrites) ?? WriteQueue()
-        queue.enqueue(.count(delta: step), for: huntID)
-        await store.save(queue, as: .pendingWrites)
+        // The queue append is the whole point of this path and goes first, unconditionally. It is
+        // one call that cannot throw and cannot be skipped by anything below it — the encounter is
+        // durable before a single line of cosmetics runs. Everything after this is the card
+        // catching up with a number that is already on disk.
+        //
+        // One `mutate`, not `load` → enqueue → `save`: the latter is two awaits, actors are
+        // reentrant at both, and two presses a few hundred milliseconds apart are two independent
+        // Tasks. Both would load the same queue, each append its own tap, and the second save would
+        // overwrite the first — one tap gone, silently, on the durable path whose entire job is not
+        // to lose taps.
+        await store(for: userID).mutate(
+            WriteQueue.self, as: .pendingWrites, default: WriteQueue()
+        ) {
+            $0.enqueue(.count(delta: step), for: huntID)
+        }
+
+        // Without this the card freezes: the count is recorded, the Lock Screen keeps showing the
+        // old number, and the hunter presses again because it looks like the tap was dropped. Over
+        // an 8,000-encounter hunt that is not a cosmetic bug, it is a systematic *over*count — the
+        // frozen display manufactures the extra presses.
+        await HuntActivityBridge.advance(huntID, by: step)
     }
 }
