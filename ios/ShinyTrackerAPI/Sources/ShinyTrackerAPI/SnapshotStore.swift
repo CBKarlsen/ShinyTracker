@@ -79,15 +79,27 @@ public actor SnapshotStore {
         directory = container.appendingPathComponent(userID?.uuidString.lowercased() ?? "anonymous")
     }
 
-    public func save<T: Codable>(_ value: T, as key: SnapshotKey) {
+    /// Returns whether the bytes actually reached disk.
+    ///
+    /// Callers that only cache may ignore it. The one that must not is `.pendingWrites`: a write
+    /// can fail for reasons that persist — a full disk, or file protection before the first unlock
+    /// after a reboot — and a caller that shows the user a number on the strength of a save that
+    /// silently no-opped is telling them an encounter is safe when nothing recorded it.
+    @discardableResult
+    public func save<T: Codable>(_ value: T, as key: SnapshotKey) -> Bool {
         guard let data = try? JSONEncoder().encode(
             Envelope(version: Self.schemaVersion, value: value))
-        else { return }
+        else { return false }
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         // `.atomic` IS the sibling-temp-file-then-rename dance: a crash or a kill mid-write
         // leaves the previous snapshot intact rather than a half-file that decodes into a
         // plausible-but-wrong screen. Doing it again by hand around it bought nothing.
-        try? data.write(to: url(for: key), options: writingOptions)
+        do {
+            try data.write(to: url(for: key), options: writingOptions)
+            return true
+        } catch {
+            return false
+        }
     }
 
     public func load<T: Codable>(_ type: T.Type, as key: SnapshotKey) -> T? {
@@ -97,6 +109,34 @@ public actor SnapshotStore {
             envelope.version == Self.schemaVersion
         else { return nil }
         return envelope.value
+    }
+
+    /// Read-modify-write as one indivisible step, for the key where a lost write is a lost hunt.
+    ///
+    /// `load` → mutate → `save` from *outside* the actor is two `await`s, and Swift actors are
+    /// **reentrant at every suspension point**. Two callers can therefore both load the same queue,
+    /// each append their own encounter, and the second save silently overwrite the first. The
+    /// Lock Screen's `+` on a killed app is exactly that shape: one independent `Task` per press,
+    /// presses hundreds of milliseconds apart.
+    ///
+    /// This body has no suspension point — `load` and `save` are synchronous methods on this actor
+    /// and the closure is not `async` — so nothing can interleave between the read and the write.
+    /// **Do not add an `await` here, and do not let a caller split it back into load-then-save**:
+    /// either one puts the hole straight back, and it is a hole that loses encounters without
+    /// leaving a trace.
+    ///
+    /// It serialises only callers sharing *this instance*. Two `SnapshotStore`s over one directory
+    /// are two isolation domains and race exactly as before, which is why `LiveHuntFallback` keeps
+    /// one around instead of constructing one per press.
+    public func mutate<T: Codable & Sendable>(
+        _ type: T.Type,
+        as key: SnapshotKey,
+        default initial: T,
+        _ change: @Sendable (inout T) -> Void
+    ) -> Bool {
+        var value = load(type, as: key) ?? initial
+        change(&value)
+        return save(value, as: key)
     }
 
     /// Sign-out. Removes this user's snapshots and nobody else's.

@@ -97,7 +97,7 @@ func queryIntColumn(ctx context.Context, sql string, args ...any) ([]int, error)
 func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([]calc.MethodCandidate, error) {
 	rows, err := database.DB.Query(ctx, `
 		SELECT hm.id, g.id, g.title, hm.method_name, g.base_odds,
-		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm,
+		       hm.base_rolls, hm.charm_rolls, ug.has_shiny_charm,
 		       hm.formula_type, hm.requires_kind, COALESCE(hm.requires_terrain, '')
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
@@ -114,7 +114,7 @@ func fetchMethodCandidates(ctx context.Context, userID string, pokemonID int) ([
 	for rows.Next() {
 		var c calc.MethodCandidate
 		if err := rows.Scan(&c.MethodID, &c.GameID, &c.GameTitle, &c.MethodName, &c.BaseOdds,
-			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType,
+			&c.BaseRolls, &c.CharmRolls, &c.HasShinyCharm, &c.FormulaType,
 			&c.RequiresKind, &c.RequiresTerrain); err != nil {
 			return nil, err
 		}
@@ -279,7 +279,7 @@ func anyOwned(avail, owned []int) bool {
 }
 
 // HuntSuggestion is one ranked "hunt next" target. The full Route is embedded so
-// the frontend can Start without another fetch; odds/eta/method/game are read
+// the frontend can Start without another fetch; odds/method/game are read
 // from Route (no projection duplicates -> no drift).
 type HuntSuggestion struct {
 	PokemonID         int        `json:"pokemon_id"`
@@ -320,7 +320,7 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(ctx, `
 		SELECT ma.pokemon_id, p.name, p.sprite_url,
 		       hm.id, g.id, g.title, hm.method_name, g.base_odds,
-		       hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, ug.has_shiny_charm, hm.formula_type,
+		       hm.base_rolls, hm.charm_rolls, ug.has_shiny_charm, hm.formula_type,
 		       hm.requires_kind
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
@@ -353,7 +353,7 @@ func DexSuggestionsHandler(w http.ResponseWriter, r *http.Request) {
 		var c calc.MethodCandidate
 		if err := rows.Scan(&pid, &name, &sprite,
 			&c.MethodID, &c.GameID, &c.GameTitle, &c.MethodName, &c.BaseOdds,
-			&c.BaseRolls, &c.CharmRolls, &c.AvgTimeSeconds, &c.HasShinyCharm, &c.FormulaType,
+			&c.BaseRolls, &c.CharmRolls, &c.HasShinyCharm, &c.FormulaType,
 			&c.RequiresKind); err != nil {
 			http.Error(w, "Failed to read suggestions", http.StatusInternalServerError)
 			return

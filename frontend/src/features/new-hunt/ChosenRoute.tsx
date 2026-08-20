@@ -9,7 +9,7 @@ interface Props {
 }
 
 /**
- * Compact confirmation for an already-chosen route: method + game + odds/eta,
+ * Compact confirmation for an already-chosen route: method + game + odds,
  * the parameter inputs (if the formula needs them), and a "Change method" link.
  * Replaces the full RouteList in the prefill path so the user isn't re-asked
  * the choice they just made.
@@ -69,33 +69,22 @@ export function ChosenRoute({
 
 			<div
 				style={{
-					display: "grid",
-					gridTemplateColumns: "1fr 1fr",
-					gap: 8,
 					marginTop: 14,
 					paddingTop: 14,
 					borderTop: "1px solid var(--line-1)",
 				}}
 			>
-				<div>
-					<div className="t-label">Odds (best case)</div>
-					<div
-						className="t-mono"
-						style={{
-							fontSize: 13,
-							marginTop: 2,
-							color: "var(--gold)",
-							fontWeight: 600,
-						}}
-					>
-						1 / {route.odds.toLocaleString()}
-					</div>
-				</div>
-				<div>
-					<div className="t-label">Expected time</div>
-					<div className="t-mono" style={{ fontSize: 13, marginTop: 2 }}>
-						~{route.eta_hours.toFixed(1)} h
-					</div>
+				<div className="t-label">Odds (best case)</div>
+				<div
+					className="t-mono"
+					style={{
+						fontSize: 13,
+						marginTop: 2,
+						color: "var(--gold)",
+						fontWeight: 600,
+					}}
+				>
+					1 / {route.odds.toLocaleString()}
 				</div>
 			</div>
 

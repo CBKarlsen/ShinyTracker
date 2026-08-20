@@ -1542,16 +1542,16 @@ ul {
 	color: var(--gold);
 	margin-top: 6px;
 }
+.dex-route-qualifier {
+	font-size: 9px;
+	color: var(--ink-4);
+	opacity: 0.65;
+}
 .dex-route-odds {
 	font-family: var(--font-mono);
 	font-size: 14px;
 	color: var(--gold);
 	font-weight: 600;
-}
-.dex-route-eta {
-	font-family: var(--font-mono);
-	font-size: 10px;
-	color: var(--ink-3);
 }
 .dex-route-charm {
 	font-family: var(--font-mono);
@@ -2986,11 +2986,6 @@ ul {
 	margin-top: 4px;
 	font-weight: 600;
 	color: var(--green, #6ee7a2);
-}
-.hunt-next-eta {
-	font-weight: 400;
-	color: var(--ink-1, #f4f2ec);
-	opacity: 0.6;
 }
 .hunt-next-start {
 	display: block;

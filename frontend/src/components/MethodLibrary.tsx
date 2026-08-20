@@ -14,19 +14,11 @@ interface MethodRow {
 	method_name: string;
 	base_rolls: number;
 	charm_rolls: number;
-	avg_time_seconds: number;
 	formula_type?: string;
 }
 
 function fmtMethodName(name: string) {
 	return name.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function fmtTime(seconds: number) {
-	if (seconds < 60) return `${seconds}s`;
-	const m = Math.floor(seconds / 60);
-	const s = seconds % 60;
-	return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
 export default function MethodLibrary() {
@@ -151,7 +143,6 @@ function MethodTable({ rows }: { rows: MethodRow[] }) {
 					<th>Method</th>
 					<th>Base rolls</th>
 					<th>Charm rolls</th>
-					<th>Avg time/enc</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -188,7 +179,6 @@ function MethodTable({ rows }: { rows: MethodRow[] }) {
 						<td className="t-mono">
 							{m.charm_rolls > 0 ? `+${m.charm_rolls}` : "—"}
 						</td>
-						<td className="t-mono">{fmtTime(m.avg_time_seconds)}</td>
 					</tr>
 				))}
 			</tbody>

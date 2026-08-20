@@ -759,7 +759,7 @@ const Dashboard: React.FC<Props> = ({
 				<EmptyState
 					icon={<SparkSm size={28} />}
 					title="Start your first hunt"
-					description="Pick a Pokémon, choose a method, and we'll track odds, encounters and ETA. Hit SPACE to count."
+					description="Pick a Pokémon, choose a method, and we'll track odds and encounters. Hit SPACE to count."
 					action={
 						<button className="btn gold" onClick={onNewHunt}>
 							<IcPlus /> New hunt

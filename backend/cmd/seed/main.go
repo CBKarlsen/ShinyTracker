@@ -54,9 +54,9 @@ func main() {
 	//   1. seedMethods          — populate hunt_methods / method_games
 	//   2. seedMethodExceptions — manual include/exclude corrections
 	//   3. ensureWildEncounters — PokeAPI wild kinds (skipped if already present)
-	//   4. seedCuratedEncounters / seedTerrainSpecies (overworld + fishing) /
-	//      seedFriendSafariSpecies / seedBDSPWildEncounters / seedORASWildEncounters
-	//      — curated encounter rows
+	//   4. seedCuratedEncounters / seedRunawayEncounters / seedTerrainSpecies
+	//      (overworld + fishing) / seedFriendSafariSpecies / seedBDSPWildEncounters /
+	//      seedORASWildEncounters — curated encounter rows
 	//   5. reconcileAvailability — backfill pokemon_availability from encounters
 	//   6. deriveEggEncounters   — egg kinds for breedable base-stage Pokemon
 	//   7. seedShinyLocks        — MUST run before computeAvailability so locked
@@ -103,6 +103,9 @@ func main() {
 
 	log.Println("Seeding curated static/raid encounter kinds...")
 	seedCuratedEncounters(ctx)
+
+	log.Println("Seeding respawn-on-flee static encounter rows...")
+	seedRunawayEncounters(ctx)
 
 	// Gen 8/9 have no PokeAPI wild data; ORAS has no fishing terrain. Same shape,
 	// different terrain — see seedTerrainSpecies.
@@ -492,6 +495,58 @@ func seedCuratedEncounters(ctx context.Context) {
 		}
 	}
 	log.Printf("Inserted %d curated static/raid encounter rows.", inserted)
+}
+
+// runawayEncounters lists the (Pokemon, game) pairs whose *static* encounter
+// respawns without a soft reset: the hunter flees the battle, steps out of the
+// area and back in, and re-battles a freshly generated PID. Each pair gets a
+// SECOND static encounter row carrying terrain='other', and run_away_precharm is
+// the only static method with requires_terrain set, so computeAvailability
+// reaches exactly these pairs. Scoping through terrain rather than through
+// method_exceptions keeps the mapping fail-closed: a terrain-less static method
+// mapped to the game would hand run-away to every static in it, and an
+// exclude-the-rest list would silently leak the method onto any static curated
+// later. The default terrain='none' row from seedCuratedEncounters is left in
+// place, so Soft Reset (requires_terrain NULL, matches any terrain) stays
+// available for the same Pokemon.
+//
+// Adding a pair here is a domain claim: only add one whose respawn-on-flee
+// behaviour is verified against Bulbapedia/Serebii for that specific encounter.
+var runawayEncounters = []struct {
+	PokemonID int
+	Game      string
+}{
+	// Mew, Faraway Island (Emerald). Fleeing, Roar or Teleport makes Mew
+	// respawn when you re-enter the forest — no reboot involved, hence
+	// "runaway"/live encounters rather than soft resets. No other Gen 3
+	// static was verified to behave this way (the Regis, the weather trio,
+	// Deoxys and the Eon duo do not respawn on flee).
+	{151, "Ruby/Sapphire/Emerald"},
+}
+
+// seedRunawayEncounters inserts the terrain='other' static rows described above.
+// Idempotent: the static kinds are cleared at the top of every run and this
+// insert is ON CONFLICT DO NOTHING. Must run after seedCuratedEncounters (same
+// pass over curated statics) and before reconcileAvailability.
+func seedRunawayEncounters(ctx context.Context) {
+	gameIDs := loadGameIDs(ctx)
+	inserted := 0
+	for _, r := range runawayEncounters {
+		gameID, ok := gameIDs[r.Game]
+		if !ok {
+			log.Fatalf("seedRunawayEncounters: unknown game %q for Pokemon #%d", r.Game, r.PokemonID)
+		}
+		tag, err := database.DB.Exec(ctx, `
+			INSERT INTO pokemon_game_encounter (pokemon_id, game_id, kind, terrain)
+			VALUES ($1, $2, 'static', 'other')
+			ON CONFLICT DO NOTHING
+		`, r.PokemonID, gameID)
+		if err != nil {
+			log.Fatalf("seedRunawayEncounters: failed to insert #%d in %s: %v", r.PokemonID, r.Game, err)
+		}
+		inserted += int(tag.RowsAffected())
+	}
+	log.Printf("Inserted %d respawn-on-flee static encounter rows (terrain=other).", inserted)
 }
 
 // seedTerrainSpecies inserts curated wild encounter rows for games where PokeAPI

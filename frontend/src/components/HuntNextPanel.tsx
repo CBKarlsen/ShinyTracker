@@ -138,10 +138,7 @@ const HuntNextCard: React.FC<{
 			<div className="hunt-next-meta">
 				{r.game_title} · {r.method_name}
 			</div>
-			<div className="hunt-next-odds">
-				1 / {r.odds.toLocaleString()}{" "}
-				<span className="hunt-next-eta">· ~{r.eta_hours.toFixed(1)} h</span>
-			</div>
+			<div className="hunt-next-odds">1 / {r.odds.toLocaleString()}</div>
 			<button
 				type="button"
 				className="hunt-next-start"
