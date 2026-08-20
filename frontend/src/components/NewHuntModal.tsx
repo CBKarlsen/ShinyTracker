@@ -48,7 +48,7 @@ const NewHuntModal: React.FC<Props> = ({
 	const [starting, setStarting] = useState(false);
 	const [changing, setChanging] = useState(false);
 
-	// In the prefill path the chosen route already carries odds/eta/formula, so
+	// In the prefill path the chosen route already carries odds/formula, so
 	// we skip the route fetch entirely (no flash, no double-fetch). It only runs
 	// once the user clicks "Change method".
 	const routeFetchId =

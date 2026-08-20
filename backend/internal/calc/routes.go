@@ -17,7 +17,6 @@ type MethodCandidate struct {
 	BaseRolls       int
 	CharmRolls      int
 	HasShinyCharm   bool
-	AvgTimeSeconds  int
 	RequiresKind    string // 'wild' | 'static' | 'raid' | 'egg'
 	RequiresTerrain string // "" means "any terrain"
 }
@@ -36,8 +35,7 @@ type Route struct {
 	MethodName      string      `json:"method_name"`
 	MethodID        int         `json:"method_id"`
 	FormulaType     string      `json:"formula_type"`
-	Odds            int         `json:"odds"` // integer-floored denominator of the 1/Odds probability (matches the displayed "1 / N"); ETAHours keeps full precision
-	ETAHours        float64     `json:"eta_hours"`
+	Odds            int         `json:"odds"` // integer-floored denominator of the 1/Odds probability (matches the displayed "1 / N")
 	EvolveFrom      *EvolveFrom `json:"evolve_from,omitempty"`
 	HasShinyCharm   bool        `json:"has_shiny_charm"`
 	RequiresKind    string      `json:"requires_kind"`
@@ -48,18 +46,15 @@ type Route struct {
 // computeRoute turns a candidate into a Route (Kind/EvolveFrom set by callers).
 func computeRoute(c MethodCandidate) Route {
 	base := OddsConfig{
-		BaseOdds:       c.BaseOdds,
-		BaseRolls:      c.BaseRolls,
-		CharmRolls:     c.CharmRolls,
-		HasShinyCharm:  c.HasShinyCharm,
-		AvgTimeSeconds: c.AvgTimeSeconds,
+		BaseOdds:      c.BaseOdds,
+		BaseRolls:     c.BaseRolls,
+		CharmRolls:    c.CharmRolls,
+		HasShinyCharm: c.HasShinyCharm,
 	}
 	odds := EffectiveOdds(c.FormulaType, DefaultParams(c.FormulaType), base, c.HasShinyCharm)
 	if odds < 1 {
 		odds = 1
 	}
-	// ETA: expected encounters (= odds denominator) * avg_time.
-	eta := float64(odds) * float64(c.AvgTimeSeconds) / 3600.0
 	return Route{
 		GameID:          c.GameID,
 		GameTitle:       c.GameTitle,
@@ -67,7 +62,6 @@ func computeRoute(c MethodCandidate) Route {
 		MethodID:        c.MethodID,
 		FormulaType:     c.FormulaType,
 		Odds:            odds,
-		ETAHours:        eta,
 		HasShinyCharm:   c.HasShinyCharm,
 		RequiresKind:    c.RequiresKind,
 		RequiresTerrain: c.RequiresTerrain,

@@ -58,18 +58,6 @@ export interface Pokemon {
 	is_mythical?: boolean;
 }
 
-export interface HuntMethod {
-	id: number;
-	pokemon_id: number;
-	game_id: number;
-	game_title: string;
-	method_name: string;
-	avg_time_seconds: number;
-	base_rolls: number;
-	charm_rolls: number;
-	formula_type?: string;
-}
-
 export interface Game {
 	id: number;
 	title: string;
@@ -117,7 +105,6 @@ export interface PokemonRoute {
 	method_id: number;
 	formula_type: string;
 	odds: number;
-	eta_hours: number;
 	evolve_from?: { pokemon_id: number; name: string };
 	has_shiny_charm?: boolean;
 	requires_kind?: string;

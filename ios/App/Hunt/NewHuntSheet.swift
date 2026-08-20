@@ -470,7 +470,7 @@ struct NewHuntSheet: View {
             }
 
             // The prototype's own disclaimer, and the reason there is no "recommended" badge.
-            Text("Odds and pace only — nothing here is recommended over anything else.")
+            Text("Odds only — nothing here is recommended over anything else.")
                 .font(Typography.stat)
                 .lineSpacing(4)
                 .foregroundStyle(Palette.textFaint)
@@ -479,7 +479,12 @@ struct NewHuntSheet: View {
         }
     }
 
-    /// `padding:13px 15px;border-radius:16px` — name and odds, a hairline, then note and pace.
+    /// `padding:13px 15px;border-radius:16px` — name, odds, and the odds note.
+    ///
+    /// No pace and no time-to-expected. `avg_time_seconds` is one constant on the method row
+    /// shared by every game that method appears in — the same 30 s stands for a GBA soft reset and
+    /// a Switch one — so multiplying it by the odds denominator produced a confident total that
+    /// was routinely off by a factor of two. A number that wrong is worse than no number.
     private func methodCard(_ method: HuntMethodDetail) -> some View {
         let denominator = model.odds(for: method)
         return VStack(alignment: .leading, spacing: 10) {
@@ -505,20 +510,6 @@ struct NewHuntSheet: View {
                 }
             }
 
-            Divider().overlay(Palette.hairline)
-
-            HStack(spacing: 10) {
-                Text("~\(method.avgTimeSeconds)s per encounter")
-                    .font(Typography.stat)
-                    .foregroundStyle(Palette.textMuted)
-                Spacer(minLength: 8)
-                if let denominator {
-                    Text("\(formatElapsed(denominator * method.avgTimeSeconds)) to expected")
-                        .font(Typography.summary)
-                        .foregroundStyle(Palette.textSecondary)
-                        .lineLimit(1)
-                }
-            }
         }
         .padding(.vertical, 13)
         .padding(.horizontal, 15)
@@ -534,10 +525,7 @@ struct NewHuntSheet: View {
         guard let denominator = model.odds(for: method) else {
             return "\(method.methodName), odds unknown"
         }
-        return """
-            \(method.methodName), 1 in \(denominator.formatted(.number)), about \
-            \(method.avgTimeSeconds) seconds per encounter
-            """
+        return "\(method.methodName), 1 in \(denominator.formatted(.number))"
     }
 
     /// The Ready step: the gold-glow card, the four facts, and the one button.
@@ -628,7 +616,8 @@ struct NewHuntSheet: View {
         }
     }
 
-    /// `confirmRows` — odds, charm, pace, expected time.
+    /// `confirmRows` — odds and charm. Pace and expected time are deliberately absent; see
+    /// ``methodCard`` for why a projection off `avg_time_seconds` is not worth showing.
     private func readyRows(game: Game, method: HuntMethodDetail) -> [DetailRow] {
         let denominator = model.odds(for: method)
         return [
@@ -638,11 +627,6 @@ struct NewHuntSheet: View {
                 accent: true
             ),
             DetailRow("Shiny Charm", charmSummary(game: game, method: method)),
-            DetailRow("Pace", "~\(method.avgTimeSeconds)s per encounter"),
-            DetailRow(
-                "Expected time",
-                denominator.map { formatElapsed($0 * method.avgTimeSeconds) } ?? "Unknown"
-            ),
         ]
     }
 

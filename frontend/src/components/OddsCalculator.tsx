@@ -14,7 +14,6 @@ interface MethodItem {
 	method_name: string;
 	base_rolls: number;
 	charm_rolls: number;
-	avg_time_seconds: number;
 	formula_type?: string;
 	game_title?: string;
 }
@@ -23,7 +22,6 @@ interface OddsResult {
 	fraction: string;
 	percentage: string;
 	expected_encounters: number;
-	eta_hours: number;
 	cumulative_percentage: string;
 }
 
@@ -130,8 +128,6 @@ export default function OddsCalculator() {
 		);
 
 		const expectedEncounters = denominator;
-		const etaHours =
-			(expectedEncounters * selectedMethod.avg_time_seconds) / 3600;
 		const percentage = ((rolls / baseOdds) * 100).toFixed(4) + "%";
 
 		const cumProb = calcCumulativeOdds(
@@ -149,7 +145,6 @@ export default function OddsCalculator() {
 			fraction: `1/${denominator}`,
 			percentage,
 			expected_encounters: expectedEncounters,
-			eta_hours: Math.round(etaHours * 10) / 10,
 			cumulative_percentage: cumPercentage,
 		});
 	}, [selectedMethod, effectiveCharm, encounters]);
@@ -409,25 +404,6 @@ export default function OddsCalculator() {
 								<div
 									className="stat-tile"
 									style={{
-										borderColor: "var(--gold-line)",
-										background: "var(--gold-soft)",
-									}}
-								>
-									<div className="t-label" style={{ color: "var(--gold)" }}>
-										ETA (estimate)
-									</div>
-									<div
-										className="v"
-										style={{ fontSize: 22, color: "var(--gold)" }}
-									>
-										~{odds.eta_hours}
-										<span className="unit">h</span>
-									</div>
-								</div>
-								<div
-									className="stat-tile"
-									style={{
-										gridColumn: "span 2",
 										borderColor: "var(--blue-line)",
 										background: "var(--blue-soft)",
 									}}
