@@ -76,7 +76,7 @@ already fixed. Verified statuses below.
 ### Also confirmed fixed while testing (were in CRITIQUE)
 - ✅ **1a/1b — gameless dead-end:** New Hunt now shows "You haven't added any games yet" +
   a **"Go to Game Library →"** CTA + a "Use custom method" escape — not a vague wall.
-- ✅ **2a/2d — New Hunt modal:** routes show **inline odds + ETA** (1/682, 1/1024, 1/4096)
+- ✅ **2a/2d — New Hunt modal:** routes show **inline odds** (1/682, 1/1024, 1/4096)
   with method params inline; effectively a 2-step flow now.
 
 ### New issues found this pass (not in CRITIQUE)

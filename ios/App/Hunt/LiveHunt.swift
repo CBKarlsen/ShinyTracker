@@ -70,12 +70,28 @@ enum HuntActivityBridge {
             content: ActivityContent(state: state, staleDate: nil))
     }
 
-    /// Moves a running card on by `step`, with no model and no network.
+    /// The count a running card is currently showing, or nil if no card is up for this hunt.
+    ///
+    /// Synchronous on purpose. Its caller needs to read this and decide the next target without an
+    /// `await` in between — a suspension there is exactly the window that lets two presses compute
+    /// the same target and lose one. Callable straight from the caller's actor for that reason.
+    static func currentCount(_ huntID: UUID) -> Int? {
+        Activity<HuntActivity>.activities
+            .first(where: { $0.attributes.huntID == huntID })?.content.state.count
+    }
+
+    /// Puts an **absolute** count on a running card, with no model and no network.
     ///
     /// The killed-app route (``LiveHuntFallback``) has no `HuntListModel` to assemble a state from
-    /// and no session to fetch one with — but it does not need either. The number on screen is the
-    /// running activity's own content state, which the system kept while the process was dead, so
-    /// the press can read it, add its step and push it back.
+    /// and no session to fetch one with — but it does not need either. The system kept the card's
+    /// content state while the process was dead, so a press can push a new number onto it.
+    ///
+    /// Absolute, not `+= step`, and that is the whole design. `Activity` is not an actor and
+    /// `content` is not guaranteed to reflect an `update` that has already returned, so a
+    /// read-add-write here would let two presses both read the old count and both write count+1 —
+    /// the card falls one behind, permanently, and the hunter presses again because it looks like
+    /// a tap was dropped. That is the very over-count this path exists to prevent. The caller owns
+    /// the target and raises it without suspending; this only delivers it.
     ///
     /// **Only the fields derived from the count move.** `cumulativeProbability` is `count`'s
     /// function and would otherwise sit at the probability of a smaller hunt — the most visibly
@@ -91,16 +107,20 @@ enum HuntActivityBridge {
     /// If no activity is running this is a no-op, and deliberately does not start one: requesting
     /// an activity from a background launch is unreliable, and the queue append the caller has
     /// already made is what actually matters.
-    static func advance(_ huntID: UUID, by step: Int) async {
+    ///
+    /// `nonisolated`, like ``sync(attributes:state:)`` beside it: `Activity` is not `Sendable`, so
+    /// an actor-isolated version could not hand `running` to `update` at all. The serialisation
+    /// this needs is the caller's — one pusher per hunt — not an isolation domain.
+    static func set(_ huntID: UUID, count: Int) async {
         guard
             let running = Activity<HuntActivity>.activities.first(
                 where: { $0.attributes.huntID == huntID })
         else { return }
         var state = running.content.state
-        state.count += step
+        state.count = count
         // Same expression as `HuntRow.cumulativeProbability`, on the two numbers the card carries.
-        if let denominator = state.denominator, denominator > 0, state.count > 0 {
-            state.cumulativeProbability = 1 - pow(1 - 1 / Double(denominator), Double(state.count))
+        if let denominator = state.denominator, denominator > 0, count > 0 {
+            state.cumulativeProbability = 1 - pow(1 - 1 / Double(denominator), Double(count))
         }
         await running.update(ActivityContent(state: state, staleDate: nil))
     }

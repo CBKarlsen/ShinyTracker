@@ -279,7 +279,7 @@ func anyOwned(avail, owned []int) bool {
 }
 
 // HuntSuggestion is one ranked "hunt next" target. The full Route is embedded so
-// the frontend can Start without another fetch; odds/eta/method/game are read
+// the frontend can Start without another fetch; odds/method/game are read
 // from Route (no projection duplicates -> no drift).
 type HuntSuggestion struct {
 	PokemonID         int        `json:"pokemon_id"`

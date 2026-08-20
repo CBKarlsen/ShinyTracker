@@ -69,16 +69,62 @@ enum LiveHuntFallback {
         // Tasks. Both would load the same queue, each append its own tap, and the second save would
         // overwrite the first — one tap gone, silently, on the durable path whose entire job is not
         // to lose taps.
-        await store(for: userID).mutate(
+        let stored = await store(for: userID).mutate(
             WriteQueue.self, as: .pendingWrites, default: WriteQueue()
         ) {
             $0.enqueue(.count(delta: step), for: huntID)
         }
+        // A save can fail for a reason that does not pass — a full disk, or file protection before
+        // the first unlock after a reboot. Moving the card anyway would be the worst outcome this
+        // path can produce: the hunter watches the number climb to 8,000 while nothing at all is
+        // recorded. A card that visibly stops moving is the honest signal, and it is the one thing
+        // that makes them check.
+        guard stored else { return }
 
         // Without this the card freezes: the count is recorded, the Lock Screen keeps showing the
         // old number, and the hunter presses again because it looks like the tap was dropped. Over
         // an 8,000-encounter hunt that is not a cosmetic bug, it is a systematic *over*count — the
         // frozen display manufactures the extra presses.
-        await HuntActivityBridge.advance(huntID, by: step)
+        await raiseCard(huntID, by: step)
+    }
+
+    /// The number this hunt's card should be showing, per press.
+    ///
+    /// Separate from the queue because the two answer different questions: the queue owns what the
+    /// server is owed, this owns what the Lock Screen is displaying. They are reconciled the next
+    /// time the app actually loads, when the model pushes a full state it computed from the server's
+    /// count plus everything still queued.
+    private static var target: [UUID: Int] = [:]
+    /// Hunts with a push in flight. One pusher at a time, so two `update` calls cannot land out of
+    /// order and leave the lower number on screen.
+    private static var pushing: Set<UUID> = []
+
+    /// Raises the card to a target this press computes, rather than adding to what the card reads.
+    ///
+    /// Every line up to the `guard` runs without suspending, which is what makes it correct: two
+    /// presses a few hundred milliseconds apart are two independent Tasks, and `@MainActor` alone
+    /// would not save them — MainActor is reentrant at every `await`, so both could read the same
+    /// card count and both write count+1. Reading and raising `target` in one synchronous stretch
+    /// means the second press always sees the first press's number.
+    ///
+    /// `max(card, target)` because either can be the stale one: `target` is empty on a fresh
+    /// background launch and the card is authoritative, while after a press the card may not yet
+    /// reflect an `update` that has already returned.
+    ///
+    /// The loop is a coalescer, not a retry. While one press is awaiting its push another can raise
+    /// `target`; re-reading it after the await delivers the newer number on the same pusher instead
+    /// of racing a second one against it.
+    private static func raiseCard(_ huntID: UUID, by step: Int) async {
+        let card = HuntActivityBridge.currentCount(huntID) ?? 0
+        target[huntID] = max(card, target[huntID] ?? 0) + step
+        guard !pushing.contains(huntID) else { return }
+        pushing.insert(huntID)
+        defer { pushing.remove(huntID) }
+
+        var pushed: Int?
+        while let want = target[huntID], want != pushed {
+            pushed = want
+            await HuntActivityBridge.set(huntID, count: want)
+        }
     }
 }

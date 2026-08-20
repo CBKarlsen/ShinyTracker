@@ -1542,6 +1542,11 @@ ul {
 	color: var(--gold);
 	margin-top: 6px;
 }
+.dex-route-qualifier {
+	font-size: 9px;
+	color: var(--ink-4);
+	opacity: 0.65;
+}
 .dex-route-odds {
 	font-family: var(--font-mono);
 	font-size: 14px;

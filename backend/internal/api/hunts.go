@@ -306,7 +306,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate client-supplied fields before they reach the UPDATE. status drives
 	// the hunt lifecycle (and the active|completed filters across the app), so an
 	// arbitrary value would corrupt state; a negative encounter_count would break
-	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
+	// odds math. The DB columns have no CHECK constraints, so guard here.
 	// An absent status means "leave it alone"; a present one is still held to the
 	// enum, "" included.
 	if req.Status != nil && *req.Status != "active" && *req.Status != "completed" {

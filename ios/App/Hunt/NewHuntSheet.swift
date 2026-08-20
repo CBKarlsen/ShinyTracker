@@ -528,7 +528,7 @@ struct NewHuntSheet: View {
         return "\(method.methodName), 1 in \(denominator.formatted(.number))"
     }
 
-    /// The Ready step: the gold-glow card, the four facts, and the one button.
+    /// The Ready step: the gold-glow card, the facts, and the one button.
     @ViewBuilder
     private var readyStep: some View {
         if let species = model.species, let method = model.method,

@@ -180,6 +180,11 @@ const Row: React.FC<{
 				<Locations route={r} />
 			</div>
 			<div style={{ textAlign: "right" }}>
+				{/* "best case" qualified the odds, not the removed ETA it used to sit above:
+				    route odds come from calc.DefaultParams, i.e. the value at the chain cap, not
+				    the odds right now. Without it "1 / 99" reads as a Poke Radar route's current
+				    odds when it means chain-40. */}
+				<div className="dex-route-qualifier">best case</div>
 				<div className="dex-route-odds">1 / {r.odds.toLocaleString()}</div>
 				{r.has_shiny_charm && <div className="dex-route-charm">✦ Charm</div>}
 				{variant === "launch" && <div className="dex-route-start">▸ Start</div>}
