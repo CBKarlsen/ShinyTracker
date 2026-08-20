@@ -114,3 +114,20 @@ func TestRunawayReachesMewAlone(t *testing.T) {
 		}
 	}
 }
+
+// The runaway scoping rests on one invariant that lives outside the runaway rows
+// themselves: run_away_precharm must be the ONLY static method carrying a
+// requires_terrain. computeAvailability matches a terrain-less method against every
+// terrain, so any second static+terrain method would attach itself to the runaway
+// encounter row and silently reach Mew -- with every other test here still passing.
+func TestRunAwayIsTheOnlyTerrainScopedStatic(t *testing.T) {
+	for slug, m := range loadMethods(t) {
+		if m.RequiresKind != "static" || m.RequiresTerrain == "" {
+			continue
+		}
+		if slug != "run_away_precharm" {
+			t.Errorf("%s is a static method with requires_terrain=%q; only run_away_precharm may be, "+
+				"or it stops reaching Mew alone", slug, m.RequiresTerrain)
+		}
+	}
+}

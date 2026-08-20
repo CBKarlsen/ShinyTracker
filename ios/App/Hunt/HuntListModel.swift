@@ -183,6 +183,10 @@ final class HuntListModel {
     /// send-time checks cannot disagree in the direction that loses data.
     private var serverBacked: Set<UUID> = []
 
+    /// Hunts already reported as not syncing. Per launch, and never cleared on success: the point
+    /// is one warning per stuck hunt, not a banner that reappears on every drain.
+    private var stuckWarned: Set<UUID> = []
+
     init(client: APIClient, store: SnapshotStore) {
         self.client = client
         self.store = store
@@ -515,7 +519,19 @@ final class HuntListModel {
         // time when it can just gain the whole batch at once.
         var dropped: [String] = []
         while let entry = queue.next {
-            if entry.failures >= Self.failureLimit, entry.expendable {
+            if entry.failures >= Self.failureLimit {
+                guard entry.expendable else {
+                    // Kept and retried forever — but said out loud, once. The card's "queued" badge
+                    // cannot tell a wedged write from the ordinary offline state this whole queue
+                    // exists for, and a hunt runs for weeks: without this the hunter could count
+                    // for days believing the server has encounters it has never been sent.
+                    if stuckWarned.insert(entry.huntID).inserted {
+                        dropped.append(
+                            "\(name(of: entry.huntID)) isn't syncing. Your count is safe on this "
+                                + "device and will keep retrying.")
+                    }
+                    break
+                }
                 // Never silently: the user counted these encounters and is entitled to know they
                 // did not reach the server, even though nothing can be done about it now.
                 dropped.append(await dropPermanently(entry))
@@ -678,22 +694,24 @@ final class HuntListModel {
     /// here, and both are conditions that pass. Only a server verdict this client cannot change is
     /// treated as final — retrying that forever would be a queue that never empties.
     ///
-    /// The final set is narrow on purpose, and it is stated as an allow-list rather than "every 4xx
-    /// is final". This client cannot tell one 4xx from another by status alone: a 403 or a bare
-    /// `404 Application not found` from an edge, a proxy or a sleeping platform host looks exactly
-    /// like a verdict from our own handler, and treating those as final deleted the backlog on the
-    /// first drain. So a 404 is final only when the body is the one our handler sends, and
-    /// everything else waits for a server that can answer properly.
+    /// Exactly one verdict is final, and it is matched on the body rather than the status. This
+    /// client cannot tell one 4xx from another by status alone: a 403, or a bare `404 Application
+    /// not found` from an edge, a proxy or a sleeping platform host, looks exactly like a verdict
+    /// from our own handler — and treating those as final deleted the whole backlog on the first
+    /// drain. Status 400 is not on the list either: a queued count cannot produce one from our own
+    /// handler (its request carries no count, no nickname and no status, and its `write_id` is
+    /// always a UUID), so in practice the only 400 it could ever see is one we did not write.
+    ///
+    /// The cost is that a write nothing can satisfy blocks the ones behind it forever. That is the
+    /// right side to be wrong on — the entries are safe on disk and on screen — and `drain` says so
+    /// out loud once an entry has failed enough times to look stuck.
     private func isRetryable(_ error: any Error) -> Bool {
         guard let api = error as? APIError else { return true }
         switch api {
         case .http(let status, _, let body):
-            // The hunt is gone -- deleted on another device. Nothing to retry into.
-            if status == 404 { return !body.contains("Hunt not found") }
-            // A request our own handler rejects as malformed is a bug here, not a passing
-            // condition, and no amount of waiting changes it.
-            if status == 400 { return false }
-            return true
+            // The hunt is gone — deleted on another device. Nothing to retry into. Our handler
+            // sends this body only for `pgx.ErrNoRows`; every other failure there is a 5xx.
+            return !(status == 404 && body.contains("Hunt not found"))
         case .decoding:
             // The write very likely landed; only the response failed to parse. The write id makes
             // a retry a no-op server-side, so retrying is the safe side of that uncertainty.
