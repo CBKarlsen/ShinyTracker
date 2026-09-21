@@ -306,7 +306,7 @@ func UpdateHuntHandler(w http.ResponseWriter, r *http.Request) {
 	// Validate client-supplied fields before they reach the UPDATE. status drives
 	// the hunt lifecycle (and the active|completed filters across the app), so an
 	// arbitrary value would corrupt state; a negative encounter_count would break
-	// odds/ETA math. The DB columns have no CHECK constraints, so guard here.
+	// odds math. The DB columns have no CHECK constraints, so guard here.
 	// An absent status means "leave it alone"; a present one is still held to the
 	// enum, "" included.
 	if req.Status != nil && *req.Status != "active" && *req.Status != "completed" {
@@ -477,7 +477,15 @@ func LogPhaseHandler(w http.ResponseWriter, r *http.Request) {
 		`SELECT encounter_count, status, game_id FROM user_hunts WHERE id = $1 AND user_id = $2`,
 		huntID, userID).Scan(&currentCount, &huntStatus, &parentGameID)
 	if err != nil {
-		http.Error(w, "Hunt not found", http.StatusNotFound)
+		// Split, the same way UpdateHuntHandler does: the iOS write queue treats a
+		// 404 whose body is "Hunt not found" as final and drops the write, so
+		// answering a pooler reset or a restoring database with that body throws
+		// away a phase for a condition that would have passed on the next try.
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "Hunt not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to load hunt", http.StatusInternalServerError)
 		return
 	}
 	if huntStatus != "active" {

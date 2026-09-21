@@ -24,6 +24,24 @@ public struct PendingWrite: Codable, Equatable, Identifiable, Sendable {
         /// it in the queue.
         case phase(pokemonID: Int)
     }
+
+    /// Whether this entry may ever be given up on, once the server has refused it enough times.
+    ///
+    /// False for `.count`, and that is the entire point of the flag. A count carries `write_id`,
+    /// the server dedupes on it in `hunt_writes`, and that table has no expiry -- so resending one
+    /// is provably a no-op if it already landed, and there is therefore no number of failures at
+    /// which deleting a hunter's encounters is better than retrying. Counting is the one thing this
+    /// app exists to not lose, and a soft-reset hunt can hold tens of thousands of encounters in a
+    /// single coalesced entry.
+    ///
+    /// True for the other two, for reasons that are theirs alone: `.phase` has no `write_id` to
+    /// dedupe on, so retrying it after a lost response banks a second phase and zeroes the count;
+    /// and a `.found` that cannot be sent just leaves the hunt active, which the user can see and
+    /// redo. Neither loses a number that only exists on this device.
+    public var expendable: Bool {
+        if case .count = kind { return false }
+        return true
+    }
 }
 
 /// A durable, ordered queue of writes owed to the server, coalesced so that a burst of taps costs

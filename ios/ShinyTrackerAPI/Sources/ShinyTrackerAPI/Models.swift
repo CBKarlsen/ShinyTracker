@@ -247,7 +247,6 @@ public struct MethodDetail: Codable, Sendable, Equatable, Identifiable {
     public let methodName: String
     public let baseRolls: Int
     public let charmRolls: Int
-    public let avgTimeSeconds: Int
     public let formulaType: String
 
     enum CodingKeys: String, CodingKey {
@@ -257,7 +256,6 @@ public struct MethodDetail: Codable, Sendable, Equatable, Identifiable {
         case methodName = "method_name"
         case baseRolls = "base_rolls"
         case charmRolls = "charm_rolls"
-        case avgTimeSeconds = "avg_time_seconds"
         case formulaType = "formula_type"
     }
 }
@@ -270,7 +268,6 @@ public struct HuntMethodDetail: Codable, Sendable, Equatable, Identifiable {
     public let gameID: Int
     public let gameTitle: String
     public let methodName: String
-    public let avgTimeSeconds: Int
     public let baseRolls: Int
     public let charmRolls: Int
     public let formulaType: String
@@ -281,7 +278,6 @@ public struct HuntMethodDetail: Codable, Sendable, Equatable, Identifiable {
         case gameID = "game_id"
         case gameTitle = "game_title"
         case methodName = "method_name"
-        case avgTimeSeconds = "avg_time_seconds"
         case baseRolls = "base_rolls"
         case charmRolls = "charm_rolls"
         case formulaType = "formula_type"

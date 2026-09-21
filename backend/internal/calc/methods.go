@@ -305,7 +305,7 @@ var bdspRadarNumerators = [41]int{
 }
 
 // DefaultParams returns each method's achievable-best parameters, used for
-// route ranking (where no per-hunt params exist yet). avg_time keeps ETA honest.
+// route ranking (where no per-hunt params exist yet).
 func DefaultParams(formulaType string) map[string]any {
 	switch formulaType {
 	case "brilliant_swsh":

@@ -274,26 +274,24 @@ func GetPokemonHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type HuntMethodDetail struct {
-	ID             int    `json:"id"`
-	PokemonID      int    `json:"pokemon_id"`
-	GameID         int    `json:"game_id"`
-	GameTitle      string `json:"game_title"`
-	MethodName     string `json:"method_name"`
-	AvgTimeSeconds int    `json:"avg_time_seconds"`
-	BaseRolls      int    `json:"base_rolls"`
-	CharmRolls     int    `json:"charm_rolls"`
-	FormulaType    string `json:"formula_type"`
+	ID          int    `json:"id"`
+	PokemonID   int    `json:"pokemon_id"`
+	GameID      int    `json:"game_id"`
+	GameTitle   string `json:"game_title"`
+	MethodName  string `json:"method_name"`
+	BaseRolls   int    `json:"base_rolls"`
+	CharmRolls  int    `json:"charm_rolls"`
+	FormulaType string `json:"formula_type"`
 }
 
 type MethodDetail struct {
-	ID             int    `json:"id"`
-	GameID         int    `json:"game_id"`
-	GameTitle      string `json:"game_title"`
-	MethodName     string `json:"method_name"`
-	BaseRolls      int    `json:"base_rolls"`
-	CharmRolls     int    `json:"charm_rolls"`
-	AvgTimeSeconds int    `json:"avg_time_seconds"`
-	FormulaType    string `json:"formula_type"`
+	ID          int    `json:"id"`
+	GameID      int    `json:"game_id"`
+	GameTitle   string `json:"game_title"`
+	MethodName  string `json:"method_name"`
+	BaseRolls   int    `json:"base_rolls"`
+	CharmRolls  int    `json:"charm_rolls"`
+	FormulaType string `json:"formula_type"`
 }
 
 // GetGamePokemonHandler returns the pokemon_id values obtainable in a given
@@ -347,7 +345,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.DB.Query(context.Background(), `
 		SELECT DISTINCT ON (g.id, hm.method_name)
 			hm.id, g.id as game_id, g.title, hm.method_name,
-			hm.base_rolls, hm.charm_rolls, hm.avg_time_seconds, hm.formula_type
+			hm.base_rolls, hm.charm_rolls, hm.formula_type
 		FROM method_games mg
 		JOIN hunt_methods hm ON mg.method_id = hm.id
 		JOIN games g ON g.id = mg.game_id
@@ -365,7 +363,7 @@ func GetMethodsHandler(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var m MethodDetail
 		if err := rows.Scan(&m.ID, &m.GameID, &m.GameTitle, &m.MethodName,
-			&m.BaseRolls, &m.CharmRolls, &m.AvgTimeSeconds, &m.FormulaType); err == nil {
+			&m.BaseRolls, &m.CharmRolls, &m.FormulaType); err == nil {
 			methods = append(methods, m)
 		}
 	}
@@ -395,7 +393,7 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch methods from our new rules-based availability table
 	rows, err := database.DB.Query(context.Background(), `
-		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name, hm.avg_time_seconds, hm.base_rolls, hm.charm_rolls, hm.formula_type
+		SELECT hm.id, ma.pokemon_id, g.id as game_id, g.title, hm.method_name, hm.base_rolls, hm.charm_rolls, hm.formula_type
 		FROM method_availability ma
 		JOIN hunt_methods hm ON ma.method_id = hm.id
 		JOIN games g ON g.id = ma.game_id
@@ -414,7 +412,7 @@ func GetHuntMethodsHandler(w http.ResponseWriter, r *http.Request) {
 		var m HuntMethodDetail
 		if err := rows.Scan(
 			&m.ID, &m.PokemonID, &m.GameID, &m.GameTitle,
-			&m.MethodName, &m.AvgTimeSeconds, &m.BaseRolls, &m.CharmRolls, &m.FormulaType,
+			&m.MethodName, &m.BaseRolls, &m.CharmRolls, &m.FormulaType,
 		); err != nil {
 			continue
 		}

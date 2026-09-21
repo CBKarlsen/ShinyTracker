@@ -80,9 +80,16 @@ final class HuntListModel {
     /// `STEPS = [1, 2, 3, 5, 10]` — the ×N cycler.
     static let steps = [1, 2, 3, 5, 10]
 
-    /// How many *answered* failures a queued write gets before it is given up on. A write the
-    /// server keeps refusing for a reason this client cannot classify would otherwise block every
-    /// entry behind it forever, and the queue is ordered precisely so nothing overtakes.
+    /// How many *answered* failures an **expendable** queued write gets before it is given up on.
+    /// A write the server keeps refusing for a reason this client cannot classify would otherwise
+    /// block every entry behind it forever, and the queue is ordered precisely so nothing overtakes.
+    ///
+    /// This does not apply to counts -- see `PendingWrite.expendable`. It used to, and that was a
+    /// hunt-ending bug: taps coalesce into one entry, so an offline session is a *single* `.count`
+    /// holding everything since the last drain, and five answered failures deleted the lot. Five is
+    /// about two and a half minutes of a 5xx at the cooldown below, which is exactly what a paused
+    /// or restoring Supabase project serves; worse, `failures` persists with the queue and never
+    /// resets, so five unrelated blips weeks apart added up to the same deletion.
     ///
     /// Only a failure the server itself produced spends one of these. A transport failure or an
     /// expired session must never count: being offline is the state this queue exists for, and a
@@ -176,6 +183,10 @@ final class HuntListModel {
     /// send-time checks cannot disagree in the direction that loses data.
     private var serverBacked: Set<UUID> = []
 
+    /// Hunts already reported as not syncing. Per launch, and never cleared on success: the point
+    /// is one warning per stuck hunt, not a banner that reappears on every drain.
+    private var stuckWarned: Set<UUID> = []
+
     init(client: APIClient, store: SnapshotStore) {
         self.client = client
         self.store = store
@@ -184,7 +195,7 @@ final class HuntListModel {
         // path instead of eating it.
         LiveHuntCounter.shared.handler = { [weak self] huntID, step in
             guard let self else { return false }
-            return self.countFromActivity(huntID, by: step)
+            return await self.countFromActivity(huntID, by: step)
         }
     }
 
@@ -196,9 +207,15 @@ final class HuntListModel {
     ///
     /// Returns false when this model does not know the hunt — an empty `rows` after a background
     /// launch that never loaded — which is the caller's cue to fall back rather than drop the tap.
-    private func countFromActivity(_ huntID: UUID, by step: Int) -> Bool {
+    private func countFromActivity(_ huntID: UUID, by step: Int) async -> Bool {
         guard rows.contains(where: { $0.id == huntID }) else { return false }
         bump(huntID, by: step)
+        // Returning is what tells the system the intent is done and the process may be suspended.
+        // `bump` only *schedules* the write to disk, which is fine for a tap made in the app -- the
+        // app is on screen -- but from the Lock Screen it puts the tap in a race with suspension.
+        // Awaiting the same write costs the press a few milliseconds and makes counting without
+        // unlocking exactly as durable as counting inside the app.
+        await persist()
         return true
     }
 
@@ -503,6 +520,18 @@ final class HuntListModel {
         var dropped: [String] = []
         while let entry = queue.next {
             if entry.failures >= Self.failureLimit {
+                guard entry.expendable else {
+                    // Kept and retried forever — but said out loud, once. The card's "queued" badge
+                    // cannot tell a wedged write from the ordinary offline state this whole queue
+                    // exists for, and a hunt runs for weeks: without this the hunter could count
+                    // for days believing the server has encounters it has never been sent.
+                    if stuckWarned.insert(entry.huntID).inserted {
+                        dropped.append(
+                            "\(name(of: entry.huntID)) isn't syncing. Your count is safe on this "
+                                + "device and will keep retrying.")
+                    }
+                    break
+                }
                 // Never silently: the user counted these encounters and is entitled to know they
                 // did not reach the server, even though nothing can be done about it now.
                 dropped.append(await dropPermanently(entry))
@@ -664,11 +693,25 @@ final class HuntListModel {
     /// The default is yes, and deliberately so: transport failures and an expired session both land
     /// here, and both are conditions that pass. Only a server verdict this client cannot change is
     /// treated as final — retrying that forever would be a queue that never empties.
+    ///
+    /// Exactly one verdict is final, and it is matched on the body rather than the status. This
+    /// client cannot tell one 4xx from another by status alone: a 403, or a bare `404 Application
+    /// not found` from an edge, a proxy or a sleeping platform host, looks exactly like a verdict
+    /// from our own handler — and treating those as final deleted the whole backlog on the first
+    /// drain. Status 400 is not on the list either: a queued count cannot produce one from our own
+    /// handler (its request carries no count, no nickname and no status, and its `write_id` is
+    /// always a UUID), so in practice the only 400 it could ever see is one we did not write.
+    ///
+    /// The cost is that a write nothing can satisfy blocks the ones behind it forever. That is the
+    /// right side to be wrong on — the entries are safe on disk and on screen — and `drain` says so
+    /// out loud once an entry has failed enough times to look stuck.
     private func isRetryable(_ error: any Error) -> Bool {
         guard let api = error as? APIError else { return true }
         switch api {
-        case .http(let status, _, _):
-            return status >= 500 || status == 408 || status == 429
+        case .http(let status, _, let body):
+            // The hunt is gone — deleted on another device. Nothing to retry into. Our handler
+            // sends this body only for `pgx.ErrNoRows`; every other failure there is a 5xx.
+            return !(status == 404 && body.contains("Hunt not found"))
         case .decoding:
             // The write very likely landed; only the response failed to parse. The write id makes
             // a retry a no-op server-side, so retrying is the safe side of that uncertainty.

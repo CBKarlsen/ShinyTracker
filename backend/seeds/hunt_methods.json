@@ -421,6 +421,20 @@
     "requires_kind": "wild"
   },
   {
+    "id": "run_away_precharm",
+    "games": [
+      "Ruby/Sapphire/Emerald"
+    ],
+    "method_name": "Runaway Encounters",
+    "avg_time_seconds": 35,
+    "base_rolls": 1,
+    "charm_rolls": 0,
+    "formula_type": "static",
+    "requires_kind": "static",
+    "requires_terrain": "other",
+    "_note": "Faraway Island Mew respawns without a reboot: flee (or Roar/Teleport), step out of the forest and back in, and it is there again with a freshly generated PID - the loop never touches the reset button. Hunters call these runaways / live encounters (the well-known catch is titled \"10,732 Runaway Encounters\"). Odds are identical to Soft Reset (one full-odds roll per encounter); only the name and the ~35s loop (battle intro + Run + map exit/re-entry + re-cornering Mew) differ. SCOPED TO MEW ALONE via requires_terrain 'other': cmd/seed's runawayEncounters inserts a second static encounter row with that terrain for exactly the pairs whose respawn-on-flee behaviour is verified. A terrain-less static row here would hand run-away to every RSE static (the Regis, the weather trio, Deoxys, Latios/Latias), none of which respawn on flee. charm_rolls 0 because the Shiny Charm is a Gen 5 item - same split as soft_reset_precharm vs soft_reset_static. Distinct from the Sword/Shield 'run_away' row, which is requires_kind 'wild' with charm_rolls 2 and cannot serve Gen 3. https://bulbapedia.bulbagarden.net/wiki/Faraway_Island"
+  },
+  {
     "id": "random_encounter_bdsp",
     "games": [
       "Brilliant Diamond/Shining Pearl"

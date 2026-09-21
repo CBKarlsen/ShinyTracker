@@ -273,3 +273,14 @@ private let huntB = UUID()
     #expect(queue.entries.count == 3)
     #expect(queue.entries.map(\.kind) == [.count(delta: 5), .phase(pokemonID: 19), .count(delta: 3)])
 }
+
+@Test func aCountIsNeverExpendable() {
+    // A whole offline session coalesces into one .count entry, so giving up on one entry is giving
+    // up on every encounter since the last drain. It carries a write_id the server dedupes on with
+    // no expiry, so a retry is always safe and no failure count justifies deleting it.
+    var q = WriteQueue()
+    q.enqueue(.count(delta: 4096), for: huntA)
+    q.enqueue(.phase(pokemonID: 151), for: huntA)
+    q.enqueue(.found, for: huntA)
+    #expect(q.entries.map(\.expendable) == [false, true, true])
+}

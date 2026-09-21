@@ -55,7 +55,7 @@ func dumpPokemon(ctx context.Context, id int) {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(tw, "game\tgen\tmethod\trequires_kind\trequires_terrain\tbacking encounter")
 	rows, err := database.DB.Query(ctx, `
-		SELECT g.title, g.generation, hm.method_name, hm.requires_kind,
+		SELECT DISTINCT g.title, g.generation, hm.method_name, hm.requires_kind,
 		       COALESCE(hm.requires_terrain, '(any)') AS req_terrain,
 		       COALESCE(pge.kind || '/' || pge.terrain, '** NONE **') AS backing
 		FROM method_availability ma

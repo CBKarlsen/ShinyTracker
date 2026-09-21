@@ -94,33 +94,22 @@ export function MethodPreview({
 			{!useCustomMethod && selectedRoute && (
 				<div
 					style={{
-						display: "grid",
-						gridTemplateColumns: "1fr 1fr",
-						gap: 8,
 						marginTop: 14,
 						paddingTop: 14,
 						borderTop: "1px solid var(--line-1)",
 					}}
 				>
-					<div>
-						<div className="t-label">Odds</div>
-						<div
-							className="t-mono"
-							style={{
-								fontSize: 13,
-								marginTop: 2,
-								color: "var(--gold)",
-								fontWeight: 600,
-							}}
-						>
-							1 / {selectedRoute.odds.toLocaleString()}
-						</div>
-					</div>
-					<div>
-						<div className="t-label">Expected time</div>
-						<div className="t-mono" style={{ fontSize: 13, marginTop: 2 }}>
-							~{selectedRoute.eta_hours.toFixed(1)} h
-						</div>
+					<div className="t-label">Odds</div>
+					<div
+						className="t-mono"
+						style={{
+							fontSize: 13,
+							marginTop: 2,
+							color: "var(--gold)",
+							fontWeight: 600,
+						}}
+					>
+						1 / {selectedRoute.odds.toLocaleString()}
 					</div>
 				</div>
 			)}
